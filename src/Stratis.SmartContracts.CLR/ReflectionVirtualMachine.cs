@@ -2,13 +2,16 @@
 using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
+using Mono.Cecil;
 using NBitcoin;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
 
@@ -23,18 +26,21 @@ namespace Stratis.SmartContracts.CLR
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
+        private readonly IRewrittenContractCache rewrittenContractCache;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
             ILoader assemblyLoader,
-            IContractModuleDefinitionReader moduleDefinitionReader)
+            IContractModuleDefinitionReader moduleDefinitionReader,
+            IRewrittenContractCache rewrittenContractCache)
         {
             this.validator = validator;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.assemblyLoader = assemblyLoader;
             this.moduleDefinitionReader = moduleDefinitionReader;
+            this.rewrittenContractCache = rewrittenContractCache;
         }
 
         /// <summary>
@@ -42,7 +48,7 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            RuntimeObserver.IGasMeter gasMeter,
+            IGasMeter gasMeter,
             byte[] contractCode,
             object[] parameters,
             string typeName = null)
@@ -71,17 +77,16 @@ namespace Stratis.SmartContracts.CLR
                     return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
                 }
 
-                typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
+                IContractModuleDefinition rewrittenModule = this.GetRewrittenModuleDefinition(moduleDefinition, contractCode, gasMeter);
 
-                var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
-                var rewriter = new ObserverRewriter(observer);
-
-                if (!this.Rewrite(moduleDefinition, rewriter))
+                if (rewrittenModule == null)
                 {
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
-                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+                typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
+
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(rewrittenModule);
 
                 if (!getCodeResult.IsSuccess)
                 {
@@ -90,6 +95,8 @@ namespace Stratis.SmartContracts.CLR
 
                 code = getCodeResult.Value;
             }
+
+            // TODO: Dispose rewrittenModule?
 
             Result<IContract> contractLoadResult = this.Load(
                 code,
@@ -127,22 +134,21 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, RuntimeObserver.IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
         {
             ContractByteCode code;
 
             // Code we're loading from database - can assume it's valid.
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
             {
-                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                var rewriter = new ObserverRewriter(observer);
+                IContractModuleDefinition rewrittenModule = this.GetRewrittenModuleDefinition(moduleDefinition, contractCode, gasMeter);
 
-                if (!this.Rewrite(moduleDefinition, rewriter))
+                if (rewrittenModule == null)
                 {
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
-                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(rewrittenModule);
 
                 if (!getCodeResult.IsSuccess)
                 {
@@ -151,6 +157,8 @@ namespace Stratis.SmartContracts.CLR
 
                 code = getCodeResult.Value;
             }
+
+            // TODO: Dispose rewrittenModule?
 
             Result<IContract> contractLoadResult = this.Load(
                 code,
@@ -179,6 +187,44 @@ namespace Stratis.SmartContracts.CLR
             this.logger.LogDebug("CALL_CONTRACT_INSTANTIATION_SUCCEEDED");
 
             return VmExecutionResult.Ok(invocationResult.Return, typeName);
+        }
+
+        private IContractModuleDefinition GetRewrittenModuleDefinition(IContractModuleDefinition moduleDefinition, byte[] contractCode, IGasMeter gasMeter)
+        {
+            // Check if we have the rewritten version of this contract stored already.
+            byte[] codeHash = HashHelper.Keccak256(contractCode); // TODO: We do this in other places, can we avoid it here. Also IContractHashingStrategy can be used in StateRepo...
+            uint256 codeHashUint256 = new uint256(codeHash);
+            ModuleDefinition cachedModule = this.rewrittenContractCache.Retrieve(codeHashUint256);
+
+            var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+
+            if (cachedModule == null)
+            {
+                // We don't have this contract rewritten yet. Rewrite and save.
+                var rewriter = new ObserverRewriter(observer);
+
+                if (!this.Rewrite(moduleDefinition, rewriter))
+                {
+                    return null; // Will throw an error in the calling method.
+                }
+
+                this.rewrittenContractCache.Store(codeHashUint256, moduleDefinition.ModuleDefinition); 
+
+                return moduleDefinition;
+            }
+            else
+            {
+                // We have a cached version of the module. We just need to replace the Observer.
+                moduleDefinition = new ContractModuleDefinition(cachedModule);
+                var replacerRewriter = new ObserverReplacerRewriter(observer);
+
+                if (!this.Rewrite(moduleDefinition, replacerRewriter))
+                {
+                    return null; // Will throw an error in the calling method.
+                }
+
+                return moduleDefinition;
+            }
         }
 
         private static VmExecutionResult GetInvocationVmErrorResult(IContractInvocationResult invocationResult)

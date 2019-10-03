@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.CLR.Compilation
             try
             {
                 ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(stream, new ReaderParameters { AssemblyResolver = resolver});
-                return Result.Ok<IContractModuleDefinition>(new ContractModuleDefinition(moduleDefinition, stream));
+                return Result.Ok<IContractModuleDefinition>(new ContractModuleDefinition(moduleDefinition));
             }
             catch (Exception e) // Ideally we would only catch BadImageFormatException but unfortunately Cecil can be unreliable.
             {
