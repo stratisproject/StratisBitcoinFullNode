@@ -154,7 +154,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             return additions;
         }
 
-        // Used by tests.
+        // Used for importing wallets and by tests for adding transactions directly.
         internal void ProcessTransactionData(HdAddress address, ICollection<TransactionData> transactions)
         {
             if (transactions.Count == 0)
@@ -169,6 +169,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
 
             foreach (TransactionData transactionData in transactions)
             {
+                // Process spends.
                 var spendingDetails = transactionData.SpendingDetails;
                 if (spendingDetails != null)
                 {
@@ -181,14 +182,35 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                     this.RecordSpend(block, new TxIn() { PrevOut = new OutPoint(transactionData.Id, transactionData.Index) }, address.ScriptPubKey.ToHex(),
                         transactionData.SpendingDetails.IsCoinStake ?? false, transactionData.SpendingDetails.CreationTime.ToUnixTimeSeconds(),
                         totalOut, spendingDetails.TransactionId ?? 0, 0);
+
+                    // Process payment details.
+                    // When importing transaction data one address at a time (vs processing transactions) it is important to also
+                    // process the payment and change details since external payments are not tracked in transaction data.
+                    foreach ((bool? isChange, PaymentDetails pd) in spendingDetails.Payments.Select(p => ((bool?)null, p)).Concat
+                        (spendingDetails.Change.Select(c => ((bool?)true, c))))
+                    {
+                        // The transaction data receiving the spending/payment details.
+                        long outputTxTime = transactionData.SpendingDetails.CreationTime.ToUnixTimeSeconds();
+                        uint256 outputTxId = spendingDetails.TransactionId;
+                        Script scriptPubKey = address.ScriptPubKey;
+
+                        // Legacy JSON files may contain change in "Payments".
+                        bool change = isChange ?? (addressesOfInterest.Contains(pd.DestinationScriptPubKey, out AddressIdentifier addressIdentifier) &&
+                            addressIdentifier.AddressType == 1);
+
+                        // Receipts. Can be external...
+                        this.RecordReceipt(block, scriptPubKey, new TxOut(pd.Amount, pd.DestinationScriptPubKey),
+                        spendingDetails.IsCoinStake ?? false, outputTxTime, outputTxId, (int)pd.OutputIndex, change);
+                    }
                 }
 
-                // One per scriptPubKey from scriptPubKey. Original to RedeemScript via TxOut.
+                // Process receipts.
                 {
                     var block = (transactionData.BlockHeight == null) ? null :
                         new HashHeightPair(transactionData.BlockHash ?? 0, (int)transactionData.BlockHeight);
 
                     Script scriptPubKey = transactionData.ScriptPubKey;
+                    // One per scriptPubKey from scriptPubKey. Original to RedeemScript via TxOut.
                     foreach (Script pubKeyScript in this.GetDestinations(scriptPubKey))
                     {
                         bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out AddressIdentifier targetAddress);
