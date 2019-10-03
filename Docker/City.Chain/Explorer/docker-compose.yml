@@ -7,7 +7,7 @@ services:
         nakonet:
             ipv4_address: 172.16.10.100
     image: coinvault/nako-indexer:latest
-    command: city RpcDomain="{CoinTag}-client" RpcAccessPort=5000 ConnectionString="mongodb://{CoinTag}-mongo" DatabaseNameSubfix="false" NetworkWitnessPrefix="city"
+    command: city RpcDomain="{CoinTag}-client" RpcAccessPort=5000 ConnectionString="mongodb://{CoinTag}-mongo" DatabaseNameSubfix="false" NetworkWitnessPrefix="city" StoreRawTransactions="true"
     ports: 
         - 80:9000
         - 443:9000
