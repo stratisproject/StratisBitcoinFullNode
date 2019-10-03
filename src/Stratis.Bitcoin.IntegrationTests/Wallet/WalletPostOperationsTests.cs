@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.walletFilePath = Path.Combine(walletsFolderPath, filename);
             File.Copy(Path.Combine("Wallet", "Data", filename), this.walletFilePath, true);
 
+            ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
+
             var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
                 Name = this.walletWithFundsName,
