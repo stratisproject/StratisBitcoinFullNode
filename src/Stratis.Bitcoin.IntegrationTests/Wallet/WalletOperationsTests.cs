@@ -1513,16 +1513,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesAsync()
+        public async Task ListWalletsAsync()
         {
             // Act.
             WalletInfoModel walletFileModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/files")
+                .AppendPathSegment("wallet/list-wallets")
                 .GetJsonAsync<WalletInfoModel>();
 
             // Assert.
             walletFileModel.WalletNames.Count().Should().BeGreaterThan(0);
-            walletFileModel.WalletNames.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
+            walletFileModel.WalletNames.Should().Contain(
+                Path.GetFileNameWithoutExtension(this.fixture.WalletWithFundsFilePath).Replace(".wallet",""));
         }
 
         [Fact]
