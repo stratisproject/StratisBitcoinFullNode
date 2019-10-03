@@ -231,6 +231,7 @@ namespace Stratis.Bitcoin.Networks
                 .Register<ProvenHeaderCoinstakeRule>();
 
             consensus.ConsensusRules
+                .Register<PosTransactionsOrderRule>()
                 .Register<BlockMerkleRootRule>()
                 .Register<PosBlockSignatureRepresentationRule>()
                 .Register<PosBlockSignatureRule>();
