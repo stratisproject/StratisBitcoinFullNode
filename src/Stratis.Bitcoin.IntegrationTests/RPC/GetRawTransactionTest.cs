@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 RPCClient rpc = node.CreateRPCClient();
 
-                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, uint256.Zero.ToString(), 0, lastBlockHash); };
+                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, uint256.Zero.ToString(), false, lastBlockHash); };
                 RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
                 exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
                 exception.Message.Should().Be("No such transaction found in the provided block.");
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, uint256.Zero.ToString(), 0, uint256.Zero.ToString()); };
+                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, uint256.Zero.ToString(), false, uint256.Zero.ToString()); };
 
                 // Assert.
                 RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 RPCClient rpc = node.CreateRPCClient();
 
-                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, block.MerkleRoot, 0, block.Hash); };
+                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.getrawtransaction, block.MerkleRoot, false, block.Hash); };
                 RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
                 exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
                 exception.Message.Should().Be("The genesis block coinbase is not considered an ordinary transaction and cannot be retrieved.");
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), 1);
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), true);
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), 1, tip.Hash);
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), true, tip.Hash);
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First().TxId, 0, tip.Hash);
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First().TxId, false, tip.Hash);
 
                 // Assert.
                 response.ResultString.Should().Be(tip.Transactions.First().Hex);
@@ -305,6 +305,62 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
                 exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
                 exception.Message.Should().Be("No such mempool transaction. Use -txindex to enable blockchain transaction queries.");
+            }
+        }
+
+        [Fact]
+        public async Task GetRawTransactionWithNonZeroIntegerParameterReperesenting()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+
+                // Get the last block we have.
+                string lastBlockHash = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("consensus/getbestblockhash")
+                    .GetJsonAsync<string>();
+
+                BlockModel tip = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("blockstore/block")
+                    .SetQueryParams(new { hash = lastBlockHash, outputJson = true })
+                    .GetJsonAsync<BlockModel>();
+
+                // Act.
+                RPCClient rpc = node.CreateRPCClient();
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), 1);
+
+                // Assert.
+                TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
+                transaction.TxId.Should().Be((string)tip.Transactions.First());
+                transaction.VOut.First().ScriptPubKey.Addresses.Count.Should().Be(1);
+            }
+        }
+
+        [Fact]
+        public async Task GetRawTransactionWithZeroIntegerParameterReperesenting()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+
+                // Get the last block we have.
+                string lastBlockHash = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("consensus/getbestblockhash")
+                    .GetJsonAsync<string>();
+
+                BlockTransactionDetailsModel tip = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("blockstore/block")
+                    .SetQueryParams(new { hash = lastBlockHash, outputJson = true, showtransactiondetails = true })
+                    .GetJsonAsync<BlockTransactionDetailsModel>();
+
+                // Act.
+                RPCClient rpc = node.CreateRPCClient();
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First().TxId, 0, tip.Hash);
+
+                // Assert.
+                response.ResultString.Should().Be(tip.Transactions.First().Hex);
             }
         }
     }
