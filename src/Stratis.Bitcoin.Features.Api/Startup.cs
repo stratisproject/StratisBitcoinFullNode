@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -109,6 +110,17 @@ namespace Stratis.Bitcoin.Features.Api
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("contracts", new Info { Title = "Contract API", Version = "1" });
+                c.DocInclusionPredicate((docName, apiDesc) =>
+                {
+                    if (docName != "contracts")
+                        return true;
+
+                    if (apiDesc.ActionDescriptor is ControllerActionDescriptor descriptor)
+                    {
+                        return descriptor.ControllerName == "ControllerThatWillEventuallyBeDynamicallyGenerated";
+                    }
+                    return false;
+                });
             });
 
             // Massive hack
@@ -129,13 +141,7 @@ namespace Stratis.Bitcoin.Features.Api
             app.UseMvc();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger(o =>
-            {
-                o.PreSerializeFilters.Add((document, request) =>
-                {
-                    document.Definitions.Add(new KeyValuePair<string, Schema>("test", new Schema()));
-                });
-            });
+            app.UseSwagger();
 
             app.UseMiddleware<SwaggerUIContractListMiddleware>();
 
