@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesWhenNoFilesArePresentAsync()
+        public async Task GetWalletNamesWhenNoWalletsArePresentAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Act.
                 WalletInfoModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
-                .AppendPathSegment("wallet/files")
+                .AppendPathSegment("wallet/list-wallets")
                 .GetJsonAsync<WalletInfoModel>();
 
                 // Assert.
