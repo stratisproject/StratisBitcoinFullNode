@@ -13,7 +13,6 @@
   <ItemGroup>
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="3.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.1.4" />
     <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="4.0.1" />
