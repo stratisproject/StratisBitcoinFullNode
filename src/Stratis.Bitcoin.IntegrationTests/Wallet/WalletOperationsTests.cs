@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             stratisNode.FullNode.NodeService<IWalletSyncManager>().Stop();
 
             // Prevent wallet transactions with non-consensus blocks from being omitted.
-            ((WalletManager)stratisNode.FullNode.NodeService<IWalletManager>()).WalletLoadsOnlyConsensusBlocks = false;
+            ((WalletManager)stratisNode.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
 
             // Ask the server to load the wallet to its repository.
             var result = $"http://localhost:{stratisNode.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest

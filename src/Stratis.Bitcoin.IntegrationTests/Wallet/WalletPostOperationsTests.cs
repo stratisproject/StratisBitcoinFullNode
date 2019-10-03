@@ -405,7 +405,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 node.FullNode.NodeService<IWalletSyncManager>().Stop();
 
                 // Allow a wallet to be loaded that does not have verifiable blocks in the consensus chain.
-                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).WalletLoadsOnlyConsensusBlocks = false;
+                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 

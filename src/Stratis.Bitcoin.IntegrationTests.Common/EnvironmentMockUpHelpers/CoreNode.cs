@@ -226,18 +226,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             // Extract the zipped blockchain data to the node's DataFolder.
             ZipFile.ExtractToDirectory(Path.GetFullPath(readyDataName), this.DataFolder, true);
 
-            /*
-            // Import wallets to DB.
-            this.runActions.Add(() =>
+            // Import whole wallets to DB.
+            this.startActions.Add(() =>
             {
-                foreach (string walletPath in Directory.GetFiles(this.FullNode.DataFolder.WalletPath, "*.wallet.json"))
-                {
-                    string walletName = Path.GetFileName(walletPath);
-                    walletName = walletName.Substring(0, walletName.Length - ".wallet.json".Length);
-                    ((WalletManager)this.FullNode.NodeService<IWalletManager>()).LoadWallet(walletName);
-                }
+                var walletManager = ((WalletManager)this.FullNode?.NodeService<IWalletManager>(true));
+                if (walletManager != null)
+                    walletManager.ExcludeTransactionsFromWalletImports = false;
             });
-            */
 
             return this;
         }
@@ -290,6 +285,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
+        List<Action> startActions = new List<Action>();
         List<Action> runActions = new List<Action>();
 
         public CoreNode Start(Action startAction = null)
@@ -304,7 +300,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     this.DisableValidation();
 
                 this.runner.BuildNode();
+
                 startAction?.Invoke();
+                foreach (Action action in this.startActions)
+                    action.Invoke();
+
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
