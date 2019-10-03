@@ -21,7 +21,7 @@ services:
     networks: 
         nakonet:
             ipv4_address: 172.16.10.101
-    image: citychain/citychain
+    image: citychain/citychain:10.0.18
     command: ["-server=1", "-rpcallowip=172.16.10.100", "-rpcbind=172.16.10.101", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-rpcthreads=300", "-txindex=1"]
     ports: 
         - 5019:5000
