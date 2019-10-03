@@ -7,8 +7,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 {
     public class WalletGeneralInfoModel
     {
-        [JsonProperty(PropertyName = "walletFilePath")]
-        public string WalletFilePath { get; set; }
+        /// <summary>
+        /// The name of the Wallet
+        /// </summary>
+        [JsonProperty(PropertyName = "walletName")]
+        public string WalletName { get; set; }
 
         [JsonProperty(PropertyName = "network")]
         [JsonConverter(typeof(NetworkConverter))]

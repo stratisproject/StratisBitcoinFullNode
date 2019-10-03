@@ -386,6 +386,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var model = new WalletGeneralInfoModel
                 {
+                    WalletName = wallet.Name,
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
