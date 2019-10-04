@@ -1104,7 +1104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockObject)
             {
-                // Back-up to JSON ".wallet.json.bak" first
+                // Back-up to JSON ".wallet.json.bak" first.
                 this.SaveWallet(walletName, true);
 
                 // Delete any JSON wallet file that may otherwise be re-imported.
