@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -143,14 +145,32 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             TestBase.WaitLoop(() => to.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(x => x.Transaction.Amount) > 0);
         }
 
-        private async Task<AddressGroupingModel[]> CallListAddressGroupingsAsync()
+        private async Task<List<AddressGroupingModel>> CallListAddressGroupingsAsync()
         {
             RPCClient client = this.receiver.CreateRPCClient();
             var response = await client.SendCommandAsync(RPCOperations.listaddressgroupings);
-            var result = response.Result.ToObject<AddressGroupingModel[]>();
+            var result = response.Result.ToObject<List<object>>();
             client = null;
 
-            return result;
+            // Convert object to model.
+            var addressGroupingModels = new List<AddressGroupingModel>();
+
+            foreach (var item in result)
+            {
+                var addressGroupingModel = new AddressGroupingModel();
+                foreach (var inner in JToken.FromObject(item))
+                {
+                    var innerToken = JToken.FromObject(inner);
+                    var address = innerToken.Children().ElementAt(0).Value<string>();
+                    var amount = innerToken.Children().ElementAt(1).Value<long>();
+                    var addressGroupModel = new AddressGroupModel() { Address = address, Amount = Money.Satoshis(amount) };
+                    addressGroupingModel.AddressGroups.Add(addressGroupModel);
+                }
+
+                addressGroupingModels.Add(addressGroupingModel);
+            }
+
+            return addressGroupingModels;
         }
     }
 }
