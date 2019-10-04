@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.CLR.Caching
                 return;
             }
 
-            this.cachedContracts.Add(initialCodeHash, rewrittenContractCode);
+            this.cachedContracts[initialCodeHash] = rewrittenContractCode;
         }
 
         /// <inheritdoc />
