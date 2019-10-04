@@ -21,6 +21,7 @@ namespace Stratis.SmartContracts.CLR.Caching
         /// </summary>
         ModuleDefinition Retrieve(uint256 codeHash);
     }
+
     public class RewrittenContractCache : IRewrittenContractCache
     {
         private readonly Dictionary<uint256, ModuleDefinition> cachedContracts;
@@ -42,10 +43,9 @@ namespace Stratis.SmartContracts.CLR.Caching
         /// <inheritdoc />
         public ModuleDefinition Retrieve(uint256 codeHash)
         {
-            if (this.cachedContracts.ContainsKey(codeHash))
-                return this.cachedContracts[codeHash];
-
-            return null;
+            ModuleDefinition ret = null;
+            this.cachedContracts.TryGetValue(codeHash, out ret);
+            return ret;
         }
     }
 }

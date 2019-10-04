@@ -212,19 +212,18 @@ namespace Stratis.SmartContracts.CLR
 
                 return moduleDefinition;
             }
-            else
+
+            // We have a cached version of the module. We just need to replace the Observer.
+            moduleDefinition = new ContractModuleDefinition(cachedModule);
+            var replacerRewriter = new ObserverReplacerRewriter(observer);
+
+            if (!this.Rewrite(moduleDefinition, replacerRewriter))
             {
-                // We have a cached version of the module. We just need to replace the Observer.
-                moduleDefinition = new ContractModuleDefinition(cachedModule);
-                var replacerRewriter = new ObserverReplacerRewriter(observer);
-
-                if (!this.Rewrite(moduleDefinition, replacerRewriter))
-                {
-                    return null; // Will throw an error in the calling method.
-                }
-
-                return moduleDefinition;
+                return null; // Will throw an error in the calling method.
             }
+
+            return moduleDefinition;
+            
         }
 
         private static VmExecutionResult GetInvocationVmErrorResult(IContractInvocationResult invocationResult)
