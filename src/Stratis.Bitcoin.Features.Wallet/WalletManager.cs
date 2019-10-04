@@ -1100,13 +1100,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void DeleteWallet()
+        public void DeleteWallet(string walletName)
         {
-            throw new NotImplementedException();
+            lock (this.lockObject)
+            {
+                // Back-up to JSON ".wallet.json.bak" first
+                this.SaveWallet(walletName, true);
+
+                // Delete any JSON wallet file that may otherwise be re-imported.
+                string fileName = $"{walletName}.{WalletFileExtension}";
+                this.fileStorage.DeleteFile(fileName);
+
+                // Delete from the repo.
+                this.WalletRepository.DeleteWallet(walletName);
+            }
         }
 
-        /// <inheritdoc />
-        public void SaveWallet(string walletName)
+        private void SaveWallet(string walletName, bool toBackup)
         {
             Guard.NotNull(walletName, nameof(walletName));
 
@@ -1114,8 +1124,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 var wallet = this.GetWallet(walletName);
                 string fileName = $"{wallet.Name}.{WalletFileExtension}";
-                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}", new FileStorageOption { SerializeNullValues = false });
+
+                if (toBackup)
+                    fileName += ".bak";
+
+                this.fileStorage.SaveToFile(wallet, fileName, new FileStorageOption { SerializeNullValues = false });
             }
+        }
+
+        /// <inheritdoc />
+        public void SaveWallet(string walletName)
+        {
+            this.SaveWallet(walletName, false);
         }
 
         /// <inheritdoc />

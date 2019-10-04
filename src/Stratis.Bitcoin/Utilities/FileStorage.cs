@@ -85,6 +85,18 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// Deletes a file from storage.
+        /// </summary>
+        /// <param name="fileName">The name of the file to delete.</param>
+        public void DeleteFile(string fileName)
+        {
+            Guard.NotEmpty(fileName, nameof(fileName));
+
+            string filePath = Path.Combine(this.FolderPath, fileName);
+            File.Delete(filePath);
+        }
+
+        /// <summary>
         /// Saves an object to a file, optionally keeping a backup of it.
         /// </summary>
         /// <param name="toSave">Object to save as a file.</param>
