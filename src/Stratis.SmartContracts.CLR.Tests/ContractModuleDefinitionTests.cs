@@ -57,7 +57,7 @@ public class ModuleDefinitionTest : SmartContract
         [Fact]
         public void Validate_Invalid_ModuleDefinition_Catches_Exceptions()
         {
-            var contractModule = new ContractModuleDefinition(null);
+            var contractModule = new ContractModuleDefinition(null, null);
 
             var validator = new Mock<ISmartContractValidator>();
             validator

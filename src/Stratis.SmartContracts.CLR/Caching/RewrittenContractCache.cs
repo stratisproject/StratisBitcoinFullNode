@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Mono.Cecil;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.CLR.Caching
@@ -12,38 +11,46 @@ namespace Stratis.SmartContracts.CLR.Caching
         ///
         /// If trying to add a cache entry twice for the same hash, this will throw an exception.
         /// </summary>
-        void Store(uint256 initialCodeHash, ModuleDefinition module);
+        void Store(uint256 initialCodeHash, byte[] rewrittenContractCode);
 
         /// <summary>
         /// Returns a cached module definition for this contract code if one exists.
         ///
         /// Returns null if this contract code has not been cached yet.
         /// </summary>
-        ModuleDefinition Retrieve(uint256 codeHash);
+        byte[] Retrieve(uint256 codeHash);
     }
 
     public class RewrittenContractCache : IRewrittenContractCache
     {
-        private readonly Dictionary<uint256, ModuleDefinition> cachedContracts;
+        private readonly Dictionary<uint256, byte[]> cachedContracts;
 
-        public RewrittenContractCache()
+        private readonly ILogger logger;
+
+        public RewrittenContractCache(ILoggerFactory loggerFactory)
         {
-            this.cachedContracts = new Dictionary<uint256, ModuleDefinition>();
+            this.cachedContracts = new Dictionary<uint256, byte[]>();
+
+            this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
         /// <inheritdoc />
-        public void Store(uint256 initialCodeHash, ModuleDefinition module)
+        public void Store(uint256 initialCodeHash, byte[] rewrittenContractCode)
         {
             if (this.cachedContracts.ContainsKey(initialCodeHash))
-                throw new Exception("Cache already contains an entry for this code hash.");
+            {
+                // This could happen in a race condition where multiple threads are using the same contract for the first time at the same time.
+                this.logger.LogWarning("Tried to add the same contract code to the cache twice.");
+                return;
+            }
 
-            this.cachedContracts.Add(initialCodeHash, module);
+            this.cachedContracts.Add(initialCodeHash, rewrittenContractCode);
         }
 
         /// <inheritdoc />
-        public ModuleDefinition Retrieve(uint256 codeHash)
+        public byte[] Retrieve(uint256 codeHash)
         {
-            ModuleDefinition ret = null;
+            byte[] ret = null;
             this.cachedContracts.TryGetValue(codeHash, out ret);
             return ret;
         }

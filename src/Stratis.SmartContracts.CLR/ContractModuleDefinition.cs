@@ -17,10 +17,12 @@ namespace Stratis.SmartContracts.CLR
         private List<TypeDefinition> contractTypes;
 
         private TypeDefinition contractType;
+        private readonly MemoryStream stream;
 
-        public ContractModuleDefinition(ModuleDefinition moduleDefinition)
+        public ContractModuleDefinition(ModuleDefinition moduleDefinition, MemoryStream stream)
         {
             this.ModuleDefinition = moduleDefinition;
+            this.stream = stream;
         }
 
         /// <inheritdoc />
@@ -90,6 +92,7 @@ namespace Stratis.SmartContracts.CLR
 
         public void Dispose()
         {
+            this.stream?.Dispose();
             this.ModuleDefinition?.Dispose();
         }
     }
