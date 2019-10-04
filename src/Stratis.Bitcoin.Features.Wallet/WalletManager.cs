@@ -804,12 +804,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-//
-//        /// <inheritdoc />
-//        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-//        {
-//            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-//        }
+        //
+        //        /// <inheritdoc />
+        //        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
+        //        {
+        //            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
+        //        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
@@ -1111,7 +1111,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 string fileName = $"{walletName}.{WalletFileExtension}";
                 this.fileStorage.DeleteFile(fileName);
 
-                // Delete from the repo.
+                // Delete from the repository.
                 this.WalletRepository.DeleteWallet(walletName);
             }
         }
