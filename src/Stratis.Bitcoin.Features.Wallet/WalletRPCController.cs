@@ -211,33 +211,42 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new ArgumentException(nameof(txid));
 
             WalletAccountReference accountReference = this.GetWalletAccountReference();
+
             HdAccount account = this.walletManager.GetAccounts(accountReference.WalletName).Single(a => a.Name == accountReference.AccountName);
+            List<HdAddress> addresses = account.GetCombinedAddresses().ToList();
+
+            IWalletAddressReadOnlyLookup addressLookup = this.walletManager.WalletRepository.GetWalletAddressLookup(accountReference.WalletName);
+
+            bool IsChangeAddress(Script scriptPubKey)
+            {
+                return addressLookup.Contains(scriptPubKey, out AddressIdentifier addressIdentifier) && addressIdentifier.AddressType == 1;
+            }
 
             // Get the transaction from the wallet by looking into received and send transactions.
-            List<HdAddress> addresses = account.GetCombinedAddresses().ToList();
-            List<TransactionData> receivedTransactions = addresses.Where(r => !r.IsChangeAddress() && r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == trxid)).ToList();
-            List<TransactionData> sendTransactions = addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.SpendingDetails != null && t.SpendingDetails.TransactionId == trxid)).ToList();
+            List<TransactionData> receivedTransactions = this.walletManager.WalletRepository.GetTransactionOutputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true)
+                .Where(td => !IsChangeAddress(td.ScriptPubKey)).ToList();
+            List<TransactionData> sendTransactions = this.walletManager.WalletRepository.GetTransactionInputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true).ToList();
 
             if (!receivedTransactions.Any() && !sendTransactions.Any())
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id.");
 
-            // Get the block hash from the transaction in the wallet.
-            TransactionData transactionFromWallet = null;
             uint256 blockHash = null;
             int? blockHeight, blockIndex;
+            DateTimeOffset transactionTime;
 
             if (receivedTransactions.Any())
             {
                 blockHeight = receivedTransactions.First().BlockHeight;
                 blockIndex = receivedTransactions.First().BlockIndex;
                 blockHash = receivedTransactions.First().BlockHash;
-                transactionFromWallet = receivedTransactions.First();
+                transactionTime = receivedTransactions.First().CreationTime;
             }
             else
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
                 blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
                 blockHash = blockHeight != null ? this.ChainIndexer.GetHeader(blockHeight.Value).HashBlock : null;
+                transactionTime = sendTransactions.First().SpendingDetails.CreationTime;
             }
 
             // Get the block containing the transaction (if it has  been confirmed).
@@ -253,7 +262,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 transactionFromStore = block.Transactions.Single(t => t.GetHash() == trxid);
             }
 
-            DateTimeOffset transactionTime;
             bool isGenerated;
             string hex;
             if (transactionFromStore != null)
@@ -263,16 +271,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = transactionFromStore.ToHex();
 
             }
-            // WALLET TODO: Remove
-            else if (transactionFromWallet != null)
-            {
-                transactionTime = transactionFromWallet.CreationTime;
-                isGenerated = transactionFromWallet.IsCoinBase == true || transactionFromWallet.IsCoinStake == true;
-                hex = transactionFromWallet.Hex;
-            }
             else
             {
-                transactionTime = sendTransactions.First().SpendingDetails.CreationTime;
                 isGenerated = false;
                 hex = null; // TODO get from mempool
             }
@@ -294,8 +294,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             Money feeSent = Money.Zero;
             if (sendTransactions.Any())
             {
-                Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
-                feeSent = wallet.GetSentTransactionFee(transactionTime, trxid);
+                // Get the details of the spending transaction, which can be found on any input spent.
+                SpendingDetails spendingTransaction = sendTransactions.Select(s => s.SpendingDetails).First();
+
+                // Get the change.
+                long change = spendingTransaction.Change.Sum(o => o.Amount);
+
+                Money inputsAmount = new Money(sendTransactions.Sum(i => i.Amount));
+                Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + change);
+
+                feeSent = inputsAmount - outputsAmount;
             }
 
             // Send transactions details.

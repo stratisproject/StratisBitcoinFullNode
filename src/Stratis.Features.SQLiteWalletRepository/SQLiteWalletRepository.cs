@@ -1138,12 +1138,31 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset? transactionTime, uint256 transactionId = null, bool includePayments = false)
+        public IEnumerable<TransactionData> GetTransactionInputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false)
         {
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
-            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionInputs(conn, wallet.WalletId, transactionTime?.ToUnixTimeSeconds(), transactionId?.ToString()))
+            int? accountIndex = (accountName == null) ? (int?)null : conn.GetAccountByName(wallet.Name, accountName).AccountIndex;
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionInputs(conn, wallet.WalletId, accountIndex, transactionTime?.ToUnixTimeSeconds(), transactionId.ToString()))
+            {
+                var payments = includePayments ? HDPayment.GetAllPayments(conn, tranData.SpendTxTime ?? 0, tranData.SpendTxId, tranData.OutputTxId,
+                    tranData.OutputIndex, tranData.ScriptPubKey) : new HDPayment[] { };
+
+                yield return this.ToTransactionData(tranData, payments);
+            }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<TransactionData> GetTransactionOutputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false)
+        {
+            WalletContainer walletContainer = this.GetWalletContainer(walletName);
+            (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
+
+            int? accountIndex = (accountName == null) ? (int?)null : conn.GetAccountByName(wallet.Name, accountName).AccountIndex;
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionOutputs(conn, wallet.WalletId, accountIndex, transactionTime?.ToUnixTimeSeconds(), transactionId.ToString()))
             {
                 var payments = includePayments ? HDPayment.GetAllPayments(conn, tranData.SpendTxTime ?? 0, tranData.SpendTxId, tranData.OutputTxId,
                     tranData.OutputIndex, tranData.ScriptPubKey) : new HDPayment[] { };

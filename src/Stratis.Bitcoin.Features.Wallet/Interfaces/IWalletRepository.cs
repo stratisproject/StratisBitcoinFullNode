@@ -226,11 +226,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Returns <see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="accountName">An optional account name.</param>
         /// <param name="transactionTime">The transaction creation time.</param>
         /// <param name="transactionId">The transaction id.</param>
         /// <param name="includePayments">Set to <c>true</c> to include payment details.</param>
         /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
-        IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset? transactionTime, uint256 transactionId = null, bool includePayments = false);
+        IEnumerable<TransactionData> GetTransactionInputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
+
+        /// <summary>
+        /// Returns <see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="accountName">An optional account name.</param>
+        /// <param name="transactionTime">The transaction creation time.</param>
+        /// <param name="transactionId">The transaction id.</param>
+        /// <param name="includePayments">Set to <c>true</c> to include payment details.</param>
+        /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
+        IEnumerable<TransactionData> GetTransactionOutputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
 
         /// <summary>
         /// Determines address groupings.
