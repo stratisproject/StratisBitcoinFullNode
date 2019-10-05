@@ -212,9 +212,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference accountReference = this.GetWalletAccountReference();
 
-            HdAccount account = this.walletManager.GetAccounts(accountReference.WalletName).Single(a => a.Name == accountReference.AccountName);
-            List<HdAddress> addresses = account.GetCombinedAddresses().ToList();
-
             IWalletAddressReadOnlyLookup addressLookup = this.walletManager.WalletRepository.GetWalletAddressLookup(accountReference.WalletName);
 
             bool IsChangeAddress(Script scriptPubKey)
@@ -338,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 model.Details.Add(new GetTransactionDetailsModel
                 {
-                    Address = addresses.First(a => a.Transactions.Contains(trxInWallet)).Address,
+                    Address = trxInWallet.ScriptPubKey.GetDestinationAddress(this.Network).ToString(),
                     Category = category,
                     Amount = trxInWallet.Amount.ToDecimal(MoneyUnit.BTC),
                     OutputIndex = trxInWallet.Index
