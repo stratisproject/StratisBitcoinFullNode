@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Internal;
@@ -14,6 +15,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.State;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Swagger;
@@ -76,7 +78,109 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public string Param1 { get; set; }
 
         public int Param2 { get; set; }
+
+        public Address Address { get; set; }
+
+        public byte[] ByteArray { get; set; }
     }
+
+    public class ContractSwaggerDocGenerator : ISwaggerProvider
+    {
+        private readonly ISchemaRegistryFactory schemaRegistryFactory;
+        private readonly string address;
+        private readonly Assembly assembly;
+        private readonly SwaggerGeneratorOptions options;
+
+        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, ISchemaRegistryFactory schemaRegistryFactory, string address, Assembly assembly)
+        {
+            this.schemaRegistryFactory = schemaRegistryFactory;
+            this.address = address;
+            this.assembly = assembly;
+            this.options = options;
+        }
+
+        public SwaggerDocument GetSwagger(string documentName, string host = null, string basePath = null, string[] schemes = null)
+        {
+            if (!this.options.SwaggerDocs.TryGetValue(documentName, out Info info))
+                throw new UnknownSwaggerDocument(documentName);
+
+            // Schemas required:
+            // - Dynamic schema for the contract + some params
+            // - Static schema for the response
+            // Paths required:
+            // - Endpoint for the dynamic API
+            // - Params
+
+            var factory = this.schemaRegistryFactory.Create();
+            factory.GetOrRegister(typeof(SomeSchema));
+
+            var definitions = this.CreateDefinitions();
+
+            var swaggerDoc = new SwaggerDocument
+            {
+                Info = info,
+                Host = host,
+                BasePath = basePath,
+                Schemes = schemes,
+                Paths = this.CreatePathItems(definitions),
+                Definitions = factory.Definitions,
+                SecurityDefinitions = this.options.SecurityDefinitions.Any() ? this.options.SecurityDefinitions : null,
+                Security = this.options.SecurityRequirements.Any() ? this.options.SecurityRequirements : null
+            };
+
+            return swaggerDoc;
+        }
+
+        private IDictionary<string, Schema> CreateDefinitions()
+        {
+            // Creates schema for each of the methods in the contract.
+
+            return null;
+        }
+
+        private IDictionary<string, PathItem> CreatePathItems(IDictionary<string, Schema> schema)
+        {
+            // Creates path items for each of the methods & properties in the contract + their schema.
+
+            // TODO: Generate GETs to perform local calls for properties.
+
+            // The endpoint for this contract.
+            // TODO: Test => MethodName
+            var path = $"/api/contract/{this.address}/Test";
+
+            var pathItem = new PathItem();
+
+            var operation = new Operation();
+
+            // Tag should be the contract address?
+            operation.Tags = new [] { this.address };
+            operation.OperationId = "Test2"; // TODO - Method name
+            operation.Consumes = new[] { "application/json", "text/json", "application/*+json" };
+
+            // TODO: Generate a bodyParam for each method.
+            var bodyParam = new BodyParameter
+            {
+                Name = "MethodName",
+                In = "body",
+                Required = true,
+                //Schema = schema
+            };
+
+            operation.Parameters = new List<IParameter> {bodyParam};
+            operation.Responses = new Dictionary<string, Response>
+            {
+                {"200", new Response {Description = "Success"}}
+            };
+
+            pathItem.Post = operation;
+
+            return new Dictionary<string, PathItem>
+            {
+                { path, pathItem }
+            };
+        }
+    }
+
     public class ContractApiDescriptionsProvider : IApiDescriptionGroupCollectionProvider
     {
         private IApiDescriptionGroupCollectionProvider baseProvider;
@@ -170,13 +274,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // We can get the controller method, then customize the available parameters
             var expected = apiDescriptionsProvider.ApiDescriptionGroups;
 
-            var swaggerGen = new SwaggerGenerator(apiDescriptionsProvider, this.schemaRegistryFactory, this.options);
+            // We want to skip this and implement our own one I guess
+            var swaggerGen = new ContractSwaggerDocGenerator(this.options, this.schemaRegistryFactory, address, null);
 
             // Need to build a swagger doc with our dynamic schema and our generic contract invocation endpoint.
             var doc = swaggerGen.GetSwagger("contracts");
-            doc.Paths.Add($"/api/contract/{address}/Test", doc.Paths["/api/contract/schema"]);
-            doc.Paths.Remove("/api/contract/{address}/{method}");
-            doc.Paths.Remove("/api/contract/schema");
+            
+            //doc.Paths.Add($"/api/contract/{address}/Test", doc.Paths["/api/contract/schema"]);
+            //doc.Paths.Remove("/api/contract/{address}/{method}");
+            //doc.Paths.Remove("/api/contract/schema");
 
             // Rewrite params
 
