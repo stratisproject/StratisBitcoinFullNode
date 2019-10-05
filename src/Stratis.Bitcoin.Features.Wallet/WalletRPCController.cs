@@ -222,10 +222,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Get the transaction from the wallet by looking into received and send transactions.
             List<TransactionData> receivedTransactions = this.walletManager.WalletRepository.GetTransactionOutputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true)
                 .Where(td => !IsChangeAddress(td.ScriptPubKey)).ToList();
-            List<TransactionData> sendTransactions = this.walletManager.WalletRepository.GetTransactionInputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true).ToList();
+            List<TransactionData> sentTransactions = this.walletManager.WalletRepository.GetTransactionInputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true).ToList();
 
             TransactionData firstReceivedTransaction = receivedTransactions.FirstOrDefault();
-            TransactionData firstSendTransaction = sendTransactions.FirstOrDefault();
+            TransactionData firstSendTransaction = sentTransactions.FirstOrDefault();
             if (firstReceivedTransaction == null && firstSendTransaction == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id.");
 
@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Get the change.
                     long change = spendingDetails.Change.Sum(o => o.Amount);
 
-                    Money inputsAmount = new Money(sendTransactions.Sum(i => i.Amount));
+                    Money inputsAmount = new Money(sentTransactions.Sum(i => i.Amount));
                     Money outputsAmount = new Money(spendingDetails.Payments.Sum(p => p.Amount) + change);
 
                     feeSent = inputsAmount - outputsAmount;
