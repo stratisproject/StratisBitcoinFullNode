@@ -34,7 +34,50 @@ namespace Stratis.SmartContracts.CLR.Tests.Loader
         [Fact]
         public void GetDeployedType_Returns_Correct_Type()
         {
-            var assemblyLoadResult = this.loader.Load((ContractByteCode)this.compilation.Compilation);
+            var code = @"
+namespace Stratis.SmartContracts.CLR.Tests.Loader
+{
+    [Deploy]
+    public class Test : SmartContract
+    {
+        public Test(ISmartContractState state)
+            : base(state)
+        { }
+    }
+
+    public class NotDeployedType : SmartContract
+    {
+        public NotDeployedType(ISmartContractState state)
+            :base(state)
+        { }
+    }
+}
+";
+            var assemblyLoadResult = this.loader.Load((ContractByteCode) ContractCompiler.Compile(code).Compilation);
+
+            var contractAssembly = assemblyLoadResult.Value;
+
+            var type = contractAssembly.GetDeployedType();
+
+            Assert.NotNull(type);
+            Assert.Equal("Test", type.Name);
+        }
+
+        [Fact]
+        public void GetDeployedType_NoAttribute_Returns_Correct_Type()
+        {
+            var code = @"
+namespace Stratis.SmartContracts.CLR.Tests.Loader
+{
+    public class Test : SmartContract
+    {
+        public Test(ISmartContractState state)
+            : base(state)
+        { }
+    }
+}
+";
+            var assemblyLoadResult = this.loader.Load((ContractByteCode)ContractCompiler.Compile(code).Compilation);
 
             var contractAssembly = assemblyLoadResult.Value;
 

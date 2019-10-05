@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,6 +17,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.Core.State;
 using Swashbuckle.AspNetCore.Annotations;
@@ -275,8 +277,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // We can get the controller method, then customize the available parameters
             var expected = apiDescriptionsProvider.ApiDescriptionGroups;
 
+            var code = this.stateRepository.GetCode(address.ToUint160(this.network));
+
+            if (code == null)
+                throw new Exception("Contract does not exist");
+
+            var assembly = Assembly.Load(code);
+
             // We want to skip this and implement our own one I guess
-            var swaggerGen = new ContractSwaggerDocGenerator(this.options, this.schemaRegistryFactory, address, null);
+            var swaggerGen = new ContractSwaggerDocGenerator(this.options, this.schemaRegistryFactory, address, assembly);
 
             // Need to build a swagger doc with our dynamic schema and our generic contract invocation endpoint.
             var doc = swaggerGen.GetSwagger("contracts");
