@@ -77,6 +77,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             IDictionary<string, Schema> definitions = this.CreateDefinitions();
 
+            info.Title = $"{this.assembly.GetDeployedType().Name} Contract API";
+            info.Description = $"{this.address}";
+
             var swaggerDoc = new SwaggerDocument
             {
                 Info = info,
