@@ -30,5 +30,18 @@ namespace Stratis.SmartContracts.CLR.Tests.Loader
             Assert.NotNull(type);
             Assert.Equal("Test", type.Name);
         }
+
+        [Fact]
+        public void GetDeployedType_Returns_Correct_Type()
+        {
+            var assemblyLoadResult = this.loader.Load((ContractByteCode)this.compilation.Compilation);
+
+            var contractAssembly = assemblyLoadResult.Value;
+
+            var type = contractAssembly.GetDeployedType();
+
+            Assert.NotNull(type);
+            Assert.Equal("Test", type.Name);
+        }
     }
 }
