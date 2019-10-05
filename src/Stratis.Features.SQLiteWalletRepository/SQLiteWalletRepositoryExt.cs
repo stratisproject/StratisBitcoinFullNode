@@ -76,6 +76,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
+                    BlockHash = string.IsNullOrEmpty(transactionData.SpendBlockHash) ? null : uint256.Parse(transactionData.SpendBlockHash),
                     // BlockIndex // Not used currently.
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)transactionData.SpendTxTime),
                     IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
