@@ -6,25 +6,16 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Options;
 using NBitcoin;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.Core.State;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -54,53 +45,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Map parameters to our contract object and try to invoke it.
             // This will need to proxy to the actual SC controller
 
-            //yield return new object[] { true }; // MethodParameterDataType.Bool
-            //yield return new object[] { (byte)1 }; // MethodParameterDataType.Byte
-            //yield return new object[] { Encoding.UTF8.GetBytes("test") }; // MethodParameterDataType.ByteArray
-            //yield return new object[] { 's' }; // MethodParameterDataType.Char
-            //yield return new object[] { "test" }; // MethodParameterDataType.String
-            //yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
-            //yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
-            //yield return new object[] { new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(Network) }; // MethodParameterDataType.Address
-            //yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,
-            //yield return new object[] { (int)10000000 };// MethodParameterDataType.Int
             return Ok(address);
         }
-
-        [Route("api/contract/schema")]
-        [HttpPost]
-        public IActionResult Schema(
-            [FromBody] SomeSchema schema)
-        {
-            // Just to see how the schema is generated
-            return Ok();
-        }
-    }
-
-    public class SomeSchema
-    {
-        public bool AcceptsBool { get; set; }
-        public byte AcceptsByte { get; set; }
-        public byte[] AcceptsByteArray { get; set; }
-        public char AcceptsChar { get; set; }
-        public string AcceptsString { get; set; }
-        public uint AcceptsUint { get; set; }
-        public ulong AcceptsUlong { get; set; }
-        public int AcceptsInt { get; set; }
-        public long AcceptsLong { get; set; }
-        public string AcceptsAddress { get; set; }
     }
 
     public class ContractSwaggerDocGenerator : ISwaggerProvider
     {
-        private readonly ISchemaRegistryFactory schemaRegistryFactory;
         private readonly string address;
         private readonly IContractAssembly assembly;
         private readonly SwaggerGeneratorOptions options;
 
-        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, ISchemaRegistryFactory schemaRegistryFactory, string address, IContractAssembly assembly)
+        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, string address, IContractAssembly assembly)
         {
-            this.schemaRegistryFactory = schemaRegistryFactory;
             this.address = address;
             this.assembly = assembly;
             this.options = options;
@@ -111,12 +67,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.options.SwaggerDocs.TryGetValue(documentName, out Info info))
                 throw new UnknownSwaggerDocument(documentName);
 
-            // Schemas required:
-            // - Dynamic schema for the contract + some params
-            // - Static schema for the response
-            // Paths required:
-            // - Endpoint for the dynamic API
-            // - Params
             IDictionary<string, Schema> definitions = this.CreateDefinitions();
 
             var swaggerDoc = new SwaggerDocument
@@ -191,10 +141,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             var operation = new Operation();
 
             operation.Tags = new[] { methodInfo.Name };
-            operation.OperationId = methodInfo.Name; // TODO - Method name
+            operation.OperationId = methodInfo.Name;
             operation.Consumes = new[] { "application/json", "text/json", "application/*+json" };
 
-            // TODO: Generate a bodyParam for each method.
             var bodyParam = new BodyParameter
             {
                 Name = methodInfo.Name,
@@ -215,74 +164,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
     }
 
-    public class ContractApiDescriptionsProvider : IApiDescriptionGroupCollectionProvider
-    {
-        private IApiDescriptionGroupCollectionProvider baseProvider;
-        private readonly string controllerName;
-
-        public ContractApiDescriptionsProvider(IApiDescriptionGroupCollectionProvider baseProvider, string controllerName)
-        {
-            this.baseProvider = baseProvider;
-            this.controllerName = controllerName;
-        }
-
-        public ApiDescriptionGroupCollection ApiDescriptionGroups
-        {
-            get
-            {
-                var firstGroup = this.baseProvider.ApiDescriptionGroups.Items.First();
-                var name = firstGroup.GroupName;
-                var items = firstGroup.Items
-                    .Where(i =>
-                    {
-                        if (i.ActionDescriptor is ControllerActionDescriptor descriptor)
-                        {
-                            return descriptor.ControllerName == this.controllerName;
-                        }
-                        return false;
-                    })
-                    .ToList();
-
-                var group = new ApiDescriptionGroup(name, items);
-                return new ApiDescriptionGroupCollection(new List<ApiDescriptionGroup> { group }, this.baseProvider.ApiDescriptionGroups.Version);
-            }
-        }
-    }
-
     [Route("swagger/[controller]")]
     public class ContractsController : Controller
     {
         private readonly ILoader loader;
-        private readonly ISwaggerProvider existingGenerator;
-        private readonly IApiDescriptionGroupCollectionProvider apiDescriptionGroupCollectionProvider;
-        private readonly ISchemaRegistryFactory schemaRegistryFactory;
-        private readonly IActionDescriptorChangeProvider changeProvider;
-        private readonly ApplicationPartManager partManager;
-        private readonly IActionDescriptorCollectionProvider actionDescriptorCollectionProvider;
-        private readonly ISwaggerProvider swaggerProvider;
-        private readonly IApiDescriptionGroupCollectionProvider desc;
         private readonly IStateRepositoryRoot stateRepository;
         private readonly Network network;
         private readonly SwaggerGeneratorOptions options;
-        private readonly SwaggerUIOptions uiOptions;
-        private JsonSerializer swaggerSerializer;
+        private readonly JsonSerializer swaggerSerializer;
 
-        public ContractsController(ILoader loader, IOptions<MvcJsonOptions> mvcJsonOptions,
-            ISwaggerProvider existingGenerator, IApiDescriptionGroupCollectionProvider apiDescriptionGroupCollectionProvider, ISchemaRegistryFactory schemaRegistryFactory, IActionDescriptorChangeProvider changeProvider, ApplicationPartManager partManager, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider, ISwaggerProvider swaggerProvider, IApiDescriptionGroupCollectionProvider desc, IOptions<SwaggerGeneratorOptions> options, IOptions<SwaggerUIOptions> uiOptions, IStateRepositoryRoot stateRepository, Network network)
+        public ContractsController(
+            ILoader loader,
+            IOptions<MvcJsonOptions> mvcJsonOptions,
+            IOptions<SwaggerGeneratorOptions> options,
+            IStateRepositoryRoot stateRepository,
+            Network network)
         {
             this.loader = loader;
-            this.existingGenerator = existingGenerator;
-            this.apiDescriptionGroupCollectionProvider = apiDescriptionGroupCollectionProvider;
-            this.schemaRegistryFactory = schemaRegistryFactory;
-            this.changeProvider = changeProvider;
-            this.partManager = partManager;
-            this.actionDescriptorCollectionProvider = actionDescriptorCollectionProvider;
-            this.swaggerProvider = swaggerProvider;
-            this.desc = desc;
             this.stateRepository = stateRepository;
             this.network = network;
             this.options = options.Value;
-            this.uiOptions = uiOptions.Value;
             this.swaggerSerializer = SwaggerSerializerFactory.Create(mvcJsonOptions);
         }
 
@@ -291,17 +192,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [SwaggerOperation(description: "test")]
         public async Task<IActionResult> ContractSwaggerDoc(string address)
         {
-            // Attempt to dynamically generate a swagger doc based on a controller that we specify.
-
-
-            //this.changeProvider.GetChangeToken();
-            // Add the new assembly with the controller to the application parts.
-            //this.partManager.ApplicationParts.Add(new AssemblyPart());
-
-            // Controller should be registered. Generate a swagger doc for it.
-            // DocInclusionPredicate? should be used to match the document name == "contract" and the apiDesc items?
-            // Or just inject our own APIDescriptionsProvider with only the items we need
-
             var code = this.stateRepository.GetCode(address.ToUint160(this.network));
 
             if (code == null)
@@ -310,22 +200,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             Result<IContractAssembly> assemblyLoadResult = this.loader.Load((ContractByteCode) code);
 
             if (assemblyLoadResult.IsFailure)
-                return this.BadRequest();
+                throw new Exception("Error loading assembly");
 
             IContractAssembly assembly = assemblyLoadResult.Value;
 
-            // We want to skip this and implement our own one I guess
-            var swaggerGen = new ContractSwaggerDocGenerator(this.options, this.schemaRegistryFactory, address, assembly);
+            var swaggerGen = new ContractSwaggerDocGenerator(this.options, address, assembly);
 
-            // Need to build a swagger doc with our dynamic schema and our generic contract invocation endpoint.
-            var doc = swaggerGen.GetSwagger("contracts");
-            
-            //doc.Paths.Add($"/api/contract/{address}/Test", doc.Paths["/api/contract/schema"]);
-            //doc.Paths.Remove("/api/contract/{address}/{method}");
-            //doc.Paths.Remove("/api/contract/schema");
-
-            // Rewrite params
-
+            SwaggerDocument doc = swaggerGen.GetSwagger("contracts");
 
             var jsonBuilder = new StringBuilder();
 
@@ -335,8 +216,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 var j = writer.ToString();
                 return Ok(j);
             }
-
         }
-
     }
 }
