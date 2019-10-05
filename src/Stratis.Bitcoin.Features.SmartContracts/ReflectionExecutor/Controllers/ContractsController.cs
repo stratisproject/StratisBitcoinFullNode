@@ -145,12 +145,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private IDictionary<string, PathItem> CreatePathItems(IDictionary<string, Schema> schema)
         {
             // Creates path items for each of the methods & properties in the contract + their schema.
-            // TODO: Generate GETs to perform local calls for properties.
 
             IEnumerable<MethodInfo> methods = this.assembly.GetPublicMethods();
 
-            return methods
+            var methodPaths = methods
                 .ToDictionary(k => $"/api/contract/{this.address}/{k.Name}", v => this.CreatePathItem(v, schema));
+
+            IEnumerable<PropertyInfo> properties = this.assembly.GetPublicGetterProperties();
+
+            var propertyPaths = properties
+                .ToDictionary(k => $"/api/contract/{this.address}/{k.Name}", v => this.CreatePathItem(v));
+            
+            foreach (KeyValuePair<string, PathItem> item in propertyPaths)
+            {
+                methodPaths[item.Key] = item.Value;
+            }
+
+            return methodPaths;
+        }
+
+        private PathItem CreatePathItem(PropertyInfo propertyInfo)
+        {
+            var pathItem = new PathItem();
+
+            var operation = new Operation();
+
+            operation.Tags = new[] { propertyInfo.Name };
+            operation.OperationId = propertyInfo.Name; // TODO - Method name
+            operation.Consumes = new[] { "application/json", "text/json", "application/*+json" };
+
+            operation.Responses = new Dictionary<string, Response>
+            {
+                {"200", new Response {Description = "Success"}}
+            };
+
+            pathItem.Get = operation;
+
+            return pathItem;
         }
 
         private PathItem CreatePathItem(MethodInfo methodInfo, IDictionary<string, Schema> schema)

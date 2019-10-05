@@ -51,6 +51,18 @@ namespace Stratis.SmartContracts.CLR.Loader
             return deployedType
                 .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) // Get only the methods declared on the contract type
                 .Where(m => !m.IsSpecialName); // Ignore property setters/getters
-        } 
+        }
+
+        public IEnumerable<PropertyInfo> GetPublicGetterProperties()
+        {
+            Type deployedType = this.GetDeployedType();
+
+            if (deployedType == null)
+                return new List<PropertyInfo>();
+
+            return deployedType
+                .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.GetGetMethod() != null);
+        }
     }
 }
