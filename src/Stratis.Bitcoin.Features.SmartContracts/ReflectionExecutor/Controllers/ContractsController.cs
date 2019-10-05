@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Options;
 using NBitcoin;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core.State;
 using Swashbuckle.AspNetCore.Annotations;
@@ -31,15 +33,50 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="value">The address of the smart contract to retrieve as bytecode and C# source.</param>
         ///
         /// <returns>A response object containing the bytecode and the decompiled C# code.</returns>
-        [Route("TransferTo")]
+        [Route("api/contract/{address}/{method}")]
         [HttpPost]
-        public IActionResult TransferTo([FromBody] BuildCallContractTransactionRequest value)
+        public IActionResult TransferTo([FromRoute] string address, [FromRoute] string method)
         {
+            string requestBody;
+            using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                requestBody = reader.ReadToEnd();
+            }
+
+            // TODO map request body to JSON object, extract transaction-related params, build new request model, then call the regular SC controller.
+
+            // Map parameters to our contract object and try to invoke it.
             // This will need to proxy to the actual SC controller
-            return Ok(true);
+
+            //yield return new object[] { true }; // MethodParameterDataType.Bool
+            //yield return new object[] { (byte)1 }; // MethodParameterDataType.Byte
+            //yield return new object[] { Encoding.UTF8.GetBytes("test") }; // MethodParameterDataType.ByteArray
+            //yield return new object[] { 's' }; // MethodParameterDataType.Char
+            //yield return new object[] { "test" }; // MethodParameterDataType.String
+            //yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
+            //yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
+            //yield return new object[] { new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(Network) }; // MethodParameterDataType.Address
+            //yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,
+            //yield return new object[] { (int)10000000 };// MethodParameterDataType.Int
+            return Ok(address);
+        }
+
+        [Route("api/contract/schema")]
+        [HttpPost]
+        public IActionResult Schema(
+            [FromBody] SomeSchema schema)
+        {
+            // Just to see how the schema is generated
+            return Ok();
         }
     }
 
+    public class SomeSchema
+    {
+        public string Param1 { get; set; }
+
+        public int Param2 { get; set; }
+    }
     public class ContractApiDescriptionsProvider : IApiDescriptionGroupCollectionProvider
     {
         private IApiDescriptionGroupCollectionProvider baseProvider;
@@ -130,14 +167,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // TODO don't modify the options object directly.
             //this.options.DocInclusionPredicate = (s, description) => true;
 
+            // We can get the controller method, then customize the available parameters
+            var expected = apiDescriptionsProvider.ApiDescriptionGroups;
+
             var swaggerGen = new SwaggerGenerator(apiDescriptionsProvider, this.schemaRegistryFactory, this.options);
 
-            //var sp = new ContractSwaggerGenerator(desc, this.options, address, this.stateRepository, this.network);
+            // Need to build a swagger doc with our dynamic schema and our generic contract invocation endpoint.
             var doc = swaggerGen.GetSwagger("contracts");
+            doc.Paths.Add($"/api/contract/{address}/Test", doc.Paths["/api/contract/schema"]);
+            doc.Paths.Remove("/api/contract/{address}/{method}");
+            doc.Paths.Remove("/api/contract/schema");
 
-            var swagger = this.existingGenerator.GetSwagger("contracts", host: null, basePath: null);
+            // Rewrite params
+
 
             var jsonBuilder = new StringBuilder();
+
             using (var writer = new StringWriter(jsonBuilder))
             {
                 this.swaggerSerializer.Serialize(writer, doc);
