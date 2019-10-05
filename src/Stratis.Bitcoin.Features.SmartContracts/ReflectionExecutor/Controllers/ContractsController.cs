@@ -75,13 +75,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
     public class SomeSchema
     {
-        public string Param1 { get; set; }
-
-        public int Param2 { get; set; }
-
-        public Address Address { get; set; }
-
-        public byte[] ByteArray { get; set; }
+        public bool AcceptsBool { get; set; }
+        public byte AcceptsByte { get; set; }
+        public byte[] AcceptsByteArray { get; set; }
+        public char AcceptsChar { get; set; }
+        public string AcceptsString { get; set; }
+        public uint AcceptsUint { get; set; }
+        public ulong AcceptsUlong { get; set; }
+        public int AcceptsInt { get; set; }
+        public long AcceptsLong { get; set; }
+        public string AcceptsAddress { get; set; }
     }
 
     public class ContractSwaggerDocGenerator : ISwaggerProvider
