@@ -19,44 +19,6 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
-    public class ControllerThatWillEventuallyBeDynamicallyGenerated : Controller
-    {
-        [Route("api/contract/{address}/method/{method}")]
-        [HttpPost]
-        public IActionResult CallMethod([FromRoute] string address, [FromRoute] string method)
-        {
-            string requestBody;
-            using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
-            {
-                requestBody = reader.ReadToEnd();
-            }
-
-            // TODO map request body to JSON object, extract transaction-related params, build new request model, then call the regular SC controller.
-
-            // Map parameters to our contract object and try to invoke it.
-            // This will need to proxy to the actual SC controller
-
-            return Ok(requestBody);
-        }
-
-
-        [Route("api/contract/{address}/property/{property}")]
-        [HttpGet]
-        public IActionResult LocalCallProperty([FromRoute] string address, [FromRoute] string property)
-        {
-            string requestBody;
-
-            using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
-            {
-                requestBody = reader.ReadToEnd();
-            }
-
-            // TODO map to local call and return result.
-
-            return Ok(requestBody);
-        }
-    }
-
     public class ContractSwaggerDocGenerator : ISwaggerProvider
     {
         private readonly string address;
