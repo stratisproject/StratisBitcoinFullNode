@@ -110,17 +110,6 @@ namespace Stratis.Bitcoin.Features.Api
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("contracts", new Info { Title = "Contract API", Version = "1" });
-                c.DocInclusionPredicate((docName, apiDesc) =>
-                {
-                    if (docName != "contracts")
-                        return true;
-
-                    if (apiDesc.ActionDescriptor is ControllerActionDescriptor descriptor)
-                    {
-                        return descriptor.ControllerName == "ControllerThatWillEventuallyBeDynamicallyGenerated";
-                    }
-                    return false;
-                });
             });
 
             // Massive hack
