@@ -30,8 +30,10 @@ namespace Stratis.SmartContracts.CLR.Loader
 
         public Type GetDeployedType()
         {
-            return this.Assembly.ExportedTypes.Count() > 1
-                ? this.Assembly.ExportedTypes.FirstOrDefault(t => t.GetCustomAttribute<DeployAttribute>() != null)
+            Type deployAttributeType =
+                this.Assembly.ExportedTypes.FirstOrDefault(t => t.GetCustomAttribute<DeployAttribute>() != null);
+            return deployAttributeType != null 
+                ? deployAttributeType
                 : this.Assembly.ExportedTypes.FirstOrDefault();
         }
 
