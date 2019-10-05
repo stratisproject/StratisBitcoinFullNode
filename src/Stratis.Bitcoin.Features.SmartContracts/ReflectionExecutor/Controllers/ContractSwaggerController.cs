@@ -16,8 +16,8 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
-    [Route("swagger/[controller]")]
-    public class ContractsController : Controller
+    [Route("swagger/contracts")]
+    public class ContractSwaggerController : Controller
     {
         private readonly ILoader loader;
         private readonly IStateRepositoryRoot stateRepository;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly SwaggerGeneratorOptions options;
         private readonly JsonSerializer swaggerSerializer;
 
-        public ContractsController(
+        public ContractSwaggerController(
             ILoader loader,
             IOptions<MvcJsonOptions> mvcJsonOptions,
             IOptions<SwaggerGeneratorOptions> options,
