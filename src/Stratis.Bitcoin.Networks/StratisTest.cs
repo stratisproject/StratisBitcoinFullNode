@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26174;
             this.DefaultAPIPort = 38221;
+            this.DefaultSignalRPort = 39824;
             this.CoinTicker = "TSTRAT";
             this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 

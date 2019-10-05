@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
@@ -139,7 +138,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, deployments, loggerFactory)
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, deployments, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var minerSettings = new MinerSettings(nodeSettings);
 
             // Simple block creation, nothing special yet:
-            var blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
+            var blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, deployments);
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
             await consensus.BlockMinedAsync(newBlock.Block);
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             }
 
             // Just to make sure we can still make simple blocks
-            blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
+            blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, deployments);
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
             var mempoolSettings = new MempoolSettings(nodeSettings) { RequireStandard = requireStandard };
@@ -288,7 +288,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, new NodeDeployments(network, chain), loggerFactory)
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, deployments, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid

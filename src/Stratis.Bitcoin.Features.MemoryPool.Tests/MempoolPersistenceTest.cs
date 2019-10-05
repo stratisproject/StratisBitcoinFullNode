@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -283,10 +282,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             NodeSettings nodeSettings = NodeSettings.Default(settings.Network);
             ILoggerFactory loggerFactory = nodeSettings.LoggerFactory;
             var consensusSettings = new ConsensusSettings(nodeSettings);
-            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
+            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(mempoolSettings, loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ChainIndexer(settings.Network);
+            var deployments = new NodeDeployments(this.network, chain);
             var chainState = new ChainState();
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
             this.network.Consensus.Options = new PosConsensusOptions();
@@ -299,33 +299,34 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var asyncProvider = new AsyncProvider(nodeSettings.LoggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
 
-            ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, chain, new NodeDeployments(this.network, chain),
+            ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, chain, deployments,
                 consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, loggerFactory), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
-            
+
             // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
             var mempoolRules = new List<MempoolRule>
             {
-                new CheckConflictsMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckCoinViewMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CreateMempoolEntryMempoolRule(network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory),
-                new CheckSigOpsMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckFeeMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckRateLimitMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckAncestorsMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckReplacementMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, txMemPool, mempoolSettings, chain, consensusRules, new NodeDeployments(this.network, chain), loggerFactory)
+                new CheckConflictsMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckCoinViewMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CreateMempoolEntryMempoolRule(this.network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckSigOpsMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckFeeMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckRateLimitMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckAncestorsMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckReplacementMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
+                new CheckAllInputsMempoolRule(this.network, txMemPool, mempoolSettings, chain, consensusRules, deployments, loggerFactory),
+                new CheckTxOutDustRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
             for (int i = 0; i < this.network.Consensus.MempoolRules.Count; i++)
             {
-                if (network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
+                if (this.network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
                 {
                     throw new Exception("Mempool rule type mismatch");
                 }
             }
 
-            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules, mempoolRules, new NodeDeployments(this.network, chain));
+            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules, mempoolRules, deployments);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }
     }

@@ -5,10 +5,8 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
@@ -49,6 +47,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16174;
             this.DefaultAPIPort = 37221;
+            this.DefaultSignalRPort = 38824;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -251,7 +250,7 @@ namespace Stratis.Bitcoin.Networks
             consensus.ConsensusRules
                 .Register<SetActivationDeploymentsPartialValidationRule>()
                 .Register<PosTimeMaskRule>()
-                
+
                 // rules that are inside the method ContextualCheckBlock
                 .Register<TransactionLocktimeActivationRule>()
                 .Register<CoinbaseHeightActivationRule>()
@@ -274,8 +273,8 @@ namespace Stratis.Bitcoin.Networks
                 .Register<LoadCoinviewRule>()
                 .Register<TransactionDuplicationActivationRule>()
                 .Register<PosCoinviewRule>() // implements BIP68, MaxSigOps and BlockReward calculation
-                // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
-                // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
+                                             // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
+                                             // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
                 .Register<PosColdStakingRule>()
                 .Register<SaveCoinviewRule>();
         }
@@ -292,7 +291,8 @@ namespace Stratis.Bitcoin.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule)
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxOutDustRule)
             };
         }
 
