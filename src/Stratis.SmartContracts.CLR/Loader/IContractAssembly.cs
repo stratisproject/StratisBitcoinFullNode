@@ -13,5 +13,7 @@ namespace Stratis.SmartContracts.CLR.Loader
         Type GetDeployedType();
 
         IEnumerable<MethodInfo> GetPublicMethods();
+
+        IEnumerable<PropertyInfo> GetPublicGetterProperties();
     }
 }
