@@ -21,18 +21,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
     public class ControllerThatWillEventuallyBeDynamicallyGenerated : Controller
     {
-        /// <summary>
-        /// Gets the bytecode for a smart contract as a hexadecimal string. The bytecode is decompiled to
-        /// C# source, which is returned as well. Be aware, it is the bytecode which is being executed,
-        /// so this is the "source of truth".
-        /// </summary>
-        ///
-        /// <param name="value">The address of the smart contract to retrieve as bytecode and C# source.</param>
-        ///
-        /// <returns>A response object containing the bytecode and the decompiled C# code.</returns>
-        [Route("api/contract/{address}/{method}")]
+        [Route("api/contract/{address}/method/{method}")]
         [HttpPost]
-        public IActionResult TransferTo([FromRoute] string address, [FromRoute] string method)
+        public IActionResult CallMethod([FromRoute] string address, [FromRoute] string method)
         {
             string requestBody;
             using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
@@ -45,7 +36,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Map parameters to our contract object and try to invoke it.
             // This will need to proxy to the actual SC controller
 
-            return Ok(address);
+            return Ok(requestBody);
+        }
+
+
+        [Route("api/contract/{address}/property/{property}")]
+        [HttpGet]
+        public IActionResult LocalCallProperty([FromRoute] string address, [FromRoute] string property)
+        {
+            string requestBody;
+
+            using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
+            {
+                requestBody = reader.ReadToEnd();
+            }
+
+            // TODO map to local call and return result.
+
+            return Ok(requestBody);
         }
     }
 
@@ -99,12 +107,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IEnumerable<MethodInfo> methods = this.assembly.GetPublicMethods();
 
             var methodPaths = methods
-                .ToDictionary(k => $"/api/contract/{this.address}/{k.Name}", v => this.CreatePathItem(v, schema));
+                .ToDictionary(k => $"/api/contract/{this.address}/method/{k.Name}", v => this.CreatePathItem(v, schema));
 
             IEnumerable<PropertyInfo> properties = this.assembly.GetPublicGetterProperties();
 
             var propertyPaths = properties
-                .ToDictionary(k => $"/api/contract/{this.address}/{k.Name}", v => this.CreatePathItem(v));
+                .ToDictionary(k => $"/api/contract/{this.address}/property/{k.Name}", v => this.CreatePathItem(v));
             
             foreach (KeyValuePair<string, PathItem> item in propertyPaths)
             {
