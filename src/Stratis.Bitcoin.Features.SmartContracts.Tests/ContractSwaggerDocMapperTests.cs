@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR.Compilation;
+using Swashbuckle.AspNetCore.Swagger;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -39,17 +40,22 @@ public class PrimitiveParams : SmartContract
 
             var assembly = Assembly.Load(compilationResult.Compilation);
 
-            var mapper = new ContractSwaggerDocMapper();
-            var method = assembly.ExportedTypes.First().GetMethod("AcceptsAddress");
+            var mapper = new ContractSwaggerDocMapper("test");
 
-            var controllerActionDescriptor = new ControllerActionDescriptor();
-            controllerActionDescriptor.MethodInfo = method;
-            controllerActionDescriptor.ControllerName = "Test";
-            controllerActionDescriptor.DisplayName = "Test Display";
-            controllerActionDescriptor.ActionName = "AcceptsAddress";
-            
+            MethodInfo methodInfo = assembly.ExportedTypes.First().GetMethod("AcceptsAllParams");
+            Schema mapped = mapper.Map(methodInfo);
+            var properties = mapped.Properties;
 
-            
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(bool)]().Type, properties["b"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(byte)]().Type, properties["bb"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(byte[])]().Type, properties["ba"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(char)]().Type, properties["c"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(string)]().Type, properties["s"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(uint)]().Type, properties["ui"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(ulong)]().Type, properties["ul"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(int)]().Type, properties["i"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(long)]().Type, properties["l"].Type);
+            Assert.Equal(ContractSwaggerDocMapper.PrimitiveTypeMap[typeof(string)]().Type, properties["a"].Type);
         }
 
         [Fact]
