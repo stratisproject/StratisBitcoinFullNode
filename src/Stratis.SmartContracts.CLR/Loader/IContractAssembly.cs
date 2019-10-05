@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Stratis.SmartContracts.CLR.Loader
@@ -10,5 +11,7 @@ namespace Stratis.SmartContracts.CLR.Loader
         Type GetType(string name);
 
         Type GetDeployedType();
+
+        IEnumerable<MethodInfo> GetPublicMethods();
     }
 }

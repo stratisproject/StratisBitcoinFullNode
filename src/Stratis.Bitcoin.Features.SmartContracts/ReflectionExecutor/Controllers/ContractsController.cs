@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
@@ -94,14 +95,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
     {
         private readonly ISchemaRegistryFactory schemaRegistryFactory;
         private readonly string address;
-        private readonly ContractAssembly assembly;
+        private readonly IContractAssembly assembly;
         private readonly SwaggerGeneratorOptions options;
 
-        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, ISchemaRegistryFactory schemaRegistryFactory, string address, Assembly assembly)
+        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, ISchemaRegistryFactory schemaRegistryFactory, string address, IContractAssembly assembly)
         {
             this.schemaRegistryFactory = schemaRegistryFactory;
             this.address = address;
-            this.assembly = new ContractAssembly(assembly);
+            this.assembly = assembly;
             this.options = options;
         }
 
@@ -144,32 +145,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private IDictionary<string, PathItem> CreatePathItems(IDictionary<string, Schema> schema)
         {
             // Creates path items for each of the methods & properties in the contract + their schema.
-
             // TODO: Generate GETs to perform local calls for properties.
 
-            // The endpoint for this contract.
-            // TODO: Test => MethodName
-            var path = $"/api/contract/{this.address}/Test";
+            IEnumerable<MethodInfo> methods = this.assembly.GetPublicMethods();
 
+            return methods
+                .ToDictionary(k => $"/api/contract/{this.address}/{k.Name}", v => this.CreatePathItem(v, schema));
+        }
+
+        private PathItem CreatePathItem(MethodInfo methodInfo, IDictionary<string, Schema> schema)
+        {
             var pathItem = new PathItem();
 
             var operation = new Operation();
 
-            // Tag should be the contract address?
-            operation.Tags = new [] { this.address };
-            operation.OperationId = "Test2"; // TODO - Method name
+            operation.Tags = new[] { methodInfo.Name };
+            operation.OperationId = methodInfo.Name; // TODO - Method name
             operation.Consumes = new[] { "application/json", "text/json", "application/*+json" };
 
             // TODO: Generate a bodyParam for each method.
             var bodyParam = new BodyParameter
             {
-                Name = "MethodName",
+                Name = methodInfo.Name,
                 In = "body",
                 Required = true,
-                //Schema = schema
+                Schema = schema[methodInfo.Name]
             };
 
-            operation.Parameters = new List<IParameter> {bodyParam};
+            operation.Parameters = new List<IParameter> { bodyParam };
             operation.Responses = new Dictionary<string, Response>
             {
                 {"200", new Response {Description = "Success"}}
@@ -177,10 +180,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             pathItem.Post = operation;
 
-            return new Dictionary<string, PathItem>
-            {
-                { path, pathItem }
-            };
+            return pathItem;
         }
     }
 
@@ -221,6 +221,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
     [Route("swagger/[controller]")]
     public class ContractsController : Controller
     {
+        private readonly ILoader loader;
         private readonly ISwaggerProvider existingGenerator;
         private readonly IApiDescriptionGroupCollectionProvider apiDescriptionGroupCollectionProvider;
         private readonly ISchemaRegistryFactory schemaRegistryFactory;
@@ -235,9 +236,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly SwaggerUIOptions uiOptions;
         private JsonSerializer swaggerSerializer;
 
-        public ContractsController(IOptions<MvcJsonOptions> mvcJsonOptions,
+        public ContractsController(ILoader loader, IOptions<MvcJsonOptions> mvcJsonOptions,
             ISwaggerProvider existingGenerator, IApiDescriptionGroupCollectionProvider apiDescriptionGroupCollectionProvider, ISchemaRegistryFactory schemaRegistryFactory, IActionDescriptorChangeProvider changeProvider, ApplicationPartManager partManager, IActionDescriptorCollectionProvider actionDescriptorCollectionProvider, ISwaggerProvider swaggerProvider, IApiDescriptionGroupCollectionProvider desc, IOptions<SwaggerGeneratorOptions> options, IOptions<SwaggerUIOptions> uiOptions, IStateRepositoryRoot stateRepository, Network network)
         {
+            this.loader = loader;
             this.existingGenerator = existingGenerator;
             this.apiDescriptionGroupCollectionProvider = apiDescriptionGroupCollectionProvider;
             this.schemaRegistryFactory = schemaRegistryFactory;
@@ -268,21 +270,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Controller should be registered. Generate a swagger doc for it.
             // DocInclusionPredicate? should be used to match the document name == "contract" and the apiDesc items?
             // Or just inject our own APIDescriptionsProvider with only the items we need
-            
-            var apiDescriptionsProvider = new ContractApiDescriptionsProvider(this.apiDescriptionGroupCollectionProvider, nameof(ControllerThatWillEventuallyBeDynamicallyGenerated));
-
-            // TODO don't modify the options object directly.
-            //this.options.DocInclusionPredicate = (s, description) => true;
-
-            // We can get the controller method, then customize the available parameters
-            var expected = apiDescriptionsProvider.ApiDescriptionGroups;
 
             var code = this.stateRepository.GetCode(address.ToUint160(this.network));
 
             if (code == null)
                 throw new Exception("Contract does not exist");
 
-            var assembly = Assembly.Load(code);
+            Result<IContractAssembly> assemblyLoadResult = this.loader.Load((ContractByteCode) code);
+
+            if (assemblyLoadResult.IsFailure)
+                return this.BadRequest();
+
+            IContractAssembly assembly = assemblyLoadResult.Value;
 
             // We want to skip this and implement our own one I guess
             var swaggerGen = new ContractSwaggerDocGenerator(this.options, this.schemaRegistryFactory, address, assembly);

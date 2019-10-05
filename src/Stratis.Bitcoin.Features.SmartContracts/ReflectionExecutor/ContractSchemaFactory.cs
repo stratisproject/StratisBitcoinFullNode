@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public IDictionary<string, Schema> Map(ContractAssembly assembly)
+        public IDictionary<string, Schema> Map(IContractAssembly assembly)
         {
             return this.Map(assembly.GetPublicMethods());
         }
