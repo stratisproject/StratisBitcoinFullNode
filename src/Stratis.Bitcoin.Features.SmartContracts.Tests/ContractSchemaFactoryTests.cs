@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Loader;
 using Swashbuckle.AspNetCore.Swagger;
 using Xunit;
 
@@ -75,10 +76,8 @@ public class DontDeploy : SmartContract
 
             var mapper = new ContractSchemaFactory();
 
-            Type type = assembly.ExportedTypes.First(t => t.Name == "PrimitiveParams");
-
             // Maps the methods in a type to schemas.
-            IDictionary<string, Schema> mapped = mapper.Map(type);
+            IDictionary<string, Schema> mapped = mapper.Map(new ContractAssembly(assembly).GetPublicMethods());
             
             Assert.Equal("AcceptsBool", mapped["AcceptsBool"].Title);
             Assert.Equal("AcceptsByte", mapped["AcceptsByte"].Title);
@@ -103,7 +102,7 @@ public class DontDeploy : SmartContract
 
             var mapper = new ContractSchemaFactory();
 
-            IDictionary<string, Schema> mapped = mapper.Map(assembly);
+            IDictionary<string, Schema> mapped = mapper.Map(new ContractAssembly(assembly));
             
             Assert.Equal(11, mapped.Count);
             Assert.False(mapped.ContainsKey("SomeMethod"));
@@ -125,9 +124,11 @@ public class PrimitiveParams : SmartContract
 
             var assembly = Assembly.Load(compilationResult.Compilation);
 
+            var contractAssembly = new ContractAssembly(assembly);
+
             var mapper = new ContractSchemaFactory();
 
-            IDictionary<string, Schema> mapped = mapper.Map(assembly);
+            IDictionary<string, Schema> mapped = mapper.Map(contractAssembly);
 
             Assert.Equal(1, mapped.Count);
             Assert.True(mapped.ContainsKey("SomeMethod"));

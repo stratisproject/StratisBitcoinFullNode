@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR.Loader;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
@@ -35,13 +36,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
         /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public IDictionary<string, Schema> Map(Assembly assembly)
+        public IDictionary<string, Schema> Map(ContractAssembly assembly)
         {
-            Type deployedType = assembly.ExportedTypes.Count() > 1 
-                ? assembly.ExportedTypes.First(t => t.GetCustomAttribute<DeployAttribute>() != null)
-                : assembly.ExportedTypes.First();
-
-            return this.Map(deployedType);
+            return this.Map(assembly.GetPublicMethods());
         }
 
         /// <summary>
@@ -49,13 +46,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public IDictionary<string, Schema> Map(Type type)
+        public IDictionary<string, Schema> Map(IEnumerable<MethodInfo> methods)
         {
-            // Get the public methods of the type.
-            IEnumerable<MethodInfo> methods = type
-                .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) // Get only the methods declared on the contract type
-                .Where(m => !m.IsSpecialName); // Ignore property setters/getters
-
             return methods.Select(this.Map).ToDictionary(k => k.Title, v => v);
         }
 

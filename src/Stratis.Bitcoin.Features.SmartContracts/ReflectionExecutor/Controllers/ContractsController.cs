@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.Core.State;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Swagger;
@@ -91,14 +92,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
     {
         private readonly ISchemaRegistryFactory schemaRegistryFactory;
         private readonly string address;
-        private readonly Assembly assembly;
+        private readonly ContractAssembly assembly;
         private readonly SwaggerGeneratorOptions options;
 
         public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, ISchemaRegistryFactory schemaRegistryFactory, string address, Assembly assembly)
         {
             this.schemaRegistryFactory = schemaRegistryFactory;
             this.address = address;
-            this.assembly = assembly;
+            this.assembly = new ContractAssembly(assembly);
             this.options = options;
         }
 

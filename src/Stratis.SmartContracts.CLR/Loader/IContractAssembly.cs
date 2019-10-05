@@ -8,5 +8,7 @@ namespace Stratis.SmartContracts.CLR.Loader
         Assembly Assembly { get; }
 
         Type GetType(string name);
+
+        Type GetDeployedType();
     }
 }

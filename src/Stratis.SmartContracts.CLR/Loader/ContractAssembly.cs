@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -26,5 +27,28 @@ namespace Stratis.SmartContracts.CLR.Loader
         {
             return this.Assembly.ExportedTypes.FirstOrDefault(x => x.Name == name);
         }
+
+        public Type GetDeployedType()
+        {
+            return this.Assembly.ExportedTypes.Count() > 1
+                ? this.Assembly.ExportedTypes.FirstOrDefault(t => t.GetCustomAttribute<DeployAttribute>() != null)
+                : this.Assembly.ExportedTypes.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Gets the public methods defined by the contract, ignoring property getters/setters.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<MethodInfo> GetPublicMethods()
+        {
+            Type deployedType = this.GetDeployedType();
+
+            if (deployedType == null)
+                return new List<MethodInfo>();
+
+            return deployedType
+                .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) // Get only the methods declared on the contract type
+                .Where(m => !m.IsSpecialName); // Ignore property setters/getters
+        } 
     }
 }
