@@ -113,11 +113,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Paths required:
             // - Endpoint for the dynamic API
             // - Params
-
-            var factory = this.schemaRegistryFactory.Create();
-            factory.GetOrRegister(typeof(SomeSchema));
-
-            var definitions = this.CreateDefinitions();
+            IDictionary<string, Schema> definitions = this.CreateDefinitions();
 
             var swaggerDoc = new SwaggerDocument
             {
@@ -126,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 BasePath = basePath,
                 Schemes = schemes,
                 Paths = this.CreatePathItems(definitions),
-                Definitions = factory.Definitions,
+                Definitions = definitions,
                 SecurityDefinitions = this.options.SecurityDefinitions.Any() ? this.options.SecurityDefinitions : null,
                 Security = this.options.SecurityRequirements.Any() ? this.options.SecurityRequirements : null
             };
@@ -137,8 +133,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private IDictionary<string, Schema> CreateDefinitions()
         {
             // Creates schema for each of the methods in the contract.
+            var schemaFactory = new ContractSchemaFactory();
 
-            return null;
+            return schemaFactory.Map(this.assembly);
         }
 
         private IDictionary<string, PathItem> CreatePathItems(IDictionary<string, Schema> schema)
