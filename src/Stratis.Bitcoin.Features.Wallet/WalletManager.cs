@@ -804,12 +804,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-//
-//        /// <inheritdoc />
-//        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-//        {
-//            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-//        }
+        //
+        //        /// <inheritdoc />
+        //        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
+        //        {
+        //            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
+        //        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
@@ -1100,13 +1100,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void DeleteWallet()
+        public void DeleteWallet(string walletName)
         {
-            throw new NotImplementedException();
+            lock (this.lockObject)
+            {
+                // Back-up to JSON ".wallet.json.bak" first.
+                this.SaveWallet(walletName, true);
+
+                // Delete any JSON wallet file that may otherwise be re-imported.
+                string fileName = $"{walletName}.{WalletFileExtension}";
+                this.fileStorage.DeleteFile(fileName);
+
+                // Delete from the repository.
+                this.WalletRepository.DeleteWallet(walletName);
+            }
         }
 
-        /// <inheritdoc />
-        public void SaveWallet(string walletName)
+        private void SaveWallet(string walletName, bool toBackup)
         {
             Guard.NotNull(walletName, nameof(walletName));
 
@@ -1114,8 +1124,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 var wallet = this.GetWallet(walletName);
                 string fileName = $"{wallet.Name}.{WalletFileExtension}";
-                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}", new FileStorageOption { SerializeNullValues = false });
+
+                if (toBackup)
+                    fileName += ".bak";
+
+                this.fileStorage.SaveToFile(wallet, fileName, new FileStorageOption { SerializeNullValues = false });
             }
+        }
+
+        /// <inheritdoc />
+        public void SaveWallet(string walletName)
+        {
+            this.SaveWallet(walletName, false);
         }
 
         /// <inheritdoc />

@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Deletes a wallet.
         /// </summary>
-        void DeleteWallet();
+        void DeleteWallet(string walletName);
 
         /// <summary>
         /// Gets an account that contains no transactions.
