@@ -122,26 +122,28 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         }
 
         // Finds account transactions acting as inputs to other wallet transactions - i.e. not a complete list of transaction inputs.
-        internal static IEnumerable<HDTransactionData> FindTransactionInputs(DBConnection conn, int walletId, long? transactionTime, string transactionId)
+        internal static IEnumerable<HDTransactionData> FindTransactionInputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId}) { ((transactionTime == null && transactionId == null) ? "" : $@"
-                AND     SpendTxTime = {transactionTime}
-                AND     SpendTxId = '{transactionId}'")}");
+                WHERE   WalletId = {walletId} {((accountIndex != null) ? $@"
+                AND     AccountIndex = {accountIndex}" : $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})")} { ((transactionTime == null) ? "" : $@"
+                AND     SpendTxTime = {transactionTime}")}
+                AND     SpendTxId = '{transactionId}'");
         }
 
         // Finds the wallet transaction data related to a transaction - i.e. not a complete list of transaction outputs.
-        internal static IEnumerable<HDTransactionData> FindTransactionOutputs(DBConnection conn, int walletId, int transactionTime, string transactionId)
+        internal static IEnumerable<HDTransactionData> FindTransactionOutputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})
-                AND     OutputTxTime = {transactionTime}
+                WHERE   WalletId = {walletId} {((accountIndex != null) ? $@"
+                AND     AccountIndex = {accountIndex}" : $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})")} { ((transactionTime == null) ? "" : $@"
+                AND     OutputTxTime = {transactionTime}")}
                 AND     OutputTxId = '{transactionId}'");
         }
     }

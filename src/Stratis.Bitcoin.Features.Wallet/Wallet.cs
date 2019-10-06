@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 if (transactionTime != null && spendingTransactionId != null)
                 {
-                    foreach (TransactionData txData in this.WalletRepository.GetTransactionInputs(this.Name, transactionTime, spendingTransactionId, includePayments: true))
+                    foreach (TransactionData txData in this.WalletRepository.GetTransactionInputs(this.Name, null, transactionTime, spendingTransactionId, includePayments: true))
                         yield return txData;
                 }
                 else
