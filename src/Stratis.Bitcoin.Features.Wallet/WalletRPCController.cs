@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -345,30 +346,29 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         [ActionName("listaddressgroupings")]
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
-        public AddressGroupingModel[] ListAddressGroupings()
+        public List<object> ListAddressGroupings()
         {
             var walletReference = this.GetWalletAccountReference();
             var addressGroupings = this.walletManager.GetAddressGroupings(walletReference.WalletName);
-            var addressGroupingModels = new List<AddressGroupingModel>();
+
+            var groupingObject = new List<object> { };
 
             foreach (var addressGrouping in addressGroupings)
             {
-                var addressGroupingModel = new AddressGroupingModel();
+                var inner = new List<object> { };
 
                 foreach (var address in addressGrouping)
                 {
                     var balance = this.walletManager.GetAddressBalance(address);
-                    addressGroupingModel.AddressGroups.Add(new AddressGroupModel()
-                    {
-                        Address = address,
-                        Amount = balance.AmountConfirmed
-                    });
+                    inner.Add(new { address, balance.AmountConfirmed.Satoshi });
                 }
 
-                addressGroupingModels.Add(addressGroupingModel);
+                var innerValues = JArray.FromObject(inner).Select(x => x.Values());
+
+                groupingObject.Add(innerValues);
             }
 
-            return addressGroupingModels.ToArray();
+            return groupingObject;
         }
 
         /// <summary>
