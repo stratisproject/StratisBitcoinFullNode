@@ -90,25 +90,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult LocalCallProperty([FromRoute] string address, [FromRoute] string property)
         {
-            string requestBody;
-            using (StreamReader reader = new StreamReader(this.Request.Body, Encoding.UTF8))
-            {
-                requestBody = reader.ReadToEnd();
-            }
-
-            // TODO map request body to JSON object, extract transaction-related params, build new request model, then call the regular SC controller.
-            JObject requestData;
-
-            try
-            {
-                requestData = JObject.Parse(requestBody);
-            }
-            catch (JsonReaderException e)
-            {
-                return this.BadRequest(e.Message);
-            }
-
-            LocalCallContractRequest request = this.MapLocalCallRequest(address, property, requestData, this.Request.Headers);
+            LocalCallContractRequest request = this.MapLocalCallRequest(address, property, this.Request.Headers);
 
             // Proxy to the actual SC controller.
             return this.localCallController.LocalCallSmartContractTransaction(request);
@@ -135,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return call;
         }
 
-        private LocalCallContractRequest MapLocalCallRequest(string address, string property, JObject requestData, IHeaderDictionary headers)
+        private LocalCallContractRequest MapLocalCallRequest(string address, string property, IHeaderDictionary headers)
         {
             return new LocalCallContractRequest
             {
@@ -144,9 +126,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 Amount = headers["Amount"],
                 Sender = headers["Sender"],
                 ContractAddress = address,
-                MethodName = "get_" + property, // This is an assumption but should be correct 100% of the time in this use case.
-                // TODO map parameters
-
+                MethodName = property
             };
         }
     }
