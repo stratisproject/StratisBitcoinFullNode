@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly Network network;
 
         /// <summary>
-        /// 
+        /// Creates a new DynamicContractController instance.
         /// </summary>
         /// <param name="smartContractWalletController"></param>
         /// <param name="localCallController"></param>

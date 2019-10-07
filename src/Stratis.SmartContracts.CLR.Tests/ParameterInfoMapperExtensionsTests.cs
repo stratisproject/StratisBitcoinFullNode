@@ -26,7 +26,7 @@ public class Test
             // The jObject as we expect it to come from swagger.
             var jObject = JObject.FromObject(new
             {
-                b = "true", // TODO check swagger serialization of bools
+                b = "true",
                 bb = "DD",
                 ba = "AABB",
                 c = 'a',
