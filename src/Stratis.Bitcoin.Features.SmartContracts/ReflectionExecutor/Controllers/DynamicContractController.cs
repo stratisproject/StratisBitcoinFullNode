@@ -73,12 +73,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             Type type = assembly.GetDeployedType();
 
             MethodInfo methodInfo = type.GetMethod(method);
-
-            // Map the jobject to the parameter + types expected by the call.
-            var methodParams = methodInfo
-                .GetParameters()
-                .Select(p => $"{Prefix.ForType(p.ParameterType).Value}#{requestData[p.Name]}")
-                .ToArray();
+            
+            // Map the JObject to the parameter + types expected by the call.
+            string[] methodParams = methodInfo.GetParameters().Map(requestData);
 
             BuildCallContractTransactionRequest request = this.MapCallRequest(address, method, methodParams, this.Request.Headers);
 
