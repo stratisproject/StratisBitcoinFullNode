@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
 {
-    public class JObjectParameterInfoMapperTests
+    public class ParameterInfoMapperExtensionsTests
     {
         [Fact]
         public void Map_Method_Params_Success()
@@ -38,9 +38,7 @@ public class Test
                 a = "address"
             });
 
-            var mapper = new JObjectParameterInfoMapper();
-
-            var mapped = mapper.Map(jObject, method.GetParameters());
+            var mapped = method.GetParameters().Map(jObject);
 
             // Check the order and type of each param is correct.
             Assert.Equal(10, mapped.Length);

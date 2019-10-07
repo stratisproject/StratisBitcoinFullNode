@@ -8,20 +8,20 @@ namespace Stratis.SmartContracts.CLR.Serialization
     /// <summary>
     /// Maps a JObject of values to the parameters on a method.
     /// </summary>
-    public class JObjectParameterInfoMapper
+    public static class ParameterInfoMapperExtensions
     {
-        public string[] Map(JObject obj, ParameterInfo[] parameters)
+        public static string[] Map(this ParameterInfo[] parameters, JObject obj)
         {
             var result = new List<string>();
 
-            foreach (var parameter in parameters)
+            foreach (ParameterInfo parameter in parameters)
             {
-                var jObParam = obj[parameter.Name];
+                JToken jObParam = obj[parameter.Name];
 
                 if (jObParam == null)
                     throw new Exception("Couldn't map all params");
 
-                var prefix = Prefix.ForType(parameter.ParameterType);
+                Prefix prefix = Prefix.ForType(parameter.ParameterType);
 
                 result.Add($"{prefix.Value}#{jObParam}");
             }
