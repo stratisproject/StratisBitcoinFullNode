@@ -51,40 +51,46 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public static Prefix ForObject(object o)
         {
-            byte type = (byte) GetPrimitiveType(o);
+            byte type = (byte) GetPrimitiveType(o.GetType());
             return new Prefix(type);
         }
 
-        private static MethodParameterDataType GetPrimitiveType(object o)
+        public static Prefix ForType(Type t)
         {
-            if (o is bool)
+            byte type = (byte)GetPrimitiveType(t);
+            return new Prefix(type);
+        }
+
+        private static MethodParameterDataType GetPrimitiveType(Type o)
+        {
+            if (o == typeof(bool))
                 return MethodParameterDataType.Bool;
 
-            if (o is byte)
+            if (o == typeof(byte))
                 return MethodParameterDataType.Byte;
 
-            if (o is byte[])
+            if (o == typeof(byte[]))
                 return MethodParameterDataType.ByteArray;
 
-            if (o is char)
+            if (o == typeof(char))
                 return MethodParameterDataType.Char;
 
-            if (o is string)
+            if (o == typeof(string))
                 return MethodParameterDataType.String;
 
-            if (o is uint)
+            if (o == typeof(uint))
                 return MethodParameterDataType.UInt;
 
-            if (o is ulong)
+            if (o == typeof(ulong))
                 return MethodParameterDataType.ULong;
 
-            if (o is Address)
+            if (o == typeof(Address))
                 return MethodParameterDataType.Address;
 
-            if (o is long)
+            if (o == typeof(long))
                 return MethodParameterDataType.Long;
 
-            if (o is int)
+            if (o == typeof(int))
                 return MethodParameterDataType.Int;
 
             // Any other types are not supported.
