@@ -8,6 +8,9 @@ using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 {
+    /// <summary>
+    /// Factory for generating swagger schema for smart contract primitives.
+    /// </summary>
     public class ContractSchemaFactory
     {
         public static readonly Dictionary<Type, Func<Schema>> PrimitiveTypeMap = new Dictionary<Type, Func<Schema>>
