@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.SmartContracts.CLR.Loader;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -11,12 +12,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
     {
         private readonly string address;
         private readonly IContractAssembly assembly;
+        private readonly string defaultWalletName;
+        private readonly string defaultSenderAddress;
         private readonly SwaggerGeneratorOptions options;
 
-        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, string address, IContractAssembly assembly)
+        public ContractSwaggerDocGenerator(SwaggerGeneratorOptions options, string address, IContractAssembly assembly, string defaultWalletName = "", string defaultSenderAddress = "")
         {
             this.address = address;
             this.assembly = assembly;
+            this.defaultWalletName = defaultWalletName;
+            this.defaultSenderAddress = defaultSenderAddress;
             this.options = options;
         }
 
@@ -84,6 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             operation.Tags = new[] { propertyInfo.Name };
             operation.OperationId = propertyInfo.Name;
             operation.Consumes = new[] { "application/json", "text/json", "application/*+json" };
+            operation.Parameters = this.GetLocalCallMetadataHeaderParams();
 
             operation.Responses = new Dictionary<string, Response>
             {
@@ -113,7 +119,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 Schema = schema[methodInfo.Name]
             };
 
-            operation.Parameters = new List<IParameter> { bodyParam };
+            var parameters = new List<IParameter>
+            {
+                bodyParam
+            };
+
+            // Get the extra metadata fields required for a contract transaction and add this as header data.
+            // We use headers few reasons:
+            // - Compatibility with Swagger, which doesn't support setting multiple body objects.
+            // - Preventing collisions with contract method parameter names if we were add them to method invocation body object.
+            // - Still somewhat REST-ful vs. adding query params.
+            // We add header params after adding the body param so they appear in the correct order.
+            parameters.AddRange(this.GetCallMetadataHeaderParams());
+
+            operation.Parameters = parameters;
+
             operation.Responses = new Dictionary<string, Response>
             {
                 {"200", new Response {Description = "Success"}}
@@ -122,6 +142,118 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             pathItem.Post = operation;
 
             return pathItem;
+        }
+
+        private List<IParameter> GetLocalCallMetadataHeaderParams()
+        {
+            return new List<IParameter>
+            {
+                new NonBodyParameter
+                {
+                    Name = "GasPrice",
+                    In = "header",
+                    Required = true,
+                    Type = "number",
+                    Format = "int64",
+                    Minimum = SmartContractMempoolValidator.MinGasPrice,
+                    Maximum = SmartContractFormatLogic.GasPriceMaximum,
+                    Default = SmartContractMempoolValidator.MinGasPrice
+                },
+                new NonBodyParameter
+                {
+                    Name = "GasLimit",
+                    In = "header",
+                    Required = true,
+                    Type = "number",
+                    Format = "int64",
+                    Minimum = SmartContractFormatLogic.GasLimitCallMinimum,
+                    Maximum = SmartContractFormatLogic.GasLimitMaximum,
+                    Default = SmartContractFormatLogic.GasLimitMaximum
+                },
+                new NonBodyParameter
+                {
+                    Name = "Amount",
+                    In = "header",
+                    Required = true,
+                    Type = "string",
+                    Default = "0"
+                },
+                new NonBodyParameter
+                {
+                    Name = "Sender",
+                    In = "header",
+                    Required = false,
+                    Type = "string",
+                    Default = this.defaultSenderAddress
+                }
+            };
+        }
+
+        private List<IParameter> GetCallMetadataHeaderParams()
+        {
+            return new List<IParameter>
+            {
+                new NonBodyParameter
+                {
+                    Name = "GasPrice",
+                    In = "header",
+                    Required = true,
+                    Type = "number",
+                    Format = "int64",
+                    Minimum = SmartContractMempoolValidator.MinGasPrice,
+                    Maximum = SmartContractFormatLogic.GasPriceMaximum,
+                    Default = SmartContractMempoolValidator.MinGasPrice
+                },
+                new NonBodyParameter
+                {
+                    Name = "GasLimit",
+                    In = "header",
+                    Required = true,
+                    Type = "number",
+                    Format = "int64",
+                    Minimum = SmartContractFormatLogic.GasLimitCallMinimum,
+                    Maximum = SmartContractFormatLogic.GasLimitMaximum,
+                    Default = SmartContractFormatLogic.GasLimitMaximum
+                },
+                new NonBodyParameter
+                {
+                    Name = "Amount",
+                    In = "header",
+                    Required = true,
+                    Type = "string",
+                    Default = "0"
+                },
+                new NonBodyParameter
+                {
+                    Name = "FeeAmount",
+                    In = "header",
+                    Required = false,
+                    Type = "string"
+                },
+                new NonBodyParameter
+                {
+                    Name = "WalletName",
+                    In = "header",
+                    Required = true,
+                    Type = "string",
+                    Default = this.defaultWalletName
+                },
+                new NonBodyParameter
+                {
+                    Name = "WalletPassword",
+                    In = "header",
+                    Required = true,
+                    Type = "string"
+                },
+                new NonBodyParameter
+                {
+                    Name = "Sender",
+                    In = "header",
+                    Required = true,
+                    Type = "string",
+                    Default = this.defaultSenderAddress
+                }
+            };
         }
     }
 }
