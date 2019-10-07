@@ -1211,6 +1211,83 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Removes transactions from the wallet.
+        /// You might want to remove transactions from a wallet if some unconfirmed transactions disappear
+        /// from the blockchain or the transaction fields within the wallet are updated and a refresh is required to
+        /// populate the new fields.
+        /// In one situation, you might notice several unconfirmed transaction in the wallet, which you now know were
+        /// never confirmed. You can use this API to correct this by specifying a date and time before the first
+        /// unconfirmed transaction thereby removing all transactions after this point. You can also request a resync as
+        /// part of the call, which calculates the block height for the earliest removal. The wallet sync manager then
+        /// proceeds to resync from there reinstating the confirmed transactions in the wallet. You can also cherry pick
+        /// transactions to remove by specifying their transaction ID.
+        ///
+        /// <param name="request">An object containing the necessary parameters to remove transactions
+        /// from a wallet. The includes several options for specifying the transactions to remove.</param>
+        /// <returns>A JSON object containing all removed transactions identified by their
+        /// transaction ID and creation time.</returns>
+        /// </summary>
+        [Route("remove-transactions")]
+        [HttpDelete]
+        public IActionResult RemoveTransactions([FromQuery]RemoveTransactionsModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
+
+                if (request.DeleteAll)
+                {
+                    result = this.walletManager.RemoveAllTransactions(request.WalletName);
+                }
+                else if (request.FromDate != default(DateTime))
+                {
+                    result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
+                }
+                else if (request.TransactionsIds != null)
+                {
+                    IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
+                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                }
+                else
+                {
+                    throw new WalletException("A filter specifying what transactions to remove must be set.");
+                }
+
+                // If the user chose to resync the wallet after removing transactions.
+                if (result.Any() && request.ReSync)
+                {
+                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
+                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
+
+                    // Start the syncing process from the block before the earliest transaction was seen.
+                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1, request.WalletName);
+                }
+
+                IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
+                {
+                    TransactionId = r.transactionId,
+                    CreationTime = r.creationTime
+                });
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+        
+        /// <summary>
         /// Gets the extended public key of a specified wallet account.
         /// <param name="request">An object containing the necessary parameters to retrieve
         /// the extended public key for a wallet account.</param>
