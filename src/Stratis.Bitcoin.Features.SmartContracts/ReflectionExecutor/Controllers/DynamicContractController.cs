@@ -73,9 +73,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             Type type = assembly.GetDeployedType();
 
             MethodInfo methodInfo = type.GetMethod(method);
-            
+
+            if (methodInfo == null)
+                throw new Exception("Method does not exist on contract.");
+
+            ParameterInfo[] parameters = methodInfo.GetParameters();
+
+            if (!this.ValidateParams(requestData, parameters))
+                throw new Exception("Parameters don't match method signature.");
+
             // Map the JObject to the parameter + types expected by the call.
-            string[] methodParams = methodInfo.GetParameters().Map(requestData);
+            string[] methodParams = parameters.Map(requestData);
 
             BuildCallContractTransactionRequest request = this.MapCallRequest(address, method, methodParams, this.Request.Headers);
 
@@ -91,6 +99,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             // Proxy to the actual SC controller.
             return this.localCallController.LocalCallSmartContractTransaction(request);
+        }
+
+        private bool ValidateParams(JObject requestData, ParameterInfo[] parameters)
+        {
+            foreach (ParameterInfo param in parameters)
+            {
+                if (requestData[param.Name] == null)
+                    return false;
+            }
+
+            return true;
         }
 
         private BuildCallContractTransactionRequest MapCallRequest(string address, string method, string[] parameters, IHeaderDictionary headers)
