@@ -8,6 +8,11 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
+    /// <summary>
+    /// Creates swagger documents for a contract assembly.
+    /// Maps the methods of a contract and its parameters to a call endpoint.
+    /// Maps the properties of a contract to an local call endpoint.
+    /// </summary>
     public class ContractSwaggerDocGenerator : ISwaggerProvider
     {
         private readonly string address;
@@ -25,6 +30,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.options = options;
         }
 
+        /// <summary>
+        /// Generates a swagger document for an assembly. Adds a path per public method, with a request body
+        /// that contains the parameters of the method. Transaction-related metadata is added to header fields
+        /// which are pre-filled with sensible defaults.
+        /// </summary>
+        /// <param name="documentName">The name of the swagger document to use.</param>
+        /// <param name="host"></param>
+        /// <param name="basePath"></param>
+        /// <param name="schemes"></param>
+        /// <returns></returns>
+        /// <exception cref="UnknownSwaggerDocument"></exception>
         public SwaggerDocument GetSwagger(string documentName, string host = null, string basePath = null, string[] schemes = null)
         {
             if (!this.options.SwaggerDocs.TryGetValue(documentName, out Info info))

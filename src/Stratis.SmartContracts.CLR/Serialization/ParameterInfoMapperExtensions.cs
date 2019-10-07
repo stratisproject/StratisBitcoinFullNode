@@ -5,11 +5,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Stratis.SmartContracts.CLR.Serialization
 {
-    /// <summary>
-    /// Maps a JObject of values to the parameters on a method.
-    /// </summary>
     public static class ParameterInfoMapperExtensions
     {
+        /// <summary>
+        /// Maps a JObject of values to the parameters on a method.
+        /// </summary>
         public static string[] Map(this ParameterInfo[] parameters, JObject obj)
         {
             var result = new List<string>();

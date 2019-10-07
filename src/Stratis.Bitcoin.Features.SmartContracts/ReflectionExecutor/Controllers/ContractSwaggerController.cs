@@ -19,6 +19,9 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
+    /// <summary>
+    /// Controller for dynamically generating swagger documents for smart contract assemblies.
+    /// </summary>
     [Route("swagger/contracts")]
     public class ContractSwaggerController : Controller
     {
@@ -45,6 +48,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.swaggerSerializer = SwaggerSerializerFactory.Create(mvcJsonOptions);
         }
 
+        /// <summary>
+        /// Dynamically generates a swagger document for the contract at the given address.
+        /// </summary>
+        /// <param name="address">The contract's address.</param>
+        /// <returns>A <see cref="SwaggerDocument"/> model.</returns>
+        /// <exception cref="Exception"></exception>
         [Route("{address}")]
         [HttpGet]
         [SwaggerOperation(description: "test")]

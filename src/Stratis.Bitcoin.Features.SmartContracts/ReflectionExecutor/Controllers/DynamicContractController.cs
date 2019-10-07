@@ -20,6 +20,10 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
+    /// <summary>
+    /// Controller for receiving dynamically generated contract calls.
+    /// Maps calls from a json object to a request model and proxies this to the correct controller method.
+    /// </summary>
     public class DynamicContractController : Controller
     {
         private readonly SmartContractWalletController smartContractWalletController;
@@ -28,6 +32,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ILoader loader;
         private readonly Network network;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="smartContractWalletController"></param>
+        /// <param name="localCallController"></param>
+        /// <param name="stateRoot"></param>
+        /// <param name="loader"></param>
+        /// <param name="network"></param>
         public DynamicContractController(
             SmartContractWalletController smartContractWalletController,
             SmartContractsController localCallController,
@@ -42,6 +54,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.network = network;
         }
 
+        /// <summary>
+        /// Call a method on the contract by broadcasting a call transaction to the network.
+        /// </summary>
+        /// <param name="address">The address of the contract to call.</param>
+        /// <param name="method">The name of the method on the contract being called.</param>
+        /// <returns>A model of the transaction data, if created and broadcast successfully.</returns>
+        /// <exception cref="Exception"></exception>
         [Route("api/contract/{address}/method/{method}")]
         [HttpPost]
         public IActionResult CallMethod([FromRoute] string address, [FromRoute] string method)
@@ -91,6 +110,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return this.smartContractWalletController.Call(request);
         }
 
+        /// <summary>
+        /// Query the value of a property on the contract using a local call.
+        /// </summary>
+        /// <param name="address">The address of the contract to query.</param>
+        /// <param name="property">The name of the property to query.</param>
+        /// <returns>A model of the query result.</returns>
         [Route("api/contract/{address}/property/{property}")]
         [HttpGet]
         public IActionResult LocalCallProperty([FromRoute] string address, [FromRoute] string property)
