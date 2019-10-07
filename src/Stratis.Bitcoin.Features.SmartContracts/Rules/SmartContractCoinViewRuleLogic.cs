@@ -84,26 +84,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             if (this.cachedResults == null)
             {
-                // We have no cached results. Didn't come from our miner. We have to execute.
-
-                byte[] blockRootBytes = blockRoot.ToBytes();
-                this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRootBytes);
+                // We have no cached results. Didn't come from our miner. We execute the contracts, so need to set up a new state repository.
+                this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot.ToBytes());
             }
             else
             {
                 // We have already done all of this execution when mining so we will use those results.
-
                 this.mutableStateRepository = this.cachedResults.MutatedStateRepository;
 
                 foreach (Receipt receipt in this.cachedResults.Receipts)
                 {
-                    // Block hash needs to be set for all. It was set during mining and may need updating.
+                    // Block hash needs to be set for all. It was set during mining and can only be updated after.
                     receipt.BlockHash = block.GetHash();
                     this.receipts.Add(receipt);
                 }
             }
 
-            // Always call into the base. When they call back in, we will optionally perform execution based on whether this.cachedResults is set.
+            // Always call into the base. When the base class calls back in, we will optionally perform execution based on whether this.cachedResults is set.
             await baseRunAsync(context);
 
             var blockHeader = (ISmartContractBlockHeader)block.Header;
@@ -314,9 +311,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             if (receiptRoot != expectedReceiptRoot)
                 SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
-
-            if (this.receipts == null)
-                Console.Write("te");
 
             this.receiptRepository.Store(this.receipts);
         }

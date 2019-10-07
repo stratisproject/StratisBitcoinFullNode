@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
             this.executionCache = executionCache;
-            
             this.loggerFactory = loggerFactory;
         }
 

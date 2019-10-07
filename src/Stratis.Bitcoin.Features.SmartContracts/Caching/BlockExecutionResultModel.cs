@@ -4,6 +4,9 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Caching
 {
+    /// <summary>
+    /// Contains information that was obtained through execution of a single block's smart contracts.
+    /// </summary>
     public class BlockExecutionResultModel
     {
         public IStateRepositoryRoot MutatedStateRepository { get; }
