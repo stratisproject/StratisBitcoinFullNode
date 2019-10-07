@@ -1355,14 +1355,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A value of Ok if the resync was successful.</returns>
         [HttpPost]
         [Route("sync-from-date")]
-        public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
+        public IActionResult SyncFromDate([FromBody] WalletSyncRequest request)
         {
             if (!this.ModelState.IsValid)
             {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            this.walletSyncManager.SyncFromDate(request.Date);
+            if (!request.All)
+            {
+                this.walletSyncManager.SyncFromDate(request.Date, request.WalletName);
+            }
+            else
+            {
+                this.walletSyncManager.SyncFromHeight(0, request.WalletName);
+            }
 
             return this.Ok();
         }

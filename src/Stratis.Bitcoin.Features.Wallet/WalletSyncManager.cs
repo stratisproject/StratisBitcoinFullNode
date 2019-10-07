@@ -126,13 +126,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public virtual void SyncFromDate(DateTime date)
+        public virtual void SyncFromDate(DateTime date, string walletName = null)
         {
             lock (this.lockObject)
             {
                 int syncFromHeight = this.chainIndexer.GetHeightAtTime(date);
 
-                this.SyncFromHeight(syncFromHeight);
+                this.SyncFromHeight(syncFromHeight, walletName);
             }
         }
 

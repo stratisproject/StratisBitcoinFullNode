@@ -1312,7 +1312,60 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(new Money(139000), resultingBalance.AmountUnconfirmed);
             Assert.Equal(new Money(108000), resultingBalance.SpendableAmount);
         }
+        
+        [Fact]
+        public void WalletSyncFromDateReturnsOK()
+        {
+            string walletName = "myWallet";
+            DateTime syncDate = DateTime.Now.Subtract(new TimeSpan(1)).Date;
 
+            var mockWalletSyncManager = new Mock<IWalletSyncManager>();
+            mockWalletSyncManager.Setup(w => w.SyncFromDate(
+                It.Is<DateTime>((val) => val.Equals(syncDate)),
+                It.Is<string>(val => walletName.Equals(val))));
+
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object,
+                new Mock<IWalletTransactionHandler>().Object, mockWalletSyncManager.Object, It.IsAny<ConnectionManager>(),
+                this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            
+            IActionResult result = controller.SyncFromDate(new WalletSyncRequest
+            {
+                WalletName = walletName,
+                Date = DateTime.Now.Subtract(new TimeSpan(1)).Date
+            });
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            mockWalletSyncManager.Verify();
+            Assert.NotNull(viewResult);
+            Assert.NotNull(viewResult.StatusCode == (int)HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public void WalletSyncAllReturnsOK()
+        {
+            string walletName = "myWallet";
+           
+            var mockWalletSyncManager = new Mock<IWalletSyncManager>();
+            mockWalletSyncManager.Setup(w => w.SyncFromHeight(
+                It.Is<int>((val) => val.Equals(0)),
+                It.Is<string>(val => walletName.Equals(val))));
+
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object,
+                new Mock<IWalletTransactionHandler>().Object, mockWalletSyncManager.Object, It.IsAny<ConnectionManager>(),
+                this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            
+            IActionResult result = controller.SyncFromDate(new WalletSyncRequest
+            {
+                WalletName = walletName,
+                All = true
+            });
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            mockWalletSyncManager.Verify();
+            Assert.NotNull(viewResult);
+            Assert.NotNull(viewResult.StatusCode == (int)HttpStatusCode.OK);
+        }
+        
         [Fact]
         public void GetBalanceWithEmptyListOfAccountsReturnsWalletBalanceModel()
         {
