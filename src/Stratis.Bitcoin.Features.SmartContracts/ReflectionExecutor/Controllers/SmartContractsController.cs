@@ -29,7 +29,6 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -158,7 +157,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <returns>A single piece of stored smart contract data.</returns>
         [Route("storage")]
         [HttpGet]
-
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
             if (!this.ModelState.IsValid)

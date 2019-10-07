@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <exception cref="Exception"></exception>
         [Route("{address}")]
         [HttpGet]
-        [SwaggerOperation(description: "test")]
         public async Task<IActionResult> ContractSwaggerDoc(string address)
         {
             var code = this.stateRepository.GetCode(address.ToUint160(this.network));
