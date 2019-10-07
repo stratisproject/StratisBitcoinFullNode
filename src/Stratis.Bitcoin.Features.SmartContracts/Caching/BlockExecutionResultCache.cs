@@ -8,10 +8,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Caching
         /// <summary>
         /// Get all the execution results for a mined block.
         ///
-        /// Returns null if 
+        /// Returns null if the block does not exist in the cache, i.e. it was not mined on this node.
         /// </summary>
         BlockExecutionResultModel GetExecutionResult(uint256 blockHash);
 
+        /// <summary>
+        /// Store all the execution results for a mined block.
+        /// </summary>
         void StoreExecutionResult(uint256 blockHash, BlockExecutionResultModel result);
     }
 
@@ -24,13 +27,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Caching
             this.cachedExecutions = new Dictionary<uint256, BlockExecutionResultModel>();
         }
 
+        /// <inheritdoc />
         public BlockExecutionResultModel GetExecutionResult(uint256 blockHash)
         {
-            BlockExecutionResultModel ret = null;
-            this.cachedExecutions.TryGetValue(blockHash, out ret);
+            this.cachedExecutions.TryGetValue(blockHash, out BlockExecutionResultModel ret);
             return ret;
         }
 
+        /// <inheritdoc />
         public void StoreExecutionResult(uint256 blockHash, BlockExecutionResultModel result)
         {
             this.cachedExecutions.Add(blockHash, result);
