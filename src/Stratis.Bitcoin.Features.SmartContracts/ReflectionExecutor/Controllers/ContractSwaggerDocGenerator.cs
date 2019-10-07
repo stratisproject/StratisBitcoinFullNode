@@ -227,8 +227,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 {
                     Name = "FeeAmount",
                     In = "header",
-                    Required = false,
-                    Type = "string"
+                    Required = true,
+                    Type = "string",
+                    Default = "0.01"
                 },
                 new NonBodyParameter
                 {
