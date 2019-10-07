@@ -65,10 +65,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
             foreach (var parameter in method.GetParameters())
             {
                 // Default to string.
-                var paramSchema = PrimitiveTypeMap[typeof(string)]();
-
-                if (PrimitiveTypeMap.ContainsKey(parameter.ParameterType))
-                    paramSchema = PrimitiveTypeMap[parameter.ParameterType]();
+                Schema paramSchema = PrimitiveTypeMap.ContainsKey(parameter.ParameterType)
+                    ? PrimitiveTypeMap[parameter.ParameterType]()
+                    : PrimitiveTypeMap[typeof(string)]();
 
                 schema.Properties.Add(parameter.Name, paramSchema);
             }
