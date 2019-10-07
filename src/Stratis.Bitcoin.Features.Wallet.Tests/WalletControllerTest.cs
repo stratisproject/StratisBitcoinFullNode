@@ -1365,7 +1365,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(viewResult);
             Assert.NotNull(viewResult.StatusCode == (int)HttpStatusCode.OK);
         }
-        
+
+
         [Fact]
         public void GetBalanceWithEmptyListOfAccountsReturnsWalletBalanceModel()
         {
@@ -2278,127 +2279,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(actualFee);
             Assert.Equal(expectedFee, actualFee);
-        }
-
-        [Fact]
-        public void RemoveAllTransactionsWithSyncEnabledSyncsAfterRemoval()
-        {
-            // Arrange.
-            string walletName = "wallet1";
-            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-
-            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
-            uint256 trxId2 = uint256.Parse("a3dd63ec364fcb59043a1cf209285d8e60f1cc06186d4dcbce496cdbb4303401");
-            var resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
-            resultModel.Add((trxId1, DateTimeOffset.Now));
-            resultModel.Add((trxId2, DateTimeOffset.Now));
-
-            var walletManager = new Mock<IWalletManager>();
-            var walletSyncManager = new Mock<IWalletSyncManager>();
-            walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
-            walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>(), It.IsAny<string>()));
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
-
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-            var requestModel = new RemoveTransactionsModel
-            {
-                WalletName = walletName,
-                ReSync = true,
-                DeleteAll = true
-            };
-
-            // Act.
-            IActionResult result = controller.RemoveTransactions(requestModel);
-
-            // Assert.
-            walletManager.VerifyAll();
-            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
-
-            var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
-            Assert.NotNull(model);
-            Assert.Equal(2, model.Count());
-            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
-            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId2) != null);
-        }
-
-        [Fact]
-        public void RemoveAllTransactionsWithSyncDisabledDoesNotSyncAfterRemoval()
-        {
-            // Arrange.
-            string walletName = "wallet1";
-            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
-            uint256 trxId2 = uint256.Parse("a3dd63ec364fcb59043a1cf209285d8e60f1cc06186d4dcbce496cdbb4303401");
-            var resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
-            resultModel.Add((trxId1, DateTimeOffset.Now));
-            resultModel.Add((trxId2, DateTimeOffset.Now));
-
-            var walletManager = new Mock<IWalletManager>();
-            var walletSyncManager = new Mock<IWalletSyncManager>();
-            walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
-
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-            var requestModel = new RemoveTransactionsModel
-            {
-                WalletName = walletName,
-                ReSync = false,
-                DeleteAll = true
-            };
-
-            // Act.
-            IActionResult result = controller.RemoveTransactions(requestModel);
-
-            // Assert.
-            walletManager.VerifyAll();
-            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
-
-            var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
-            Assert.NotNull(model);
-            Assert.Equal(2, model.Count());
-            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
-            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId2) != null);
-        }
-
-        [Fact]
-        public void RemoveTransactionsWithIdsRemovesAllTransactionsByIds()
-        {
-            // Arrange.
-            string walletName = "wallet1";
-            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-
-            uint256 trxId1 = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
-            var resultModel = new HashSet<(uint256 trxId, DateTimeOffset creationTime)>();
-            resultModel.Add((trxId1, DateTimeOffset.Now));
-
-            var walletManager = new Mock<IWalletManager>();
-            var walletSyncManager = new Mock<IWalletSyncManager>();
-            walletManager.Setup(manager => manager.RemoveTransactionsByIds(walletName, new[] { trxId1 })).Returns(resultModel);
-            walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>(), It.IsAny<string>()));
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
-
-            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
-            var requestModel = new RemoveTransactionsModel
-            {
-                WalletName = walletName,
-                ReSync = true,
-                TransactionsIds = new[] { "d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400" }
-            };
-
-            // Act.
-            IActionResult result = controller.RemoveTransactions(requestModel);
-
-            // Assert.
-            walletManager.VerifyAll();
-            walletManager.Verify(manager => manager.RemoveAllTransactions(It.IsAny<string>()), Times.Never);
-            walletSyncManager.Verify(manager => manager.SyncFromHeight(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
-
-            var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as IEnumerable<RemovedTransactionModel>;
-            Assert.NotNull(model);
-            Assert.Single(model);
-            Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
         }
     }
 
