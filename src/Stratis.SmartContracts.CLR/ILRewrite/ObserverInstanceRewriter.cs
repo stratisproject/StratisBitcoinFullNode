@@ -13,7 +13,6 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         public const string MethodName = "SetObserver";
         public const string ParameterName = "observer";
         private const string InjectedPropertyName = "Instance";
-        public const string ConstructorName = ".cctor";
 
         /// <summary>
         /// The individual rewriters to be applied to each method, which use the injected type.
@@ -77,15 +76,6 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             il.Emit(OpCodes.Stsfld, instanceField);
             il.Emit(OpCodes.Ret);
             instanceType.Methods.Add(method);
-
-            // Add an empty static constructor.
-            var constructor = new MethodDefinition(
-                ConstructorName, MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
-                module.ImportReference(typeof(void))
-            );
-            ILProcessor constructorIl = constructor.Body.GetILProcessor();
-            constructorIl.Emit(OpCodes.Ret);
-            instanceType.Methods.Add(constructor);
 
             return (instanceField, instanceType);
         }
