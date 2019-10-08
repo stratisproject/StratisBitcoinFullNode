@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             byte[] contractExecutionCode = compilationResult.Compilation;
             var methodParameters = new object[] { (ulong)5 };
 
-            VmExecutionResult result = this.vm.Create(this.state, this.contractState, this.gasMeter, contractExecutionCode, methodParameters);
+            VmExecutionResult result = this.vm.Create(this.state, this.contractState, new ExecutionContext(), this.gasMeter, contractExecutionCode, methodParameters);
 
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
@@ -134,7 +134,8 @@ public class Contract : SmartContract
 
             VmExecutionResult result = this.vm.Create(
                 this.state,
-                contractState,
+                contractState, 
+                new ExecutionContext(),
                 emptyGasMeter,
                 contractExecutionCode,
                 null);

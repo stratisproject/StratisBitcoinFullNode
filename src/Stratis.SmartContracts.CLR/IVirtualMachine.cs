@@ -5,9 +5,10 @@ namespace Stratis.SmartContracts.CLR
 {
     public interface IVirtualMachine
     {
-        VmExecutionResult Create(IStateRepository repository, 
+        VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            RuntimeObserver.IGasMeter gasMeter,
+            ExecutionContext executionContext,
+            IGasMeter gasMeter,
             byte[] contractCode,
             object[] parameters,
             string typeName = null);
