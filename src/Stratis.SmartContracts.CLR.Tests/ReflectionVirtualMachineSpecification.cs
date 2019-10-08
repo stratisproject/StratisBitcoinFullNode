@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Collections.Generic;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -46,6 +47,8 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             var moduleDef = new Mock<IContractModuleDefinition>();
             moduleDef.Setup(m => m.ToByteCode()).Returns((ContractByteCode)new byte[] { });
+            moduleDef.Setup(x => x.Validate(this.validator))
+                .Returns(new SmartContractValidationResult(new List<ValidationResult>()));
 
             this.moduleDefReader.Setup(m => m.Read(It.IsAny<byte[]>())).Returns(Result.Ok(moduleDef.Object));
 
