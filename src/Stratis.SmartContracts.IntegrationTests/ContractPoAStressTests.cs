@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain = fixture.Chain;
         }
 
-        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
+        [Fact]
         public void MaximumCreateTransactionsInABlock()
         {
             const int txsToSend = 100;
@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
-        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
+        [Fact]
         public void ReorgedCoinbaseUtxoRemovedFromMempool()
         {
             var node1 = this.mockChain.Nodes[0];
@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
+        [Fact]
         public void MaximumCallTransactionsInABlockSpendingAllGas()
         {
             const int txsToSend = 100;
@@ -151,6 +151,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             // Load us up with 100 utxos, each gets 1000.
             Result<WalletSendTransactionModel> fundingResult = node1.SendTransaction(node1.MinerAddress.ScriptPubKey, Money.Coins(100_000m), txsToSend);
+            node1.WaitMempoolCount(1);
             this.mockChain.MineBlocks(1);
 
             for (int i = 0; i < txsToSend; i++)
@@ -179,7 +180,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
-        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
+        [Fact]
         public void BlockFullWithRefundTransactionsAndNormalTransactions()
         {
             // Demonstrates that even with the maximum amount of internal transactions and refunds, and normal transactions, the block can't get too big

@@ -54,7 +54,6 @@ namespace Stratis.SmartContracts.CLR
         {
             // The type and code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             string typeToInstantiate;
-            //ContractByteCode code;
             IContract contract;
 
             // Hash the code
@@ -142,11 +141,7 @@ namespace Stratis.SmartContracts.CLR
                     contract = contractLoadResult.Value;
 
                     // Cache this completely validated and rewritten contract to reuse later.
-                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage
-                    {
-                        Assembly = new ContractAssembly(contract.Type.Assembly),
-                        ModuleDefinition = moduleDefinition
-                    });
+                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition));
                 }
             }
 
@@ -233,12 +228,8 @@ namespace Stratis.SmartContracts.CLR
 
                     contract = contractLoadResult.Value;
 
-                    // Cache this rewritten contract.
-                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage
-                    {
-                        Assembly = new ContractAssembly(contract.Type.Assembly),
-                        ModuleDefinition = moduleDefinition
-                    });
+                    // Cache this completely validated and rewritten contract to reuse later.
+                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition));
                 }
             }
 

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.CLR.Caching
@@ -7,14 +6,14 @@ namespace Stratis.SmartContracts.CLR.Caching
     public interface IContractAssemblyCache
     {
         /// <summary>
-        /// Stores a cached module definition for contract code.
+        /// Stores a cached assembly and module definition for a particular contract's code.
         ///
         /// If trying to add a cache entry twice for the same hash, this will throw an exception.
         /// </summary>
         void Store(uint256 codeHash, CachedAssemblyPackage assembly);
 
         /// <summary>
-        /// Returns a cached module definition for this contract code if one exists.
+        /// Returns a cached assembly and module definition for this contract code.
         ///
         /// Returns null if this contract code has not been cached yet.
         /// </summary>
@@ -25,12 +24,9 @@ namespace Stratis.SmartContracts.CLR.Caching
     {
         private readonly Dictionary<uint256, CachedAssemblyPackage> cachedContracts;
 
-        private readonly ILogger logger;
-
-        public ContractAssemblyCache(ILoggerFactory loggerFactory)
+        public ContractAssemblyCache()
         {
             this.cachedContracts = new Dictionary<uint256, CachedAssemblyPackage>();
-            this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
         /// <inheritdoc />
@@ -42,8 +38,7 @@ namespace Stratis.SmartContracts.CLR.Caching
         /// <inheritdoc />
         public CachedAssemblyPackage Retrieve(uint256 codeHash)
         {
-            CachedAssemblyPackage ret;
-            this.cachedContracts.TryGetValue(codeHash, out ret);
+            this.cachedContracts.TryGetValue(codeHash, out CachedAssemblyPackage ret);
             return ret;
         }
     }
