@@ -65,15 +65,23 @@ namespace Stratis.Bitcoin.Features.RPC
             if (req == null)
                 return null;
 
-            if ((this.context.ActionContext.ActionDescriptor == null) || (this.context.ActionContext.ActionDescriptor.Parameters == null))
+            var actionParameters = this.context.ActionContext.ActionDescriptor.Parameters;
+            if ((this.context.ActionContext.ActionDescriptor == null) || (actionParameters == null))
                 return null;
 
-            ParameterDescriptor parameter = this.context.ActionContext.ActionDescriptor.Parameters.FirstOrDefault(p => p.Name == key);
+            ParameterDescriptor parameter = actionParameters.FirstOrDefault(p => p.Name == key);
             if (parameter == null)
                 return null;
 
-            int index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
+            int index = actionParameters.IndexOf(parameter);
+
             var parameters = (JArray)req["params"];
+            if (parameters == null)
+            {
+                var parameterInfo = (parameter as ControllerParameterDescriptor)?.ParameterInfo;
+                return parameterInfo?.DefaultValue?.ToString();
+            }
+
             if ((index < 0) || (index >= parameters.Count))
                 return null;
 
