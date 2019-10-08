@@ -38,11 +38,13 @@ namespace Stratis.SmartContracts.CLR.Loader
         }
 
         /// <summary>
-        /// Sets the execution context on the executing contract assembly.
+        /// Sets the static observer instance field for the executing contract assembly.
+        /// Because each contract assembly is loaded in an isolated assembly load context,
+        /// this instance field will be accessible to any object instances loaded in the context.
         /// </summary>
-        /// <param name="observer"></param>
-        /// <returns></returns>
-        public bool SetExecutionContext(Observer observer)
+        /// <param name="observer">The observer to set.</param>
+        /// <returns>A boolean representing whether or not setting the observer was successful.</returns>
+        public bool SetObserver(Observer observer)
         {
             Type observerType = this.GetObserverType();
 
@@ -54,6 +56,7 @@ namespace Stratis.SmartContracts.CLR.Loader
             if (observerMethod == null)
                 return false;
 
+            // We don't expect this to throw if rewriting happened correctly.
             observerMethod.Invoke(null, new object[] { observer });
 
             return true;

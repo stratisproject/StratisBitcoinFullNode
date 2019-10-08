@@ -280,7 +280,7 @@ namespace Stratis.SmartContracts.CLR
                 return Result.Fail<IContract>(typeNotFoundError);
             }
 
-            if (!contractAssembly.SetExecutionContext(observer))
+            if (!contractAssembly.SetObserver(observer))
             {
                 const string setExecutionContextError = "Error setting execution context!";
 
