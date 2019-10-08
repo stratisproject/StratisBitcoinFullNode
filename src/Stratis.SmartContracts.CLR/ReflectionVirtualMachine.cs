@@ -142,7 +142,8 @@ namespace Stratis.SmartContracts.CLR
                 code,
                 typeToInstantiate,
                 contractState.Message.ContractAddress.ToUint160(),
-                contractState);
+                contractState,
+                executionContext);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -238,7 +239,8 @@ namespace Stratis.SmartContracts.CLR
                 code,
                 typeName,
                 contractState.Message.ContractAddress.ToUint160(),
-                contractState);
+                contractState,
+                executionContext);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -285,7 +287,8 @@ namespace Stratis.SmartContracts.CLR
             ContractByteCode byteCode,
             string typeName,
             uint160 address,
-            ISmartContractState contractState)
+            ISmartContractState contractState,
+            ExecutionContext executionContext)
         {
             Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(byteCode);
 
@@ -307,6 +310,13 @@ namespace Stratis.SmartContracts.CLR
                 this.logger.LogDebug(typeNotFoundError);
 
                 return Result.Fail<IContract>(typeNotFoundError);
+            }
+
+            if (!contractAssembly.SetExecutionContext(executionContext))
+            {
+                const string setExecutionContextError = "Error setting execution context!";
+
+                return Result.Fail<IContract>(setExecutionContextError);
             }
 
             IContract contract;

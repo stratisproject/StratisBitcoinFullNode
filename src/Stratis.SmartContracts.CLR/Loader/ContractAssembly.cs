@@ -26,5 +26,15 @@ namespace Stratis.SmartContracts.CLR.Loader
         {
             return this.Assembly.ExportedTypes.FirstOrDefault(x => x.Name == name);
         }
+
+        /// <summary>
+        /// Sets the execution context on the executing contract assembly.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public bool SetExecutionContext(ExecutionContext context)
+        {
+            return false;
+        }
     }
 }
