@@ -63,9 +63,10 @@ namespace Stratis.SmartContracts.CLR
             // Lets see if we already have a rewritten version of the code. If so, we know it's valid!
             byte[] cachedCode = this.rewrittenContractCache.Retrieve(codeHashUint256);
 
+            // This section is only necessary to get the deployed type name.
+            // We could refactor some other parts of the code to prevent having to load the module definition here.
             if (cachedCode != null)
             {
-                // Replace the written-in observer with our custom one in the cached code.
                 code = (ContractByteCode)cachedCode;
 
                 Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(cachedCode);
@@ -76,14 +77,12 @@ namespace Stratis.SmartContracts.CLR
 
                 using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
                 {
-                    // Everything worked. Assign what will get executed.
                     typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
                 }
             }
             else
             {
                 // Validate then rewrite the entirety of the incoming code.
-
                 Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
 
                 if (moduleResult.IsFailure)
@@ -181,7 +180,6 @@ namespace Stratis.SmartContracts.CLR
             else
             {
                 // Rewrite from scratch.
-
                 using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
                 {
                     var rewriter = new ObserverInstanceRewriter();
@@ -202,6 +200,10 @@ namespace Stratis.SmartContracts.CLR
                 }
             }
 
+            // Creating a new observer instance here is necessary due to nesting.
+            // If a nested call takes place it will use a new gas meter instance,
+            // due to the fact that the nested call's gas limit may be specified by the user.
+            // Because of that we can't reuse the same observer for a single execution.
             var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
 
             Result<IContract> contractLoadResult = this.Load(
@@ -282,9 +284,9 @@ namespace Stratis.SmartContracts.CLR
 
             if (!contractAssembly.SetObserver(observer))
             {
-                const string setExecutionContextError = "Error setting execution context!";
+                const string setObserverError = "Error setting observer!";
 
-                return Result.Fail<IContract>(setExecutionContextError);
+                return Result.Fail<IContract>(setObserverError);
             }
 
             IContract contract;

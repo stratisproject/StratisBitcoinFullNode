@@ -26,7 +26,6 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
         /// <summary>
         /// Completely rewrites a module with all of the code required to meter memory and gas.
-        /// Includes the injection of the specific observer for this contract.
         /// </summary>
         public ModuleDefinition Rewrite(ModuleDefinition module)
         {
@@ -45,7 +44,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
         /// <summary>
         /// Inserts a static type into the module which gives access to an instance of <see cref="Observer"/>.
-        /// Because this is injected per module, it counts as a separate type and will not be a shared static.
+        /// Inserts a method which allows the static field to be set.
         /// </summary>
         private (FieldDefinition, TypeDefinition) GetRuntimeInstance(ModuleDefinition module)
         {

@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.CLR
             this.TransactionHash = transactionHash;
             this.smartContractStateFactory = smartContractStateFactory;
         }
-
+        
         public uint256 TransactionHash { get; }
 
         public IBlock Block { get; }
