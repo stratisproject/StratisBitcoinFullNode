@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         private readonly Mock<ILoggerFactory> loggerFactory;
         private readonly Mock<ILoader> loader;
         private readonly Mock<IContractModuleDefinitionReader> moduleDefReader;
-        private readonly Mock<IContractAssemblyCache> rewrittenContractCache;
+        private readonly Mock<IContractAssemblyCache> assemblyCache;
         private readonly Address testAddress;
         private readonly IStateRepository stateRepository;
 
@@ -35,7 +35,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.loader = new Mock<ILoader>();
             this.moduleDefReader = new Mock<IContractModuleDefinitionReader>();
-            this.rewrittenContractCache = new Mock<IContractAssemblyCache>();
+            this.assemblyCache = new Mock<IContractAssemblyCache>();
             this.stateRepository = Mock.Of<IStateRepository>();
             this.testAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
         }
@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void Create_Contract_Sets_Observer()
         {
-            var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.rewrittenContractCache.Object);
+            var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.assemblyCache.Object);
 
             var moduleDef = new Mock<IContractModuleDefinition>();
             moduleDef.Setup(m => m.ToByteCode()).Returns((ContractByteCode)new byte[] { });
@@ -60,7 +60,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
-            this.rewrittenContractCache.Setup(c => c.Retrieve(It.IsAny<uint256>())).Returns((CachedAssemblyPackage) null);
+            this.assemblyCache.Setup(c => c.Retrieve(It.IsAny<uint256>())).Returns((CachedAssemblyPackage) null);
 
             var state = new SmartContractState(
                 new Block(1, this.testAddress),
@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void Call_Contract_Sets_Observer()
         {
-            var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.rewrittenContractCache.Object);
+            var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.assemblyCache.Object);
 
             var moduleDef = new Mock<IContractModuleDefinition>();
             moduleDef.Setup(m => m.ToByteCode()).Returns((ContractByteCode)new byte[] { });
@@ -96,7 +96,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
-            this.rewrittenContractCache.Setup(c => c.Retrieve(It.IsAny<uint256>())).Returns((CachedAssemblyPackage)null);
+            this.assemblyCache.Setup(c => c.Retrieve(It.IsAny<uint256>())).Returns((CachedAssemblyPackage)null);
             
             var state = new SmartContractState(
                 new Block(1, this.testAddress),
