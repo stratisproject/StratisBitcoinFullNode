@@ -67,6 +67,7 @@ namespace Stratis.SmartContracts.CLR
             if (cachedCode != null)
             {
                 // Replace the written-in observer with our custom one in the cached code.
+                code = (ContractByteCode)cachedCode;
 
                 Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(cachedCode);
 
@@ -74,25 +75,10 @@ namespace Stratis.SmartContracts.CLR
                 if (moduleResult.IsFailure)
                     throw new Exception("Error loading cached code into module.");
 
-                // TODO - this won't be necessary when we can directly set the execution context.
-                // Replace the Observer.
                 using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
                 {
-                    //var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    //var replacerRewriter = new ObserverReplacerRewriter(observer);
-
-                    //// Again, assume this will work, otherwise something is wrong with the cached code.
-                    //if (!this.Rewrite(moduleDefinition, replacerRewriter))
-                    //    throw new Exception("Error rewriting new Observer into cached code.");
-
-                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
-
-                    if (!getCodeResult.IsSuccess)
-                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
-
                     // Everything worked. Assign what will get executed.
                     typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
-                    code = getCodeResult.Value;
                 }
             }
             else
@@ -193,25 +179,7 @@ namespace Stratis.SmartContracts.CLR
 
             if (cachedCode != null)
             {
-                // Replace Observer in cached code.
-
-                using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(cachedCode).Value)
-                {
-                    //var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    //var replacerRewriter = new ObserverReplacerRewriter(observer);
-
-                    //// Again, assume this will work, otherwise something is wrong with the cached code.
-                    //if (!this.Rewrite(moduleDefinition, replacerRewriter))
-                    //    throw new Exception("Error rewriting new Observer into cached code.");
-
-                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
-
-                    if (!getCodeResult.IsSuccess)
-                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
-
-                    // Everything worked. Assign the code that will be executed.
-                    code = getCodeResult.Value;
-                }
+                code = (ContractByteCode)cachedCode;
             }
             else
             {
