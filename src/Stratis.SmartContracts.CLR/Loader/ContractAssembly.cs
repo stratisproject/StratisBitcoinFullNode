@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Stratis.SmartContracts.CLR.ILRewrite;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Loader
 {
@@ -27,6 +29,14 @@ namespace Stratis.SmartContracts.CLR.Loader
             return this.Assembly.ExportedTypes.FirstOrDefault(x => x.Name == name);
         }
 
+        private Type GetObserverType()
+        {
+            return this
+                .Assembly
+                .DefinedTypes
+                .FirstOrDefault(t => t.Name == ObserverRewriter.InjectedTypeName);
+        }
+
         /// <summary>
         /// Sets the execution context on the executing contract assembly.
         /// </summary>
@@ -34,7 +44,14 @@ namespace Stratis.SmartContracts.CLR.Loader
         /// <returns></returns>
         public bool SetExecutionContext(ExecutionContext context)
         {
-            return false;
+            Type observerType = this.GetObserverType();
+
+            if (observerType == null)
+                return false;
+
+            // TODO get method and invoke via reflection with the context ID.
+
+            return true;
         }
     }
 }
