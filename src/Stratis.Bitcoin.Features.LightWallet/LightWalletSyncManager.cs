@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public virtual void SyncFromDate(DateTime date, string walletName = null)
+        public void SyncFromDate(DateTime date, string walletName = null)
         {
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the date from which we want to sync, we wait for it to catch up, and then we start syncing.
