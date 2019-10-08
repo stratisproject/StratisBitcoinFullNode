@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.CLR.Loader
             return this
                 .Assembly
                 .DefinedTypes
-                .FirstOrDefault(t => t.Name == ObserverRewriter.InjectedTypeName);
+                .FirstOrDefault(t => t.Name == ObserverInstanceRewriter.InjectedTypeName);
         }
 
         /// <summary>
