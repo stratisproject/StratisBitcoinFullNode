@@ -308,50 +308,6 @@ public static class Other
         }
 
         [Fact]
-        public void Test_Replacing_Observer()
-        {
-            ContractCompilationResult compilationResult =
-                ContractCompiler.Compile(TestMultipleConstructorSource);
-
-            Assert.True(compilationResult.Success);
-            byte[] originalAssemblyBytes = compilationResult.Compilation;
-
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
-
-            // Rewrite and execute module.
-            module.Rewrite(this.rewriter);
-            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
-            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
-            IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
-            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
-
-            // Now lets rewrite with a new Observer.
-            var newGasMeter = new GasMeter((Gas)5000000);
-            var newMemoryMeter = new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit);
-            var replacerRewriter = new ObserverReplacerRewriter(new Observer(newGasMeter, newMemoryMeter));
-            module.Rewrite(replacerRewriter);
-
-            // The calling of this new module should affect a different gas meter. The previous one should remain untouched.
-            assembly = this.assemblyLoader.Load(module.ToByteCode());
-            var context = new ContractExecutorTestContext();
-            var newState = new SmartContractState(
-                new Block(1, this.TestAddress),
-                new Message(this.TestAddress, this.TestAddress, 0),
-                new PersistentState(new MeteredPersistenceStrategy(context.State, newGasMeter, new BasicKeyEncodingStrategy()),
-                    context.Serializer, this.TestAddress.ToUint160()),
-                context.Serializer,
-                new ContractLogHolder(),
-                Mock.Of<IInternalTransactionExecutor>(),
-                new InternalHashHelper(),
-                () => 1000);
-            IContract newContract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), newState, null);
-            result = newContract.InvokeConstructor(new[] { "Test Owner" });
-            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
-            Assert.Equal((Gas)328, newGasMeter.GasConsumed);
-        }
-
-        [Fact]
         public void Test_MemoryLimit_Small_Allocations_Pass()
         {
             IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
