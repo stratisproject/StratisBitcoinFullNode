@@ -78,7 +78,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             il.Emit(OpCodes.Ret);
             instanceType.Methods.Add(method);
 
-            // When this type is created, retrieve the Observer from our global static dictionary so it can be used.
+            // Add an empty static constructor.
             var constructor = new MethodDefinition(
                 ConstructorName, MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
                 module.ImportReference(typeof(void))
