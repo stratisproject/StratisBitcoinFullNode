@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.SmartContracts.Core.Receipts;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -113,6 +114,8 @@ namespace Stratis.Bitcoin.Features.Api
 
             // Hack to be able to access and modify the options object configured here in SwaggerUIContractListMiddleware.
             services.AddSingleton(_ => this.uiOptions);
+
+            services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
