@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Moq;
-using NBitcoin;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.ILRewrite;
@@ -91,20 +90,18 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         private readonly ObserverRewriter rewriter;
         private readonly IStateRepository repository;
-        private readonly Network network;
         private readonly IContractModuleDefinitionReader moduleReader;
         private readonly ContractAssemblyLoader assemblyLoader;
-        private readonly RuntimeObserver.IGasMeter gasMeter;
+        private readonly IGasMeter gasMeter;
 
         public ObserverTests()
         {
             var context = new ContractExecutorTestContext();
-            this.network = context.Network;
             this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
             this.repository = context.State;
             this.moduleReader = new ContractModuleDefinitionReader();
             this.assemblyLoader = new ContractAssemblyLoader();
-            this.gasMeter = new GasMeter((RuntimeObserver.Gas)5000000);
+            this.gasMeter = new GasMeter((Gas)5000000);
 
             var block = new TestBlock
             {
@@ -308,6 +305,50 @@ public static class Other
 
             Assert.False(result.IsSuccess);
             Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
+        }
+
+        [Fact]
+        public void Test_Replacing_Observer()
+        {
+            ContractCompilationResult compilationResult =
+                ContractCompiler.Compile(TestMultipleConstructorSource);
+
+            Assert.True(compilationResult.Success);
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
+
+            // Rewrite and execute module.
+            module.Rewrite(this.rewriter);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
+
+            // Now lets rewrite with a new Observer.
+            var newGasMeter = new GasMeter((Gas)5000000);
+            var newMemoryMeter = new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit);
+            var replacerRewriter = new ObserverReplacerRewriter(new Observer(newGasMeter, newMemoryMeter));
+            module.Rewrite(replacerRewriter);
+
+            // The calling of this new module should affect a different gas meter. The previous one should remain untouched.
+            assembly = this.assemblyLoader.Load(module.ToByteCode());
+            var context = new ContractExecutorTestContext();
+            var newState = new SmartContractState(
+                new Block(1, this.TestAddress),
+                new Message(this.TestAddress, this.TestAddress, 0),
+                new PersistentState(new MeteredPersistenceStrategy(context.State, newGasMeter, new BasicKeyEncodingStrategy()),
+                    context.Serializer, this.TestAddress.ToUint160()),
+                context.Serializer,
+                new ContractLogHolder(),
+                Mock.Of<IInternalTransactionExecutor>(),
+                new InternalHashHelper(),
+                () => 1000);
+            IContract newContract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), newState, null);
+            result = newContract.InvokeConstructor(new[] { "Test Owner" });
+            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
+            Assert.Equal((Gas)328, newGasMeter.GasConsumed);
         }
 
         [Fact]

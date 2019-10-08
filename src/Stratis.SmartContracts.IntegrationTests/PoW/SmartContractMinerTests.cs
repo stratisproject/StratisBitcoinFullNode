@@ -36,6 +36,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.ResultProcessors;
@@ -166,6 +167,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private StateFactory stateFactory;
             private IContractPrimitiveSerializer primitiveSerializer;
             internal Key PrivateKey { get; private set; }
+            private IRewrittenContractCache contractCache;
             private ReflectionVirtualMachine reflectionVirtualMachine;
             private IContractRefundProcessor refundProcessor;
             internal StateRepositoryRoot StateRoot { get; private set; }
@@ -337,7 +339,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
-                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader);
+                this.contractCache = new RewrittenContractCache(this.loggerFactory);
+                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader, this.contractCache);
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);

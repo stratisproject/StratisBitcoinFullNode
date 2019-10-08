@@ -3,12 +3,14 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
 
@@ -23,18 +25,21 @@ namespace Stratis.SmartContracts.CLR
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
+        private readonly IRewrittenContractCache rewrittenContractCache;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
             ILoader assemblyLoader,
-            IContractModuleDefinitionReader moduleDefinitionReader)
+            IContractModuleDefinitionReader moduleDefinitionReader,
+            IRewrittenContractCache rewrittenContractCache)
         {
             this.validator = validator;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.assemblyLoader = assemblyLoader;
             this.moduleDefinitionReader = moduleDefinitionReader;
+            this.rewrittenContractCache = rewrittenContractCache;
         }
 
         /// <summary>
@@ -42,53 +47,94 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            RuntimeObserver.IGasMeter gasMeter,
+            IGasMeter gasMeter,
             byte[] contractCode,
             object[] parameters,
             string typeName = null)
         {
+            // The type and code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             string typeToInstantiate;
             ContractByteCode code;
 
-            // Decompile the contract execution code
-            Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
-            if (moduleResult.IsFailure)
+            // Hash the code
+            byte[] codeHash = HashHelper.Keccak256(contractCode);
+            uint256 codeHashUint256 = new uint256(codeHash);
+
+            // Lets see if we already have a rewritten version of the code. If so, we know it's valid!
+            byte[] cachedCode = this.rewrittenContractCache.Retrieve(codeHashUint256);
+
+            if (cachedCode != null)
             {
-                this.logger.LogDebug(moduleResult.Error);
-                this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
-                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
+                // Replace the written-in observer with our custom one in the cached code.
+
+                Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(cachedCode);
+
+                // Assume this will always work with stored code, else something is wrong and we shouldn't have stored the code in the first place.
+                if (moduleResult.IsFailure)
+                    throw new Exception("Error loading cached code into module.");
+
+                // Replace the Observer.
+                using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
+                {
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    var replacerRewriter = new ObserverReplacerRewriter(observer);
+
+                    // Again, assume this will work, otherwise something is wrong with the cached code.
+                    if(!this.Rewrite(moduleDefinition, replacerRewriter))
+                        throw new Exception("Error rewriting new Observer into cached code.");
+
+                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                    if (!getCodeResult.IsSuccess)
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+
+                    // Everything worked. Assign what will get executed.
+                    typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
+                    code = getCodeResult.Value;
+                }
             }
-
-            // Validate contract execution code
-            using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
+            else
             {
-                SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
+                // Validate then rewrite the entirety of the incoming code.
 
-                // If validation failed, refund the sender any remaining gas.
-                if (!validation.IsValid)
+                Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
+
+                if (moduleResult.IsFailure)
                 {
-                    this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
+                    this.logger.LogDebug(moduleResult.Error);
+                    this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
                 }
 
-                typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
-
-                var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
-                var rewriter = new ObserverRewriter(observer);
-
-                if (!this.Rewrite(moduleDefinition, rewriter))
+                using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
                 {
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                    SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
+
+                    // If validation failed, refund the sender any remaining gas.
+                    if (!validation.IsValid)
+                    {
+                        this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
+                    }
+
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    var rewriter = new ObserverRewriter(observer);
+
+                    if (!this.Rewrite(moduleDefinition, rewriter))
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+
+                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                    if (!getCodeResult.IsSuccess)
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+
+                    // Everything worked. Assign what will get executed.
+                    typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
+                    code = getCodeResult.Value;
+
+                    // Cache this completely validated and rewritten contract to reuse later.
+                    this.rewrittenContractCache.Store(codeHashUint256, code.Value);
                 }
-
-                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
-
-                if (!getCodeResult.IsSuccess)
-                {
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
-                }
-
-                code = getCodeResult.Value;
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -127,29 +173,63 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, RuntimeObserver.IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
         {
+            // The code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             ContractByteCode code;
 
-            // Code we're loading from database - can assume it's valid.
-            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
+            // Hash the code
+            byte[] codeHash = HashHelper.Keccak256(contractCode);
+            uint256 codeHashUint256 = new uint256(codeHash);
+
+            // Lets see if we already have a rewritten version of the code.
+            byte[] cachedCode = this.rewrittenContractCache.Retrieve(codeHashUint256);
+
+            if (cachedCode != null)
             {
-                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                var rewriter = new ObserverRewriter(observer);
+                // Replace Observer in cached code.
 
-                if (!this.Rewrite(moduleDefinition, rewriter))
+                using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(cachedCode).Value)
                 {
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    var replacerRewriter = new ObserverReplacerRewriter(observer);
+
+                    // Again, assume this will work, otherwise something is wrong with the cached code.
+                    if (!this.Rewrite(moduleDefinition, replacerRewriter))
+                        throw new Exception("Error rewriting new Observer into cached code.");
+
+                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                    if (!getCodeResult.IsSuccess)
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+
+                    // Everything worked. Assign the code that will be executed.
+                    code = getCodeResult.Value;
                 }
+            }
+            else
+            {
+                // Rewrite from scratch.
 
-                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
-
-                if (!getCodeResult.IsSuccess)
+                using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
                 {
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
-                }
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    var rewriter = new ObserverRewriter(observer);
 
-                code = getCodeResult.Value;
+                    if (!this.Rewrite(moduleDefinition, rewriter))
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+
+                    Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                    if (!getCodeResult.IsSuccess)
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+
+                    // Everything worked. Assign the code that will be executed.
+                    code = getCodeResult.Value;
+
+                    // Cache this rewritten contract.
+                    this.rewrittenContractCache.Store(codeHashUint256, code.Value);
+                }
             }
 
             Result<IContract> contractLoadResult = this.Load(
