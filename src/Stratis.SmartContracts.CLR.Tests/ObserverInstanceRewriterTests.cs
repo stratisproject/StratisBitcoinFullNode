@@ -185,7 +185,6 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -194,7 +193,13 @@ namespace Stratis.SmartContracts.CLR.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () => contract.Invoke(callData));
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () =>
+            {
+                // Need to set this here as the timeout helper will run this in a new thread and observer is thread static within the assembly.
+                assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+
+                return contract.Invoke(callData);
+            });
 
             Assert.False(result.IsSuccess);
             Assert.Equal((RuntimeObserver.Gas)0, this.gasMeter.GasAvailable);
