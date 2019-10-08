@@ -13,9 +13,9 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Interfaces;
 using Script = NBitcoin.Script;
+using ConcurrentCollections;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
@@ -721,11 +721,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
+                        bool done = false;
+
                         Parallel.ForEach(rounds, round =>
                         {
                             try
                             {
-                                ParallelProcessBlock(round, block, header);
+                                if (!ParallelProcessBlock(round, block, header))
+                                    done = true;
                             }
                             catch (Exception err)
                             {
@@ -738,7 +741,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             }
                         });
 
-                        if (header == null)
+                        if (done)
                             break;
                     }
                 }
@@ -754,9 +757,12 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
+                        bool done = false;
+
                         try
                         {
-                            ParallelProcessBlock(round, block, header);
+                            if (!ParallelProcessBlock(round, block, header))
+                                done = true;
                         }
                         catch (Exception err)
                         {
@@ -768,14 +774,14 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 round.LockProcessBlocks.Release();
                         }
 
-                        if (header == null)
+                        if (done)
                             break;
                     }
                 }
             }
         }
 
-        private void ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader header)
+        private bool ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader header)
         {
             try
             {
@@ -801,7 +807,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.BeginTransaction();
                         try
                         {
-
                             if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                             {
                                 IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
@@ -861,27 +866,48 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                         round.ParticipatingWallets.Clear();
 
-                        if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
-                            round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+                        round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                     }
                 }
 
                 if (header == null)
-                    return;
+                    return false;
 
                 if (round.PrevTip == null)
                 {
                     // Determine participating wallets.
                     if (round.Wallet == null && !this.DatabasePerWallet)
-                        round.ParticipatingWallets = this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name).ToList();
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
                     else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                        round.ParticipatingWallets = new List<string> { round.Wallet.Name };
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
                     else
-                        round.ParticipatingWallets = new List<string>();
+                        return false;
 
-                    // Now grab the wallet locks.
-                    foreach (string walletName in round.ParticipatingWallets)
-                        this.Wallets[walletName].WriteLockWait();
+                    // See if all the wallet locks can be obtained, otherwise do nothing.
+                    bool failed = false;
+
+                    Parallel.ForEach(round.ParticipatingWallets, walletName =>
+                    {
+                        WalletContainer walletContainer = this.Wallets[walletName];
+
+                        if (walletContainer.LockUpdateWallet.Wait(0))
+                        {
+                            if (walletContainer.ReaderCount == 0)
+                                return;
+
+                            walletContainer.LockUpdateWallet.Release();
+                        }
+
+                        failed = true;
+
+                        Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
+                    });
+
+                    if (failed)
+                    {
+                        Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
+                        return false;
+                    }
 
                     // Batch starting.
                     round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
@@ -905,9 +931,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             catch (Exception)
             {
-
                 throw;
             }
+
+            return true;
         }
 
         /// <inheritdoc />
