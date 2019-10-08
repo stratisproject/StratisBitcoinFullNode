@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         public IContractModuleDefinitionReader ModuleDefinitionReader { get; }
         public IContractPrimitiveSerializer ContractPrimitiveSerializer { get; }
         public IInternalExecutorFactory InternalTxExecutorFactory { get; }
-        public IRewrittenContractCache ContractCache { get; }
+        public IContractAssemblyCache ContractCache { get; }
         public ReflectionVirtualMachine Vm { get; }
         public ISmartContractStateFactory SmartContractStateFactory { get; }
         public StateProcessor StateProcessor { get; }
@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.Validator = new SmartContractValidator();
             this.AssemblyLoader = new ContractAssemblyLoader();
             this.ModuleDefinitionReader = new ContractModuleDefinitionReader();
-            this.ContractCache = new RewrittenContractCache(this.LoggerFactory);
+            this.ContractCache = new ContractAssemblyCache(this.LoggerFactory);
             this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.AssemblyLoader, this.ModuleDefinitionReader, this.ContractCache);
             this.StateProcessor = new StateProcessor(this.Vm, this.AddressGenerator);
             this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.StateProcessor);

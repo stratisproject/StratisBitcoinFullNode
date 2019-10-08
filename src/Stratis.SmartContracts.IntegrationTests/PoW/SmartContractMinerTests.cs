@@ -164,7 +164,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private StateFactory stateFactory;
             private IContractPrimitiveSerializer primitiveSerializer;
             internal Key PrivateKey { get; private set; }
-            private IRewrittenContractCache contractCache;
+            private IContractAssemblyCache contractCache;
             private ReflectionVirtualMachine reflectionVirtualMachine;
             private IContractRefundProcessor refundProcessor;
             internal StateRepositoryRoot StateRoot { get; private set; }
@@ -333,7 +333,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
-                this.contractCache = new RewrittenContractCache(this.loggerFactory);
+                this.contractCache = new ContractAssemblyCache(this.loggerFactory);
                 this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader, this.contractCache);
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);

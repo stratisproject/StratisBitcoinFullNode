@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         private readonly IContractTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
         private IInternalExecutorFactory internalTxExecutorFactory;
-        private readonly IRewrittenContractCache contractCache;
+        private readonly IContractAssemblyCache contractCache;
         private IVirtualMachine vm;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly StateFactory stateFactory;
@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.moduleDefinitionReader = new ContractModuleDefinitionReader();
             this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
             this.serializer = new Serializer(this.contractPrimitiveSerializer);
-            this.contractCache = new RewrittenContractCache(this.loggerFactory);
+            this.contractCache = new ContractAssemblyCache(this.loggerFactory);
             this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader, this.contractCache);
             this.stateProcessor = new StateProcessor(this.vm, this.addressGenerator);
             this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);

@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.CLR
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
-        private readonly IRewrittenContractCache rewrittenContractCache;
+        private readonly IContractAssemblyCache assemblyCache;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
 
@@ -33,13 +33,13 @@ namespace Stratis.SmartContracts.CLR
             ILoggerFactory loggerFactory,
             ILoader assemblyLoader,
             IContractModuleDefinitionReader moduleDefinitionReader,
-            IRewrittenContractCache rewrittenContractCache)
+            IContractAssemblyCache assemblyCache)
         {
             this.validator = validator;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.assemblyLoader = assemblyLoader;
             this.moduleDefinitionReader = moduleDefinitionReader;
-            this.rewrittenContractCache = rewrittenContractCache;
+            this.assemblyCache = assemblyCache;
         }
 
         /// <summary>
@@ -54,34 +54,40 @@ namespace Stratis.SmartContracts.CLR
         {
             // The type and code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             string typeToInstantiate;
-            ContractByteCode code;
+            //ContractByteCode code;
+            IContract contract;
 
             // Hash the code
             byte[] codeHash = HashHelper.Keccak256(contractCode);
             uint256 codeHashUint256 = new uint256(codeHash);
 
-            // Lets see if we already have a rewritten version of the code. If so, we know it's valid!
-            byte[] cachedCode = this.rewrittenContractCache.Retrieve(codeHashUint256);
+            // Lets see if we already have an assembly
+            CachedAssemblyPackage assemblyPackage = this.assemblyCache.Retrieve(codeHashUint256);
 
-            // This section is only necessary to get the deployed type name.
-            // We could refactor some other parts of the code to prevent having to load the module definition here.
-            if (cachedCode != null)
+            if (assemblyPackage != null)
             {
-                code = (ContractByteCode)cachedCode;
+                // Set Observer and load and execute.
+                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                assemblyPackage.Assembly.SetObserver(observer);
 
-                Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(cachedCode);
+                typeToInstantiate = typeName ?? assemblyPackage.ModuleDefinition.ContractType.Name;
 
-                // Assume this will always work with stored code, else something is wrong and we shouldn't have stored the code in the first place.
-                if (moduleResult.IsFailure)
-                    throw new Exception("Error loading cached code into module.");
+                Type type = assemblyPackage.Assembly.GetType(typeToInstantiate);
 
-                using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
-                {
-                    typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
-                }
+                uint160 address = contractState.Message.ContractAddress.ToUint160();
+                contract = Contract.CreateUninitialized(type, contractState, address);
+
+
+                // TODO: Type not found?
+
+                // TODO: Setting observer error?
+
+                // TODO: Error instantiating contract?
+
             }
             else
             {
+                // Create from scratch
                 // Validate then rewrite the entirety of the incoming code.
                 Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
 
@@ -89,7 +95,8 @@ namespace Stratis.SmartContracts.CLR
                 {
                     this.logger.LogDebug(moduleResult.Error);
                     this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
-                    return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed,
+                        "Contract bytecode is not valid IL.");
                 }
 
                 using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
@@ -100,7 +107,8 @@ namespace Stratis.SmartContracts.CLR
                     if (!validation.IsValid)
                     {
                         this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
-                        return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed,
+                            new SmartContractValidationException(validation.Errors).ToString());
                     }
 
                     var rewriter = new ObserverInstanceRewriter();
@@ -115,28 +123,32 @@ namespace Stratis.SmartContracts.CLR
 
                     // Everything worked. Assign what will get executed.
                     typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
-                    code = getCodeResult.Value;
+                    ContractByteCode code = getCodeResult.Value;
+
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+
+                    Result<IContract> contractLoadResult = this.Load(
+                        code,
+                        typeToInstantiate,
+                        contractState.Message.ContractAddress.ToUint160(),
+                        contractState,
+                        observer);
+
+                    if (!contractLoadResult.IsSuccess)
+                    {
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
+                    }
+
+                    contract = contractLoadResult.Value;
 
                     // Cache this completely validated and rewritten contract to reuse later.
-                    this.rewrittenContractCache.Store(codeHashUint256, code.Value);
+                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage
+                    {
+                        Assembly = new ContractAssembly(contract.Type.Assembly),
+                        ModuleDefinition = moduleDefinition
+                    });
                 }
             }
-
-            var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-
-            Result<IContract> contractLoadResult = this.Load(
-                code,
-                typeToInstantiate,
-                contractState.Message.ContractAddress.ToUint160(),
-                contractState,
-                observer);
-
-            if (!contractLoadResult.IsSuccess)
-            {
-                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
-            }
-
-            IContract contract = contractLoadResult.Value;
 
             this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
@@ -163,19 +175,25 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
         {
-            // The code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
-            ContractByteCode code;
+            IContract contract;
 
             // Hash the code
             byte[] codeHash = HashHelper.Keccak256(contractCode);
             uint256 codeHashUint256 = new uint256(codeHash);
 
-            // Lets see if we already have a rewritten version of the code.
-            byte[] cachedCode = this.rewrittenContractCache.Retrieve(codeHashUint256);
+            // Lets see if we already have an assembly
+            CachedAssemblyPackage assemblyPackage = this.assemblyCache.Retrieve(codeHashUint256);
 
-            if (cachedCode != null)
+            if (assemblyPackage != null)
             {
-                code = (ContractByteCode)cachedCode;
+                // Set Observer and load and execute.
+                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                assemblyPackage.Assembly.SetObserver(observer);
+
+                Type type = assemblyPackage.Assembly.GetType(typeName);
+
+                uint160 address = contractState.Message.ContractAddress.ToUint160();
+                contract = Contract.CreateUninitialized(type, contractState, address);
             }
             else
             {
@@ -193,32 +211,36 @@ namespace Stratis.SmartContracts.CLR
                         return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
 
                     // Everything worked. Assign the code that will be executed.
-                    code = getCodeResult.Value;
+                    ContractByteCode code = getCodeResult.Value;
+
+                    // Creating a new observer instance here is necessary due to nesting.
+                    // If a nested call takes place it will use a new gas meter instance,
+                    // due to the fact that the nested call's gas limit may be specified by the user.
+                    // Because of that we can't reuse the same observer for a single execution.
+                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+
+                    Result<IContract> contractLoadResult = this.Load(
+                        code,
+                        typeName,
+                        contractState.Message.ContractAddress.ToUint160(),
+                        contractState,
+                        observer);
+
+                    if (!contractLoadResult.IsSuccess)
+                    {
+                        return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
+                    }
+
+                    contract = contractLoadResult.Value;
 
                     // Cache this rewritten contract.
-                    this.rewrittenContractCache.Store(codeHashUint256, code.Value);
+                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage
+                    {
+                        Assembly = new ContractAssembly(contract.Type.Assembly),
+                        ModuleDefinition = moduleDefinition
+                    });
                 }
             }
-
-            // Creating a new observer instance here is necessary due to nesting.
-            // If a nested call takes place it will use a new gas meter instance,
-            // due to the fact that the nested call's gas limit may be specified by the user.
-            // Because of that we can't reuse the same observer for a single execution.
-            var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-
-            Result<IContract> contractLoadResult = this.Load(
-                code,
-                typeName,
-                contractState.Message.ContractAddress.ToUint160(),
-                contractState,
-                observer);
-
-            if (!contractLoadResult.IsSuccess)
-            {
-                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
-            }
-
-            IContract contract = contractLoadResult.Value;
 
             this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
