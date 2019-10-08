@@ -60,6 +60,9 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
                 FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly,
                 module.ImportReference(typeof(Observer))
             );
+
+            // Add the ThreadStaticAttribute so that each new thread has its own instance of the observer.
+            instanceField.CustomAttributes.Add(new CustomAttribute(module.ImportReference(typeof(ThreadStaticAttribute).GetConstructor(Type.EmptyTypes))));
             instanceType.Fields.Add(instanceField);
 
             // Add a static method that can be used to set the observer instance.

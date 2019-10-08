@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Mono.Cecil;
 using Moq;
 using Stratis.SmartContracts.CLR.Compilation;
@@ -184,7 +185,6 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -193,7 +193,13 @@ namespace Stratis.SmartContracts.CLR.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () => contract.Invoke(callData));
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () =>
+            {
+                // Need to set this here as the timeout helper will run this in a new thread and observer is thread static within the assembly.
+                assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+
+                return contract.Invoke(callData);
+            });
 
             Assert.False(result.IsSuccess);
             Assert.Equal((RuntimeObserver.Gas)0, this.gasMeter.GasAvailable);
@@ -398,6 +404,70 @@ public static class Other
         {
             IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
             AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedConcat));
+        }
+
+        [Fact]
+        public void Separate_Threads_Have_Different_Observer_Instances()
+        {
+            // Create a contract assembly.
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(TestSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
+
+            module.Rewrite(this.rewriter);
+
+            CSharpFunctionalExtensions.Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(module.ToByteCode());
+
+            IContractAssembly assembly = assemblyLoadResult.Value;
+
+            var threadCount = 10;
+
+            var observers = new Observer[threadCount];
+
+            var countdown = new CountdownEvent(threadCount);
+
+            var threads = new Thread[threadCount];
+
+            for (var i = 0; i < 10; i++)
+            {
+                // Create a fake observer with a counter.
+                var observer = new Observer(new GasMeter((Gas)1000000), new MemoryMeter(1000000));
+
+                observers[i] = observer;
+
+                // Set a different observer on each thread.
+                // Invoke the same method on each thread.
+                Thread newThread = new Thread(() =>
+                {
+                    assembly.SetObserver(observer);
+                    var callData = new MethodCall("TestMethod", new object[] { 1 });
+                    IContract contract = Contract.CreateUninitialized(assembly.GetType(module.ContractType.Name), this.state, null);
+
+                    IContractInvocationResult result = contract.Invoke(callData);
+
+                    countdown.Signal();
+                });
+
+                newThread.Name = i.ToString();
+                threads[i] = newThread;
+            }
+
+            // Start the threads on a separate loop to ensure all time is spent on processing.
+            foreach (Thread thread in threads)
+            {
+                thread.Start();
+            }
+
+            countdown.Wait();
+
+            foreach (Observer observer in observers)
+            {
+                Assert.Equal(observers[1].GasMeter.GasConsumed, observer.GasMeter.GasConsumed);
+                Assert.Equal(observers[1].MemoryMeter.MemoryConsumed, observer.MemoryMeter.MemoryConsumed);
+            }
         }
 
         private void AssertFailsDueToMemory(IContract contract, string methodName)

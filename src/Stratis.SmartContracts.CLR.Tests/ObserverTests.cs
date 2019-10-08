@@ -159,6 +159,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
             IContractInvocationResult result = contract.Invoke(callData);
@@ -181,6 +182,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -211,6 +213,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -234,6 +237,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -258,6 +262,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -298,6 +303,7 @@ public static class Other
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -415,6 +421,7 @@ public static class Other
             module.Rewrite(this.rewriter);
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+            assembly.Value.SetObserver(new Observer(this.gasMeter, new MemoryMeter(10000)));
 
             return Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
         }
