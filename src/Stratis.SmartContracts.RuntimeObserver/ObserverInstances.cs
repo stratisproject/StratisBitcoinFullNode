@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts.RuntimeObserver
     /// </summary>
     public static class ObserverInstances
     {
-        private static readonly ConcurrentDictionary<Guid, Observer> instances;
+        private static readonly ConcurrentDictionary<string, Observer> instances;
 
         static ObserverInstances()
         {
-            instances = new ConcurrentDictionary<Guid, Observer>();
+            instances = new ConcurrentDictionary<string, Observer>();
         }
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.RuntimeObserver
         /// </summary>
         public static Observer Get(string id)
         {
-            return instances[Guid.Parse(id)];
+            return instances[id];
         } 
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.RuntimeObserver
         /// </summary>
         /// <param name="id"></param>
         /// <param name="observer"></param>
-        public static void Set(Guid id, Observer observer)
+        public static void Set(string id, Observer observer)
         {
             instances[id] = observer;
         }

@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             ILProcessor il = constructor.Body.GetILProcessor();
             il.Replace(constructor.Body.Instructions[0], il.Create(OpCodes.Ldstr, id.ToString()));
             
-            ObserverInstances.Set(id, this.observerToInject);
+            ObserverInstances.Set(id.ToString(), this.observerToInject);
 
             return module;
         }

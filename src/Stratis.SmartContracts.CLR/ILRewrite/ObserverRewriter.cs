@@ -49,7 +49,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
                 this.RewriteType(type, observer);
             }
 
-            ObserverInstances.Set(id, this.observerToInject);
+            ObserverInstances.Set(id.ToString(), this.observerToInject);
 
             module.Types.Add(observerType);
 
