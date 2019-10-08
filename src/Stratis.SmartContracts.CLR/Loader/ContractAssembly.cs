@@ -40,10 +40,9 @@ namespace Stratis.SmartContracts.CLR.Loader
         /// <summary>
         /// Sets the execution context on the executing contract assembly.
         /// </summary>
-        /// <param name="context"></param>
         /// <param name="observer"></param>
         /// <returns></returns>
-        public bool SetExecutionContext(ExecutionContext context, Observer observer)
+        public bool SetExecutionContext(Observer observer)
         {
             Type observerType = this.GetObserverType();
 

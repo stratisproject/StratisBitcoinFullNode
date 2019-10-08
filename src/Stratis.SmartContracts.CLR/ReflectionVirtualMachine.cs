@@ -47,7 +47,6 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            ExecutionContext executionContext,
             IGasMeter gasMeter,
             byte[] contractCode,
             object[] parameters,
@@ -131,7 +130,6 @@ namespace Stratis.SmartContracts.CLR
                 typeToInstantiate,
                 contractState.Message.ContractAddress.ToUint160(),
                 contractState,
-                executionContext,
                 observer);
 
             if (!contractLoadResult.IsSuccess)
@@ -164,8 +162,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter,
-            ExecutionContext executionContext, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
         {
             // The code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             ContractByteCode code;
@@ -212,7 +209,6 @@ namespace Stratis.SmartContracts.CLR
                 typeName,
                 contractState.Message.ContractAddress.ToUint160(),
                 contractState,
-                executionContext,
                 observer);
 
             if (!contractLoadResult.IsSuccess)
@@ -260,7 +256,6 @@ namespace Stratis.SmartContracts.CLR
             string typeName,
             uint160 address,
             ISmartContractState contractState,
-            ExecutionContext executionContext,
             Observer observer)
         {
             Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(byteCode);
@@ -285,7 +280,7 @@ namespace Stratis.SmartContracts.CLR
                 return Result.Fail<IContract>(typeNotFoundError);
             }
 
-            if (!contractAssembly.SetExecutionContext(executionContext, observer))
+            if (!contractAssembly.SetExecutionContext(observer))
             {
                 const string setExecutionContextError = "Error setting execution context!";
 

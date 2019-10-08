@@ -7,7 +7,6 @@ namespace Stratis.SmartContracts.CLR
     {
         VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            ExecutionContext executionContext,
             IGasMeter gasMeter,
             byte[] contractCode,
             object[] parameters,
@@ -15,7 +14,6 @@ namespace Stratis.SmartContracts.CLR
 
         VmExecutionResult ExecuteMethod(ISmartContractState contractState,
             IGasMeter gasMeter,
-            ExecutionContext executionContext,
             MethodCall methodCall,
             byte[] contractCode,
             string typeName);

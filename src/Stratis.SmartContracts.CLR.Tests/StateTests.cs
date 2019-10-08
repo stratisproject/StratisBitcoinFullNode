@@ -187,25 +187,5 @@ namespace Stratis.SmartContracts.CLR.Tests
             
             Assert.Equal(0UL, state.NonceGenerator.Next);
         }
-
-        [Fact]
-        public void New_State_Has_ExecutionContextId()
-        {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
-
-            Assert.True(!string.IsNullOrWhiteSpace(state.ExecutionContext.Id));
-        }
-
-        [Fact]
-        public void New_State_Snapshot_Preserves_ExecutionContextId()
-        {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
-
-            var executionContextId = state.ExecutionContext.Id;
-
-            var snapshot = state.Snapshot();
-
-            Assert.Equal(executionContextId, snapshot.ExecutionContext.Id);
-        }
     }
 }

@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -184,7 +184,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -216,7 +216,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -241,7 +241,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -267,7 +267,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -309,7 +309,7 @@ public static class Other
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
@@ -428,7 +428,7 @@ public static class Other
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            assembly.Value.SetExecutionContext(new ExecutionContext(), new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
+            assembly.Value.SetExecutionContext(new Observer(this.gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
 
             return Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
         }

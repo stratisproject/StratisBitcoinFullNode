@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         }
 
         [Fact]
-        public void Create_Contract_Sets_ExecutionContext()
+        public void Create_Contract_Sets_Observer()
         {
             var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.rewrittenContractCache.Object);
 
@@ -53,7 +53,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             contractAssembly.Setup(c => c.GetType(It.IsAny<string>())).Returns(typeof(string));
 
             // Set this false here to prevent further execution.
-            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>(), It.IsAny<Observer>())).Returns(false);
+            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<Observer>())).Returns(false);
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
@@ -69,14 +69,14 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new InternalHashHelper(),
                 () => 1000);
 
-            var executionContext = new ExecutionContext();
-            var result = vm.Create(this.stateRepository, state, executionContext, Mock.Of<IGasMeter>(), new byte[] { }, new object[] { }, "Test");
+            var gasMeter = Mock.Of<IGasMeter>();
+            var result = vm.Create(this.stateRepository, state, gasMeter, new byte[] { }, new object[] { }, "Test");
 
-            contractAssembly.Verify(c => c.SetExecutionContext(executionContext, It.IsAny<Observer>()), Times.Once);
+            contractAssembly.Verify(c => c.SetExecutionContext(It.Is<Observer>(g => g.GasMeter == gasMeter)), Times.Once);
         }
 
         [Fact]
-        public void Call_Contract_Sets_ExecutionContext()
+        public void Call_Contract_Sets_Observer()
         {
             var vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory.Object, this.loader.Object, this.moduleDefReader.Object, this.rewrittenContractCache.Object);
 
@@ -89,7 +89,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             contractAssembly.Setup(c => c.GetType(It.IsAny<string>())).Returns(typeof(string));
 
             // Set this false here to prevent further execution.
-            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>(), It.IsAny<Observer>())).Returns(false);
+            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<Observer>())).Returns(false);
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
@@ -105,10 +105,10 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new InternalHashHelper(),
                 () => 1000);
 
-            var executionContext = new ExecutionContext();
-            var result = vm.ExecuteMethod(state, Mock.Of<IGasMeter>(), executionContext, new MethodCall("Test"), new byte[] { }, "");
+            var gasMeter = Mock.Of<IGasMeter>();
+            var result = vm.ExecuteMethod(state, gasMeter, new MethodCall("Test"), new byte[] { }, "");
 
-            contractAssembly.Verify(c => c.SetExecutionContext(executionContext, It.IsAny<Observer>()), Times.Once);
+            contractAssembly.Verify(c => c.SetExecutionContext(It.Is<Observer>(g => g.GasMeter == gasMeter)), Times.Once);
         }
     }
 }
