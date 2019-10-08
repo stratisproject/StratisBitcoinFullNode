@@ -182,6 +182,7 @@ namespace Stratis.Sidechains.Networks
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0000af9ab2c8660481328d0444cf167dfd31f24ca2dbba8e5e963a2434cffa93"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("cf8ce1419bbc4870b7d4f1c084534d91126dd3283b51ec379e0a20e27bd23633"));
 
+            this.RegisterRules(this.Consensus);
             this.RegisterMempoolRules(this.Consensus);
         }
 
