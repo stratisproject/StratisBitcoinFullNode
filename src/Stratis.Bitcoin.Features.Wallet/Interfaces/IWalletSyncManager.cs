@@ -36,7 +36,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Synchronize the wallet starting from the date passed as a parameter.
         /// </summary>
         /// <param name="date">The date from which to start the sync process.</param>
-        void SyncFromDate(DateTime date);
+        /// <param name="walletName">The wallet to sync or <c>null</c> to rewind and sync all wallet.</param>
+        void SyncFromDate(DateTime date, string walletName = null);
 
         /// <summary>
         /// Synchronize the wallet starting from the height passed as a parameter.
