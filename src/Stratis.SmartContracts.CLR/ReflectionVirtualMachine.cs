@@ -74,15 +74,16 @@ namespace Stratis.SmartContracts.CLR
                 if (moduleResult.IsFailure)
                     throw new Exception("Error loading cached code into module.");
 
+                // TODO - this won't be necessary when we can directly set the execution context.
                 // Replace the Observer.
                 using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
                 {
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    var replacerRewriter = new ObserverReplacerRewriter(observer);
+                    //var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    //var replacerRewriter = new ObserverReplacerRewriter(observer);
 
-                    // Again, assume this will work, otherwise something is wrong with the cached code.
-                    if(!this.Rewrite(moduleDefinition, replacerRewriter))
-                        throw new Exception("Error rewriting new Observer into cached code.");
+                    //// Again, assume this will work, otherwise something is wrong with the cached code.
+                    //if (!this.Rewrite(moduleDefinition, replacerRewriter))
+                    //    throw new Exception("Error rewriting new Observer into cached code.");
 
                     Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
 
@@ -118,8 +119,7 @@ namespace Stratis.SmartContracts.CLR
                         return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
                     }
 
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    var rewriter = new ObserverRewriter(observer);
+                    var rewriter = new ObserverInstanceRewriter();
 
                     if (!this.Rewrite(moduleDefinition, rewriter))
                         return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
@@ -138,12 +138,15 @@ namespace Stratis.SmartContracts.CLR
                 }
             }
 
+            var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+
             Result<IContract> contractLoadResult = this.Load(
                 code,
                 typeToInstantiate,
                 contractState.Message.ContractAddress.ToUint160(),
                 contractState,
-                executionContext);
+                executionContext,
+                observer);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -194,12 +197,12 @@ namespace Stratis.SmartContracts.CLR
 
                 using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(cachedCode).Value)
                 {
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    var replacerRewriter = new ObserverReplacerRewriter(observer);
+                    //var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+                    //var replacerRewriter = new ObserverReplacerRewriter(observer);
 
-                    // Again, assume this will work, otherwise something is wrong with the cached code.
-                    if (!this.Rewrite(moduleDefinition, replacerRewriter))
-                        throw new Exception("Error rewriting new Observer into cached code.");
+                    //// Again, assume this will work, otherwise something is wrong with the cached code.
+                    //if (!this.Rewrite(moduleDefinition, replacerRewriter))
+                    //    throw new Exception("Error rewriting new Observer into cached code.");
 
                     Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
 
@@ -216,8 +219,7 @@ namespace Stratis.SmartContracts.CLR
 
                 using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
                 {
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                    var rewriter = new ObserverRewriter(observer);
+                    var rewriter = new ObserverInstanceRewriter();
 
                     if (!this.Rewrite(moduleDefinition, rewriter))
                         return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
@@ -235,12 +237,15 @@ namespace Stratis.SmartContracts.CLR
                 }
             }
 
+            var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
+
             Result<IContract> contractLoadResult = this.Load(
                 code,
                 typeName,
                 contractState.Message.ContractAddress.ToUint160(),
                 contractState,
-                executionContext);
+                executionContext,
+                observer);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -283,12 +288,12 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Loads the contract bytecode and returns an <see cref="IContract"/> representing an uninitialized contract instance.
         /// </summary>
-        private Result<IContract> Load(
-            ContractByteCode byteCode,
+        private Result<IContract> Load(ContractByteCode byteCode,
             string typeName,
             uint160 address,
             ISmartContractState contractState,
-            ExecutionContext executionContext)
+            ExecutionContext executionContext,
+            Observer observer)
         {
             Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(byteCode);
 
@@ -312,7 +317,7 @@ namespace Stratis.SmartContracts.CLR
                 return Result.Fail<IContract>(typeNotFoundError);
             }
 
-            if (!contractAssembly.SetExecutionContext(executionContext))
+            if (!contractAssembly.SetExecutionContext(executionContext, observer))
             {
                 const string setExecutionContextError = "Error setting execution context!";
 

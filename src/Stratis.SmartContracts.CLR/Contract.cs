@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
 using Stratis.SmartContracts.CLR.Exceptions;
+using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR

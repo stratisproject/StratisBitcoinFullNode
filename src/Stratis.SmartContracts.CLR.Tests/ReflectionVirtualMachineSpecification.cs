@@ -53,7 +53,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             contractAssembly.Setup(c => c.GetType(It.IsAny<string>())).Returns(typeof(string));
 
             // Set this false here to prevent further execution.
-            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>())).Returns(false);
+            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>(), It.IsAny<Observer>())).Returns(false);
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
@@ -72,7 +72,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var executionContext = new ExecutionContext();
             var result = vm.Create(this.stateRepository, state, executionContext, Mock.Of<IGasMeter>(), new byte[] { }, new object[] { }, "Test");
 
-            contractAssembly.Verify(c => c.SetExecutionContext(executionContext), Times.Once);
+            contractAssembly.Verify(c => c.SetExecutionContext(executionContext, It.IsAny<Observer>()), Times.Once);
         }
 
         [Fact]
@@ -89,7 +89,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             contractAssembly.Setup(c => c.GetType(It.IsAny<string>())).Returns(typeof(string));
 
             // Set this false here to prevent further execution.
-            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>())).Returns(false);
+            contractAssembly.Setup(c => c.SetExecutionContext(It.IsAny<ExecutionContext>(), It.IsAny<Observer>())).Returns(false);
 
             this.loader.Setup(l => l.Load(It.IsAny<ContractByteCode>())).Returns(Result.Ok(contractAssembly.Object));
 
@@ -108,7 +108,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var executionContext = new ExecutionContext();
             var result = vm.ExecuteMethod(state, Mock.Of<IGasMeter>(), executionContext, new MethodCall("Test"), new byte[] { }, "");
 
-            contractAssembly.Verify(c => c.SetExecutionContext(executionContext), Times.Once);
+            contractAssembly.Verify(c => c.SetExecutionContext(executionContext, It.IsAny<Observer>()), Times.Once);
         }
     }
 }
