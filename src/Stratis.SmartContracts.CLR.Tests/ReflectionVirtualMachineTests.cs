@@ -54,7 +54,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             var callData = new MethodCall("NoParamsTest");
 
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
-                this.gasMeter,
+                this.gasMeter, 
+                new ExecutionContext(),
                 callData,
                 contractExecutionCode, "StorageTest");
 
@@ -74,7 +75,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             var callData = new MethodCall("OneParamTest", methodParameters);
             
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
-                this.gasMeter,
+                this.gasMeter, 
+                new ExecutionContext(),
                 callData,
                 contractExecutionCode, "StorageTest");
             
@@ -156,7 +158,8 @@ public class Contract : SmartContract
             this.state.SetStorageValue(contractAddress, keyToClear, new byte[] { 1, 2, 3 });
 
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState, 
-                this.gasMeter,
+                this.gasMeter, 
+                new ExecutionContext(),
                 callData,
                 contractExecutionCode,
                 nameof(ClearStorage));

@@ -173,7 +173,8 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter,
+            ExecutionContext executionContext, MethodCall methodCall, byte[] contractCode, string typeName)
         {
             // The code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             ContractByteCode code;
