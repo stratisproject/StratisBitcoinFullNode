@@ -24,6 +24,6 @@ namespace Stratis.SmartContracts.CLR
         uint160 GenerateAddress(IAddressGenerator addressGenerator);
         ISmartContractState CreateSmartContractState(IState state, RuntimeObserver.IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository);
         void AddInitialTransfer(TransferInfo initialTransfer);
-        string ExecutionContextId { get; }
+        ExecutionContext ExecutionContext { get; }
     }
 }

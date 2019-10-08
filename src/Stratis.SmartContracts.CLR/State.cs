@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.CLR
             this.Block = state.Block;
             this.TransactionHash = state.TransactionHash;
             this.smartContractStateFactory = state.smartContractStateFactory;
-            this.ExecutionContextId = state.ExecutionContextId;
+            this.ExecutionContext = state.ExecutionContext;
         }
 
         public State(ISmartContractStateFactory smartContractStateFactory,
@@ -65,13 +65,13 @@ namespace Stratis.SmartContracts.CLR
             this.Block = block;
             this.TransactionHash = transactionHash;
             this.smartContractStateFactory = smartContractStateFactory;
-            this.ExecutionContextId = Guid.NewGuid().ToString();
+            this.ExecutionContext = new ExecutionContext();
         }
 
         /// <summary>
         /// A unique ID associated with the execution of a contract create or call.
         /// </summary>
-        public string ExecutionContextId { get; }
+        public ExecutionContext ExecutionContext { get; }
 
         public uint256 TransactionHash { get; }
 
