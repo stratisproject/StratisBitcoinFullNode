@@ -10,7 +10,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
 {
     public interface ITransactionsToLists
     {
-        bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null);
+        bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null, long? blockTime = null);
     }
 
     public abstract class TransactionsToListsBase : ITransactionsToLists
@@ -71,7 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             }
         }
 
-        public bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null)
+        public bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null, long? blockTime = null)
         {
             bool additions = false;
 
@@ -96,7 +96,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                     {
                         // Record our outputs that are being spent.
                         foreach (AddressIdentifier address in addresses)
-                            RecordSpend(block, txIn, address.ScriptPubKey, tx.IsCoinBase | tx.IsCoinStake, tx.Time, tx.TotalOut, txId, i);
+                            RecordSpend(block, txIn, address.ScriptPubKey, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, tx.TotalOut, txId, i);
 
                         additions = true;
                         addSpendTx = true;
@@ -140,7 +140,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                             }
 
                             // Record outputs received by our wallets.
-                            this.RecordReceipt(block, pubKeyScript, txOut, tx.IsCoinBase | tx.IsCoinStake, tx.Time, txId, i, containsAddress && address.AddressType == 1);
+                            this.RecordReceipt(block, pubKeyScript, txOut, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, txId, i, containsAddress && address.AddressType == 1);
 
                             additions = true;
 
