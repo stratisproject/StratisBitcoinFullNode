@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain = fixture.Chain;
         }
 
-        [Fact]
+        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
         public void MaximumCreateTransactionsInABlock()
         {
             const int txsToSend = 100;
@@ -64,7 +64,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
-        [Fact]
+        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
         public void ReorgedCoinbaseUtxoRemovedFromMempool()
         {
             var node1 = this.mockChain.Nodes[0];
@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
         public void MaximumCallTransactionsInABlockSpendingAllGas()
         {
             const int txsToSend = 100;
@@ -180,7 +180,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
-        [Fact]
+        [Fact(Skip = "Stress test, doesn't need to be run every time.")]
         public void BlockFullWithRefundTransactionsAndNormalTransactions()
         {
             // Demonstrates that even with the maximum amount of internal transactions and refunds, and normal transactions, the block can't get too big
