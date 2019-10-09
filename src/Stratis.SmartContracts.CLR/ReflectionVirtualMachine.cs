@@ -55,6 +55,7 @@ namespace Stratis.SmartContracts.CLR
             // The type and code that will ultimately be executed. Assigned based on which method we use to rewrite contract code.
             string typeToInstantiate;
             IContract contract;
+            Observer previousObserver = null;
 
             // Hash the code
             byte[] codeHash = HashHelper.Keccak256(contractCode);
@@ -65,6 +66,8 @@ namespace Stratis.SmartContracts.CLR
 
             if (assemblyPackage != null)
             {
+                previousObserver = assemblyPackage.Assembly.GetObserver();
+
                 // Set Observer and load and execute.
                 assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
@@ -137,8 +140,10 @@ namespace Stratis.SmartContracts.CLR
 
                     contract = contractLoadResult.Value;
 
+                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition);
+
                     // Cache this completely validated and rewritten contract to reuse later.
-                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition));
+                    this.assemblyCache.Store(codeHashUint256, assemblyPackage);
                 }
             }
 
@@ -150,6 +155,9 @@ namespace Stratis.SmartContracts.CLR
 
             // Invoke the constructor of the provided contract code
             IContractInvocationResult invocationResult = contract.InvokeConstructor(parameters);
+
+            // Always reset the observer, even if the previous was null.
+            assemblyPackage.Assembly.SetObserver(previousObserver);
 
             if (!invocationResult.IsSuccess)
             {
@@ -169,6 +177,7 @@ namespace Stratis.SmartContracts.CLR
             MethodCall methodCall, byte[] contractCode, string typeName)
         {
             IContract contract;
+            Observer previousObserver = null;
 
             // Hash the code
             byte[] codeHash = HashHelper.Keccak256(contractCode);
@@ -179,7 +188,9 @@ namespace Stratis.SmartContracts.CLR
 
             if (assemblyPackage != null)
             {
-                // Set Observer and load and execute.
+                previousObserver = assemblyPackage.Assembly.GetObserver();
+
+                // Set new Observer and load and execute.
                 assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
                 Type type = assemblyPackage.Assembly.GetType(typeName);
@@ -224,14 +235,19 @@ namespace Stratis.SmartContracts.CLR
 
                     contract = contractLoadResult.Value;
 
+                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition);
+
                     // Cache this completely validated and rewritten contract to reuse later.
-                    this.assemblyCache.Store(codeHashUint256, new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition));
+                    this.assemblyCache.Store(codeHashUint256, assemblyPackage);
                 }
             }
 
             this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
             IContractInvocationResult invocationResult = contract.Invoke(methodCall);
+
+            // Always reset the observer, even if the previous was null.
+            assemblyPackage.Assembly.SetObserver(previousObserver);
 
             if (!invocationResult.IsSuccess)
             {

@@ -2,9 +2,11 @@
 using System.Text;
 using Moq;
 using NBitcoin;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Metering;
+using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
@@ -51,6 +53,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
 
             var callData = new MethodCall("NoParamsTest");
 
@@ -61,6 +64,13 @@ namespace Stratis.SmartContracts.CLR.Tests
                 callData,
                 contractExecutionCode, "StorageTest");
 
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
             Assert.True((bool)result.Success.Result);
@@ -73,6 +83,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
             var methodParameters = new object[] { (int)5 };
             var callData = new MethodCall("OneParamTest", methodParameters);
 
@@ -82,7 +94,14 @@ namespace Stratis.SmartContracts.CLR.Tests
                 executionContext,
                 callData,
                 contractExecutionCode, "StorageTest");
-            
+
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
             Assert.Equal(methodParameters[0], result.Success.Result);
@@ -95,11 +114,20 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
             var methodParameters = new object[] { (ulong)5 };
             var executionContext = new ExecutionContext(new Observer(this.gasMeter, new MemoryMeter(100_000)));
 
             VmExecutionResult result = this.vm.Create(this.state, this.contractState, executionContext, contractExecutionCode, methodParameters);
 
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
         }
@@ -120,7 +148,8 @@ public class Contract : SmartContract
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
-    
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
             // Set up the state with an empty gasmeter so that out of gas occurs
             var contractState = Mock.Of<ISmartContractState>(s =>
                 s.Block == Mock.Of<IBlock>(b => b.Number == 1 && b.Coinbase == this.TestAddress) &&
@@ -143,6 +172,15 @@ public class Contract : SmartContract
                 executionContext,
                 contractExecutionCode,
                 null);
+            
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached, even though we ran out of gas.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
+
             Assert.False(result.IsSuccess);
             Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
@@ -154,6 +192,8 @@ public class Contract : SmartContract
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
             var callData = new MethodCall(nameof(ClearStorage.ClearKey), new object[] { });
 
             uint160 contractAddress = this.contractState.Message.ContractAddress.ToUint160();
@@ -169,6 +209,14 @@ public class Contract : SmartContract
                 callData,
                 contractExecutionCode,
                 nameof(ClearStorage));
+
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached for a successful call.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
 
             Assert.Null(result.Error);
             Assert.Null(this.state.GetStorageValue(contractAddress, keyToClear));
