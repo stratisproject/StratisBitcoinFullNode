@@ -71,7 +71,7 @@ namespace Stratis.SmartContracts.CLR
                 // in which case we need to restore the previous observer later.
                 previousObserver = assemblyPackage.Assembly.GetObserver();
 
-                typeToInstantiate = typeName ?? assemblyPackage.ModuleDefinition.ContractType.Name;
+                typeToInstantiate = typeName ?? assemblyPackage.Assembly.DeployedType.Name;
 
                 Type type = assemblyPackage.Assembly.GetType(typeToInstantiate);
 
