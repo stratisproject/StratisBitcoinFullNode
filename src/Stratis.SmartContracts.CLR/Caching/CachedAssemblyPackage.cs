@@ -8,14 +8,10 @@ namespace Stratis.SmartContracts.CLR.Caching
     public class CachedAssemblyPackage
     {
         public IContractAssembly Assembly { get; }
-
-        public IContractModuleDefinition ModuleDefinition { get; }
-
-
-        public CachedAssemblyPackage(IContractAssembly assembly, IContractModuleDefinition moduleDefinition)
+        
+        public CachedAssemblyPackage(IContractAssembly assembly)
         {
             this.Assembly = assembly;
-            this.ModuleDefinition = moduleDefinition;
         }
     }
 }

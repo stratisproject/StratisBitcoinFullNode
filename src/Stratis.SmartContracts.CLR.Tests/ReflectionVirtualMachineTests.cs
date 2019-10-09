@@ -261,7 +261,7 @@ public class Contract : SmartContract
             var contractAssembly = new ContractAssembly(Assembly.Load(rewrittenCode));
 
             // Cache the assembly.
-            this.context.ContractCache.Store(new uint256(codeHash), new CachedAssemblyPackage(contractAssembly, null));
+            this.context.ContractCache.Store(new uint256(codeHash), new CachedAssemblyPackage(contractAssembly));
 
             // Set an observer on the cached rewritten assembly.
             var initialObserver = new Observer(new GasMeter((Gas)(this.gasMeter.GasAvailable + 1000)), new MemoryMeter(100_000));

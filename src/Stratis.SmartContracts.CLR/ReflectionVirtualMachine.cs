@@ -139,7 +139,7 @@ namespace Stratis.SmartContracts.CLR
 
                     contract = contractLoadResult.Value;
 
-                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition);
+                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly));
 
                     // Cache this completely validated and rewritten contract to reuse later.
                     this.assemblyCache.Store(codeHashUint256, assemblyPackage);
@@ -236,7 +236,7 @@ namespace Stratis.SmartContracts.CLR
 
                     contract = contractLoadResult.Value;
 
-                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly), moduleDefinition);
+                    assemblyPackage = new CachedAssemblyPackage(new ContractAssembly(contract.Type.Assembly));
 
                     // Cache this completely validated and rewritten contract to reuse later.
                     this.assemblyCache.Store(codeHashUint256, assemblyPackage);
