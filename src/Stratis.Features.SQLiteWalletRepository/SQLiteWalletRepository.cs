@@ -895,7 +895,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // Determine the scripts for creating temporary tables and inserting the block's information into them.
                     ITransactionsToLists transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, round);
-                    if (transactionsToLists.ProcessTransactions(block.Transactions, new HashHeightPair(header)))
+                    if (transactionsToLists.ProcessTransactions(block.Transactions, new HashHeightPair(header), blockTime: block.Header.BlockTime.ToUnixTimeSeconds()))
                         this.Metrics.ProcessCount++;
 
                     this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
