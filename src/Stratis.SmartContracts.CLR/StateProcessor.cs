@@ -67,7 +67,7 @@ namespace Stratis.SmartContracts.CLR
         {
             var gasMeter = new GasMeter(message.GasLimit);
             gasMeter.Spend((Gas)GasPriceList.CreateCost);
-            var observer = new Observer(gasMeter, new MemoryMeter(100_000));
+            var observer = new Observer(gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit));
             var executionContext = new ExecutionContext(observer);
 
             // We need to generate an address here so that we can set the initial balance.
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.CLR
 
             var gasMeter = new GasMeter(message.GasLimit);
             gasMeter.Spend((Gas)GasPriceList.CreateCost);
-            var observer = new Observer(gasMeter, new MemoryMeter(100_000));
+            var observer = new Observer(gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit));
             var executionContext = new ExecutionContext(observer);
 
             byte[] contractCode = state.ContractState.GetCode(message.From);
@@ -152,7 +152,7 @@ namespace Stratis.SmartContracts.CLR
 
             var gasMeter = new GasMeter(message.GasLimit);
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
-            var observer = new Observer(gasMeter, new MemoryMeter(100_000));
+            var observer = new Observer(gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit));
             var executionContext = new ExecutionContext(observer);
 
             byte[] contractCode = state.ContractState.GetCode(message.To);
@@ -180,7 +180,7 @@ namespace Stratis.SmartContracts.CLR
             var gasMeter = new GasMeter(message.GasLimit);
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
-            var observer = new Observer(gasMeter, new MemoryMeter(100_000));
+            var observer = new Observer(gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit));
             var executionContext = new ExecutionContext(observer);
 
             byte[] contractCode = state.ContractState.GetCode(message.To);
@@ -223,7 +223,7 @@ namespace Stratis.SmartContracts.CLR
                 return StateTransitionResult.Ok(gasMeter.GasConsumed, message.To);
             }
 
-            var observer = new Observer(gasMeter, new MemoryMeter(100_000));
+            var observer = new Observer(gasMeter, new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit));
             var executionContext = new ExecutionContext(observer);
 
             // For internal contract-contract transfers we need to add the value contained in the contract invocation transaction
