@@ -74,7 +74,8 @@ namespace Stratis.SmartContracts.CLR.Tests
                 () => 1000);
 
             var gasMeter = Mock.Of<IGasMeter>();
-            var result = vm.Create(this.stateRepository, state, gasMeter, new byte[] { }, new object[] { }, "Test");
+            var executionContext = new ExecutionContext(new Observer(gasMeter, new MemoryMeter(100_000)));
+            var result = vm.Create(this.stateRepository, state, executionContext, new byte[] { }, new object[] { }, "Test");
 
             contractAssembly.Verify(c => c.SetObserver(It.Is<Observer>(g => g.GasMeter == gasMeter)), Times.Once);
         }

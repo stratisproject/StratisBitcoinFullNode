@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public VmExecutionResult Create(IStateRepository repository,
             ISmartContractState contractState,
-            IGasMeter gasMeter,
+            ExecutionContext executionContext,
             byte[] contractCode,
             object[] parameters,
             string typeName = null)
@@ -66,8 +66,7 @@ namespace Stratis.SmartContracts.CLR
             if (assemblyPackage != null)
             {
                 // Set Observer and load and execute.
-                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                assemblyPackage.Assembly.SetObserver(observer);
+                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
                 typeToInstantiate = typeName ?? assemblyPackage.ModuleDefinition.ContractType.Name;
 
@@ -124,14 +123,12 @@ namespace Stratis.SmartContracts.CLR
                     typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
                     ContractByteCode code = getCodeResult.Value;
 
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-
                     Result<IContract> contractLoadResult = this.Load(
                         code,
                         typeToInstantiate,
                         contractState.Message.ContractAddress.ToUint160(),
                         contractState,
-                        observer);
+                        executionContext.Observer);
 
                     if (!contractLoadResult.IsSuccess)
                     {
