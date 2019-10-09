@@ -6,6 +6,7 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -53,8 +54,10 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             var callData = new MethodCall("NoParamsTest");
 
+            var executionContext = new ExecutionContext(new Observer(this.gasMeter, new MemoryMeter(100_000)));
+
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
-                this.gasMeter,
+                executionContext,
                 callData,
                 contractExecutionCode, "StorageTest");
 
@@ -72,9 +75,11 @@ namespace Stratis.SmartContracts.CLR.Tests
             byte[] contractExecutionCode = compilationResult.Compilation;
             var methodParameters = new object[] { (int)5 };
             var callData = new MethodCall("OneParamTest", methodParameters);
-            
+
+            var executionContext = new ExecutionContext(new Observer(this.gasMeter, new MemoryMeter(100_000)));
+
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
-                this.gasMeter,
+                executionContext,
                 callData,
                 contractExecutionCode, "StorageTest");
             
@@ -155,8 +160,10 @@ public class Contract : SmartContract
             // Set a value to be cleared
             this.state.SetStorageValue(contractAddress, keyToClear, new byte[] { 1, 2, 3 });
 
-            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState, 
-                this.gasMeter,
+            var executionContext = new ExecutionContext(new Observer(this.gasMeter, new MemoryMeter(100_000)));
+
+            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                executionContext,
                 callData,
                 contractExecutionCode,
                 nameof(ClearStorage));

@@ -122,7 +122,7 @@ namespace Stratis.SmartContracts.CLR
 
             ISmartContractState smartContractState = state.CreateSmartContractState(state, executionContext.GasMeter, message.To, message, state.ContractState);
 
-            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, executionContext.GasMeter, message.Method, contractCode, type);
+            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, executionContext, message.Method, contractCode, type);
 
             bool revert = !result.IsSuccess;
 

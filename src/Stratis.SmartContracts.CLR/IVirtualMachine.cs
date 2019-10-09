@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.CLR
             string typeName = null);
 
         VmExecutionResult ExecuteMethod(ISmartContractState contractState,
-            IGasMeter gasMeter,
+            ExecutionContext executionContext,
             MethodCall methodCall,
             byte[] contractCode,
             string typeName);

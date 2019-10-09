@@ -7,6 +7,7 @@ using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Loader;
+using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
@@ -109,7 +110,8 @@ namespace Stratis.SmartContracts.CLR.Tests
                 () => 1000);
 
             var gasMeter = Mock.Of<IGasMeter>();
-            var result = vm.ExecuteMethod(state, gasMeter, new MethodCall("Test"), new byte[] { }, "");
+            var executionContext = new ExecutionContext(new Observer(gasMeter, new MemoryMeter(100_000)));
+            var result = vm.ExecuteMethod(state, executionContext, new MethodCall("Test"), new byte[] { }, "");
 
             contractAssembly.Verify(c => c.SetObserver(It.Is<Observer>(g => g.GasMeter == gasMeter)), Times.Once);
         }

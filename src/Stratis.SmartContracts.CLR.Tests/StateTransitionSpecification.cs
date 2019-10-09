@@ -135,7 +135,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(typeName);
 
             this.vm.Setup(v =>
-                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName))
+                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), externalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -154,7 +154,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
-                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName),
+                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), externalCallMessage.Method, code, typeName),
                 Times.Once);
 
             Assert.True(result.IsSuccess);
@@ -191,7 +191,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(typeName);
 
             this.vm.Setup(v =>
-                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName))
+                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), externalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -208,7 +208,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
-                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName),
+                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), externalCallMessage.Method, code, typeName),
                 Times.Once);
 
             Assert.True(result.IsFailure);
@@ -475,7 +475,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Setup(sr => sr.GetContractType(internalCallMessage.To))
                 .Returns(typeName);
 
-            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.Method, code, typeName))
+            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), internalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -499,7 +499,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
 
             // Verify the VM was invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.Method, code, typeName), Times.Once);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), internalCallMessage.Method, code, typeName), Times.Once);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == internalCallMessage.From
@@ -532,7 +532,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     internalCallMessage.Method,
                     code,
                     typeName))
@@ -560,7 +560,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     internalCallMessage.Method,
                     code,
                     typeName),
@@ -654,7 +654,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     callMessage.Method,
                     code,
                     null))
@@ -678,7 +678,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     callMessage.Method,
                     code,
                     null),
@@ -714,7 +714,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Setup(sr => sr.GetContractType(contractTransferMessage.To))
                 .Returns(typeName);
 
-            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(),contractTransferMessage.Method, code, typeName))
+            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(),contractTransferMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -738,7 +738,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
 
             // Verify the VM was invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), contractTransferMessage.Method, code, typeName), Times.Once);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), contractTransferMessage.Method, code, typeName), Times.Once);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == contractTransferMessage.From
@@ -770,7 +770,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     contractTransferMessage.Method,
                     code,
                     typeName))
@@ -798,7 +798,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<RuntimeObserver.IGasMeter>(),
+                    It.IsAny<ExecutionContext>(),
                     contractTransferMessage.Method,
                     code,
                     typeName),
@@ -876,7 +876,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractStateRoot.Verify(s => s.GetCode(contractTransferMessage.To), Times.Once);
 
             // Verify the VM was NOT invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), It.IsAny<MethodCall>(), It.IsAny<byte[]>(), It.IsAny<string>()), Times.Never);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<ExecutionContext>(), It.IsAny<MethodCall>(), It.IsAny<byte[]>(), It.IsAny<string>()), Times.Never);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == contractTransferMessage.From

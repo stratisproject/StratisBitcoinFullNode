@@ -168,7 +168,8 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, ExecutionContext executionContext,
+            MethodCall methodCall, byte[] contractCode, string typeName)
         {
             IContract contract;
 
@@ -182,8 +183,7 @@ namespace Stratis.SmartContracts.CLR
             if (assemblyPackage != null)
             {
                 // Set Observer and load and execute.
-                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
-                assemblyPackage.Assembly.SetObserver(observer);
+                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
                 Type type = assemblyPackage.Assembly.GetType(typeName);
 
@@ -212,14 +212,13 @@ namespace Stratis.SmartContracts.CLR
                     // If a nested call takes place it will use a new gas meter instance,
                     // due to the fact that the nested call's gas limit may be specified by the user.
                     // Because of that we can't reuse the same observer for a single execution.
-                    var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
 
                     Result<IContract> contractLoadResult = this.Load(
                         code,
                         typeName,
                         contractState.Message.ContractAddress.ToUint160(),
                         contractState,
-                        observer);
+                        executionContext.Observer);
 
                     if (!contractLoadResult.IsSuccess)
                     {
