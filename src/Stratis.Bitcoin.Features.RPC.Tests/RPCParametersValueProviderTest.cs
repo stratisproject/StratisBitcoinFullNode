@@ -152,7 +152,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             {
                 this.actionContext.ActionDescriptor.Parameters.Add(new ControllerParameterDescriptor { Name = parameterInfo.Name, ParameterInfo = parameterInfo });
             }
-            
 
             var result = this.provider.GetValue("minConfirmations");
 
