@@ -68,9 +68,6 @@ namespace Stratis.SmartContracts.CLR
             {
                 previousObserver = assemblyPackage.Assembly.GetObserver();
 
-                // Set Observer and load and execute.
-                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
-
                 typeToInstantiate = typeName ?? assemblyPackage.ModuleDefinition.ContractType.Name;
 
                 Type type = assemblyPackage.Assembly.GetType(typeToInstantiate);
@@ -130,8 +127,7 @@ namespace Stratis.SmartContracts.CLR
                         code,
                         typeToInstantiate,
                         contractState.Message.ContractAddress.ToUint160(),
-                        contractState,
-                        executionContext.Observer);
+                        contractState);
 
                     if (!contractLoadResult.IsSuccess)
                     {
@@ -152,6 +148,9 @@ namespace Stratis.SmartContracts.CLR
             // Set the code and the Type before the method is invoked
             repository.SetCode(contract.Address, contractCode);
             repository.SetContractType(contract.Address, typeToInstantiate);
+
+            // Set Observer and load and execute.
+            assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
             // Invoke the constructor of the provided contract code
             IContractInvocationResult invocationResult = contract.InvokeConstructor(parameters);
@@ -190,9 +189,6 @@ namespace Stratis.SmartContracts.CLR
             {
                 previousObserver = assemblyPackage.Assembly.GetObserver();
 
-                // Set new Observer and load and execute.
-                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
-
                 Type type = assemblyPackage.Assembly.GetType(typeName);
 
                 uint160 address = contractState.Message.ContractAddress.ToUint160();
@@ -225,8 +221,7 @@ namespace Stratis.SmartContracts.CLR
                         code,
                         typeName,
                         contractState.Message.ContractAddress.ToUint160(),
-                        contractState,
-                        executionContext.Observer);
+                        contractState);
 
                     if (!contractLoadResult.IsSuccess)
                     {
@@ -243,6 +238,9 @@ namespace Stratis.SmartContracts.CLR
             }
 
             this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
+
+            // Set new Observer and load and execute.
+            assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
             IContractInvocationResult invocationResult = contract.Invoke(methodCall);
 
@@ -282,8 +280,7 @@ namespace Stratis.SmartContracts.CLR
         private Result<IContract> Load(ContractByteCode byteCode,
             string typeName,
             uint160 address,
-            ISmartContractState contractState,
-            Observer observer)
+            ISmartContractState contractState)
         {
             Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(byteCode);
 
@@ -305,13 +302,6 @@ namespace Stratis.SmartContracts.CLR
                 this.logger.LogDebug(typeNotFoundError);
 
                 return Result.Fail<IContract>(typeNotFoundError);
-            }
-
-            if (!contractAssembly.SetObserver(observer))
-            {
-                const string setObserverError = "Error setting observer!";
-
-                return Result.Fail<IContract>(setObserverError);
             }
 
             IContract contract;
