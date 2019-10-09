@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Reflection;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
+using Stratis.SmartContracts.CLR.ILRewrite;
+using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.Core.State;
@@ -220,6 +224,72 @@ public class Contract : SmartContract
 
             Assert.Null(result.Error);
             Assert.Null(this.state.GetStorageValue(contractAddress, keyToClear));
+        }
+
+        [Fact]
+        public void VM_ExecuteContract_CachedAssembly_WithExistingObserver()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(
+                @"
+using System;
+using Stratis.SmartContracts;
+
+public class Contract : SmartContract
+{
+    public Contract(ISmartContractState state) : base(state) {}
+
+    public void Test() {}
+}
+");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
+            byte[] rewrittenCode;
+
+            // Rewrite the assembly to have an observer.
+            using (IContractModuleDefinition moduleDefinition = this.context.ModuleDefinitionReader.Read(contractExecutionCode).Value)
+            {
+                var rewriter = new ObserverInstanceRewriter();
+
+                moduleDefinition.Rewrite(rewriter);
+
+                rewrittenCode = moduleDefinition.ToByteCode().Value;
+            }
+            
+            var contractAssembly = new ContractAssembly(Assembly.Load(rewrittenCode));
+
+            // Cache the assembly.
+            this.context.ContractCache.Store(new uint256(codeHash), new CachedAssemblyPackage(contractAssembly, null));
+
+            // Set an observer on the cached rewritten assembly.
+            var initialObserver = new Observer(new GasMeter((Gas)(this.gasMeter.GasAvailable + 1000)), new MemoryMeter(100_000));
+
+            Assert.True(contractAssembly.SetObserver(initialObserver));
+            
+            var callData = new MethodCall("Test");
+
+            // Run the execution with an empty gas meter, which means it should fail if the correct observer is used.
+            var emptyGasMeter = new GasMeter((Gas)0);
+
+            var executionContext = new ExecutionContext(new Observer(emptyGasMeter, new MemoryMeter(100_000)));
+
+            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                executionContext,
+                callData,
+                contractExecutionCode,
+                "Contract");
+
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's still cached.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset to the original.
+            Assert.Same(initialObserver,cachedAssembly.Assembly.GetObserver());
+            Assert.False(result.IsSuccess);
+            Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
     }
 
