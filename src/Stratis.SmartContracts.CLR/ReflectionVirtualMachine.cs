@@ -66,6 +66,9 @@ namespace Stratis.SmartContracts.CLR
 
             if (assemblyPackage != null)
             {
+                // If the assembly is in the cache, keep a reference to its observer around.
+                // We might be in a nested execution for the same assembly,
+                // in which case we need to restore the previous observer later.
                 previousObserver = assemblyPackage.Assembly.GetObserver();
 
                 typeToInstantiate = typeName ?? assemblyPackage.ModuleDefinition.ContractType.Name;
@@ -187,6 +190,9 @@ namespace Stratis.SmartContracts.CLR
 
             if (assemblyPackage != null)
             {
+                // If the assembly is in the cache, keep a reference to its observer around.
+                // We might be in a nested execution for the same assembly,
+                // in which case we need to restore the previous observer later.
                 previousObserver = assemblyPackage.Assembly.GetObserver();
 
                 Type type = assemblyPackage.Assembly.GetType(typeName);
