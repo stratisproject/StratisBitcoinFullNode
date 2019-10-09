@@ -1,8 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Features.RPC.ModelBinders;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -56,10 +58,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (key == null)
                 return null;
 
-            if (this.context.ActionContext.RouteData == null)
-                return null;
-
-            if ((this.context.ActionContext.RouteData.Values == null) || (this.context.ActionContext.RouteData.Values.Count == 0))
+            if (this.context.ActionContext.RouteData?.Values == null || (this.context.ActionContext.RouteData.Values.Count == 0))
                 return null;
 
             var req = this.context.ActionContext.RouteData.Values["req"] as JObject;
@@ -78,8 +77,18 @@ namespace Stratis.Bitcoin.Features.RPC
             if ((index < 0) || (index >= parameters.Count))
                 return null;
 
-            JToken jtoken = parameters[index];
-            return jtoken == null ? null : jtoken.ToString();
+            JToken jToken = parameters[index];
+            string value = jToken?.ToString();
+
+            if (parameter.ParameterType != typeof(bool)) return value;
+
+            bool hasIntToBoolAttribute = (parameter as ControllerParameterDescriptor)?.ParameterInfo?.CustomAttributes?.Any(a => a.AttributeType == typeof(IntToBoolAttribute)) ?? false;
+            if (hasIntToBoolAttribute && int.TryParse(value, out int number))
+            {
+                return number != 0 ? "true" : "false";
+            }
+
+            return value;
         }
     }
 }
