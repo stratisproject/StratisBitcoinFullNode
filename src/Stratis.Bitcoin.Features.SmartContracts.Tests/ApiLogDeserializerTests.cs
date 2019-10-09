@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
@@ -25,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Deserialize_Basic_Log_Success()
         {
-            var network = new SmartContractsPoATest();
+            var network = new SmartContractsRegTest();
             var primitiveSerializer = new ContractPrimitiveSerializer(network);
 
             var testStruct = new TestLog
