@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         public const string InjectedTypeName = "<RuntimeObserverInstance>";
         public const string MethodName = "SetObserver";
         public const string ParameterName = "observer";
-        private const string InjectedPropertyName = "Instance";
+        public const string InjectedPropertyName = "Instance";
 
         /// <summary>
         /// The individual rewriters to be applied to each method, which use the injected type.

@@ -61,5 +61,16 @@ namespace Stratis.SmartContracts.CLR.Loader
 
             return true;
         }
+
+        /// <summary>
+        /// Returns the assembly's <see cref="Observer"/> for the current thread, or null if it has not been set.
+        /// </summary>
+        /// <returns></returns>
+        public Observer GetObserver()
+        {
+            return (Observer) this.GetObserverType()?
+                .GetField(ObserverInstanceRewriter.InjectedPropertyName, BindingFlags.NonPublic | BindingFlags.Static)?
+                .GetValue(null);
+        }
     }
 }

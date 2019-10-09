@@ -11,5 +11,7 @@ namespace Stratis.SmartContracts.CLR.Loader
         Type GetType(string name);
 
         bool SetObserver(Observer observer);
+
+        Observer GetObserver();
     }
 }

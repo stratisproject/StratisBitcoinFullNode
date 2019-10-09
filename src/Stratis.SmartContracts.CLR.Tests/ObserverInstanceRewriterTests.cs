@@ -431,7 +431,7 @@ public static class Other
 
             var threads = new Thread[threadCount];
 
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < threadCount; i++)
             {
                 // Create a fake observer with a counter.
                 var observer = new Observer(new GasMeter((Gas)1000000), new MemoryMeter(1000000));
@@ -443,6 +443,8 @@ public static class Other
                 Thread newThread = new Thread(() =>
                 {
                     assembly.SetObserver(observer);
+
+                    Assert.Same(observer, assembly.GetObserver());
                     var callData = new MethodCall("TestMethod", new object[] { 1 });
                     IContract contract = Contract.CreateUninitialized(assembly.GetType(module.ContractType.Name), this.state, null);
 
@@ -465,8 +467,8 @@ public static class Other
 
             foreach (Observer observer in observers)
             {
-                Assert.Equal(observers[1].GasMeter.GasConsumed, observer.GasMeter.GasConsumed);
-                Assert.Equal(observers[1].MemoryMeter.MemoryConsumed, observer.MemoryMeter.MemoryConsumed);
+                Assert.Equal(observers[0].GasMeter.GasConsumed, observer.GasMeter.GasConsumed);
+                Assert.Equal(observers[0].MemoryMeter.MemoryConsumed, observer.MemoryMeter.MemoryConsumed);
             }
         }
 
