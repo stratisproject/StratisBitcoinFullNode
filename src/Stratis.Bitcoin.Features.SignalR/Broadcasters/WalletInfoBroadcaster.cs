@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                     IList<AccountBalanceModel> accountBalanceModels = new List<AccountBalanceModel>();
                     foreach (var balance in balances)
                     {
-                        HdAccount account = balance.Account;
+                        HdAccount account = wallet.GetAccount(balance.Account.Name);
 
                         var accountBalanceModel = new AccountBalanceModel
                         {
