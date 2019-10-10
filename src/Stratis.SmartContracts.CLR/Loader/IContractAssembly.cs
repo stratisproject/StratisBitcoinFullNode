@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Stratis.SmartContracts.CLR.Loader
@@ -8,5 +9,11 @@ namespace Stratis.SmartContracts.CLR.Loader
         Assembly Assembly { get; }
 
         Type GetType(string name);
+
+        Type GetDeployedType();
+
+        IEnumerable<MethodInfo> GetPublicMethods();
+
+        IEnumerable<PropertyInfo> GetPublicGetterProperties();
     }
 }

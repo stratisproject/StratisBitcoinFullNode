@@ -1,11 +1,20 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.SmartContracts.Core.Receipts;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -27,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         private IFullNode fullNode;
+        private SwaggerUIOptions uiOptions;
 
         public IConfigurationRoot Configuration { get; }
 
@@ -97,7 +107,15 @@ namespace Stratis.Bitcoin.Features.Api
             services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
             // Register the Swagger generator. This will use the options we injected just above.
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("contracts", new Info { Title = "Contract API", Version = "1" });
+            });
+
+            // Hack to be able to access and modify the options object configured here in SwaggerUIContractListMiddleware.
+            services.AddSingleton(_ => this.uiOptions);
+
+            services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -116,6 +134,8 @@ namespace Stratis.Bitcoin.Features.Api
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
+            app.UseMiddleware<SwaggerUIContractListMiddleware>();
+
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.)
             app.UseSwaggerUI(c =>
             {
@@ -126,6 +146,9 @@ namespace Stratis.Bitcoin.Features.Api
                 {
                     c.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
                 }
+
+                // Hack to be able to access and modify the options object configured here in SwaggerUIContractListMiddleware.
+                this.uiOptions = c;
             });
         }
     }
