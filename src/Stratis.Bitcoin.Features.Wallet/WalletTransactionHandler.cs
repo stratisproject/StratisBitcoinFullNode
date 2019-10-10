@@ -22,6 +22,11 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
+        /// <summary>
+        /// We will assume that we're never going to have a fee over 1 STRAT.
+        /// </summary>
+        private static readonly Money PretendMaxFee = Money.Coins(1);
+
         private readonly ILogger logger;
 
         private readonly Network network;
@@ -335,7 +340,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                if (sum > totalToSend)
+
+                // Get to our total, and then check that we're a little bit over to account for tx fees.
+                // If it gets over totalToSend but doesn't hit this break, that's fine too.
+                // The TransactionBuilder will have a go with what we give it, and throw NotEnoughFundsException accurately if it needs to.
+                if (sum > totalToSend + PretendMaxFee)
                     break;
 
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));

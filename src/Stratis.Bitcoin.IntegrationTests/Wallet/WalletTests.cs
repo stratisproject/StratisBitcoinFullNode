@@ -1,5 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using CSharpFunctionalExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -11,6 +14,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -203,6 +207,66 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
+        public void BuildTransaction_From_ManyUtxos_EnoughFundsForFee()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+
+                int maturity = (int) node1.FullNode.Network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(node1, maturity + 1 + 15);
+
+                int currentBestHeight = maturity + 1 + 15;
+
+                // The mining should add coins to the wallet.
+                long total = node1.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * 16 * 50, total);
+
+                // Sync all nodes.
+                TestHelper.ConnectAndSync(node1, node2);
+
+                const int utxosToSend = 500;
+                const int howManyTimes = 8;
+
+                for (int i = 0; i < howManyTimes; i++)
+                {
+                    HdAddress sendto = node2.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
+                    SendManyUtxosTransaction(node1, sendto.ScriptPubKey, Money.FromUnit(907700, MoneyUnit.Satoshi), utxosToSend);
+                }
+
+                TestBase.WaitLoop(() => node1.CreateRPCClient().GetRawMempool().Length == howManyTimes);
+                TestHelper.MineBlocks(node1, 1);
+                TestHelper.WaitForNodeToSync(node1, node2);
+
+                var transactionsToSpend = node2.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName);
+                Assert.Equal(utxosToSend * howManyTimes, transactionsToSpend.Count());
+
+                // Firstly, build a tx with value 1. Previously this would fail as the WalletTransactionHandler didn't pass enough UTXOs.
+                IActionResult result = node2.FullNode.NodeController<WalletController>().BuildTransaction(
+                    new BuildTransactionRequest
+                    {
+                        WalletName = WalletName,
+                        AccountName = "account 0",
+                        FeeAmount = "0.1",
+                        Password = Password,
+                        Recipients = new List<RecipientModel>
+                        {
+                            new RecipientModel
+                            {
+                                Amount = "1",
+                                DestinationAddress = node1.FullNode.WalletManager()
+                                    .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
+                            }
+                        }
+                    });
+
+                JsonResult jsonResult = (JsonResult) result;
+                Assert.NotNull(((WalletBuildTransactionModel)jsonResult.Value).TransactionId);
+            }
+        }
+
+        [Fact]
         public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -347,6 +411,38 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             string testWalletPath = Path.Combine(path, "test.wallet.json");
             if (!File.Exists(testWalletPath))
                 File.Copy("Data/test.wallet.json", testWalletPath);
+        }
+
+        private static Result<WalletSendTransactionModel> SendManyUtxosTransaction(CoreNode node, Script scriptPubKey, Money amount, int utxos = 1)
+        {
+            Recipient[] recipients = new Recipient[utxos];
+            for (int i = 0; i < recipients.Length; i++)
+            {
+                recipients[i] = new Recipient { Amount = amount, ScriptPubKey = scriptPubKey };
+            }
+
+            var txBuildContext = new TransactionBuildContext(node.FullNode.Network)
+            {
+                AccountReference = new WalletAccountReference(WalletName, "account 0"),
+                MinConfirmations = 1,
+                FeeType = FeeType.Medium,
+                WalletPassword = Password,
+                Recipients = recipients.ToList()
+            };
+
+            Transaction trx = (node.FullNode.NodeService<IWalletTransactionHandler>() as IWalletTransactionHandler).BuildTransaction(txBuildContext);
+
+            // Broadcast to the other node.
+
+            IActionResult result = node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            if (result is ErrorResult errorResult)
+            {
+                var errorResponse = (ErrorResponse)errorResult.Value;
+                return Result.Fail<WalletSendTransactionModel>(errorResponse.Errors[0].Message);
+            }
+
+            JsonResult response = (JsonResult)result;
+            return Result.Ok((WalletSendTransactionModel)response.Value);
         }
     }
 }
