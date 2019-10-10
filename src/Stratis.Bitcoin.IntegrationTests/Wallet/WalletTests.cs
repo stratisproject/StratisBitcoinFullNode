@@ -241,10 +241,32 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 var transactionsToSpend = node2.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName);
                 Assert.Equal(utxosToSend * howManyTimes, transactionsToSpend.Count());
 
+                // Firstly, build a tx with value 1. Previously this would fail as the WalletTransactionHandler didn't pass enough UTXOs.
+                IActionResult result = node2.FullNode.NodeController<WalletController>().BuildTransaction(
+                    new BuildTransactionRequest
+                    {
+                        WalletName = WalletName,
+                        AccountName = "account 0",
+                        FeeAmount = "0.1",
+                        Password = Password,
+                        Recipients = new List<RecipientModel>
+                        {
+                            new RecipientModel
+                            {
+                                Amount = "1",
+                                DestinationAddress = node1.FullNode.WalletManager()
+                                    .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
+                            }
+                        }
+                    });
+
+                JsonResult jsonResult = (JsonResult) result;
+                Assert.NotNull(((WalletBuildTransactionModel)jsonResult.Value).TransactionId);
+
                 Money totalNode2Owns = transactionsToSpend.Sum(x => x.Transaction.Amount);
 
-                // Build a tx spending many utxos within 30 seconds.
-                IActionResult buildResult = TestHelper.RunCodeWithTimeout<IActionResult>(30, () => 
+                // Now build a tx using almost all of the UTXOs, within 30 seconds. Very long, we can reduce later.
+                IActionResult result2 = TestHelper.RunCodeWithTimeout<IActionResult>(30, () =>
                     node2.FullNode.NodeController<WalletController>().BuildTransaction(new BuildTransactionRequest
                     {
                         WalletName = WalletName,
@@ -255,13 +277,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         {
                             new RecipientModel
                             {
-                                Amount = (totalNode2Owns - Money.Coins(0.2m)).ToString(),
+                                Amount = (totalNode2Owns - Money.Coins(1m)).ToString(),
                                 DestinationAddress = node1.FullNode.WalletManager()
                                     .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
                             }
                         }
                     }));
 
+                JsonResult jsonResult2 = (JsonResult)result2;
+                Assert.NotNull(((WalletBuildTransactionModel)jsonResult2.Value).TransactionId);
             }
         }
 
