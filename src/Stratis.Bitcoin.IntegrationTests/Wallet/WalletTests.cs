@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void BuildTransaction_From_ManyUtxos()
+        public void BuildTransaction_From_ManyUtxos_EnoughFundsForFee()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -262,30 +262,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 JsonResult jsonResult = (JsonResult) result;
                 Assert.NotNull(((WalletBuildTransactionModel)jsonResult.Value).TransactionId);
-
-                Money totalNode2Owns = transactionsToSpend.Sum(x => x.Transaction.Amount);
-
-                // Now build a tx using almost all of the UTXOs, within 30 seconds. Very long, we can reduce later.
-                IActionResult result2 = TestHelper.RunCodeWithTimeout<IActionResult>(30, () =>
-                    node2.FullNode.NodeController<WalletController>().BuildTransaction(new BuildTransactionRequest
-                    {
-                        WalletName = WalletName,
-                        AccountName = "account 0",
-                        FeeAmount = "0.1",
-                        Password = Password,
-                        Recipients = new List<RecipientModel>
-                        {
-                            new RecipientModel
-                            {
-                                Amount = (totalNode2Owns - Money.Coins(1m)).ToString(),
-                                DestinationAddress = node1.FullNode.WalletManager()
-                                    .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
-                            }
-                        }
-                    }));
-
-                JsonResult jsonResult2 = (JsonResult)result2;
-                Assert.NotNull(((WalletBuildTransactionModel)jsonResult2.Value).TransactionId);
             }
         }
 
