@@ -14,6 +14,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
@@ -137,6 +139,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         // After setting up, invoke any additional options which can replace services as required.
                         options?.Invoke(new SmartContractOptions(services, fullNodeBuilder.Network));
+
+                        // Controllers, necessary for DIing into the dynamic controller api.
+                        // Use AddScoped for instance-per-request lifecycle, ref. https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.2#scoped
+                        services.AddScoped<SmartContractsController>();
+                        services.AddScoped<SmartContractWalletController>();
+
                     });
             });
 
