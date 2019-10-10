@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.Features.RPC
             using (StreamReader streamReader = new StreamReader(context.HttpContext.Request.Body))
             using (JsonTextReader textReader = new JsonTextReader(streamReader))
             {
+                // Ensure floats are parsed as decimals and not as doubles.
+                textReader.FloatParseHandling = FloatParseHandling.Decimal;
                 request = await JObject.LoadAsync(textReader);
             }
             
