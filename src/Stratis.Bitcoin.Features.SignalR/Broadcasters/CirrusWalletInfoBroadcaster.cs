@@ -17,14 +17,14 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
-    public class WalletInfoBroadcaster : ClientBroadcasterBase
+    public class CirrusWalletInfoBroadcaster : ClientBroadcasterBase
     {
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
         private readonly IConsensusManager consensusManager;
         private readonly ChainIndexer chainIndexer;
 
-        public WalletInfoBroadcaster(
+        public CirrusWalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IConsensusManager consensusManager,
@@ -62,7 +62,19 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                             HdPath = account.HdPath,
                             AmountConfirmed = balance.AmountConfirmed,
                             AmountUnconfirmed = balance.AmountUnconfirmed,
-                            SpendableAmount = balance.SpendableAmount
+                            SpendableAmount = balance.SpendableAmount,
+                            Addresses = account.GetCombinedAddresses().Select(address =>
+                            {
+                                (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                                return new AddressModel
+                                {
+                                    Address = address.Address,
+                                    IsUsed = address.Transactions.Any(),
+                                    IsChange = address.IsChangeAddress(),
+                                    AmountConfirmed = confirmedAmount,
+                                    AmountUnconfirmed = unConfirmedAmount
+                                };
+                            })
                         };
 
                         accountBalanceModels.Add(accountBalanceModel);
