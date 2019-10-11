@@ -243,19 +243,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
 
             var signingKeys = new HashSet<ISecret>();
-            var added = new HashSet<HdAddress>();
-            foreach (Coin coinSpent in coinsSpent)
+            Dictionary<OutPoint,UnspentOutputReference> outpointLookup = context.UnspentOutputs.ToDictionary(o => o.ToOutPoint(), o => o);
+            IEnumerable<string> uniqueHdPaths = coinsSpent.Select(s => s.Outpoint).Select(o => outpointLookup[o].Address.HdPath).Distinct();
+
+            foreach (string hdPath in uniqueHdPaths)
             {
-                //obtain the address relative to this coin (must be improved)
-                HdAddress address = context.UnspentOutputs.First(output => output.ToOutPoint() == coinSpent.Outpoint).Address;
-
-                if (added.Contains(address))
-                    continue;
-
-                ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
+                ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(hdPath));
                 BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
                 signingKeys.Add(addressPrivateKey);
-                added.Add(address);
             }
 
             context.TransactionBuilder.AddKeys(signingKeys.ToArray());
