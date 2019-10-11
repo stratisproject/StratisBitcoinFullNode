@@ -217,9 +217,11 @@ namespace Stratis.Bitcoin.Features.RPC
                     throw new Exception("Method not found");
 
                 responseMemoryStream.Position = 0;
-                using (StreamReader streamReader = new StreamReader(responseMemoryStream))
-                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                using (var streamReader = new StreamReader(responseMemoryStream))
+                using (var textReader = new JsonTextReader(streamReader))
                 {
+                    // Ensure floats are parsed as decimals and not as doubles.
+                    textReader.FloatParseHandling = FloatParseHandling.Decimal;
                     response = await JObject.LoadAsync(textReader);
                 }
             }
@@ -228,9 +230,12 @@ namespace Stratis.Bitcoin.Features.RPC
                 await this.HandleRpcInvokeExceptionAsync(context, ex);
 
                 context.Response.Body.Position = 0;
-                using (StreamReader streamReader = new StreamReader(context.Response.Body, Encoding.Default, true, 1024, true))
-                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                using (var streamReader = new StreamReader(context.Response.Body, Encoding.Default, true, 1024, true))
+                using (var textReader = new JsonTextReader(streamReader))
                 {
+                    // Ensure floats are parsed as decimals and not as doubles.
+                    textReader.FloatParseHandling = FloatParseHandling.Decimal;
+
                     string val = streamReader.ReadToEnd();
                     context.Response.Body.Position = 0;
                     response = await JObject.LoadAsync(textReader);
