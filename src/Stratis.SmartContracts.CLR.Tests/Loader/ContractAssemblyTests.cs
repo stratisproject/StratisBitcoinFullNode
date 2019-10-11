@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Linq;
+using System.Reflection;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Xunit;
@@ -29,6 +31,90 @@ namespace Stratis.SmartContracts.CLR.Tests.Loader
 
             Assert.NotNull(type);
             Assert.Equal("Test", type.Name);
+        }
+
+        [Fact]
+        public void GetDeployedType_Returns_Correct_Type()
+        {
+            var code = @"
+namespace Stratis.SmartContracts.CLR.Tests.Loader
+{
+    [Deploy]
+    public class Test : SmartContract
+    {
+        public Test(ISmartContractState state)
+            : base(state)
+        { }
+    }
+
+    public class NotDeployedType : SmartContract
+    {
+        public NotDeployedType(ISmartContractState state)
+            :base(state)
+        { }
+    }
+}
+";
+            var assemblyLoadResult = this.loader.Load((ContractByteCode) ContractCompiler.Compile(code).Compilation);
+
+            var contractAssembly = assemblyLoadResult.Value;
+
+            var type = contractAssembly.GetDeployedType();
+
+            Assert.NotNull(type);
+            Assert.Equal("Test", type.Name);
+        }
+
+        [Fact]
+        public void GetDeployedType_NoAttribute_Returns_Correct_Type()
+        {
+            var code = @"
+namespace Stratis.SmartContracts.CLR.Tests.Loader
+{
+    public class Test : SmartContract
+    {
+        public Test(ISmartContractState state)
+            : base(state)
+        { }
+    }
+}
+";
+            var assemblyLoadResult = this.loader.Load((ContractByteCode)ContractCompiler.Compile(code).Compilation);
+
+            var contractAssembly = assemblyLoadResult.Value;
+
+            var type = contractAssembly.GetDeployedType();
+
+            Assert.NotNull(type);
+            Assert.Equal("Test", type.Name);
+        }
+
+        [Fact]
+        public void GetPublicMethodsAndProperties_Returns_Correct_Properties()
+        {
+            var code = @"
+namespace Stratis.SmartContracts.CLR.Tests.Loader
+{
+    public class Test : SmartContract
+    {
+        public Test(ISmartContractState state)
+            : base(state)
+        { }
+
+        public bool TestPublicProperty {get; set;}
+        public bool TestPublicPropertyPrivateSetter {get; private set;}
+        private bool TestPrivateProperty {get; set;}
+    }
+}
+";
+            var assemblyLoadResult = this.loader.Load((ContractByteCode)ContractCompiler.Compile(code).Compilation);
+
+            var contractAssembly = assemblyLoadResult.Value;
+
+            var methodsAndProperties = contractAssembly.GetPublicGetterProperties();
+
+            Assert.NotNull(methodsAndProperties);
+            Assert.Equal(2, methodsAndProperties.Count());
         }
     }
 }
