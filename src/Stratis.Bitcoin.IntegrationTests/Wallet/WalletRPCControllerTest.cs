@@ -133,12 +133,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
                 // Check transaction exists in block #145.
-                BlockTransactionDetailsModel block = await $"http://localhost:{sendingNode.ApiPort}/api"
+                BlockTransactionDetailsModel blockTransactionDetailsModel = await $"http://localhost:{sendingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
                     .SetQueryParams(new { hash = "b8ab1d66febfde4c26d0b4755f7def50a63e06267cefc6d6836651fa8910babc", outputJson = true, showtransactiondetails = true })
                     .GetJsonAsync<BlockTransactionDetailsModel>();
 
-                block.Transactions.Should().ContainSingle(t => t.TxId == txId);
+                blockTransactionDetailsModel.Transactions.Should().ContainSingle(t => t.TxId == txId);
 
                 // Act.
                 RPCClient rpc = sendingNode.CreateRPCClient();
@@ -153,8 +153,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 result.TransactionId.Should().Be(uint256.Parse(txId));
                 result.BlockHash.ToString().Should().Be("b8ab1d66febfde4c26d0b4755f7def50a63e06267cefc6d6836651fa8910babc");
                 result.BlockIndex.Should().Be(0);
-                result.BlockTime.Should().Be(block.Time.ToUnixTimeSeconds());
-                result.TimeReceived.Should().BeLessOrEqualTo(block.Time.ToUnixTimeSeconds());
+                result.BlockTime.Should().Be(blockTransactionDetailsModel.Time);
+                result.TimeReceived.Should().BeLessOrEqualTo(blockTransactionDetailsModel.Time);
                 result.Details.Should().ContainSingle();
 
                 GetTransactionDetailsModel details = result.Details.Single();
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AppendPathSegment("consensus/getbestblockhash")
                     .GetJsonAsync<string>();
 
-                BlockModel tip = await $"http://localhost:{sendingNode.ApiPort}/api"
+                BlockModel blockModelAtTip = await $"http://localhost:{sendingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
                     .SetQueryParams(new { hash = lastBlockHash, outputJson = true })
                     .GetJsonAsync<BlockModel>();
@@ -362,9 +362,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultSendingWallet.Confirmations.Should().Be(1);
                 resultSendingWallet.Isgenerated.Should().BeNull();
                 resultSendingWallet.TransactionId.Should().Be(txId);
-                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultSendingWallet.BlockIndex.Should().Be(1);
-                resultSendingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
+                resultSendingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
                 resultSendingWallet.TimeReceived.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultSendingWallet.TransactionTime.Should().Be(trx.Time);
                 resultSendingWallet.Details.Count.Should().Be(1);
@@ -382,9 +382,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultReceivingWallet.Confirmations.Should().Be(1);
                 resultReceivingWallet.Isgenerated.Should().BeNull();
                 resultReceivingWallet.TransactionId.Should().Be(txId);
-                resultReceivingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultReceivingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultReceivingWallet.BlockIndex.Should().Be(1);
-                resultReceivingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
+                resultReceivingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
                 resultReceivingWallet.TimeReceived.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultReceivingWallet.TransactionTime.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultReceivingWallet.Details.Should().ContainSingle();
@@ -454,7 +454,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AppendPathSegment("consensus/getbestblockhash")
                     .GetJsonAsync<string>();
 
-                BlockModel tip = await $"http://localhost:{sendingNode.ApiPort}/api"
+                BlockModel blockModelAtTip = await $"http://localhost:{sendingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
                     .SetQueryParams(new { hash = lastBlockHash, outputJson = true })
                     .GetJsonAsync<BlockModel>();
@@ -474,9 +474,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultSendingWallet.Confirmations.Should().Be(1);
                 resultSendingWallet.Isgenerated.Should().BeNull();
                 resultSendingWallet.TransactionId.Should().Be(txId);
-                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultSendingWallet.BlockIndex.Should().Be(1);
-                resultSendingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
+                resultSendingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
                 resultSendingWallet.TimeReceived.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultSendingWallet.TransactionTime.Should().Be(trx.Time);
                 resultSendingWallet.Details.Count.Should().Be(2);
@@ -502,9 +502,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultReceivingWallet.Confirmations.Should().Be(1);
                 resultReceivingWallet.Isgenerated.Should().BeNull();
                 resultReceivingWallet.TransactionId.Should().Be(txId);
-                resultReceivingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultReceivingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultReceivingWallet.BlockIndex.Should().Be(1);
-                resultReceivingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
+                resultReceivingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
                 resultReceivingWallet.TimeReceived.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultReceivingWallet.TransactionTime.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultReceivingWallet.Details.Count.Should().Be(2);
@@ -579,7 +579,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AppendPathSegment("consensus/getbestblockhash")
                     .GetJsonAsync<string>();
 
-                BlockModel tip = await $"http://localhost:{sendingNode.ApiPort}/api"
+                BlockModel blockModelAtTip = await $"http://localhost:{sendingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
                     .SetQueryParams(new { hash = lastBlockHash, outputJson = true })
                     .GetJsonAsync<BlockModel>();
@@ -596,9 +596,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultSendingWallet.Confirmations.Should().Be(1);
                 resultSendingWallet.Isgenerated.Should().BeNull();
                 resultSendingWallet.TransactionId.Should().Be(txId);
-                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultSendingWallet.BlockIndex.Should().Be(1);
-                resultSendingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
+                resultSendingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
                 resultSendingWallet.TimeReceived.Should().BeGreaterThan((DateTimeOffset.Now - TimeSpan.FromMinutes(1)).ToUnixTimeSeconds());
                 resultSendingWallet.TransactionTime.Should().Be(trx.Time);
                 resultSendingWallet.Details.Count.Should().Be(2);
@@ -671,7 +671,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AppendPathSegment("consensus/getbestblockhash")
                     .GetJsonAsync<string>();
 
-                BlockModel tip = await $"http://localhost:{sendingNode.ApiPort}/api"
+                BlockModel blockModelAtTip = await $"http://localhost:{sendingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
                     .SetQueryParams(new { hash = lastBlockHash, outputJson = true })
                     .GetJsonAsync<BlockModel>();
@@ -688,10 +688,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultSendingWallet.Confirmations.Should().Be(1);
                 resultSendingWallet.Isgenerated.Should().BeNull();
                 resultSendingWallet.TransactionId.Should().Be(txId);
-                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(tip.Hash));
+                resultSendingWallet.BlockHash.Should().Be(uint256.Parse(blockModelAtTip.Hash));
                 resultSendingWallet.BlockIndex.Should().Be(1);
-                resultSendingWallet.BlockTime.Should().Be(tip.Time.ToUnixTimeSeconds());
-                resultSendingWallet.TimeReceived.Should().BeLessOrEqualTo(tip.Time.ToUnixTimeSeconds());
+                resultSendingWallet.BlockTime.Should().Be(blockModelAtTip.Time);
+                resultSendingWallet.TimeReceived.Should().BeLessOrEqualTo(blockModelAtTip.Time);
                 resultSendingWallet.TransactionTime.Should().Be(trx.Time);
                 resultSendingWallet.Details.Count.Should().Be(1);
 
