@@ -9,6 +9,11 @@
         public string ScriptPubKey { get; set; }
         public string PubKeyScript;
 
+        public string HdPath(int coinType)
+        {
+            return $"m/44'/{coinType}'/{this.AccountIndex}'/{this.AddressType}/{this.AddressIndex}";
+        }
+
         public override bool Equals(object obj)
         {
             var address = (AddressIdentifier)obj;

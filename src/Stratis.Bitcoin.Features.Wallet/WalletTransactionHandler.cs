@@ -239,17 +239,33 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!context.Sign)
                 return;
 
-            Wallet wallet = this.walletManager.GetWallet(context.AccountReference.WalletName);
+            AddressIdentifier addressFilter = this.walletManager.WalletRepository.GetAddressIdentifier(context.AccountReference.WalletName, context.AccountReference.AccountName);
+
+            IEnumerable<string> HDPaths()
+            {
+                IWalletTransactionReadOnlyLookup transactionLookup = this.walletManager.WalletRepository.GetWalletTransactionLookup(context.AccountReference.WalletName);
+
+                foreach (OutPoint outPoint in coinsSpent.Select(s => s.Outpoint))
+                {
+                    if (transactionLookup.Contains(outPoint, out HashSet<AddressIdentifier> addresses))
+                    {
+                        AddressIdentifier id = addresses.FirstOrDefault(a => a.WalletId == addressFilter.WalletId && a.AccountIndex == addressFilter.AccountIndex);
+                        if (id != null)
+                        {
+                            yield return id.HdPath(this.network.Consensus.CoinType);
+                        }
+                    }
+                }
+            }
+
             ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
 
             var signingKeys = new HashSet<ISecret>();
-            Dictionary<OutPoint,UnspentOutputReference> outpointLookup = context.UnspentOutputs.ToDictionary(o => o.ToOutPoint(), o => o);
-            IEnumerable<string> uniqueHdPaths = coinsSpent.Select(s => s.Outpoint).Select(o => outpointLookup[o].Address.HdPath).Distinct();
 
-            foreach (string hdPath in uniqueHdPaths)
+            foreach (string hdPath in HDPaths().Distinct())
             {
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(hdPath));
-                BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
+                BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(this.network);
                 signingKeys.Add(addressPrivateKey);
             }
 
