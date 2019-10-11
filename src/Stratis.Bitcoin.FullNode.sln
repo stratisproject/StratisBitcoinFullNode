@@ -176,7 +176,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.Diagnostic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FodyNlogAdapter", "FodyNlogAdapter\FodyNlogAdapter.csproj", "{2576847F-BFFC-4F0A-B883-28F2E38FEC7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Features.Collateral", "Stratis.Features.Collateral\Stratis.Features.Collateral.csproj", "{AFEA4601-7938-44D2-A295-DBA022069F5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.Collateral", "Stratis.Features.Collateral\Stratis.Features.Collateral.csproj", "{AFEA4601-7938-44D2-A295-DBA022069F5B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.LocalSmartContracts.Networks", "Stratis.LocalSmartContracts.Networks\Stratis.LocalSmartContracts.Networks.csproj", "{F1E239C7-E6B9-4CB3-AC32-181B0B7253E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.LocalSmartContracts.MinerD", "Stratis.LocalSmartContracts.MinerD\Stratis.LocalSmartContracts.MinerD.csproj", "{27F3987B-8E8D-4C40-B5B7-01671B042D45}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.LocalSmartContracts.NodeD", "Stratis.LocalSmartContracts.NodeD\Stratis.LocalSmartContracts.NodeD.csproj", "{F1313E44-15AE-4BC4-924C-34B2B8F44625}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -464,6 +470,18 @@ Global
 		{AFEA4601-7938-44D2-A295-DBA022069F5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFEA4601-7938-44D2-A295-DBA022069F5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFEA4601-7938-44D2-A295-DBA022069F5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E239C7-E6B9-4CB3-AC32-181B0B7253E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E239C7-E6B9-4CB3-AC32-181B0B7253E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E239C7-E6B9-4CB3-AC32-181B0B7253E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E239C7-E6B9-4CB3-AC32-181B0B7253E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27F3987B-8E8D-4C40-B5B7-01671B042D45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27F3987B-8E8D-4C40-B5B7-01671B042D45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27F3987B-8E8D-4C40-B5B7-01671B042D45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27F3987B-8E8D-4C40-B5B7-01671B042D45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1313E44-15AE-4BC4-924C-34B2B8F44625}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1313E44-15AE-4BC4-924C-34B2B8F44625}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1313E44-15AE-4BC4-924C-34B2B8F44625}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1313E44-15AE-4BC4-924C-34B2B8F44625}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -526,7 +544,6 @@ Global
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251} = {7FFED910-450B-4D6E-9085-6E5A6731D72A}
 		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
-        {53209209-7239-4FEB-BE8D-B2DF6145BBDA} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{2576847F-BFFC-4F0A-B883-28F2E38FEC7F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{AFEA4601-7938-44D2-A295-DBA022069F5B} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 	EndGlobalSection
