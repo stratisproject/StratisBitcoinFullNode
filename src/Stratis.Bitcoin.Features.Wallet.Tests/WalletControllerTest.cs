@@ -1282,7 +1282,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetBalances("myWallet", WalletManager.DefaultAccount)).Returns(accountsBalances);
+            mockWalletManager.Setup(w => w.GetBalances("myWallet", WalletManager.DefaultAccount, It.IsAny<int>())).Returns(accountsBalances);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
@@ -1413,7 +1413,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetBalanceWithExceptionReturnsBadRequest()
         {
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(m => m.GetBalances("myWallet", WalletManager.DefaultAccount))
+            mockWalletManager.Setup(m => m.GetBalances("myWallet", WalletManager.DefaultAccount, It.IsAny<int>()))
                   .Throws(new InvalidOperationException("Issue retrieving accounts."));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);

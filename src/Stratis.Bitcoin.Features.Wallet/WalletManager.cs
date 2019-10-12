@@ -863,16 +863,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null)
+        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null, int confirmations = 0)
         {
             lock (this.lockObject)
             {
-                int tipHeight = this.GetWallet(walletName).AccountsRoot.First().LastBlockSyncedHeight ?? 0;
+                int tipHeight = this.ChainIndexer.Height;
 
                 //Need to make this work for single account but initially just scroll through accounts
                 foreach (HdAccount hdAccount in this.WalletRepository.GetAccounts(walletName, accountName))
                 {
-                    (Money totalAmount, Money confirmedAmount, Money spendableAmount) = this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, hdAccount.Name), tipHeight);
+                    (Money totalAmount, Money confirmedAmount, Money spendableAmount) = this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, hdAccount.Name), tipHeight, confirmations: confirmations);
 
                     yield return new AccountBalance()
                     {
