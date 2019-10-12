@@ -294,6 +294,56 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        public void StakeSegwitBlock_UsingOnlySegwitUTXOs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Even though we are mining, we still want to use PoS consensus rules.
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                var address = BitcoinWitPubKeyAddress.Create(node.FullNode.WalletManager().GetUnusedAddress().Bech32Address, KnownNetworks.StratisRegTest);
+
+                // A P2WPKH scriptPubKey - so that funds get mined into the node's wallet as segwit UTXOs
+                var script = address.ScriptPubKey;
+
+                // Need the premine to be past coinbase maturity so that we can stake with it.
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                List<uint256> res = miner.GenerateBlocks(new ReserveScript(script), 12, int.MaxValue);
+                
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+                TestBase.WaitLoop(() => node.FullNode.WalletManager().WalletTipHeight >= 12, cancellationToken: cancellationToken);
+
+                // Check that every UTXO in the wallet has a Segwit scriptPubKey
+                var scriptPubKeys = node.FullNode.WalletManager().GetAccounts(node.WalletName).SelectMany(a => a.GetCombinedAddresses()).SelectMany(b => b.Transactions).Select(c => c.ScriptPubKey);
+
+                foreach (Script scriptPubKey in scriptPubKeys)
+                    Assert.True(scriptPubKey.IsScriptType(ScriptType.P2WPKH));
+
+                // Now need to start staking.
+                var staker = node.FullNode.NodeService<IPosMinting>() as PosMinting;
+
+                staker.Stake(new WalletSecret()
+                {
+                    WalletName = node.WalletName,
+                    WalletPassword = node.WalletPassword
+                });
+
+                // Wait for the chain height to increase.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // Get the last staked block.
+                Block block = node.FullNode.ChainIndexer.Tip.Block;
+
+                // Confirm that the staked block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+
+                // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
+                Assert.NotNull(commitment);
+            }
+        }
+
+        [Fact]
         public void CheckSegwitP2PSerialisationForWitnessNode()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
