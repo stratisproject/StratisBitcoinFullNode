@@ -311,8 +311,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             HdAccount coldAccount = this.GetOrCreateColdStakingAccount(walletName, true, walletPassword);
             HdAccount hotAccount = this.GetOrCreateColdStakingAccount(walletName, false, walletPassword);
 
-            bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
-            bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
+            HdAddress coldAddress = coldAccount?.ExternalAddresses.FirstOrDefault(s => s.Address == coldWalletAddress || s.Bech32Address == coldWalletAddress);
+            HdAddress hotAddress = hotAccount?.ExternalAddresses.FirstOrDefault(s => s.Address == hotWalletAddress || s.Bech32Address == hotWalletAddress);
+
+            bool thisIsColdWallet = coldAddress != null;
+            bool thisIsHotWallet = hotAddress != null;
 
             this.logger.LogDebug("Local wallet '{0}' does{1} contain cold wallet address '{2}' and does{3} contain hot wallet address '{4}'.",
                 walletName, thisIsColdWallet ? "" : " NOT", coldWalletAddress, thisIsHotWallet ? "" : " NOT", hotWalletAddress);
@@ -329,9 +332,21 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("The hot and cold wallet addresses could not be found in the corresponding accounts.");
             }
 
-            KeyId hotPubKeyHash = new BitcoinPubKeyAddress(hotWalletAddress, wallet.Network).Hash;
-            KeyId coldPubKeyHash = new BitcoinPubKeyAddress(coldWalletAddress, wallet.Network).Hash;
-            Script destination = ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(hotPubKeyHash, coldPubKeyHash);
+            Script destination = null;
+
+            // Check if this is a segwit address
+            if (coldAddress?.Bech32Address == coldWalletAddress || hotAddress?.Bech32Address == hotWalletAddress)
+            {
+                KeyId hotPubKeyHash = new BitcoinWitPubKeyAddress(hotWalletAddress, wallet.Network).Hash.AsKeyId();
+                KeyId coldPubKeyHash = new BitcoinWitPubKeyAddress(coldWalletAddress, wallet.Network).Hash.AsKeyId();
+                destination = ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(hotPubKeyHash, coldPubKeyHash);
+            }
+            else
+            {
+                KeyId hotPubKeyHash = new BitcoinPubKeyAddress(hotWalletAddress, wallet.Network).Hash;
+                KeyId coldPubKeyHash = new BitcoinPubKeyAddress(coldWalletAddress, wallet.Network).Hash;
+                destination = ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(hotPubKeyHash, coldPubKeyHash);
+            }
 
             // Only normal accounts should be allowed.
             if (!this.GetAccounts(walletName).Any(a => a.Name == walletAccount))
@@ -394,21 +409,30 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             }
 
             // Prevent reusing cold stake addresses as regular withdrawal addresses.
-            if (coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress))
+            if (coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Any(s => s.Address == receivingAddress || s.Bech32Address == receivingAddress))
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_INVALID_COLD_WALLET_ADDRESS_USAGE]");
                 throw new WalletException("You can't send the money to a cold staking cold wallet account.");
             }
 
             HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
-            if (hotAccount != null && hotAccount.ExternalAddresses.Concat(hotAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress))
+            if (hotAccount != null && hotAccount.ExternalAddresses.Concat(hotAccount.InternalAddresses).Any(s => s.Address == receivingAddress || s.Bech32Address == receivingAddress))
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_INVALID_HOT_WALLET_ADDRESS_USAGE]");
                 throw new WalletException("You can't send the money to a cold staking hot wallet account.");
             }
 
-            // Send the money to the receiving address.
-            Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey;
+            Script destination = null;
+
+            if (BitcoinWitPubKeyAddress.IsValid(receivingAddress, this.network, out Exception _))
+            {
+                destination = new BitcoinWitPubKeyAddress(receivingAddress, wallet.Network).ScriptPubKey;
+            }
+            else
+            {
+                // Send the money to the receiving address.
+                destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey;
+            }
 
             // Create the transaction build context (used in BuildTransaction).
             var accountReference = new WalletAccountReference(walletName, coldAccount.Name);
