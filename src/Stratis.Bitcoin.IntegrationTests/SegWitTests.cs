@@ -558,6 +558,173 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        public void SegwitWalletTransactionBuildingTest_SpendP2WPKHAndNormalUTXOs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+                CoreNode listener = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                TestHelper.Connect(listener, node);
+
+                var mineAddress = node.FullNode.WalletManager().GetUnusedAddress();
+
+                int maturity = (int)node.FullNode.Network.Consensus.CoinbaseMaturity;
+
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), (ulong)(maturity + 2), int.MaxValue);
+
+                // Send a transaction from first node to itself so that it has a proper segwit input to spend.
+                var destinationAddress = node.FullNode.WalletManager().GetUnusedAddress();
+                var witAddress = destinationAddress.Bech32Address;
+
+                var p2wpkhAmount = Money.Coins(1);
+
+                IActionResult transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = witAddress, Amount = p2wpkhAmount.ToString() } },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                var walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                Transaction witFunds = node.FullNode.Network.CreateTransaction(walletBuildTransactionModel.Hex);
+                uint witIndex = witFunds.Outputs.AsIndexedOutputs().First(o => o.TxOut.ScriptPubKey.IsScriptType(ScriptType.P2WPKH)).N;
+
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetBlockCount() >= (maturity + 2), cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                // Make sure wallet is synced.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() == node.FullNode.WalletManager().LastBlockHeight(), cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                var spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(node.WalletName).Where(t => t.Address.Bech32Address != witAddress);
+
+                // By sending more than the size of the P2WPKH UTXO, we guarantee that at least one non-P2WPKH UTXO gets included
+                transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Outpoints = new List<OutpointRequest>() {
+                            new OutpointRequest() { Index = (int)witIndex, TransactionId = witFunds.GetHash().ToString() }, 
+                            new OutpointRequest() { Index = spendable.First().Transaction.Index, TransactionId = spendable.First().Transaction.Id.ToString() }
+                        },
+                        Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = witAddress, Amount = (p2wpkhAmount + Money.Coins(0.5m)).ToString() } },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+            }
+        }
+
+        [Fact]
+        public void SegwitWalletTransactionBuildingTest_SendToBech32AndNormalDestination()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+                CoreNode listener = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                TestHelper.Connect(listener, node);
+
+                var mineAddress = node.FullNode.WalletManager().GetUnusedAddress();
+
+                int maturity = (int)node.FullNode.Network.Consensus.CoinbaseMaturity;
+
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), (ulong)(maturity + 1), int.MaxValue);
+
+                var destinationAddress = node.FullNode.WalletManager().GetUnusedAddress();
+                var witAddress = destinationAddress.Bech32Address;
+                var nonWitAddress = destinationAddress.Address;
+
+                IActionResult transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = witAddress, Amount = Money.Coins(1).ToString() } },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                var walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                Transaction witFunds = node.FullNode.Network.CreateTransaction(walletBuildTransactionModel.Hex);
+                uint witIndex = witFunds.Outputs.AsIndexedOutputs().First(o => o.TxOut.ScriptPubKey.IsScriptType(ScriptType.P2WPKH)).N;
+
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetBlockCount() >= (maturity + 1), cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                // Make sure wallet is synced.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() == node.FullNode.WalletManager().LastBlockHeight(), cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                // By sending more than the size of the P2WPKH UTXO, we guarantee that at least one non-P2WPKH UTXO gets included
+                transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Outpoints = new List<OutpointRequest>() { new OutpointRequest() { Index = (int)witIndex, TransactionId = witFunds.GetHash().ToString() } },
+                        Recipients = new List<RecipientModel>
+                        {
+                            new RecipientModel { DestinationAddress = witAddress, Amount = Money.Coins(0.4m).ToString() },
+                            new RecipientModel { DestinationAddress = nonWitAddress, Amount = Money.Coins(0.4m).ToString() }
+                        },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+            }
+        }
+
+        [Fact]
         public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs_When_SBFN_Initiates_Connection()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
