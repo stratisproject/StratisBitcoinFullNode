@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
@@ -916,6 +922,60 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisX = builder.CreateStratisXNode(configParameters: parameters).Start();
 
                 TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+            }
+        }
+
+        [Fact]
+        public void Mine_On_StratisX_SBFN_Syncs_Via_Intermediary_Gateway_Node()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                CoreNode stratisX = builder.CreateStratisXNode().Start();
+
+                // Generate some blocks on the X node
+                RPCClient rpc = stratisX.CreateRPCClient();
+                rpc.SendCommand(RPCOperations.generate, 12);
+
+                // Node 1 is the SBFN gateway node
+                var callback = new Action<IFullNodeBuilder>(build => build
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC());
+
+                var config = new NodeConfigParameters
+                {
+                    {"whitebind", "0.0.0.0"},
+                    {"gateway", "1"}
+                };
+
+                CoreNode node1 = builder
+                    .CreateCustomNode(callback, KnownNetworks.StratisRegTest, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
+
+                // Connect inbound to the gateway node so that the X node isn't disconnected for not being able to provide witness data
+                // This test should not have an outbound connection to stratisX in order to simulate a 'real' environment
+                // Addnode does not work properly with stratisX, because it only attempts connections to nodes added this way every 2 minutes.
+                rpc.AddNode(node1.Endpoint);
+
+                // We have to wait up to 3 minutes here
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
+                TestBase.WaitLoop(() => node1.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+
+                // Node 2 is the 'ordinary' SBFN node
+                CoreNode node2 = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                TestHelper.ConnectAndSync(node1, node2);
+
+                // Get the last received block from node2 after it syncs
+                Block block = node1.FullNode.ChainIndexer.GetHeader(12).Block;
+
+                // The block will not have a witness commitment, as it was mined by stratisX
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node1.FullNode.Network, block);
+
+                Assert.Null(commitment);
             }
         }
     }
