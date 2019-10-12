@@ -203,6 +203,57 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        public void SegwitActivatedOnStratisNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                // Set the date ranges such that ColdStaking will 'Start' immediately after the initial confirmation window.
+                network.Consensus.BIP9Deployments[StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Test", 1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+
+                // Set a small confirmation window to reduce time taken by this test.
+                network.Consensus.MinerConfirmationWindow = 10;
+
+                // Minimum number of 'votes' required within the confirmation window to reach 'LockedIn' state.
+                network.Consensus.RuleChangeActivationThreshold = 8;
+
+                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet();
+                stratisNode.Start();
+
+                // Deployment activation:
+                // - Deployment state changes every 'MinerConfirmationWindow' blocks.
+                // - Remains in 'Defined' state until 'startedHeight'.
+                // - Changes to 'Started' state at 'startedHeight'.
+                // - Changes to 'LockedIn' state at 'lockedInHeight' (we are assuming that in this test every mined block will signal Segwit support)
+                // - Changes to 'Active' state at 'activeHeight'.
+                int startedHeight = network.Consensus.MinerConfirmationWindow - 1;
+                int lockedInHeight = startedHeight + network.Consensus.MinerConfirmationWindow;
+                int activeHeight = lockedInHeight + network.Consensus.MinerConfirmationWindow;
+
+                // Generate enough blocks to cover all state changes.
+                TestHelper.MineBlocks(stratisNode, activeHeight + 1);
+
+                // Check that Segwit states got updated as expected.
+                ThresholdConditionCache cache = (stratisNode.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine).NodeDeployments.BIP9;
+                Assert.Equal(ThresholdState.Defined, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight - 1), StratisBIP9Deployments.Segwit));
+                Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight), StratisBIP9Deployments.Segwit));
+                Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(lockedInHeight), StratisBIP9Deployments.Segwit));
+                Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight), StratisBIP9Deployments.Segwit));
+
+                // Verify that the block created before activation does not have the 'Witness' script flag set.
+                var rulesEngine = stratisNode.FullNode.NodeService<IConsensusRuleEngine>();
+                ChainedHeader prevHeader = stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight - 1);
+                DeploymentFlags flags1 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(prevHeader);
+                Assert.Equal(0, (int)(flags1.ScriptFlags & ScriptVerify.Witness));
+
+                // Verify that the block created after activation has the 'Witness' flag set.
+                DeploymentFlags flags2 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(stratisNode.FullNode.ChainIndexer.Tip);
+                Assert.NotEqual(0, (int)(flags2.ScriptFlags & ScriptVerify.Witness));
+            }
+        }
+
+        [Fact]
         public void TestSegwit_AlwaysActivatedOn_StratisNode()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
