@@ -22,11 +22,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.callDataSerializer = callDataSerializer;
         }
 
+        /// <summary>
+        /// Executes the set of <see cref="IContractTransactionValidationRule"/> rules.
+        /// </summary>
         public Task RunAsync(RuleContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            List<IContractTransactionValidationRule> contractTransactionValidationRules = rules.ToList();
+            var contractTransactionValidationRules = rules.ToList();
 
             foreach (Transaction transaction in block.Transactions)
             {

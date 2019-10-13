@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Features.RPC.ModelBinders;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
@@ -26,6 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
     /// <summary>
     /// A <see cref="FeatureController"/> that implements several RPC methods for the full node.
     /// </summary>
+    [ApiVersion("1")]
     public class FullNodeController : FeatureController
     {
         /// <summary>Instance logger.</summary>
@@ -106,7 +108,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Retrieves a transaction given a transaction hash in either simple or verbose form.
         /// </summary>
         /// <param name="txid">The transaction hash.</param>
-        /// <param name="verbose">Non-zero if verbose model wanted.</param>
+        /// <param name="verbose">True if verbose model wanted.</param>
         /// <param name="blockHash">The hash of the block in which to look for the transaction.</param>
         /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
         /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
@@ -114,7 +116,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// When called without a blockhash argument, getrawtransaction will return the transaction if it is in the mempool, or if -txindex is enabled and the transaction is in a block in the blockchain.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
-        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0, string blockHash = null)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, [IntToBool]bool verbose = false, string blockHash = null)
         {
             Guard.NotEmpty(txid, nameof(txid));
 
@@ -167,7 +169,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 }
             }
 
-            if (verbose != 0)
+            if (verbose)
             {
                 ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : this.GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);

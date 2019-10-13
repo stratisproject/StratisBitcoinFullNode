@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.MaxTxFee = new FeeRate(Money.Coins(10));
         }
 
+        /// <inheritdoc />
         protected override void CheckPubKey(Transaction transaction, List<TransactionPolicyError> errors)
         {
             if (this.CheckScriptPubKey)
@@ -27,6 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
         }
 
+        /// <inheritdoc />
         protected override void CheckMinRelayTxFee(Transaction transaction, List<TransactionPolicyError> errors)
         {
             if (this.MinRelayTxFee != null)

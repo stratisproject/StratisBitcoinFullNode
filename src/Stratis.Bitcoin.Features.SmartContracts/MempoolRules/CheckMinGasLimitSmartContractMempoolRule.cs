@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
             this.callDataSerializer = callDataSerializer;
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             Transaction transaction = context.Transaction;

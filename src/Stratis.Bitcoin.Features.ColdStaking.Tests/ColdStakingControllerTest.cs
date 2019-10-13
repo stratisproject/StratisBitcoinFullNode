@@ -176,7 +176,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new CheckRateLimitMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
                 new CheckAncestorsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
                 new CheckReplacementMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
-                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory)
+                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory),
+                new CheckTxOutDustRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer,  this.loggerFactory)
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid

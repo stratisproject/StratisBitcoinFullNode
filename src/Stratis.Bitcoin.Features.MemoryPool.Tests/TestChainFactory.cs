@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
@@ -124,7 +123,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory)
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
@@ -247,11 +247,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory)
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
-            for (int i=0; i < network.Consensus.MempoolRules.Count; i++)
+            for (int i = 0; i < network.Consensus.MempoolRules.Count; i++)
             {
                 if (network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
                 {

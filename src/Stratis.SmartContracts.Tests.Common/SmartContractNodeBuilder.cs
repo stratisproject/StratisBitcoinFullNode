@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.Tests.Common
             return node;
         }
 
-        public CoreNode CreateWhitelistedContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
+        public CoreNode CreateWhitelistedContractPoANode(SmartContractsPoAWhitelistRegTest network, int nodeIndex)
         {
             string dataFolder = this.GetNextDataFolderName();
 

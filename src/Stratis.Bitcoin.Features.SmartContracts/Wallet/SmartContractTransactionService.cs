@@ -81,16 +81,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
             {
-                uint160 address = recipientModel.DestinationAddress.ToUint160(this.network);
+                BitcoinAddress bitcoinAddress = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network);
 
-                if (this.stateRoot.IsExist(address))
+                // If it's a potential SC address, check if it's a contract.
+                if (bitcoinAddress is BitcoinPubKeyAddress bitcoinPubKeyAddress)
                 {
-                    return EstimateFeeResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                    var address = new uint160(bitcoinPubKeyAddress.Hash.ToBytes());
+
+                    if (this.stateRoot.IsExist(address))
+                    {
+                        return EstimateFeeResult.Failure(TransferFundsToContractError,
+                            $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                    }
                 }
 
                 recipients.Add(new Recipient
                 {
-                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    ScriptPubKey = bitcoinAddress.ScriptPubKey,
                     Amount = recipientModel.Amount
                 });
             }
@@ -146,16 +153,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
             {
-                uint160 address = recipientModel.DestinationAddress.ToUint160(this.network);
+                BitcoinAddress bitcoinAddress = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network);
 
-                if (this.stateRoot.IsExist(address))
+                // If it's a potential SC address, check if it's a contract.
+                if (bitcoinAddress is BitcoinPubKeyAddress bitcoinPubKeyAddress)
                 {
-                    return BuildContractTransactionResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                    var address = new uint160(bitcoinPubKeyAddress.Hash.ToBytes());
+
+                    if (this.stateRoot.IsExist(address))
+                    {
+                        return BuildContractTransactionResult.Failure(TransferFundsToContractError,
+                            $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                    }
                 }
 
                 recipients.Add(new Recipient
                 {
-                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    ScriptPubKey = bitcoinAddress.ScriptPubKey,
                     Amount = recipientModel.Amount
                 });
             }

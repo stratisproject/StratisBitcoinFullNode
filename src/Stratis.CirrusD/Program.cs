@@ -8,14 +8,14 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SignalR;
+using Stratis.Bitcoin.Features.SignalR.Broadcasters;
+using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic;
-using Stratis.Bitcoin.Features.SignalR;
-using Stratis.Bitcoin.Features.SignalR.Broadcasters;
-using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusD
