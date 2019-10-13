@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         Address = p.Key,
                         Category = GetTransactionDetailsCategoryModel.Send,
                         OutputIndex = p.First().OutputIndex,
-                        Amount = 0 - p.Sum(detail => detail.Amount),
+                        Amount = 0 - p.Sum(detail => detail.Amount.ToDecimal(MoneyUnit.BTC)),
                         Fee = -feeSent.ToDecimal(MoneyUnit.BTC)
                     });
 
