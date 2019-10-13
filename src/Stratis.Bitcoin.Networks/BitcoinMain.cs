@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
@@ -181,7 +179,7 @@ namespace Stratis.Bitcoin.Networks
                 .Register<CoinbaseHeightActivationRule>() // implements BIP34
                 .Register<WitnessCommitmentsRule>() // BIP141, BIP144
                 .Register<BlockSizeRule>()
-                
+
                 // rules that are inside the method CheckBlock
                 .Register<EnsureCoinbaseRule>()
                 .Register<CheckPowTransactionRule>()
@@ -209,7 +207,8 @@ namespace Stratis.Bitcoin.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule)
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxOutDustRule)
             };
         }
 

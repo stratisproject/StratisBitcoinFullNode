@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
     /// <summary>
     /// Controller providing operations for cold staking.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class ColdStakingController : Controller
     {

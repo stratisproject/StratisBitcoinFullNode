@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Sidechains.Networks;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.State;
@@ -581,6 +582,121 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void BuildTransferContext_Recipient_Is_Not_P2PKH()
+        {
+            const int utxoIndex = 0;
+            uint256 utxoId = uint256.Zero;
+            uint256 utxoIdUnused = uint256.One;
+            string senderAddress = uint160.Zero.ToBase58Address(this.network);
+            string changeAddress = new uint160(2).ToBase58Address(this.network);
+
+            // This is a valid non-P2PKH address on CirrusTest.
+            string recipientAddress = "xH1GHWVNKwdebkgiFPtQtM4qb3vrvNX2Rg";
+            var cirrusNetwork = CirrusNetwork.NetworksSelector.Testnet();
+
+            var amount = 1234.567M;
+
+            var request = new BuildContractTransactionRequest
+            {
+                AccountName = "account 0",
+                FeeAmount = "0.01",
+                WalletName = "wallet",
+                Password = "password",
+                Sender = senderAddress,
+                ShuffleOutputs = true,
+                AllowUnconfirmed = true,
+                ChangeAddress = changeAddress,
+                Recipients = new List<RecipientModel>
+                {
+                    new RecipientModel { Amount = amount.ToString(), DestinationAddress = recipientAddress}
+                }
+            };
+
+            SmartContractTransactionService service = new SmartContractTransactionService(
+                cirrusNetwork,
+                this.walletManager.Object,
+                this.walletTransactionHandler.Object,
+                this.stringSerializer.Object,
+                this.callDataSerializer.Object,
+                this.addressGenerator.Object,
+                this.stateRepository.Object);
+
+            var senderHdAddress = new HdAddress { Address = senderAddress };
+
+            this.walletManager.Setup(x => x.GetWallet(request.WalletName))
+                .Returns(new Features.Wallet.Wallet
+                {
+                    AccountsRoot = new List<AccountRoot>
+                    {
+                        new AccountRoot
+                        {
+                            Accounts = new List<HdAccount>
+                            {
+                                new HdAccount
+                                {
+                                    ExternalAddresses = new List<HdAddress>
+                                    {
+                                        senderHdAddress
+                                    },
+                                    Name = request.AccountName,
+                                }
+                            }
+                        }
+                    }
+                });
+
+            this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
+                .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = Money.FromUnit(amount, MoneyUnit.BTC), AmountUnconfirmed = 0 });
+
+            var outputs = new List<UnspentOutputReference>
+                {
+                    new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoId,
+                            Index = utxoIndex,
+                        }
+                    }, new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoIdUnused,
+                            Index = utxoIndex,
+                        }
+                    }
+                };
+
+            this.walletManager.Setup(x => x.GetSpendableTransactionsInWallet(It.IsAny<string>(), 0)).Returns(outputs);
+
+            this.walletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                .Returns(new Transaction());
+
+            BuildContractTransactionResult result = service.BuildTx(request);
+
+            // Check that the transaction builder is invoked, and that we:
+            // - Ignore shuffleOutputs,
+            // - Set inputs from sender
+            // - Set recipients,
+            // - Set change to sender
+            this.walletTransactionHandler.Verify(w => w.BuildTransaction(It.Is<TransactionBuildContext>(context =>
+                context.AllowOtherInputs == false &&
+                context.Shuffle == false &&
+                context.SelectedInputs.All(i => outputs.Select(o => o.Transaction.Id).Contains(i.Hash)) &&
+                context.Recipients.Single().Amount == Money.FromUnit(amount, MoneyUnit.BTC) &&
+                context.ChangeAddress == senderHdAddress
+            )));
+        }
+
+        [Fact]
         public void BuildTransferContextCorrectly()
         {
             const int utxoIndex = 0;
@@ -721,6 +837,126 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             SmartContractTransactionService service = new SmartContractTransactionService(
                 this.network,
+                this.walletManager.Object,
+                this.walletTransactionHandler.Object,
+                this.stringSerializer.Object,
+                this.callDataSerializer.Object,
+                this.addressGenerator.Object,
+                this.stateRepository.Object);
+
+            var senderHdAddress = new HdAddress { Address = senderAddress };
+
+            this.walletManager.Setup(x => x.GetWallet(request.WalletName))
+                .Returns(new Features.Wallet.Wallet
+                {
+                    AccountsRoot = new List<AccountRoot>
+                    {
+                        new AccountRoot
+                        {
+                            Accounts = new List<HdAccount>
+                            {
+                                new HdAccount
+                                {
+                                    ExternalAddresses = new List<HdAddress>
+                                    {
+                                        senderHdAddress
+                                    },
+                                    Name = request.AccountName,
+                                }
+                            }
+                        }
+                    }
+                });
+
+            this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
+                .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = Money.FromUnit(amount, MoneyUnit.BTC), AmountUnconfirmed = 0 });
+
+            var outputs = new List<UnspentOutputReference>
+                {
+                    new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoId,
+                            Index = utxoIndex,
+                        }
+                    }, new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoIdUnused,
+                            Index = utxoIndex,
+                        }
+                    }
+                };
+
+            this.walletManager.Setup(x => x.GetSpendableTransactionsInWallet(It.IsAny<string>(), 0)).Returns(outputs);
+
+            this.walletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                .Returns(new Transaction());
+
+            EstimateFeeResult result = service.EstimateFee(request);
+
+            // Check that the transaction builder is invoked, and that we:
+            // - Ignore shuffleOutputs,
+            // - Set inputs from sender
+            // - Set recipients,
+            // - Set change to sender
+            // - Set the fee type correctly
+            // - Set sign to false
+            // - Set transaction fee to null
+            this.walletTransactionHandler.Verify(w => w.EstimateFee(It.Is<TransactionBuildContext>(context =>
+                context.AllowOtherInputs == false &&
+                context.Shuffle == false &&
+                context.SelectedInputs.All(i => outputs.Select(o => o.Transaction.Id).Contains(i.Hash)) &&
+                context.Recipients.Single().Amount == Money.FromUnit(amount, MoneyUnit.BTC) &&
+                context.ChangeAddress == senderHdAddress &&
+                context.Sign == false &&
+                context.TransactionFee == null &&
+                context.FeeType == FeeType.Medium
+            )));
+        }
+
+        [Fact]
+        public void BuildFeeEstimationContext_Recipient_Is_Not_P2PKH()
+        {
+            const int utxoIndex = 0;
+            uint256 utxoId = uint256.Zero;
+            uint256 utxoIdUnused = uint256.One;
+            string senderAddress = uint160.Zero.ToBase58Address(this.network);
+            string changeAddress = new uint160(2).ToBase58Address(this.network);
+
+            // This is a valid non-P2PKH address on CirrusTest.
+            string recipientAddress = "xH1GHWVNKwdebkgiFPtQtM4qb3vrvNX2Rg";
+            var cirrusNetwork = CirrusNetwork.NetworksSelector.Testnet();
+
+            var amount = 1234.567M;
+
+            var request = new ScTxFeeEstimateRequest
+            {
+                AccountName = "account 0",
+                WalletName = "wallet",
+                Sender = senderAddress,
+                ShuffleOutputs = true,
+                AllowUnconfirmed = true,
+                ChangeAddress = changeAddress,
+                Recipients = new List<RecipientModel>
+                {
+                    new RecipientModel { Amount = amount.ToString(), DestinationAddress = recipientAddress}
+                },
+                FeeType = "medium"
+            };
+
+            SmartContractTransactionService service = new SmartContractTransactionService(
+                cirrusNetwork,
                 this.walletManager.Object,
                 this.walletTransactionHandler.Object,
                 this.stringSerializer.Object,

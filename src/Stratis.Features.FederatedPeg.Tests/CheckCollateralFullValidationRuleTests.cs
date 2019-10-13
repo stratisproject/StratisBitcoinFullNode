@@ -31,7 +31,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.collateralCheckerMock = new Mock<ICollateralChecker>();
             this.slotsManagerMock = new Mock<ISlotsManager>();
 
-
             this.ibdMock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
             this.slotsManagerMock
                 .Setup(x => x.GetFederationMemberForTimestamp(It.IsAny<uint>(), null))
@@ -43,7 +42,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             Block block = this.ruleContext.ValidationContext.BlockToValidate;
             block.AddTransaction(new Transaction());
 
-            CollateralHeightCommitmentEncoder encoder = new CollateralHeightCommitmentEncoder();
+            var encoder = new CollateralHeightCommitmentEncoder();
 
             byte[] encodedHeight = encoder.EncodeWithPrefix(1000);
 

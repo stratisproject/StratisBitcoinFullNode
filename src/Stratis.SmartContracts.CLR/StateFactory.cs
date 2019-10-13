@@ -11,7 +11,6 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class StateFactory : IStateFactory
     {
-        private readonly IInternalExecutorFactory internalTransactionExecutorFactory;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
         public StateFactory(ISmartContractStateFactory smartContractStateFactory)

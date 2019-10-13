@@ -2,11 +2,16 @@ using System;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
+using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks
@@ -33,6 +38,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16175;
             this.DefaultAPIPort = 37223;
+            this.DefaultSignalRPort = 38823;
             this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -108,7 +114,6 @@ namespace Stratis.Sidechains.Networks
                 new CollateralFederationMember(new PubKey("0371c8558c846172eaf694a4e3af4d6cfdbfdd0d8480666c206ea43522c65a926a"), new Money(10000_00000000),"SREEeESBB1fiSCEfZ7qDBuQeZtM7byCyoG"),
                 new CollateralFederationMember(new PubKey("03adce7b60c2a3b03f9567d44bcf4e1d98200a736914a4385a4ef8c248d50b71ba"), new Money(10000_00000000),"ScY7ZaL5KN4PpHMaoAr3yK1qbRpEuq4rYv"),
                 new CollateralFederationMember(new PubKey("028bbb6d3eca487640fab54c5800beb9e9d0f20c072805f08f0a4ae2af8bec596d"), new Money(10000_00000000),"SUGnHfLwuCidT3mRR6i8ZrNgYHPjBbdUzJ")
-
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -123,7 +128,7 @@ namespace Stratis.Sidechains.Networks
                 autoKickIdleMembers: false
             )
             {
-                EnforceMinProtocolVersionAtBlockHeight = 0, // setting the value to zero makes the functionality inactive
+                EnforceMinProtocolVersionAtBlockHeight = 384675, // setting the value to zero makes the functionality inactive
                 EnforcedMinProtocolVersion = NBitcoin.Protocol.ProtocolVersion.CIRRUS_VERSION // minimum protocol version which will be enforced at block height defined in EnforceMinProtocolVersionAtBlockHeight
             };
 
@@ -207,10 +212,66 @@ namespace Stratis.Sidechains.Networks
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("000005769503496300ec879afd7543dc9f86d3b3d679950b2b83e2f49f525856"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("1669a55d45b642af0ce82c5884cf5b8d8efd5bdcb9a450c95f442b9bd1ff65ea"));
 
+            this.RegisterRules(this.Consensus);
             this.RegisterMempoolRules(this.Consensus);
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        // This should be abstract or virtual
+        protected override void RegisterRules(IConsensus consensus)
+        {
+            // IHeaderValidationConsensusRule -----------------------
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksPoARule>()
+                .Register<StratisHeaderVersionRule>()
+                .Register<PoAHeaderDifficultyRule>()
+                .Register<PoAHeaderSignatureRule>();
+            // ------------------------------------------------------
+
+            // IIntegrityValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>()
+                .Register<PoAIntegritySignatureRule>();
+            // ------------------------------------------------------
+
+            // IPartialValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+
+                // Rules that are inside the method ContextualCheckBlock
+                .Register<TransactionLocktimeActivationRule>()
+                .Register<CoinbaseHeightActivationRule>()
+                .Register<BlockSizeRule>()
+
+                // Rules that are inside the method CheckBlock
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckSigOpsRule>()
+
+                .Register<PoAVotingCoinbaseOutputFormatRule>()
+                .Register<AllowedScriptTypeRule>()
+                .Register<ContractTransactionPartialValidationRule>();
+            // ------------------------------------------------------
+
+            // IFullValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+
+                // Rules that require the store to be loaded (coinview)
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>() // implements BIP30
+
+                // Smart contract specific
+                .Register<ContractTransactionFullValidationRule>()
+                .Register<TxOutSmartContractExecRule>()
+                .Register<OpSpendRule>()
+                .Register<CanGetSenderRule>()
+                .Register<P2PKHNotContractRule>()
+                .Register<SmartContractPoACoinviewRule>()
+                .Register<SaveCoinviewRule>();
+            // ------------------------------------------------------
+        }
+
+        protected override void RegisterMempoolRules(IConsensus consensus)
         {
             consensus.MempoolRules = new List<Type>()
             {

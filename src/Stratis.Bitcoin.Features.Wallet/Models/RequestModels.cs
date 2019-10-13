@@ -651,7 +651,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// A class containing the necessary parameters for a new account request.  
+    /// A class containing the necessary parameters for a new account request.
     /// </summary>
     public class GetUnusedAccountModel : RequestModel
     {
@@ -669,7 +669,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// A class containing the necessary parameters for a wallet resynchronization request.  
+    /// A class containing the necessary parameters for a wallet resynchronization request.
     /// </summary>
     public class WalletSyncFromDateRequest : RequestModel
     {
@@ -680,6 +680,40 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public DateTime Date { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet stats request.
+    /// </summary>
+    public class WalletStatsRequest : RequestModel
+    {
+        public WalletStatsRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet for which to get the stats.
+        /// </summary>
+        [Required]
+        public string WalletName { get; set; }
+
+
+        /// <summary>
+        /// The name of the account for which to get the stats.
+        /// <summary>
+        public string AccountName { get; set; }
+
+        /// <summary>
+        /// The minimum number of confirmations a transaction needs to have to be included.
+        /// To include unconfirmed transactions, set this value to 0.
+        /// </summary>
+        public int MinConfirmations { get; set; }
+
+        /// <summary>
+        /// Should the request return a more detailed output
+        /// </summary>
+        public bool Verbose { get; set; }
+    }
+    
     /// <summary>
     /// A class containing the necessary parameters to perform an add address book entry request.
     /// </summary>

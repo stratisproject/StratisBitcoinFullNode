@@ -33,10 +33,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
         private readonly CirrusRegTest sidechainNetwork;
         private readonly Network mainNetwork;
-
-        private readonly (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress
-            mainchainMultisigAddress) scriptAndAddresses;
-
+        private readonly (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
 
         public NodeInitialisationTests()
         {
@@ -51,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
-                CoreNode user = nodeBuilder.CreateSidechainNode(this.sidechainNetwork);
+                CoreNode user = nodeBuilder.CreateSidechainNode(new CirrusSideChainStartsRegTest());
 
                 user.Start();
 
@@ -227,14 +224,22 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
     }
 
-    public class CirrusSingleCollateralRegTest : CirrusRegTest
+    internal class CirrusSingleCollateralRegTest : CirrusRegTest
     {
-        public CirrusSingleCollateralRegTest()
+        internal CirrusSingleCollateralRegTest()
         {
             this.Name = "CirrusSingleCollateralRegTest";
             CollateralFederationMember firstMember = this.ConsensusOptions.GenesisFederationMembers[0] as CollateralFederationMember;
             firstMember.CollateralAmount = Money.Coins(100m);
             firstMember.CollateralMainchainAddress = new Key().ScriptPubKey.GetDestinationAddress(this).ToString();
+        }
+    }
+
+    internal class CirrusSideChainStartsRegTest : CirrusRegTest
+    {
+        internal CirrusSideChainStartsRegTest()
+        {
+            this.Name = "CirrusSideChainStartsRegTest";
         }
     }
 }
