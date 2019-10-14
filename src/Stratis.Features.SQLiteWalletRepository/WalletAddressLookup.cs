@@ -63,18 +63,22 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             walletId = this.walletId ?? walletId;
 
+            string strWalletId = DBTable.DBParameter(walletId);
+            string strAccountIndex = DBTable.DBParameter(accountIndex);
+            string strAddressType = DBTable.DBParameter(addressType);
+
             List<HDAddress> addresses = this.conn.Query<HDAddress>($@"
                 SELECT  *
                 FROM    HDAddress {
                 // Restrict to wallet if provided.
                 ((walletId != null) ? $@"
-                WHERE   WalletId = {walletId}" : "")} {
+                WHERE   WalletId = {strWalletId}" : "")} {
                 // Restrict to account if provided.
                 ((accountIndex != null) ? $@"
-                AND     AccountIndex = {accountIndex}" : "")} {
+                AND     AccountIndex = {strAccountIndex}" : "")} {
                 // Restrict to account if provided.
                 ((addressType != null) ? $@"
-                AND     AddressType = {addressType}" : "")}");
+                AND     AddressType = {strAddressType}" : "")}");
 
             foreach (HDAddress address in addresses)
             {
@@ -89,7 +93,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         private bool Exists(Script scriptPubKey, out AddressIdentifier address)
         {
-            string hex = scriptPubKey.ToHex();
+            string strWalletId = DBTable.DBParameter(this.walletId);
+            string strHex = DBTable.DBParameter(scriptPubKey.ToHex());
 
             address = this.conn.FindWithQuery<AddressIdentifier>($@"
                         SELECT  WalletId
@@ -98,11 +103,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                         ,       AddressIndex
                         ,       ScriptPubKey
                         FROM    HDAddress
-                        WHERE   ScriptPubKey = '{hex}' {
+                        WHERE   ScriptPubKey = {strHex} {
                     // Restrict to wallet if provided.
                     // "BETWEEN" boosts performance from half a seconds to 2ms.
                     ((this.walletId != null) ? $@"
-                        AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")};");
+                        AND     WalletId BETWEEN {strWalletId} AND {strWalletId}" : "")};");
 
             return address != null;
         }

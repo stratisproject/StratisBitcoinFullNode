@@ -91,32 +91,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 yield return $"INSERT INTO temp.{this.RowType.Name} {ObjectColumns()} VALUES {string.Join(Environment.NewLine + ",", batch.Select(obj => ObjectRow(props, obj)))};";
         }
 
-        // Intended to handle string, int, long and decimal.
-        internal static string DBParameter(object prop)
-        {
-            if (prop == null)
-                return "NULL";
-
-            switch (Type.GetTypeCode(prop?.GetType()))
-            {
-                case TypeCode.String:
-                    return $"'{((string)prop).Replace("'", "''")}'";
-
-                case TypeCode.Decimal:
-                    return ((decimal)prop).ToString("0.#############################");
-
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                    return prop.ToString();
-            }
-
-            throw new InvalidOperationException($"Unsupported data type passed to {nameof(DBParameter)} method");
-        }
-
         internal static string ObjectRow(PropertyInfo[] props, object obj)
         {
-            var res = props.Select(p => p.GetValue(obj)).Select(prop => DBParameter(prop));
+            var res = props.Select(p => p.GetValue(obj)).Select(prop => DBTable.DBParameter(prop));
             var arr = string.Join(",", res);
             return $"({arr})";
         }

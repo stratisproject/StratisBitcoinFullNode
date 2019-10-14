@@ -7,7 +7,7 @@ using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
-    internal class HDWallet
+    internal class HDWallet : DBTable
     {
         public string Name { get; set; }
         [PrimaryKey]
@@ -65,19 +65,21 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             ,       BlockLocator
             ,       CreationTime
             )
-            VALUES ('{this.Name}'
-            ,       {this.LastBlockSyncedHeight}
-            ,       '{this.LastBlockSyncedHash}'
-            ,       {this.IsExtPubKeyWallet}
-            ,       '{this.EncryptedSeed}'
-            ,       '{this.ChainCode}'
-            ,       '{this.BlockLocator}'
-            ,       {this.CreationTime})");
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            this.Name,
+            this.LastBlockSyncedHeight,
+            this.LastBlockSyncedHash,
+            this.IsExtPubKeyWallet,
+            this.EncryptedSeed,
+            this.ChainCode,
+            this.BlockLocator,
+            this.CreationTime);
 
             this.WalletId = conn.ExecuteScalar<int>($@"
             SELECT  WalletId
             FROM    HDWallet
-            WHERE   Name = '{this.Name}'");
+            WHERE   Name = ?",
+            this.Name);
         }
 
         internal static HDWallet GetByName(SQLiteConnection conn, string walletName)
@@ -109,26 +111,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             internal string Hash { get; set; }
         }
 
-        /*
-        internal static HeightHashPair GreatestBlockHeightBeforeOrAt(SQLiteConnection conn, int walletId, int height)
-        {
-            return conn.FindWithQuery<HeightHashPair>($@"
-                SELECT  OutputBlockHeight BlockHeight
-                ,       OutputBlockHash BlockHash
-                FROM    HDTransactionData
-                WHERE   WalletId = { walletId }
-                AND     OutputBlockHeight <= { height }
-                UNION   ALL
-                SELECT  SpendBlockHeight BlockHeight
-                ,       SpendBlockHash BlockHash
-                FROM    HDTransactionData
-                WHERE   WalletId = { walletId }
-                AND     SpendBlockHeight <= { height }
-                ORDER   BY BlockHeight desc
-                LIMIT   1");
-        }
-        */
-
         internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, uint256 prevTipHash)
         {
             uint256 lastBlockSyncedHash = newTip?.HashBlock ?? uint256.Zero;
@@ -139,13 +121,17 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             conn.Execute($@"
                     UPDATE HDWallet
-                    SET    LastBlockSyncedHash = '{lastBlockSyncedHash}',
-                           LastBlockSyncedHeight = {lastBlockSyncedHeight},
-                           BlockLocator = '{blockLocator}'
-                    WHERE  LastBlockSyncedHash = '{prevTipHash}' {
+                    SET    LastBlockSyncedHash = ?,
+                           LastBlockSyncedHeight = ?,
+                           BlockLocator = ?
+                    WHERE  LastBlockSyncedHash = ? {
                     // Respect the wallet name if provided.
                     ((wallet?.Name != null) ? $@"
-                    AND    Name = '{wallet?.Name}'" : "")}");
+                    AND    Name = {DBParameter(wallet?.Name)}" : "")}",
+                    lastBlockSyncedHash.ToString(),
+                    lastBlockSyncedHeight,
+                    blockLocator,
+                    prevTipHash.ToString());
         }
 
         internal void SetLastBlockSynced(HashHeightPair lastBlockSynced, BlockLocator blockLocator, Network network)
