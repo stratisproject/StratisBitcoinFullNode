@@ -3,6 +3,12 @@ using SQLite;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
+    internal class HDAddressWithBalances : HDAddress
+    {
+        public decimal ConfirmedAmount { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
+
     internal class HDAddress
     {
         // AddressType constants.
@@ -61,10 +67,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 count);
         }
 
-        internal static IEnumerable<HDAddress> GetUsedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
+        internal static IEnumerable<HDAddressWithBalances> GetUsedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
         {
-            return conn.Query<HDAddress>($@"
+            return conn.Query<HDAddressWithBalances>($@"
                 SELECT  A.*
+,                       SUM(CASE WHEN D.OutputBlockHeight IS NOT NULL AND D.SpendBlockHeight IS NULL THEN D.Value ELSE 0 END) ConfirmedAmount
+,                       SUM(CASE WHEN D.SpendBlockHeight IS NULL THEN D.Value ELSE 0 END) TotalAmount
                 FROM    HDAddress A
                 LEFT    JOIN HDTransactionData D
                 ON      D.WalletId = A.WalletId

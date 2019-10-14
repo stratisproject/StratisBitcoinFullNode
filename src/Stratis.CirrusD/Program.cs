@@ -80,7 +80,7 @@ namespace Stratis.CirrusD
 
                     options.ClientEventBroadcasters = new[]
                     {
-                        (Broadcaster: typeof(WalletInfoBroadcaster),
+                        (Broadcaster: typeof(CirrusWalletInfoBroadcaster),
                             ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
                             {
                                 BroadcastFrequencySeconds = 5

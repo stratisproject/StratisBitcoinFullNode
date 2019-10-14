@@ -1314,6 +1314,59 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void WalletSyncFromDateReturnsOK()
+        {
+            string walletName = "myWallet";
+            DateTime syncDate = DateTime.Now.Subtract(new TimeSpan(1)).Date;
+
+            var mockWalletSyncManager = new Mock<IWalletSyncManager>();
+            mockWalletSyncManager.Setup(w => w.SyncFromDate(
+                It.Is<DateTime>((val) => val.Equals(syncDate)),
+                It.Is<string>(val => walletName.Equals(val))));
+
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object,
+                new Mock<IWalletTransactionHandler>().Object, mockWalletSyncManager.Object, It.IsAny<ConnectionManager>(),
+                this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
+            IActionResult result = controller.SyncFromDate(new WalletSyncRequest
+            {
+                WalletName = walletName,
+                Date = DateTime.Now.Subtract(new TimeSpan(1)).Date
+            });
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            mockWalletSyncManager.Verify();
+            Assert.NotNull(viewResult);
+            Assert.NotNull(viewResult.StatusCode == (int)HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public void WalletSyncAllReturnsOK()
+        {
+            string walletName = "myWallet";
+
+            var mockWalletSyncManager = new Mock<IWalletSyncManager>();
+            mockWalletSyncManager.Setup(w => w.SyncFromHeight(
+                It.Is<int>((val) => val.Equals(0)),
+                It.Is<string>(val => walletName.Equals(val))));
+
+            var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object,
+                new Mock<IWalletTransactionHandler>().Object, mockWalletSyncManager.Object, It.IsAny<ConnectionManager>(),
+                this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
+            IActionResult result = controller.SyncFromDate(new WalletSyncRequest
+            {
+                WalletName = walletName,
+                All = true
+            });
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            mockWalletSyncManager.Verify();
+            Assert.NotNull(viewResult);
+            Assert.NotNull(viewResult.StatusCode == (int)HttpStatusCode.OK);
+        }
+
+        [Fact]
         public void GetBalanceWithEmptyListOfAccountsReturnsWalletBalanceModel()
         {
             var accounts = new List<HdAccount>();
@@ -2102,6 +2155,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletManager = new Mock<IWalletManager>();
             mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+            mockWalletManager.Setup(m => m.GetUnusedAddresses(It.IsAny<WalletAccountReference>(), false)).Returns(new[] { unusedReceiveAddress }.ToList());
+            mockWalletManager.Setup(m => m.GetUnusedAddresses(It.IsAny<WalletAccountReference>(), true)).Returns(new[] { unusedChangeAddress }.ToList());
+            mockWalletManager.Setup(m => m.GetUsedAddresses(It.IsAny<WalletAccountReference>(), false)).Returns(new[] { (usedReceiveAddress, Money.Zero, Money.Zero) }.ToList());
+            mockWalletManager.Setup(m => m.GetUsedAddresses(It.IsAny<WalletAccountReference>(), true)).Returns(new[] { (usedChangeAddress, Money.Zero, Money.Zero) }.ToList());
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetAllAddresses(new GetAllAddressesModel { WalletName = "myWallet", AccountName = "Account 0" });

@@ -49,6 +49,11 @@ namespace Stratis.Bitcoin.Consensus
         void PeerDisconnected(int peerId);
 
         /// <summary>
+        /// Gets the Header Tip
+        /// </summary>
+        int? HeaderTip { get; }
+
+        /// <summary>
         /// Provides block data for the given block hashes.
         /// </summary>
         /// <remarks>

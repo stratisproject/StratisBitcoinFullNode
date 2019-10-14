@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Sign the message.
             HdAddress hdAddress = this.WalletRepository.GetAccounts(walletName).SelectMany(a => this.WalletRepository.GetUsedAddresses(
-                new WalletAccountReference(walletName, a.Name), int.MaxValue, false)).FirstOrDefault(addr => addr.Address.ToString() == externalAddress);
+                new WalletAccountReference(walletName, a.Name), false)).Select(a => a.address).FirstOrDefault(addr => addr.Address.ToString() == externalAddress);
 
             Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
             return privateKey.SignMessage(message);
@@ -804,12 +804,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-        //
-        //        /// <inheritdoc />
-        //        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-        //        {
-        //            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-        //        }
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, bool isChange = false)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+
+            return this.WalletRepository.GetUnusedAddresses(accountReference, isChange);
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<(HdAddress address, Money confirmed, Money total)> GetUsedAddresses(WalletAccountReference accountReference, bool isChange = false)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+
+            return this.WalletRepository.GetUsedAddresses(accountReference, isChange);
+        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
