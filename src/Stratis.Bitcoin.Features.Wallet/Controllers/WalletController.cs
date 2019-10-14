@@ -1184,22 +1184,32 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 if (account == null)
                     throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
 
-                var model = new AddressesModel
-                {
-                    Addresses = account.GetCombinedAddresses().Select(address =>
-                    {
-                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                var accRef = new WalletAccountReference(request.WalletName, request.AccountName);
 
+                var unusedNonChange = this.walletManager.GetUnusedAddresses(accRef, false)
+                    .Select(a => (address: a, isUsed: false, isChange: false, confirmed: Money.Zero, total: Money.Zero));
+                var unusedChange = this.walletManager.GetUnusedAddresses(accRef, true)
+                    .Select(a => (address: a, isUsed: false, isChange: true, confirmed: Money.Zero, total: Money.Zero));
+                var usedNonChange = this.walletManager.GetUsedAddresses(accRef, false)
+                    .Select(a => (address: a.address, isUsed: true, isChange: false, confirmed: a.confirmed, total: a.total));
+                var usedChange = this.walletManager.GetUsedAddresses(accRef, true)
+                    .Select(a => (address: a.address, isUsed: true, isChange: true, confirmed: a.confirmed, total: a.total));
+
+                var model = unusedNonChange
+                    .Concat(unusedChange)
+                    .Concat(usedNonChange)
+                    .Concat(usedChange)
+                    .Select(a =>
+                    {
                         return new AddressModel
                         {
-                            Address = address.Address,
-                            IsUsed = address.Transactions.Any(),
-                            IsChange = address.IsChangeAddress(),
-                            AmountConfirmed = confirmedAmount,
-                            AmountUnconfirmed = unConfirmedAmount
+                            Address = a.address.Address,
+                            IsUsed = a.isUsed,
+                            IsChange = a.isChange,
+                            AmountConfirmed = a.confirmed,
+                            AmountUnconfirmed = a.total - a.confirmed
                         };
-                    })
-                };
+                    });
 
                 return this.Json(model);
             }
