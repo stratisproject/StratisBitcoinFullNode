@@ -1187,15 +1187,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 var accRef = new WalletAccountReference(request.WalletName, request.AccountName);
 
                 var unusedNonChange = this.walletManager.GetUnusedAddresses(accRef, false)
-                    .Select(a => (address: a, isUsed: false, isChange: false, confirmed: Money.Zero, total: Money.Zero));
+                    .Select(a => (address: a, isUsed: false, isChange: false, confirmed: Money.Zero, total: Money.Zero)).ToList();
                 var unusedChange = this.walletManager.GetUnusedAddresses(accRef, true)
-                    .Select(a => (address: a, isUsed: false, isChange: true, confirmed: Money.Zero, total: Money.Zero));
+                    .Select(a => (address: a, isUsed: false, isChange: true, confirmed: Money.Zero, total: Money.Zero)).ToList();
                 var usedNonChange = this.walletManager.GetUsedAddresses(accRef, false)
-                    .Select(a => (address: a.address, isUsed: true, isChange: false, confirmed: a.confirmed, total: a.total));
+                    .Select(a => (address: a.address, isUsed: true, isChange: false, confirmed: a.confirmed, total: a.total)).ToList();
                 var usedChange = this.walletManager.GetUsedAddresses(accRef, true)
-                    .Select(a => (address: a.address, isUsed: true, isChange: true, confirmed: a.confirmed, total: a.total));
+                    .Select(a => (address: a.address, isUsed: true, isChange: true, confirmed: a.confirmed, total: a.total)).ToList();
 
-                var model = unusedNonChange
+                var model = new AddressesModel()
+                {
+                    Addresses = unusedNonChange
                     .Concat(unusedChange)
                     .Concat(usedNonChange)
                     .Concat(usedChange)
@@ -1209,7 +1211,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             AmountConfirmed = a.confirmed,
                             AmountUnconfirmed = a.total - a.confirmed
                         };
-                    });
+                    })
+                };
 
                 return this.Json(model);
             }

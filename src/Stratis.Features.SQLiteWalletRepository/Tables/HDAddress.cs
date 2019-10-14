@@ -71,8 +71,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         {
             return conn.Query<HDAddressWithBalances>($@"
                 SELECT  A.*
-,                       SUM(CASE WHEN D.OutputBlockHeight IS NOT NULL AND D.SpentBlockHeight IS NULL THEN D.Value ELSE 0 END) ConfirmedAmount
-,                       SUM(CASE WHEN D.SpentBlockHeight IS NULL THEN D.Value ELSE 0 END) TotalAmount
+,                       SUM(CASE WHEN D.OutputBlockHeight IS NOT NULL AND D.SpendBlockHeight IS NULL THEN D.Value ELSE 0 END) ConfirmedAmount
+,                       SUM(CASE WHEN D.SpendBlockHeight IS NULL THEN D.Value ELSE 0 END) TotalAmount
                 FROM    HDAddress A
                 LEFT    JOIN HDTransactionData D
                 ON      D.WalletId = A.WalletId
