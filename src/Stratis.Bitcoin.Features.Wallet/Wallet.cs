@@ -172,6 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A list of all the transactions in the wallet.</returns>
         public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null)
         {
+            /*
             if (this.WalletRepository != null)
             {
                 if (transactionTime != null && spendingTransactionId != null)
@@ -185,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         yield return txData;
                 }
             }
-            else
+            else */
             {
                 List<HdAccount> accounts = this.GetAccounts().ToList();
 
@@ -386,35 +387,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             IEnumerable<HdAccount> accounts = this.GetAccounts(accountFilter);
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));
-        }
-
-        /// <summary>
-        /// Calculates the fee paid by the user on a transaction sent.
-        /// </summary>
-        /// <param name="transactionId">The transaction id to look for.</param>
-        /// <returns>The fee paid.</returns>
-        public Money GetSentTransactionFee(DateTimeOffset transactionTime, uint256 transactionId)
-        {
-            List<TransactionData> allTransactions = this.GetAllTransactions(transactionTime, transactionId).ToList();
-
-            // Get a list of all the inputs spent in this transaction.
-            List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
-
-            if (!inputsSpentInTransaction.Any())
-            {
-                throw new WalletException("Not a sent transaction");
-            }
-
-            // Get the details of the spending transaction, which can be found on any input spent.
-            SpendingDetails spendingTransaction = inputsSpentInTransaction.Select(s => s.SpendingDetails).First();
-
-            // Get the change.
-            long change = spendingTransaction.Change.Sum(o => o.Amount);
-
-            Money inputsAmount = new Money(inputsSpentInTransaction.Sum(i => i.Amount));
-            Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + change);
-
-            return inputsAmount - outputsAmount;
         }
     }
 }

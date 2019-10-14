@@ -58,9 +58,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             return res;
         }
 
-        internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, IEnumerable<HDPayment> payments)
+        internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, TransactionCollection transactionCollection)
         {
-            TransactionData txData = new TransactionData()
+            var res = new TransactionData()
             {
                 Amount = new Money(transactionData.Value, MoneyUnit.BTC),
                 BlockHash = (transactionData.OutputBlockHash == null) ? null : uint256.Parse(transactionData.OutputBlockHash),
@@ -80,41 +80,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                     // BlockIndex // Not used currently.
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)transactionData.SpendTxTime),
                     IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
-                    TransactionId = uint256.Parse(transactionData.SpendTxId),
-                    Change = payments.Where(p => p.SpendIsChange != 0).Select(p => new PaymentDetails()
-                    {
-                        Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
-                        DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
-                        OutputIndex = p.SpendIndex
-                    }).ToList(),
-                    Payments = payments.Where(p => p.SpendIsChange == 0).Select(p => new PaymentDetails()
-                    {
-                        Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
-                        DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
-                        OutputIndex = p.SpendIndex
-                    }).ToList()
-                }
+                    TransactionId = uint256.Parse(transactionData.SpendTxId)
+                },
+                TransactionCollection = transactionCollection
             };
 
-            if (txData.SpendingDetails == null || repo.ScriptAddressReader == null)
-                return txData;
+            if (res.SpendingDetails != null)
+                res.SpendingDetails.TransactionData = res;
 
-            try
-            {
-                IEnumerable<PaymentDetails> allDetails = txData.SpendingDetails.Change.Concat(txData.SpendingDetails.Payments);
-                var lookup = allDetails.Select(d => d.DestinationScriptPubKey).Distinct().ToDictionary(d => d, d => (string)null);
-                foreach (Script script in lookup.Keys.ToList())
-                    lookup[script] = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, script);
-
-                foreach (PaymentDetails paymentDetails in allDetails)
-                    paymentDetails.DestinationAddress = lookup[paymentDetails.DestinationScriptPubKey];
-            }
-            catch (Exception err)
-            {
-                throw;
-            }
-
-            return txData;
+            return res;
         }
     }
 }

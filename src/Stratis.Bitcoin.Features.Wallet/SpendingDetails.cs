@@ -1,17 +1,115 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    public class PaymentCollection : ICollection<PaymentDetails>
+    {
+        private bool isChange;
+        private List<PaymentDetails> payments;
+        private SpendingDetails spendingDetails;
+        private TransactionData transactionData => this.spendingDetails?.TransactionData;
+        private HdAccount account => this.transactionData?.TransactionCollection?.Address?.AddressCollection?.Account;
+        private Wallet wallet => this.account?.AccountRoot?.Wallet;
+        private IWalletRepository repository => this.wallet?.WalletRepository;
+
+        public int Count => this.GetPayments().Count();
+        public bool IsReadOnly => true;
+
+        private IEnumerable<PaymentDetails> GetPayments()
+        {
+            // TODO: if (this.payments == null)
+            {
+                if (this.repository != null)
+                    this.payments = this.repository.GetPaymentDetails(this.wallet.Name, this.transactionData, this.isChange).ToList();
+                else
+                    this.payments = this.payments ?? new List<PaymentDetails>();
+            }
+
+            return this.payments;
+        }
+
+        public PaymentCollection(SpendingDetails spendingDetails, ICollection<PaymentDetails> payments, bool isChange)
+        {
+            this.isChange = isChange;
+            this.spendingDetails = spendingDetails;
+
+            if (this.repository == null)
+            {
+                this.payments = payments.ToList();
+                return;
+            }
+
+            if (this.repository != null && payments != null)
+                foreach (PaymentDetails payment in payments)
+                    this.Add(payment);
+        }
+
+        public PaymentCollection(SpendingDetails spendingDetails)
+        {
+        }
+
+        public void Add(PaymentDetails payment)
+        {
+            if (this.repository == null)
+                this.payments.Add(payment);
+            else
+                throw new NotImplementedException();
+        }
+
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Contains(PaymentDetails payment)
+        {
+            return this.payments.Contains(payment);
+        }
+
+        public void CopyTo(PaymentDetails[] arr, int index)
+        {
+            foreach (PaymentDetails payment in this.GetPayments())
+                arr[index++] = payment;
+        }
+
+        public bool Remove(PaymentDetails paymentDetails)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerator<PaymentDetails> GetEnumerator()
+        {
+            return this.GetPayments().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetPayments().GetEnumerator();
+        }
+    }
+
     public class SpendingDetails
     {
+        public TransactionData TransactionData { get; set; }
+
         public SpendingDetails()
         {
-            this.Payments = new List<PaymentDetails>();
-            this.Change = new List<PaymentDetails>();
+            this.Payments = new PaymentCollection(this, new List<PaymentDetails>(), false);
+            this.Change = new PaymentCollection(this, new List<PaymentDetails>(), true);
+        }
+
+        [JsonConstructor]
+        public SpendingDetails(ICollection<PaymentDetails> payments, ICollection<PaymentDetails> change)
+        {
+            this.Payments = new PaymentCollection(this, payments, false);
+            this.Change = new PaymentCollection(this, change, true);
         }
 
         /// <summary>
@@ -27,6 +125,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [JsonProperty(PropertyName = "payments", NullValueHandling = NullValueHandling.Ignore)]
         public ICollection<PaymentDetails> Payments { get; set; }
 
+        [JsonProperty(PropertyName = "change", NullValueHandling = NullValueHandling.Ignore)]
         public ICollection<PaymentDetails> Change { get; set; }
 
         /// <summary>

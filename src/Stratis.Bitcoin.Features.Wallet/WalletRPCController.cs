@@ -213,6 +213,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference accountReference = this.GetWalletAccountReference();
 
+            HdAccount hdAccount = this.walletManager.WalletRepository.GetAccounts(accountReference.WalletName, accountReference.AccountName).First();
+
             IWalletAddressReadOnlyLookup addressLookup = this.walletManager.WalletRepository.GetWalletAddressLookup(accountReference.WalletName);
 
             bool IsChangeAddress(Script scriptPubKey)
@@ -221,9 +223,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Get the transaction from the wallet by looking into received and send transactions.
-            List<TransactionData> receivedTransactions = this.walletManager.WalletRepository.GetTransactionOutputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true)
+            List<TransactionData> receivedTransactions = this.walletManager.WalletRepository.GetTransactionOutputs(hdAccount, null, trxid, true)
                 .Where(td => !IsChangeAddress(td.ScriptPubKey)).ToList();
-            List<TransactionData> sentTransactions = this.walletManager.WalletRepository.GetTransactionInputs(accountReference.WalletName, accountReference.AccountName, null, trxid, true).ToList();
+            List<TransactionData> sentTransactions = this.walletManager.WalletRepository.GetTransactionInputs(hdAccount, null, trxid, true).ToList();
 
             TransactionData firstReceivedTransaction = receivedTransactions.FirstOrDefault();
             TransactionData firstSendTransaction = sentTransactions.FirstOrDefault();
