@@ -356,11 +356,44 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
 
-            if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
-                throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
+            var totalRecipients = context.Recipients.Count(r => r.SubtractFeeFromAmount);
 
-            foreach (Recipient recipient in context.Recipients)
-                context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
+            // If we have any recipients that require a fee to be subtracted from the amount, then
+            // calculate fee and evenly distribute it among all recipients. Any remaining fee should be
+            // subtracted from the first recipient.
+            if (totalRecipients > 0)
+            {
+                Money fee = this.CalculateFee(context);
+                var recipientFee = fee.Satoshi / totalRecipients;
+                var remainingFee = fee.Satoshi % totalRecipients;
+
+                for (int i = 0; i < context.Recipients.Count; i++)
+                {
+                    var recipient = context.Recipients[i];
+
+                    if (recipient.SubtractFeeFromAmount)
+                    {
+                        // First receiver pays the remainder not divisible by output count.
+                        long feeToSubtract = i == 0 ? remainingFee + recipientFee : recipientFee;
+                        long remainingAmount = recipient.Amount.Satoshi - feeToSubtract;
+                        if (remainingAmount <= 0)
+                            throw new WalletException("Fee is higher than amount to send.");
+
+                        context.TransactionBuilder.Send(recipient.ScriptPubKey, new Money(remainingAmount));
+                    }
+                    else
+                    {
+                        context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
+                    }
+                }
+            }
+            else
+            {
+                foreach (Recipient recipient in context.Recipients)
+                {
+                    context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
+                }
+            }
         }
 
         /// <summary>
@@ -368,6 +401,31 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddFee(TransactionBuildContext context)
+        {
+            if (context.Recipients.Any(r => r.SubtractFeeFromAmount))
+                return;
+
+            Money fee = this.CalculateFee(context);
+
+            context.TransactionBuilder.SendFees(fee);
+            context.TransactionFee = fee;
+        }
+
+        /// <summary>
+        /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        protected void AddOpReturnOutput(TransactionBuildContext context)
+        {
+            if (string.IsNullOrEmpty(context.OpReturnData)) return;
+
+            byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            // TODO: Get the template from the network standard scripts instead
+            Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+            context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
+        }
+
+        private Money CalculateFee(TransactionBuildContext context)
         {
             Money fee;
             Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
@@ -391,23 +449,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 fee = context.TransactionFee;
             }
 
-            context.TransactionBuilder.SendFees(fee);
-            context.TransactionFee = fee;
+            return fee;
         }
 
-        /// <summary>
-        /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
-        /// </summary>
-        /// <param name="context">The context associated with the current transaction being built.</param>
-        protected void AddOpReturnOutput(TransactionBuildContext context)
-        {
-            if (string.IsNullOrEmpty(context.OpReturnData)) return;
-
-            byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
-            // TODO: Get the template from the network standard scripts instead
-            Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-            context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
-        }
     }
 
     public class TransactionBuildContext
