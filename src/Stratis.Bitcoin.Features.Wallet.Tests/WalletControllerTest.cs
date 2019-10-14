@@ -2155,6 +2155,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletManager = new Mock<IWalletManager>();
             mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+            mockWalletManager.Setup(m => m.GetUnusedAddresses(It.IsAny<WalletAccountReference>(), false)).Returns(new[] { unusedReceiveAddress }.ToList());
+            mockWalletManager.Setup(m => m.GetUnusedAddresses(It.IsAny<WalletAccountReference>(), true)).Returns(new[] { unusedChangeAddress }.ToList());
+            mockWalletManager.Setup(m => m.GetUsedAddresses(It.IsAny<WalletAccountReference>(), false)).Returns(new[] { (usedReceiveAddress, Money.Zero, Money.Zero) }.ToList());
+            mockWalletManager.Setup(m => m.GetUsedAddresses(It.IsAny<WalletAccountReference>(), true)).Returns(new[] { (usedChangeAddress, Money.Zero, Money.Zero) }.ToList());
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetAllAddresses(new GetAllAddressesModel { WalletName = "myWallet", AccountName = "Account 0" });

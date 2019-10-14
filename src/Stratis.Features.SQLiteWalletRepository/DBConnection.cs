@@ -246,7 +246,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return addresses;
         }
 
-        internal IEnumerable<HDAddress> GetUsedAddresses(int walletId, int accountIndex, int addressType, int count)
+        internal IEnumerable<HDAddressWithBalances> GetUsedAddresses(int walletId, int accountIndex, int addressType, int count)
         {
             return HDAddress.GetUsedAddresses(this, walletId, accountIndex, addressType, count);
         }
