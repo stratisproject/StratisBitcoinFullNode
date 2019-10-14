@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         long feeToSubtract = i == 0 ? remainingFee + recipientFee : recipientFee;
                         long remainingAmount = recipient.Amount.Satoshi - feeToSubtract;
                         if (remainingAmount <= 0)
-                            throw new WalletException("Fee is higher than amount to send.");
+                            throw new WalletException($"Fee {feeToSubtract} is higher than amount {recipient.Amount.Satoshi} to send.");
 
                         context.TransactionBuilder.Send(recipient.ScriptPubKey, new Money(remainingAmount));
                     }
