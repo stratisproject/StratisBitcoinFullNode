@@ -83,24 +83,23 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             Assert.True(this.slotsManager.IsValidTimestamp(this.slotsManager.GetMiningTimestamp(roundStart - 5)));
 
-            uint actualNextTurnTimestamp = roundStart + this.consensusOptions.TargetSpacingSeconds;
+            uint thisTurnTimestamp = roundStart + this.consensusOptions.TargetSpacingSeconds;
+            uint nextTurnTimestamp = thisTurnTimestamp + this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count;
 
-            // If we ask for our next timestamp, and we are just after our opportunity to mine...
+            // If we are past our last timestamp's turn, always give us the NEXT timestamp.
+            uint justPastOurTurnTime = thisTurnTimestamp + (this.consensusOptions.TargetSpacingSeconds / 2) + 1;
+            Assert.Equal(nextTurnTimestamp, this.slotsManager.GetMiningTimestamp(justPastOurTurnTime));
 
-            // If we are closer to the next turn than our own, get the next turn's' timestamp
-            Assert.Equal(actualNextTurnTimestamp + this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count,
-                this.slotsManager.GetMiningTimestamp(actualNextTurnTimestamp + (this.consensusOptions.TargetSpacingSeconds / 2) + 1));
+            // If we are only just past our last timestamp, but still in the "range" and we haven't mined a block yet, get THIS turn's timestamp.
+            Assert.Equal(thisTurnTimestamp, this.slotsManager.GetMiningTimestamp(thisTurnTimestamp + 1));
 
-            // If we have not already mined, get this turn's time
-            Assert.Equal(actualNextTurnTimestamp, this.slotsManager.GetMiningTimestamp(actualNextTurnTimestamp + 1));
-
-            // If we have already mined, get the next turn's time.
+            // If we are only just past our last timestamp, but we've already mined a block there, then get the NEXT turn's timestamp.
             this.consensusManagerMock.Setup(x => x.Tip).Returns(new ChainedHeader(new BlockHeader
             {
-                Time = actualNextTurnTimestamp
+                Time = thisTurnTimestamp
             }, 0, 0));
             this.slotsManager = new SlotsManager(this.network, fedManager, this.consensusManagerMock.Object, new LoggerFactory());
-            Assert.Equal(actualNextTurnTimestamp + this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count, this.slotsManager.GetMiningTimestamp(actualNextTurnTimestamp + 1));
+            Assert.Equal(nextTurnTimestamp, this.slotsManager.GetMiningTimestamp(thisTurnTimestamp + 1));
 
         }
     }
