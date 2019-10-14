@@ -569,14 +569,17 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAccount> GetAccounts(string walletName, string accountName = null)
+        public IEnumerable<HdAccount> GetAccounts(Wallet hdWallet, string accountName = null)
         {
-            WalletContainer walletContainer = this.GetWalletContainer(walletName);
+            WalletContainer walletContainer = this.GetWalletContainer(hdWallet.Name);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
             foreach (HDAccount account in conn.GetAccounts(wallet.WalletId, accountName))
             {
-                yield return this.ToHdAccount(account);
+                var res = this.ToHdAccount(account);
+                res.WalletAccounts = hdWallet.AccountsRoot.First().Accounts;
+
+                yield return res;
             }
         }
 
@@ -996,7 +999,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             WalletContainer walletContainer = this.GetWalletContainer(walletAccountReference.WalletName);
             DBConnection conn = walletContainer.Conn;
 
-            HdAccount hdAccount = this.GetAccounts(walletAccountReference.WalletName, walletAccountReference.AccountName).FirstOrDefault();
+            Wallet hdWallet = this.GetWallet(walletAccountReference.WalletName);
+            HdAccount hdAccount = this.GetAccounts(hdWallet, walletAccountReference.AccountName).FirstOrDefault();
 
             foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(walletContainer.Wallet.WalletId, hdAccount.Index, currentChainHeight, coinBaseMaturity ?? this.Network.Consensus.CoinbaseMaturity, confirmations))
             {
@@ -1137,6 +1141,39 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AccountIndex = accountIndex,
                 AddressType = addressType,
                 AddressIndex = addressIndex
+            };
+        }
+
+        /// <inheritdoc />
+        public AccountHistory GetHistory(HdAccount account)
+        {
+            Wallet hdWallet = account.AccountRoot.Wallet;
+            WalletContainer walletContainer = this.GetWalletContainer(hdWallet.Name);
+            (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
+
+            var history = new List<FlatHistory>();
+
+            foreach (HDAddress address in conn.GetUsedAddresses(wallet.WalletId, account.Index, HDAddress.External, int.MaxValue)
+                .Concat(conn.GetUsedAddresses(wallet.WalletId, account.Index, HDAddress.Internal, int.MaxValue)))
+            {
+                HdAddress hdAddress = this.ToHdAddress(address);
+
+                hdAddress.AddressCollection = (address.AddressType == 0) ? account.ExternalAddresses : account.InternalAddresses;
+
+                foreach (var transaction in conn.GetTransactionsForAddress(wallet.WalletId, account.Index, address.AddressType, address.AddressIndex))
+                {
+                    history.Add(new FlatHistory()
+                    {
+                        Address = hdAddress,
+                        Transaction = this.ToTransactionData(transaction, hdAddress.Transactions)
+                    });
+                }
+            }
+
+            return new AccountHistory()
+            {
+                Account = account,
+                History = history
             };
         }
 

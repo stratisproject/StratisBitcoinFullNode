@@ -213,7 +213,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference accountReference = this.GetWalletAccountReference();
 
-            HdAccount hdAccount = this.walletManager.WalletRepository.GetAccounts(accountReference.WalletName, accountReference.AccountName).First();
+            Wallet hdWallet = this.walletManager.WalletRepository.GetWallet(accountReference.WalletName);
+            HdAccount hdAccount = this.walletManager.WalletRepository.GetAccounts(hdWallet, accountReference.AccountName).First();
 
             IWalletAddressReadOnlyLookup addressLookup = this.walletManager.WalletRepository.GetWalletAddressLookup(accountReference.WalletName);
 

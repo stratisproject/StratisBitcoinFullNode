@@ -251,10 +251,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Get the accounts in the wallet.
         /// </summary>
-        /// <param name="walletName">The name of the wallet to get the accounts for.</param>
+        /// <param name="hdWallet">The wallet to get the accounts for.</param>
         /// <param name="accountName">Specifies a specific account to return.</param>
         /// <returns>The accounts in the wallet.</returns>
-        IEnumerable<HdAccount> GetAccounts(string walletName, string accountName = null);
+        IEnumerable<HdAccount> GetAccounts(Wallet hdWallet, string accountName = null);
 
         /// <summary>
         /// Get the names of the wallets in the repository.

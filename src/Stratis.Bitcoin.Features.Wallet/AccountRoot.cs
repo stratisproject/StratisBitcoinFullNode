@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.walletRepository == null)
                 return this.accounts.Contains(account);
 
-            return this.walletRepository.GetAccounts(this.wallet.Name).Any(a => a.Index == account.Index);
+            return this.walletRepository.GetAccounts(this.wallet).Any(a => a.Index == account.Index);
         }
 
         public void CopyTo(HdAccount[] arr, int index)
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public IEnumerable<HdAccount> GetAccounts(Func<HdAccount, bool> accountFilter = null)
         {
-            var accounts = (this.walletRepository == null) ? this.accounts : this.walletRepository.GetAccounts(this.wallet.Name);
+            var accounts = (this.walletRepository == null) ? this.accounts : this.walletRepository.GetAccounts(this.AccountRoot.Wallet);
 
             if (accountFilter != null)
                 accounts = accounts.Where(accountFilter);

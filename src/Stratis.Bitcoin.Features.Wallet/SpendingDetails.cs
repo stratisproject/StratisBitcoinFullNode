@@ -39,20 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.isChange = isChange;
             this.spendingDetails = spendingDetails;
-
-            if (this.repository == null)
-            {
-                this.payments = payments.ToList();
-                return;
-            }
-
-            if (this.repository != null && payments != null)
-                foreach (PaymentDetails payment in payments)
-                    this.Add(payment);
-        }
-
-        public PaymentCollection(SpendingDetails spendingDetails)
-        {
+            this.payments = payments?.ToList() ?? new List<PaymentDetails>();
         }
 
         public void Add(PaymentDetails payment)

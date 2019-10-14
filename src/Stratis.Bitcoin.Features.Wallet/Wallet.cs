@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             // TODO: IEnumerable<HdAccount> accounts = this.WalletManager.GetAccounts(this.Name);
             //       Only WalletManager shiuld reference repository directly?
-            IEnumerable<HdAccount> accounts = (this.WalletRepository == null) ? this.AccountsRoot.First().Accounts : this.WalletRepository.GetAccounts(this.Name);
+            IEnumerable<HdAccount> accounts = (this.WalletRepository == null) ? this.AccountsRoot.First().Accounts : this.WalletRepository.GetAccounts(this);
 
             return accounts.Concat(new[] { new HdAccount() { Index = -1 } })
                 .Where(NormalAccounts)
