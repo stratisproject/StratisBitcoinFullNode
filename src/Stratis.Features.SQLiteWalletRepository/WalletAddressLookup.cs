@@ -63,9 +63,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             walletId = this.walletId ?? walletId;
 
-            string strWalletId = DBTable.DBParameter(walletId);
-            string strAccountIndex = DBTable.DBParameter(accountIndex);
-            string strAddressType = DBTable.DBParameter(addressType);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strAddressType = DBParameter.Create(addressType);
 
             List<HDAddress> addresses = this.conn.Query<HDAddress>($@"
                 SELECT  *
@@ -93,8 +93,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         private bool Exists(Script scriptPubKey, out AddressIdentifier address)
         {
-            string strWalletId = DBTable.DBParameter(this.walletId);
-            string strHex = DBTable.DBParameter(scriptPubKey.ToHex());
+            string strWalletId = DBParameter.Create(this.walletId);
+            string strHex = DBParameter.Create(scriptPubKey.ToHex());
 
             address = this.conn.FindWithQuery<AddressIdentifier>($@"
                         SELECT  WalletId

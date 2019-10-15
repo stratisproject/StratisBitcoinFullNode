@@ -3,7 +3,7 @@ using SQLite;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
-    internal class HDTransactionData : DBTable
+    internal class HDTransactionData
     {
         public int WalletId { get; set; }
         public int AccountIndex { get; set; }
@@ -64,13 +64,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int? accountIndex, int? addressType, int? addressIndex, int limit = int.MaxValue, HDTransactionData prev = null, bool descending = true)
         {
-            string strWalletId = DBParameter(walletId);
-            string strAccountIndex = DBParameter(accountIndex);
-            string strAddressType = DBParameter(addressType);
-            string strAddressIndex = DBParameter(addressIndex);
-            string strLimit = DBParameter(limit);
-            string strPrevTime = DBParameter(prev?.OutputTxTime);
-            string strPrevIndex = DBParameter(prev?.OutputIndex);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strAddressType = DBParameter.Create(addressType);
+            string strAddressIndex = DBParameter.Create(addressIndex);
+            string strLimit = DBParameter.Create(limit);
+            string strPrevTime = DBParameter.Create(prev?.OutputTxTime);
+            string strPrevIndex = DBParameter.Create(prev?.OutputIndex);
 
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
@@ -93,10 +93,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
 
-            string strWalletId = DBParameter(walletId);
-            string strAccountIndex = DBParameter(accountIndex);
-            string strMaxConfirmationHeight = DBParameter(maxConfirmationHeight);
-            string strMaxCoinBaseHeight = DBParameter(maxCoinBaseHeight);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strMaxConfirmationHeight = DBParameter.Create(maxConfirmationHeight);
+            string strMaxCoinBaseHeight = DBParameter.Create(maxCoinBaseHeight);
 
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
@@ -122,10 +122,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
 
-            string strWalletId = DBParameter(walletId);
-            string strAccountIndex = DBParameter(accountIndex);
-            string strMaxConfirmationHeight = DBParameter(maxConfirmationHeight);
-            string strMaxCoinBaseHeight = DBParameter(maxCoinBaseHeight);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strMaxConfirmationHeight = DBParameter.Create(maxConfirmationHeight);
+            string strMaxCoinBaseHeight = DBParameter.Create(maxCoinBaseHeight);
 
             var balanceData = conn.FindWithQuery<BalanceData>($@"
                 SELECT SUM(Value) TotalBalance
@@ -134,7 +134,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 FROM   HDTransactionData
                 WHERE  (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})
                 AND    SpendTxTime IS NULL { ((address == null) ? "" : $@"
-                AND    (AddressType, AddressIndex) IN (SELECT {DBParameter(address?.type)}, {DBParameter(address?.index)})")}");
+                AND    (AddressType, AddressIndex) IN (SELECT {DBParameter.Create(address?.type)}, {DBParameter.Create(address?.index)})")}");
 
             return (balanceData.TotalBalance, balanceData.ConfirmedBalance, balanceData.SpendableBalance);
         }
@@ -142,10 +142,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         // Finds account transactions acting as inputs to other wallet transactions - i.e. not a complete list of transaction inputs.
         internal static IEnumerable<HDTransactionData> FindTransactionInputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
-            string strWalletId = DBParameter(walletId);
-            string strAccountIndex = DBParameter(accountIndex);
-            string strTransactionTime = DBParameter(transactionTime);
-            string strTransactionId = DBParameter(transactionId);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strTransactionTime = DBParameter.Create(transactionTime);
+            string strTransactionId = DBParameter.Create(transactionId);
 
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
@@ -160,10 +160,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         // Finds the wallet transaction data related to a transaction - i.e. not a complete list of transaction outputs.
         internal static IEnumerable<HDTransactionData> FindTransactionOutputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
-            string strWalletId = DBParameter(walletId);
-            string strAccountIndex = DBParameter(accountIndex);
-            string strTransactionTime = DBParameter(transactionTime);
-            string strTransactionId = DBParameter(transactionId);
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strTransactionTime = DBParameter.Create(transactionTime);
+            string strTransactionId = DBParameter.Create(transactionId);
 
             return conn.Query<HDTransactionData>($@"
                 SELECT  *

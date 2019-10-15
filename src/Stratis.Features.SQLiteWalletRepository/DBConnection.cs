@@ -433,8 +433,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal long? RemoveUnconfirmedTransaction(int walletId, uint256 txId)
         {
-            string strWalletId = DBTable.DBParameter(walletId);
-            string strTxId = DBTable.DBParameter(txId);
+            string strWalletId = DBParameter.Create(walletId);
+            string strTxId = DBParameter.Create(txId);
 
             string outputFilter = $@"
             WHERE   OutputTxId = {strTxId}
@@ -455,7 +455,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<(string txId, long creationTime)> RemoveAllUnconfirmedTransactions(int walletId)
         {
-            string strWalletId = DBTable.DBParameter(walletId);
+            string strWalletId = DBParameter.Create(walletId);
 
             string outputFilter = $@"
             WHERE   OutputBlockHeight IS NULL
@@ -474,8 +474,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<(string txId, long unixTimeSeconds)> RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
         {
-            string strWalletId = DBTable.DBParameter(walletId);
-            string strLastBlockSyncedHeight = DBTable.DBParameter(lastBlockSyncedHeight);
+            string strWalletId = DBParameter.Create(walletId);
+            string strLastBlockSyncedHeight = DBParameter.Create(lastBlockSyncedHeight);
 
             string outputFilter = (walletId == null) ? $@"
             WHERE   OutputBlockHeight > {strLastBlockSyncedHeight}" : $@"

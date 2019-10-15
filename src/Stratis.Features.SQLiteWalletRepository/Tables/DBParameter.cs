@@ -4,10 +4,11 @@ using NBitcoin;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
-    internal class DBTable
+    public static class DBParameter
     {
-        // Intended to handle string, int, long and decimal.
-        internal static string DBParameter(object prop)
+        // Creates a culture-neutral string for inserting an object's value into an SQL command.
+        // Strings generated from numbers use a period ('.') decimal separator and don't contain commas or any other culture-specific formatting.
+        internal static string Create(object prop)
         {
             if (prop == null)
                 return "NULL";
@@ -31,7 +32,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             }
 
-            throw new InvalidOperationException($"Unsupported data type passed to {nameof(DBParameter)} method");
+            throw new InvalidOperationException($"Unsupported data type passed to {nameof(Create)} method");
         }
     }
 }

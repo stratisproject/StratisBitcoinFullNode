@@ -93,7 +93,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal static string ObjectRow(PropertyInfo[] props, object obj)
         {
-            var res = props.Select(p => p.GetValue(obj)).Select(prop => DBTable.DBParameter(prop));
+            var res = props.Select(p => p.GetValue(obj)).Select(prop => DBParameter.Create(prop));
             var arr = string.Join(",", res);
             return $"({arr})";
         }

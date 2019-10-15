@@ -7,7 +7,7 @@ using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
-    internal class HDWallet : DBTable
+    internal class HDWallet
     {
         public string Name { get; set; }
         [PrimaryKey]
@@ -127,7 +127,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                     WHERE  LastBlockSyncedHash = ? {
                     // Respect the wallet name if provided.
                     ((wallet?.Name != null) ? $@"
-                    AND    Name = {DBParameter(wallet?.Name)}" : "")}",
+                    AND    Name = {DBParameter.Create(wallet?.Name)}" : "")}",
                     lastBlockSyncedHash.ToString(),
                     lastBlockSyncedHeight,
                     blockLocator,
