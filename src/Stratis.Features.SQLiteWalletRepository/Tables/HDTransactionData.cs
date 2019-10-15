@@ -64,20 +64,28 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int? accountIndex, int? addressType, int? addressIndex, int limit = int.MaxValue, HDTransactionData prev = null, bool descending = true)
         {
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strAddressType = DBParameter.Create(addressType);
+            string strAddressIndex = DBParameter.Create(addressIndex);
+            string strLimit = DBParameter.Create(limit);
+            string strPrevTime = DBParameter.Create(prev?.OutputTxTime);
+            string strPrevIndex = DBParameter.Create(prev?.OutputIndex);
+
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId} {((accountIndex == null) ? $@"
-                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})" : $@"
-                AND     AccountIndex = {accountIndex}")} {((addressType == null) ? $@"
+                WHERE   WalletId = {strWalletId} {((accountIndex == null) ? $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {strWalletId})" : $@"
+                AND     AccountIndex = {strAccountIndex}")} {((addressType == null) ? $@"
                 AND     AddressType IN (0, 1)" : $@"
-                AND     AddressType = {addressType}")} {((addressIndex == null) ? "" : $@"
-                AND     AddressIndex = {addressIndex}")} {((prev == null) ? "" : (!descending ? $@"
-                AND 	(OutputTxTime > {prev.OutputTxTime} OR (OutputTxTime = {prev.OutputTxTime} AND OutputIndex > {prev.OutputIndex}))" : $@"
-                AND 	(OutputTxTime < {prev.OutputTxTime} OR (OutputTxTime = {prev.OutputTxTime} AND OutputIndex < {prev.OutputIndex}))"))} {(!descending ? $@"
+                AND     AddressType = {strAddressType}")} {((addressIndex == null) ? "" : $@"
+                AND     AddressIndex = {strAddressIndex}")} {((prev == null) ? "" : (!descending ? $@"
+                AND 	(OutputTxTime > {strPrevTime} OR (OutputTxTime = {strPrevTime} AND OutputIndex > {strPrevIndex}))" : $@"
+                AND 	(OutputTxTime < {strPrevTime} OR (OutputTxTime = {strPrevTime} AND OutputIndex < {strPrevIndex}))"))} {(!descending ? $@"
                 ORDER   BY WalletId, AccountIndex, OutputTxTime, OutputIndex" : $@"
                 ORDER   BY WalletId DESC, AccountIndex DESC, OutputTxTime DESC, OutputIndex DESC")}
-                LIMIT   {limit}");
+                LIMIT   {strLimit}");
         }
 
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
@@ -85,13 +93,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
 
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strMaxConfirmationHeight = DBParameter.Create(maxConfirmationHeight);
+            string strMaxCoinBaseHeight = DBParameter.Create(maxCoinBaseHeight);
+
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   (WalletId, AccountIndex) IN (SELECT {walletId}, {accountIndex})
+                WHERE   (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})
                 AND     SpendTxTime IS NULL {((confirmations == 0) ? "" : $@"
-                AND     OutputBlockHeight <= {maxConfirmationHeight}")}
-                AND     (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {maxCoinBaseHeight})
+                AND     OutputBlockHeight <= {strMaxConfirmationHeight}")}
+                AND     (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {strMaxCoinBaseHeight})
                 ORDER   BY OutputBlockHeight
                 ,       OutputTxId
                 ,       OutputIndex");
@@ -109,14 +122,19 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
 
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strMaxConfirmationHeight = DBParameter.Create(maxConfirmationHeight);
+            string strMaxCoinBaseHeight = DBParameter.Create(maxCoinBaseHeight);
+
             var balanceData = conn.FindWithQuery<BalanceData>($@"
                 SELECT SUM(Value) TotalBalance
-                ,      SUM(CASE WHEN OutputBlockHeight <= {maxConfirmationHeight} AND (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {maxCoinBaseHeight}) THEN Value ELSE 0 END) SpendableBalance
+                ,      SUM(CASE WHEN OutputBlockHeight <= {strMaxConfirmationHeight} AND (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {strMaxCoinBaseHeight}) THEN Value ELSE 0 END) SpendableBalance
                 ,      SUM(CASE WHEN OutputBlockHeight IS NOT NULL THEN Value ELSE 0 END) ConfirmedBalance
                 FROM   HDTransactionData
-                WHERE  (WalletId, AccountIndex) IN (SELECT {walletId}, {accountIndex})
+                WHERE  (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})
                 AND    SpendTxTime IS NULL { ((address == null) ? "" : $@"
-                AND    (AddressType, AddressIndex) IN (SELECT {address?.type}, {address?.index})")}");
+                AND    (AddressType, AddressIndex) IN (SELECT {DBParameter.Create(address?.type)}, {DBParameter.Create(address?.index)})")}");
 
             return (balanceData.TotalBalance, balanceData.ConfirmedBalance, balanceData.SpendableBalance);
         }
@@ -124,27 +142,37 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         // Finds account transactions acting as inputs to other wallet transactions - i.e. not a complete list of transaction inputs.
         internal static IEnumerable<HDTransactionData> FindTransactionInputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strTransactionTime = DBParameter.Create(transactionTime);
+            string strTransactionId = DBParameter.Create(transactionId);
+
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId} {((accountIndex != null) ? $@"
-                AND     AccountIndex = {accountIndex}" : $@"
-                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})")} { ((transactionTime == null) ? "" : $@"
-                AND     SpendTxTime = {transactionTime}")}
-                AND     SpendTxId = '{transactionId}'");
+                WHERE   WalletId = {strWalletId} {((accountIndex != null) ? $@"
+                AND     AccountIndex = {strAccountIndex}" : $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {strWalletId})")} { ((transactionTime == null) ? "" : $@"
+                AND     SpendTxTime = {strTransactionTime}")}
+                AND     SpendTxId = {strTransactionId}");
         }
 
         // Finds the wallet transaction data related to a transaction - i.e. not a complete list of transaction outputs.
         internal static IEnumerable<HDTransactionData> FindTransactionOutputs(DBConnection conn, int walletId, int? accountIndex, long? transactionTime, string transactionId)
         {
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            string strTransactionTime = DBParameter.Create(transactionTime);
+            string strTransactionId = DBParameter.Create(transactionId);
+
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId} {((accountIndex != null) ? $@"
-                AND     AccountIndex = {accountIndex}" : $@"
-                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})")} { ((transactionTime == null) ? "" : $@"
-                AND     OutputTxTime = {transactionTime}")}
-                AND     OutputTxId = '{transactionId}'");
+                WHERE   WalletId = {strWalletId} {((accountIndex != null) ? $@"
+                AND     AccountIndex = {strAccountIndex}" : $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {strWalletId})")} { ((transactionTime == null) ? "" : $@"
+                AND     OutputTxTime = {strTransactionTime}")}
+                AND     OutputTxId = {strTransactionId}");
         }
     }
 }

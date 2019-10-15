@@ -391,11 +391,13 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     conn.Execute($@"
                         DELETE  FROM HDAddress
-                        WHERE   WalletId = {walletId}");
+                        WHERE   WalletId = ?",
+                        walletId);
 
                     conn.Execute($@"
                         DELETE  FROM HDAccount
-                        WHERE   WalletId = {walletId}");
+                        WHERE   WalletId = ?",
+                        walletId);
 
                     conn.Commit();
                 }
@@ -1204,8 +1206,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SELECT  ScriptPubKey
                 ,       SpendTxId TransactionId
                 FROM    HDTransactionData
-                WHERE   WalletId = {wallet.WalletId}
-                AND     TransactionId IS NOT NULL"))
+                WHERE   WalletId = ?
+                AND     TransactionId IS NOT NULL",
+                wallet.WalletId))
             {
                 var spendTxId = spendData.TransactionId;
                 if (spendTxId != null)
@@ -1225,7 +1228,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SELECT  ScriptPubKey
                 ,       OutputTxId TransactionId
                 FROM    HDTransactionData
-                WHERE   WalletId = {wallet.WalletId}"))
+                WHERE   WalletId = ?",
+                wallet.WalletId))
             {
                 if (addressGroupings.TryGetValue(outputData.TransactionId, out HashSet<string> grouping))
                     grouping.Add(outputData.ScriptPubKey);

@@ -194,9 +194,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference account = this.GetWalletAccountReference();
 
-            Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
-            return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
-        }
+            AccountBalance balances = this.walletManager.GetBalances(account.WalletName, account.AccountName, minConfirmations).FirstOrDefault();
+            return balances?.SpendableAmount.ToUnit(MoneyUnit.BTC) ?? 0;
+       }
 
         /// <summary>
         /// RPC method to return transaction info from the wallet. Will only work fully if 'txindex' is set.
