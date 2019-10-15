@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Api
             // Hack to be able to access and modify the options object configured here in SwaggerUIContractListMiddleware.
             services.AddSingleton(_ => this.uiOptions);
 
-            services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
+            //services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

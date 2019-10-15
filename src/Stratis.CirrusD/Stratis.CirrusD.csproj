@@ -14,4 +14,10 @@
     <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

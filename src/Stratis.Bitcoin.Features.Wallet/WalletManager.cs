@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Check if it already exists, if not, create one.
                 if (!this.WalletRepository.GetWalletNames().Any(name => name == this.walletSettings.DefaultWalletName))
                 {
-                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                    var mnemonic = new Mnemonic("basic exotic crack drink left judge tourist giggle muscle unique horn body");
                     this.CreateWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, string.Empty, mnemonic);
                 }
 

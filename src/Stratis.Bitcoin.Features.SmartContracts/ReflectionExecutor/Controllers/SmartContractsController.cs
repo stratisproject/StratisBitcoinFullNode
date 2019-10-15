@@ -481,12 +481,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction as the node requires at least one connection.", string.Empty);
-            }
-
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
@@ -526,12 +520,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
-
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction as the node requires at least one connection.", string.Empty);
-            }
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
             if (!response.Success)
