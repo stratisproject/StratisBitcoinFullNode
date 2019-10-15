@@ -443,7 +443,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 if (context.TransactionFee < minTrxFee)
                 {
-                    throw new WalletException($"Not enough fees. The minimun fee is {minTrxFee}.");
+                    throw new WalletException($"Not enough fees. The minimum fee is {minTrxFee}.");
                 }
 
                 fee = context.TransactionFee;
