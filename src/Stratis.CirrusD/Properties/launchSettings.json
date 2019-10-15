@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Stratis.CirrusD": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=\"C:\\Users\\Maciej\\AppData\\Roaming\\Cirrus Hackathon\" -bootstrap -txindex -defaultwalletname=Hackathon -defaultwalletpassword=stratis -unlockwallet"
     }
   }
 }
