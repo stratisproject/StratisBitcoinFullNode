@@ -55,12 +55,19 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <summary>Loads the private key from default path.</summary>
-        public Key LoadPrivateKey()
+        public Key LoadPrivateKey(string poaMiningKey)
         {
             string path = this.GetPrivateKeySavePath();
 
-            if (!File.Exists(path))
-                return new Mnemonic("basic exotic crack drink left judge tourist giggle muscle unique horn body").DeriveExtKey().PrivateKey;
+            if (!File.Exists(path) && !string.IsNullOrEmpty(poaMiningKey))
+            {
+                return new Mnemonic(poaMiningKey).DeriveExtKey().PrivateKey;
+            }
+            else if (!File.Exists(path))
+            {
+                return null;
+            }
+                
 
             using (FileStream readStream = File.OpenRead(path))
             {

@@ -35,12 +35,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string DefaultWalletPassword { get; set; }
 
         /// <summary>
+        /// Password for the default wallet if overriding the default.
+        /// </summary>
+        public string DefaultWalletMnemonic { get; set; }
+
+        /// <summary>
         /// A value indicating whether the wallet being run is the light wallet or the full wallet.
         /// </summary>
         public bool IsLightWallet { get; set; }
 
         /// <summary>Size of the buffer of unused addresses maintained in an account.</summary>
         public int UnusedAddressesBuffer { get; set; }
+
+        public string PoAMiningKey { get; set; }
 
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
