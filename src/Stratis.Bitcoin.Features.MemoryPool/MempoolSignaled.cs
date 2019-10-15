@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
@@ -48,6 +49,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private readonly ISignals signals;
 
+        private readonly ILogger logger;
+
         private SubscriptionToken blockConnectedSubscription;
 
         /// <summary>
@@ -73,7 +76,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ITxMempool memPool,
             IMempoolValidator validator,
             MempoolOrphans mempoolOrphans,
-            ISignals signals)
+            ISignals signals,
+            ILoggerFactory loggerFactory)
         {
             this.manager = manager;
             this.chainIndexer = chainIndexer;
@@ -85,6 +89,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.validator = validator;
             this.mempoolOrphans = mempoolOrphans;
             this.signals = signals;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
@@ -97,13 +102,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //if (this.IsInitialBlockDownload)
             //  return Task.CompletedTask;
 
+            this.logger.LogDebug("RemoveForBlock outside lock, hash: {0}, height: {1}", block.GetHash(), blockHeight);
+
             return this.mempoolLock.WriteAsync(() =>
             {
+                this.logger.LogDebug("RemoveForBlock inside lock, hash: {0}, height: {1}", block.GetHash(), blockHeight);
+
                 this.memPool.RemoveForBlock(block.Transactions, blockHeight);
+
+                this.logger.LogDebug("Removing transactions from mempoolOrphans.");
+
                 this.mempoolOrphans.RemoveForBlock(block.Transactions);
 
+                this.logger.LogDebug("Removing transactions from mempool...");
+
+                this.logger.LogDebug("Setting mempoolSize");
                 this.validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
+                this.logger.LogDebug("Setting mempoolOrphanSize");
                 this.validator.PerformanceCounter.SetMempoolOrphanSize(this.mempoolOrphans.OrphansCount());
+                this.logger.LogDebug("Setting mempoolDynamicSize");
                 this.validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
         }

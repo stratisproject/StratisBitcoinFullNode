@@ -120,6 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public List<OrphanTx> OrphansList() // for testing
         {
             List<OrphanTx> result;
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 result = this.mapOrphanTransactions.Values.ToList();
@@ -134,6 +135,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public int OrphansCount()
         {
             int result;
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 result = this.mapOrphanTransactions.Count;
@@ -147,6 +149,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void RemoveForBlock(List<Transaction> transactionsToRemove)
         {
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 foreach (Transaction transaction in transactionsToRemove)
@@ -210,6 +213,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             while (workQueue.Any())
             {
                 List<OrphanTx> itByPrev = null;
+                this.logger.LogDebug("Locking this.lockObject 1");
                 lock (this.lockObject)
                 {
                     List<OrphanTx> prevOrphans = this.mapOrphanTransactionsByPrev.TryGet(workQueue.Dequeue());
@@ -283,6 +287,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (eraseQueue.Count > 0)
             {
+                this.logger.LogDebug("Locking this.lockObject 2");
                 lock (this.lockObject)
                 {
                     foreach (uint256 hash in eraseQueue)
@@ -299,6 +304,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="orphanHash">Hash to add.</param>
         public void AddToRecentRejects(uint256 orphanHash)
         {
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 this.recentRejects.TryAdd(orphanHash, orphanHash);
@@ -317,6 +323,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // It may be the case that the orphans parents have all been rejected
             bool rejectedParents;
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 rejectedParents = tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
@@ -367,6 +374,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 long nMinExpTime = nNow + OrphanTxExpireTime - OrphanTxExpireInterval;
 
                 List<OrphanTx> orphansValues;
+                this.logger.LogDebug("Locking this.lockObject 1");
                 lock (this.lockObject)
                 {
                     orphansValues = this.mapOrphanTransactions.Values.ToList();
@@ -376,6 +384,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     if (maybeErase.TimeExpire <= nNow)
                     {
+                        this.logger.LogDebug("Locking this.lockObject 2");
                         lock (this.lockObject)
                         {
                             nErased += this.EraseOrphanTxLock(maybeErase.Tx.GetHash()) ? 1 : 0;
@@ -394,6 +403,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogInformation("Erased {0} orphan tx due to expiration", nErased);
             }
 
+            this.logger.LogDebug("Locking this.lockObject 3");
             lock (this.lockObject)
             {
                 this.logger.LogDebug("Executing task to prune orphan txs to max limit.");
@@ -418,6 +428,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the orphan transaction was added.</returns>
         public bool AddOrphanTx(ulong nodeId, Transaction tx)
         {
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 uint256 hash = tx.GetHash();
@@ -513,6 +524,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="peerId">Peer node id</param>
         public void EraseOrphansFor(ulong peerId)
         {
+            this.logger.LogDebug("Locking this.lockObject");
             lock (this.lockObject)
             {
                 this.logger.LogDebug("Executing task to erase orphan transactions.");
