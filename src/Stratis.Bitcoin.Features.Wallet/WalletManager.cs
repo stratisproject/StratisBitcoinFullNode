@@ -376,8 +376,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.GetWallet(walletName);
 
             // Sign the message.
-            HdAddress hdAddress = this.WalletRepository.GetAccounts(wallet).SelectMany(a => this.WalletRepository.GetUsedAddresses(
-                new WalletAccountReference(walletName, a.Name), int.MaxValue, false)).FirstOrDefault(addr => addr.Address.ToString() == externalAddress);
+            HdAddress hdAddress = this.WalletRepository.GetAccounts(walletName).SelectMany(a => this.WalletRepository.GetUsedAddresses(
+                new WalletAccountReference(walletName, a.Name), false)).Select(a => a.address).FirstOrDefault(addr => addr.Address.ToString() == externalAddress);
 
             Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
             return privateKey.SignMessage(message);
@@ -804,12 +804,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-        //
-        //        /// <inheritdoc />
-        //        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-        //        {
-        //            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-        //        }
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, bool isChange = false)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+
+            return this.WalletRepository.GetUnusedAddresses(accountReference, isChange);
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<(HdAddress address, Money confirmed, Money total)> GetUsedAddresses(WalletAccountReference accountReference, bool isChange = false)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+
+            return this.WalletRepository.GetUsedAddresses(accountReference, isChange);
+        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
@@ -863,17 +873,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null)
+        public IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null, int confirmations = 0)
         {
             lock (this.lockObject)
             {
-                Wallet hdWallet = this.GetWallet(walletName);
-                int tipHeight = hdWallet.AccountsRoot.First().LastBlockSyncedHeight ?? 0;
+                int tipHeight = this.ChainIndexer.Height;
 
                 //Need to make this work for single account but initially just scroll through accounts
                 foreach (HdAccount hdAccount in this.WalletRepository.GetAccounts(hdWallet, accountName))
                 {
-                    (Money totalAmount, Money confirmedAmount, Money spendableAmount) = this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, hdAccount.Name), tipHeight);
+                    (Money totalAmount, Money confirmedAmount, Money spendableAmount) = this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, hdAccount.Name), tipHeight, confirmations: confirmations);
 
                     yield return new AccountBalance()
                     {

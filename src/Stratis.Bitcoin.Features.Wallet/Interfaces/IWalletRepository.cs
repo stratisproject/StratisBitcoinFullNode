@@ -132,13 +132,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
 
         /// <summary>
-        /// Gets up to the specified number of used addresses.
+        /// Getss all the unused addresses in the account.
         /// </summary>
         /// <param name="accountReference">The account to get used addresses for.</param>
-        /// <param name="count">The maximum number of addresses to return.</param>
         /// <param name="isChange">The type of addresses to return.</param>
-        /// <returns>A list of used addresses.</returns>
-        IEnumerable<HdAddress> GetUsedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
+        /// <returns>A list of used addresses with their balances.</returns>
+        IEnumerable<(HdAddress address, Money confirmed, Money total)> GetUsedAddresses(WalletAccountReference accountReference, bool isChange = false);
+
+        /// <summary>
+        /// Gets all the unused addresses in the account.
+        /// </summary>
+        /// <param name="accountReference">The account to get unused addresses for.</param>
+        /// <param name="isChange">The type of addresses to return.</param>
+        /// <returns>A list of unused addresses.</returns>
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, bool isChange = false);
 
         /// <summary>
         /// Gets all spendable transactions in the wallet with the given number of confirmation.

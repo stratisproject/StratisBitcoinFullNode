@@ -186,6 +186,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
 
         /// <summary>
+        /// Gets the unused receiving or change addresses.
+        /// </summary>
+        /// <param name="accountReference">The name of the wallet and account.</param>
+        /// <param name="isChange">A value indicating whether or not the addresses to get should be receiving or change addresses.</param>
+        /// <returns>The list of unused addresses.</returns>
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, bool isChange = false);
+
+        /// <summary>
+        /// Gets the used receiving or change addresses.
+        /// </summary>
+        /// <param name="accountReference">The name of the wallet and account.</param>
+        /// <param name="isChange">A value indicating whether or not the addresses to get should be receiving or change addresses.</param>
+        /// <returns>The list of used addresses.</returns>
+        IEnumerable<(HdAddress address, Money confirmed, Money total)> GetUsedAddresses(WalletAccountReference accountReference, bool isChange = false);
+
+        /// <summary>
         /// Gets the history of transactions contained in an account.
         /// If no account name is specified, history will be returned for all accounts in the wallet.
         /// </summary>
@@ -208,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The wallet name.</param>
         /// <param name="accountName">The account name.</param>
         /// <returns>Collection of account balances.</returns>
-        IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null);
+        IEnumerable<AccountBalance> GetBalances(string walletName, string accountName = null, int confirmations = 0);
 
         /// <summary>
         /// Gets the balance of transactions for this specific address.

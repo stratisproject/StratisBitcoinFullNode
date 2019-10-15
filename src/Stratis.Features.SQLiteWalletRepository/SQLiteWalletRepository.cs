@@ -658,7 +658,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetUsedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
+        public IEnumerable<(HdAddress address, Money confirmed, Money total)> GetUsedAddresses(WalletAccountReference accountReference, bool isChange = false)
         {
             WalletContainer walletContainer = this.GetWalletContainer(accountReference.WalletName);
             DBConnection conn = walletContainer.Conn;
@@ -667,7 +667,21 @@ namespace Stratis.Features.SQLiteWalletRepository
             if (account == null)
                 throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
 
-            return conn.GetUsedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, count).Select(a => this.ToHdAddress(a));
+            return conn.GetUsedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, int.MaxValue).Select(a =>
+                (this.ToHdAddress(a), new Money(a.ConfirmedAmount, MoneyUnit.BTC), new Money(a.TotalAmount, MoneyUnit.BTC)));
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, bool isChange = false)
+        {
+            WalletContainer walletContainer = this.GetWalletContainer(accountReference.WalletName);
+            DBConnection conn = walletContainer.Conn;
+            HDAccount account = conn.GetAccountByName(accountReference.WalletName, accountReference.AccountName);
+
+            if (account == null)
+                throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
+
+            return conn.GetUnusedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, int.MaxValue).Select(a => this.ToHdAddress(a));
         }
 
         /// <inheritdoc />
