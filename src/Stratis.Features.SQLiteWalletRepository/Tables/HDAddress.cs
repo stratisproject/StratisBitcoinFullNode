@@ -120,10 +120,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return conn.FindWithQuery<HDAddress>($@"
                 SELECT  *
                 FROM    HDAddress
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}
-                AND     AddressIndex = {addressIndex}");
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?
+                AND     AddressIndex = ?",
+                walletId,
+                accountIndex,
+                addressType,
+                addressIndex);
         }
 
         internal static int GetAddressCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
@@ -131,9 +135,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return 1 + (conn.ExecuteScalar<int?>($@"
                 SELECT  MAX(AddressIndex)
                 FROM    HDAddress
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}") ?? -1);
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?",
+                walletId,
+                accountIndex,
+                addressType) ?? -1);
         }
 
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)

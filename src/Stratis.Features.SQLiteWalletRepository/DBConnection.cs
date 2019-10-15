@@ -433,17 +433,20 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal long? RemoveUnconfirmedTransaction(int walletId, uint256 txId)
         {
+            string strWalletId = DBParameter.Create(walletId);
+            string strTxId = DBParameter.Create(txId);
+
             string outputFilter = $@"
-            WHERE   OutputTxId = '{txId}'
+            WHERE   OutputTxId = {strTxId}
             AND     OutputBlockHeight IS NULL
             AND     OutputBlockHash IS NULL
-            AND     WalletId = {walletId}";
+            AND     WalletId = {strWalletId}";
 
             string spendFilter = $@"
-            WHERE   SpendTxId = '{txId}'
+            WHERE   SpendTxId = {strTxId}
             AND     SpendBlockHeight IS NULL
             AND     SpendBlockHash IS NULL
-            AND     WalletId = {walletId}";
+            AND     WalletId = {strWalletId}";
 
             var res = this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
 
@@ -452,15 +455,17 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<(string txId, long creationTime)> RemoveAllUnconfirmedTransactions(int walletId)
         {
+            string strWalletId = DBParameter.Create(walletId);
+
             string outputFilter = $@"
             WHERE   OutputBlockHeight IS NULL
             AND     OutputBlockHash IS NULL
-            AND     WalletId = {walletId}";
+            AND     WalletId = {strWalletId}";
 
             string spendFilter = $@"
             WHERE   SpendBlockHeight IS NULL
             AND     SpendBlockHash IS NULL
-            AND     WalletId = {walletId}";
+            AND     WalletId = {strWalletId}";
 
             var res = this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
 
@@ -469,15 +474,18 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<(string txId, long unixTimeSeconds)> RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
         {
+            string strWalletId = DBParameter.Create(walletId);
+            string strLastBlockSyncedHeight = DBParameter.Create(lastBlockSyncedHeight);
+
             string outputFilter = (walletId == null) ? $@"
-            WHERE   OutputBlockHeight > {lastBlockSyncedHeight}" : $@"
-            WHERE   WalletId = {walletId}
-            AND     OutputBlockHeight > {lastBlockSyncedHeight}";
+            WHERE   OutputBlockHeight > {strLastBlockSyncedHeight}" : $@"
+            WHERE   WalletId = {strWalletId}
+            AND     OutputBlockHeight > {strLastBlockSyncedHeight}";
 
             string spendFilter = (walletId == null) ? $@"
-            WHERE   SpendBlockHeight > {lastBlockSyncedHeight}" : $@"
-            WHERE   WalletId = {walletId}
-            AND     SpendBlockHeight > {lastBlockSyncedHeight}";
+            WHERE   SpendBlockHeight > {strLastBlockSyncedHeight}" : $@"
+            WHERE   WalletId = {strWalletId}
+            AND     SpendBlockHeight > {strLastBlockSyncedHeight}";
 
             return this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
         }
