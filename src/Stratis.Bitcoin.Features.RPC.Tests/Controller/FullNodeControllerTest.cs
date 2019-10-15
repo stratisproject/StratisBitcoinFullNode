@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -642,6 +643,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             bool isValid = result.IsValid;
             Assert.True(isValid);
+        }
+
+        [Fact]
+        public void GivenInvalidTxHex_WhenCallingDecodeRawTransaction_ArgumentExceptionIsThrown()
+        {
+            this.fullNode.SetupGet(p => p.Network).Returns(this.network);
+            Action rpcCall = () => this.controller.DecodeRawTransaction("12345");
+            rpcCall.Should().Throw<ArgumentException>();
         }
 
         private Transaction CreateTransaction()
