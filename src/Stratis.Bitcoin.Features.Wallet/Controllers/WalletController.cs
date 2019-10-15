@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -234,9 +235,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the necessary parameters to load an existing wallet</param>
         [Route("load")]
         [HttpPost]
-        public IActionResult Load([FromBody]WalletLoadRequest request)
+        public async Task<IActionResult> Load([FromBody]WalletLoadRequest request)
         {
             Guard.NotNull(request, nameof(request));
+
+            while (this.chainIndexer.Height < 3)
+            {
+                await Task.Delay(1000);
+            }
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -955,12 +961,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-            }
-
             try
             {
                 Transaction transaction = this.network.CreateTransaction(request.Hex);
@@ -1012,8 +1012,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             try
             {
+                IEnumerable<string> walletNames;
                 (string folderPath, IEnumerable<string> filesNames) result = this.walletManager.GetWalletsFiles();
-                var model = new WalletFileModel
+                int retryCount = 0;
+                int maxRetry = 10;
+                do
+                {
+                    walletNames = this.walletManager.GetWalletsNames();
+                    
+                    if (retryCount > 0)
+                        await Task.Delay(1000);
+
+                    if (++retryCount >= maxRetry) break;
+
+                } while (!walletNames.Any());
+
+
+                var model = new WalletInfoModel()
                 {
                     WalletsPath = result.folderPath,
                     WalletsFiles = result.filesNames
