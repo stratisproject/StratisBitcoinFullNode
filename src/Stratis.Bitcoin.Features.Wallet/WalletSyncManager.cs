@@ -10,6 +10,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -30,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly INodeLifetime nodeLifetime;
         private IAsyncLoop walletSynchronisationLoop;
         private SubscriptionToken transactionReceivedSubscription;
+        private SubscriptionToken transactionRemovedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
 
@@ -83,11 +85,17 @@ namespace Stratis.Bitcoin.Features.Wallet
                 TimeSpan.FromSeconds(1));
 
             this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
+            this.transactionRemovedSubscription = this.signals.Subscribe<TxRemoved>(this.OnTransactionRemoved);
         }
 
         private void OnTransactionAvailable(TransactionReceived transactionReceived)
         {
             this.ProcessTransaction(transactionReceived.ReceivedTransaction);
+        }
+
+        private void OnTransactionRemoved(TxRemoved transactionRemoved)
+        {
+            this.walletManager.RemoveUnconfirmedTransaction(transactionRemoved.RemovedTransaction);
         }
 
         /// <inheritdoc />
@@ -96,6 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.syncCancellationToken.Cancel();
             this.walletSynchronisationLoop?.Dispose();
             this.signals.Unsubscribe(this.transactionReceivedSubscription);
+            this.signals.Unsubscribe(this.transactionRemovedSubscription);
         }
 
         /// <inheritdoc />

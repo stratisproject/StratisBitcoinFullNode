@@ -1187,6 +1187,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public void RemoveUnconfirmedTransaction(Transaction transaction)
+        {
+            Guard.NotNull(transaction, nameof(transaction));
+
+            foreach (Wallet wallet in this.Wallets)
+            {
+                this.WalletRepository.RemoveUnconfirmedTransaction(wallet.Name, transaction.GetHash());
+            }
+        }
+
+        /// <inheritdoc />
         public HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
