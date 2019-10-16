@@ -57,15 +57,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.InitializeTransactionBuilder(context);
 
-            if (context.Shuffle)
-                context.TransactionBuilder.Shuffle();
-
-            const int maxRetries = 3;
+            const int maxRetries = 5;
             int retryCount = 0;
 
             TransactionPolicyError[] errors = null;
             while (retryCount <= maxRetries)
             {
+                if (context.Shuffle)
+                    context.TransactionBuilder.Shuffle();
+
                 Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
                 if (context.Sign)
                 {
@@ -219,11 +219,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 context.TransactionBuilder.CoinSelector = new AllCoinsSelector();
             }
 
+            bool reCalculateFees = context.SubtractFeesFromRecipients & context.TransactionFee == null;
+
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.FindChangeAddress(context);
             this.AddFee(context);
+
+            if (reCalculateFees)
+            {
+                context.TransactionBuilder.ClearSendBuilders();
+                this.AddRecipients(context);
+                this.AddCoins(context);
+            }
 
             if (context.Time.HasValue)
                 context.TransactionBuilder.SetTimeStamp(context.Time.Value);
@@ -377,9 +386,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If we have any recipients that require a fee to be subtracted from the amount, then
             // calculate fee and evenly distribute it among all recipients. Any remaining fee should be
             // subtracted from the first recipient.
-            if (totalRecipients > 0)
+            if (totalRecipients > 0 && context.TransactionFee != null)
             {
-                Money fee = this.CalculateFee(context);
+                Money fee = context.TransactionFee;
                 var recipientFee = fee.Satoshi / totalRecipients;
                 var remainingFee = fee.Satoshi % totalRecipients;
 
@@ -395,12 +404,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (remainingAmount <= 0)
                             throw new WalletException($"Fee {feeToSubtract} is higher than amount {recipient.Amount.Satoshi} to send.");
 
-                        context.TransactionBuilder.Send(recipient.ScriptPubKey, new Money(remainingAmount));
+                        recipient.Amount = new Money(remainingAmount);
                     }
-                    else
-                    {
-                        context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
-                    }
+
+                    context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
                 }
             }
             else
@@ -418,9 +425,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddFee(TransactionBuildContext context)
         {
-            if (context.Recipients.Any(r => r.SubtractFeeFromAmount))
-                return;
-
             Money fee = this.CalculateFee(context);
 
             context.TransactionBuilder.SendFees(fee);
@@ -592,5 +596,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The timestamp to set on the transaction.
         /// </summary>
         public uint? Time { get; set; }
+        
+        /// <summary>
+        /// Indicates whether fee should be deducted from <see cref="Recipients"/> amount(s) or
+        /// added to the transaction.
+        /// </summary>
+        public bool SubtractFeesFromRecipients
+        {
+            get { return this.Recipients?.Any(r => r.SubtractFeeFromAmount) ?? false; }
+        }
     }
 }
