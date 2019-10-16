@@ -449,8 +449,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 check?.Invoke(jsonWallet);
 
-                var blockDict = new Dictionary<int, uint256>();
-
                 if (this.ExcludeTransactionsFromWalletImports)
                 {
                     // Import the wallet to the database.
