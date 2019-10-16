@@ -55,6 +55,24 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <summary>Loads the private key from default path.</summary>
+        public Key LoadPrivateKey()
+        {
+            string path = this.GetPrivateKeySavePath();
+
+            if (!File.Exists(path))
+                return null;
+
+            using (FileStream readStream = File.OpenRead(path))
+            {
+                var privateKey = new Key();
+                var stream = new BitcoinStream(readStream, false);
+                stream.ReadWrite(ref privateKey);
+
+                return privateKey;
+            }
+        }
+
+        /// <summary>Loads the private key from default path.</summary>
         public Key LoadPrivateKey(string poaMiningKey)
         {
             string path = this.GetPrivateKeySavePath();
