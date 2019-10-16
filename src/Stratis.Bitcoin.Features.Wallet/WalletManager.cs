@@ -1054,14 +1054,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockProcess)
             {
+                this.logger.LogDebug("Processing transaction '{0}' for wallet {1}.", transaction.GetHash(), walletName);
+                foreach (var input in transaction.Inputs)
+                {
+                    this.logger.LogDebug("Transaction has input with previous hash '{0}'.", input.PrevOut.ToString());
+                }
+
                 foreach (string walletName in this.WalletRepository.GetWalletNames())
                 {
-                    this.logger.LogDebug("Processing transaction '{0}' for wallet {1}.", transaction.GetHash(), walletName);
-                    foreach (var input in transaction.Inputs)
-                    {
-                        this.logger.LogDebug("Transaction has input with previous hash '{0}'.", input.PrevOut.ToString());
-                    }
-
                     this.WalletRepository.ProcessTransaction(walletName, transaction);
                 }
             }
