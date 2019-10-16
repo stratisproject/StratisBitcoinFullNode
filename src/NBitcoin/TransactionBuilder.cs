@@ -784,11 +784,10 @@ namespace NBitcoin
         /// </summary>
         public void ClearSendBuilders()
         {
-            List<Builder> builders = this.CurrentGroup.Builders;
-            for (int i = builders.Count - 1; i >= 0; i--)
+            for (int i = this.CurrentGroup.Builders.Count - 1; i >= 0; i--)
             {
                 // All other builders have different return type.
-                if (builders[i].Method.ReturnType == typeof(Money))
+                if (this.CurrentGroup.Builders[i].Method.ReturnType == typeof(Money))
                 {
                     this.CurrentGroup.Builders.RemoveAt(i);
                 }

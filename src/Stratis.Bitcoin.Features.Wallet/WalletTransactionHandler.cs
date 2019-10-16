@@ -381,7 +381,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
 
-            var totalRecipients = context.Recipients.Count(r => r.SubtractFeeFromAmount);
+            int totalRecipients = context.Recipients.Count(r => r.SubtractFeeFromAmount);
 
             // If we have any recipients that require a fee to be subtracted from the amount, then
             // calculate fee and evenly distribute it among all recipients. Any remaining fee should be
@@ -389,12 +389,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (totalRecipients > 0 && context.TransactionFee != null)
             {
                 Money fee = context.TransactionFee;
-                var recipientFee = fee.Satoshi / totalRecipients;
-                var remainingFee = fee.Satoshi % totalRecipients;
+                long recipientFee = fee.Satoshi / totalRecipients;
+                long remainingFee = fee.Satoshi % totalRecipients;
 
                 for (int i = 0; i < context.Recipients.Count; i++)
                 {
-                    var recipient = context.Recipients[i];
+                    Recipient recipient = context.Recipients[i];
 
                     if (recipient.SubtractFeeFromAmount)
                     {
