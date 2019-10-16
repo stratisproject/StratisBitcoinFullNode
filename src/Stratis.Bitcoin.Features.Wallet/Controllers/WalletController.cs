@@ -653,7 +653,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         AmountConfirmed = balance.AmountConfirmed,
                         AmountUnconfirmed = balance.AmountUnconfirmed,
                         SpendableAmount = balance.SpendableAmount,
-                        Addresses = account.GetCombinedAddresses().Select(address =>
+                        Addresses = request.IncludeBalanceByAddress ?  account.GetCombinedAddresses().Select(address =>
                         {
                             (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
                             return new AddressModel
@@ -664,7 +664,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 AmountConfirmed = confirmedAmount,
                                 AmountUnconfirmed = unConfirmedAmount
                             };
-                        })
+                        }) : null
                     });
                 }
 

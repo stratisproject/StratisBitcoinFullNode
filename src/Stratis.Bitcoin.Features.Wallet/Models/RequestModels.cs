@@ -227,6 +227,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// then the balance for the entire wallet (all accounts) is retrieved.
         /// </summary>         
         public string AccountName { get; set; }
+        
+        /// <summary>
+        /// For Cirrus we need to get Balances By Address
+        /// </summary>
+        public bool IncludeBalanceByAddress { get; set; }
     }
 
     /// <summary>
