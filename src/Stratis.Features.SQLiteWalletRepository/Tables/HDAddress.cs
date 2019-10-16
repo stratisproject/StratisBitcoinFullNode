@@ -59,7 +59,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AccountIndex = ?
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
@@ -84,7 +84,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
                 HAVING  MAX(D.WalletId) IS NOT NULL
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
@@ -107,7 +107,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
                 HAVING  MAX(D.WalletId) IS NULL
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
