@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 context.TransactionBuilder.CoinSelector = new AllCoinsSelector();
             }
 
-            bool reCalculateFees = context.SubtractFeesFromRecipients & context.TransactionFee == null;
+            bool reCalculateFees = context.SubtractFeesFromRecipients && context.TransactionFee == null;
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
