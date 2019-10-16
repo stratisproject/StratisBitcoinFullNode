@@ -1054,7 +1054,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockProcess)
             {
-                this.logger.LogDebug("Processing transaction '{0}' for wallet {1}.", transaction.GetHash(), walletName);
+                this.logger.LogDebug("Processing transaction '{0}'.", transaction.GetHash());
                 foreach (var input in transaction.Inputs)
                 {
                     this.logger.LogDebug("Transaction has input with previous hash '{0}'.", input.PrevOut.ToString());
