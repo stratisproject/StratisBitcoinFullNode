@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
@@ -16,6 +17,8 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         private readonly IAsyncProvider asyncProvider;
         protected readonly ILogger logger;
         private IAsyncLoop asyncLoop;
+        private readonly object lockObject = new object();
+        private Task<IEnumerable<IClientEvent>> getMessagesTask = null;
 
         protected ClientBroadcasterBase(
             EventsHub eventsHub,
@@ -36,15 +39,38 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 $"Broadcast {this.GetType().Name}",
                 async token =>
                 {
-                    foreach (IClientEvent clientEvent in this.GetMessages())
+                    if (null == this.getMessagesTask)
                     {
-                        await this.eventsHub.SendToClientsAsync(clientEvent).ConfigureAwait(false);
+                        lock (this.lockObject)
+                        {
+                            if (null == this.getMessagesTask)
+                            {
+                                this.getMessagesTask = this.GetMessages();
+                                this.getMessagesTask.ContinueWith(async (task) =>
+                                {
+                                    if (task.IsCompleted)
+                                    {
+                                        foreach (IClientEvent clientEvent in task.Result)
+                                        {
+                                            await this.eventsHub.SendToClientsAsync(clientEvent).ConfigureAwait(false);
+                                        }
+                                    }
+                                    else if (task.IsFaulted)
+                                    {
+                                        this.logger.LogError($"{this.GetType().Name} Error in GetMessages",
+                                            task.Exception);
+                                    }
+
+                                    this.getMessagesTask = null;
+                                });
+                            }
+                        }
                     }
                 },
                 this.nodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpan.FromSeconds(Math.Max(broadcasterSettings.BroadcastFrequencySeconds, 5)));
         }
 
-        protected abstract IEnumerable<IClientEvent> GetMessages();
+        protected abstract Task<IEnumerable<IClientEvent>> GetMessages();
     }
 }
