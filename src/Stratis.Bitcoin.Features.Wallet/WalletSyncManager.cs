@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -31,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IAsyncLoop walletSynchronisationLoop;
         private SubscriptionToken transactionReceivedSubscription;
         private CancellationTokenSource syncCancellationToken;
-        private object lockObject;
+        private readonly object lockObject;
 
         public ChainedHeader WalletTip => this.walletManager.WalletCommonTip(this.chainIndexer.Tip);
 
@@ -135,7 +133,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.SyncFromHeight(syncFromHeight, walletName);
             }
         }
-
 
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height, string walletName = null)
