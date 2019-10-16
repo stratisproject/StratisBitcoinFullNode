@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -233,13 +234,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the necessary parameters to load an existing wallet</param>
         [Route("load")]
         [HttpPost]
-        public async Task<IActionResult> Load([FromBody]WalletLoadRequest request)
+        public IActionResult Load([FromBody]WalletLoadRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
             while (this.chainIndexer.Height < 3)
             {
-                await Task.Delay(1000);
+                Thread.Sleep(1000);
             }
 
             // checks the request is valid
@@ -1005,7 +1006,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </returns>
         [Route("list-wallets")]
         [HttpGet]
-        public async Task<IActionResult> ListWallets()
+        public IActionResult ListWallets()
         {
             try
             {
@@ -1017,7 +1018,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     walletNames = this.walletManager.GetWalletsNames();
                     
                     if (retryCount > 0)
-                        await Task.Delay(1000);
+                        Thread.Sleep(1000);
 
                     if (++retryCount >= maxRetry) break;
 
