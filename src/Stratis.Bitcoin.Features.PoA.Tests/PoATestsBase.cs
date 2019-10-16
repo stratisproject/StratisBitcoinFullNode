@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network.Consensus.ConsensusFactory));
 
             var settings = new NodeSettings(network, args: new string[] { $"-datadir={dir}" });
-            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals);
+            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals, new WalletSettings(settings));
             federationManager.Initialize();
 
             return federationManager;
