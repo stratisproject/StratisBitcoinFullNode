@@ -379,6 +379,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.vTxHashes.Add(entry, tx.GetWitHash());
             //entry.vTxHashesIdx = vTxHashes.size() - 1;
 
+            if (this.signals != null)
+            {
+                this.signals.Publish(new TxAdded(entry.Transaction));
+            }
+
             return true;
         }
 
@@ -713,7 +718,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MinerPolicyEstimator.RemoveTx(hash);
 
             if (this.signals != null)
+            {
                 this.signals.Publish(new TxRemoved(entry.Transaction));
+            }
         }
 
         /// <inheritdoc />
