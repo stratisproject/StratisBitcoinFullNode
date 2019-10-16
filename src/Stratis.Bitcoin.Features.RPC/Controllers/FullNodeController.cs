@@ -191,6 +191,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 return new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
             }
+            catch (FormatException ex)
+            {
+                throw new ArgumentException(nameof(hex), ex.Message);
+            }
             catch (Exception)
             {
                 return null;
