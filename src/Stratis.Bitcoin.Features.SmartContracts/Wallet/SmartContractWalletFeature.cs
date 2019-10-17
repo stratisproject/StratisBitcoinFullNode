@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private readonly ILogger logger;
         private readonly IWalletManager walletManager;
         private readonly IWalletSyncManager walletSyncManager;
-        private readonly IWalletRepository walletRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
@@ -41,8 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IWalletSyncManager walletSyncManager,
-            INodeStats nodeStats,
-            IWalletRepository walletRepository)
+            INodeStats nodeStats)
         {
             this.broadcasterBehavior = broadcasterBehavior;
             this.chainIndexer = chainIndexer;
@@ -50,7 +48,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
-            this.walletRepository = walletRepository;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
@@ -58,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         private void AddComponentStats(StringBuilder log)
         {
-            List<string> walletNamesSQL = this.walletRepository.GetWalletNames();
+            IEnumerable<string> walletNamesSQL = this.walletManager.GetWalletsNames();
 
             if (walletNamesSQL.Any())
             {
