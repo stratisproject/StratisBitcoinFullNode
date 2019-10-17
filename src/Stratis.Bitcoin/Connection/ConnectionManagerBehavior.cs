@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Connection
             INetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
-                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
+                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.MatchIpOnly(peer.PeerEndPoint)))
                 {
                     this.Whitelisted = true;
                 }
