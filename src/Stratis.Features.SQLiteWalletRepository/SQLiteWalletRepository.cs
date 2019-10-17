@@ -833,7 +833,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             }
                             catch (Exception ex)
                             {
-                                this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
+                                this.logger.LogError("An exception occurred processing block '{0}'.", chainedHeader);
                                 this.logger.LogError(ex.ToString());
 
                                 conn.Rollback();
@@ -881,7 +881,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             catch (Exception ex)
             {
-                this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
+                this.logger.LogError("An exception occurred processing block '{0}'.", chainedHeader);
                 this.logger.LogError(ex.ToString());
 
                 throw;
@@ -998,8 +998,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public DateTimeOffset? RemoveUnconfirmedTransaction(string walletName, uint256 txId)
+        public DateTimeOffset? RemoveUnconfirmedTransaction(string walletName, uint256 transactionId)
         {
+            this.logger.LogDebug("Removing unconfirmed transaction '{0}' from wallet '{1}'.", transactionId, walletName);
+
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
@@ -1009,11 +1011,17 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 conn.BeginTransaction();
 
-                this.logger.LogDebug("Removing unconfirmed transaction '{0}'.", txId);
-                long? unixTimeSeconds = conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
+                long? unixTimeSeconds = conn.RemoveUnconfirmedTransaction(wallet.WalletId, transactionId);
                 conn.Commit();
 
                 return (unixTimeSeconds == null) ? (DateTimeOffset?)null : DateTimeOffset.FromUnixTimeSeconds((long)unixTimeSeconds);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("An exception occurred trying to remove an unconfirmed transaction '{0}' from wallet '{1}'.", transactionId, walletName);
+                this.logger.LogError(ex.ToString());
+
+                throw ex;
             }
             finally
             {
@@ -1075,7 +1083,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError("An exception occurred processing transaction {0}.", transaction.GetHash());
+                    this.logger.LogError("An exception occurred processing transaction '{0}'.", transaction.GetHash());
                     this.logger.LogError(ex.ToString());
 
                     conn.Rollback();

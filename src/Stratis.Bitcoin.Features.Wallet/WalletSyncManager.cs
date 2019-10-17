@@ -85,15 +85,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
         }
 
-        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAdded)
+        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAddedToMempool)
         {
-            this.walletManager.ProcessTransaction(transactionAdded.AddedTransaction);
+            this.walletManager.ProcessTransaction(transactionAddedToMempool.AddedTransaction);
         }
 
-        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemoved)
+        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemovedFromMempool)
         {
-            this.logger.LogDebug("Removing transaction '{0}' as it was removed from the mempool.", transactionRemoved.RemovedTransaction.GetHash());
-            this.walletManager.RemoveUnconfirmedTransaction(transactionRemoved.RemovedTransaction);
+            this.logger.LogDebug("Removing transaction '{0}' as it was removed from the mempool.", transactionRemovedFromMempool.RemovedTransaction.GetHash());
+            this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
         }
 
         /// <inheritdoc />
