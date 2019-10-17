@@ -291,11 +291,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="walletPassword">The wallet password.</param>
         /// <param name="amount">The amount to cold stake.</param>
         /// <param name="feeAmount">The fee to pay for the cold staking setup transaction.</param>
+        /// <param name="useSegwitChangeAddress">Use a segwit style change address.</param>
         /// <returns>The <see cref="Transaction"/> for setting up cold staking.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
         internal Transaction GetColdStakingSetupTransaction(IWalletTransactionHandler walletTransactionHandler,
             string coldWalletAddress, string hotWalletAddress, string walletName, string walletAccount,
-            string walletPassword, Money amount, Money feeAmount)
+            string walletPassword, Money amount, Money feeAmount, bool useSegwitChangeAddress = false)
         {
             Guard.NotNull(walletTransactionHandler, nameof(walletTransactionHandler));
             Guard.NotEmpty(coldWalletAddress, nameof(coldWalletAddress));
@@ -361,6 +362,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
                 Shuffle = false,
+                UseSegwitChangeAddress = useSegwitChangeAddress,
                 WalletPassword = walletPassword,
                 Recipients = new List<Recipient>() { new Recipient { Amount = amount, ScriptPubKey = destination } }
             };
