@@ -562,7 +562,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             cmdReplacePayments.Bind("prevHash", prevHash);
             cmdReplacePayments.ExecuteNonQuery();
 
-
             // Update spending details on HDTransactionData records.
             // Performs checks that we do not affect a confirmed transaction's spends.
             var cmdUpdateSpending = this.Commands["CmdUpdateSpending"];

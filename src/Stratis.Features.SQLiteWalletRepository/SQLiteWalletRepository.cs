@@ -8,13 +8,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
-using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Interfaces;
 using Script = NBitcoin.Script;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
@@ -737,6 +736,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
+                        this.logger.LogDebug("[WALLET_NAME_NULL]:Processing {0}", header);
+
                         Parallel.ForEach(rounds, round =>
                         {
                             try
@@ -750,7 +751,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                             finally
                             {
                                 if (header == null)
+                                {
+                                    this.logger.LogDebug("[WALLET_NAME_NULL]:Header is null, releasing locks.");
                                     round.LockProcessBlocks.Release();
+                                }
                             }
                         });
 
@@ -770,6 +774,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
+                        this.logger.LogDebug("Processing {0}", header);
+
                         try
                         {
                             ParallelProcessBlock(round, block, header);
@@ -781,7 +787,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                         finally
                         {
                             if (header == null)
+                            {
+                                this.logger.LogDebug("Header is null, releasing locks.");
                                 round.LockProcessBlocks.Release();
+                            }
                         }
 
                         if (header == null)
@@ -791,13 +800,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private void ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader header)
+        private void ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader chainedHeader)
         {
             try
             {
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
-                string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
+
+                string lastBlockSyncedHash = (chainedHeader == null) ? null : (chainedHeader.Previous?.HashBlock ?? 0).ToString();
+
+                this.logger.LogDebug("{0}='{1}'", nameof(lastBlockSyncedHash), lastBlockSyncedHash);
 
                 if (round.NewTip != null)
                 {
@@ -810,14 +822,13 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // See if other threads are waiting to update any of the wallets.
                     bool threadsWaiting = round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
-                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || header == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                     {
                         long flagFall = DateTime.Now.Ticks;
 
                         conn.BeginTransaction();
                         try
                         {
-
                             if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                             {
                                 IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
@@ -826,6 +837,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 foreach (AddressIdentifier addressIdentifier in round.AddressesOfInterest.GetTentative())
                                     conn.Insert(this.CreateAddress(addressIdentifier));
 
+                                this.logger.LogDebug("Processing {0}='{1}', {2}:'{3}'", nameof(round.NewTip), round.NewTip, nameof(round.PrevTip), round.PrevTip);
                                 conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
 
                                 round.Outputs.Clear();
@@ -833,7 +845,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                                 round.AddressesOfInterest.Confirm();
                                 round.TransactionsOfInterest.Confirm();
-
                             }
                             else
                             {
@@ -844,8 +855,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                             conn.Commit();
                             this.Metrics.CommitTime += (DateTime.Now.Ticks - flagFall3);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
+                            this.logger.LogError(ex.ToString());
+
                             conn.Rollback();
 
                             throw;
@@ -866,7 +880,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
                         }
 
-                        this.Metrics.LogMetrics(this, conn, header, wallet);
+                        this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
 
                         // Release all locks.
                         if (round.ParticipatingWallets.Count > 0)
@@ -882,7 +896,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }
                 }
 
-                if (header == null)
+                if (chainedHeader == null)
                     return;
 
                 if (round.PrevTip == null)
@@ -900,7 +914,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         this.Wallets[walletName].WriteLockWait();
 
                     // Batch starting.
-                    round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
+                    round.PrevTip = (chainedHeader.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(chainedHeader.Previous);
                 }
 
                 if (block != null)
@@ -911,16 +925,18 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // Determine the scripts for creating temporary tables and inserting the block's information into them.
                     ITransactionsToLists transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, round);
-                    if (transactionsToLists.ProcessTransactions(block.Transactions, new HashHeightPair(header), blockTime: block.Header.BlockTime.ToUnixTimeSeconds()))
+                    if (transactionsToLists.ProcessTransactions(block.Transactions, new HashHeightPair(chainedHeader), blockTime: block.Header.BlockTime.ToUnixTimeSeconds()))
                         this.Metrics.ProcessCount++;
 
                     this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
                 }
 
-                round.NewTip = header;
+                round.NewTip = chainedHeader;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
+                this.logger.LogError(ex.ToString());
 
                 throw;
             }
@@ -937,6 +953,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             try
             {
                 conn.BeginTransaction();
+
+                this.logger.LogDebug("Removing unconfirmed transaction '{0}'.", txId);
                 long? unixTimeSeconds = conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
                 conn.Commit();
 
@@ -959,6 +977,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             try
             {
                 conn.BeginTransaction();
+
+                this.logger.LogDebug("Removing all unconfirmed transactions from wallet '{0}'.", walletName);
+
                 IEnumerable<(string txId, long creationTime)> res = conn.RemoveAllUnconfirmedTransactions(wallet.WalletId);
                 conn.Commit();
 
@@ -991,11 +1012,16 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.BeginTransaction();
                 try
                 {
+                    this.logger.LogDebug("Processing transaction '{0}'.", transaction.GetHash());
+
                     conn.ProcessTransactions(txToScript, wallet);
                     conn.Commit();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    this.logger.LogError("An exception occurred processing transaction {0}.", transaction.GetHash());
+                    this.logger.LogError(ex.ToString());
+
                     conn.Rollback();
                     throw;
                 }
@@ -1074,7 +1100,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             WalletContainer walletContainer = this.Wallets.Values.FirstOrDefault(wc => wc.Wallet.WalletId == addressIdentifier.WalletId);
             DBConnection conn = walletContainer.Conn;
 
-            var prevTran = (prev == null) ? null : new HDTransactionData() {
+            var prevTran = (prev == null) ? null : new HDTransactionData()
+            {
                 OutputTxTime = prev.CreationTime.ToUnixTimeSeconds(),
                 OutputIndex = prev.Index
             };
