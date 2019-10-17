@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
-using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -95,6 +92,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemoved)
         {
+            this.logger.LogDebug("Removing transaction '{0}' as it was removed from the mempool.", transactionRemoved.RemovedTransaction.GetHash());
             this.walletManager.RemoveUnconfirmedTransaction(transactionRemoved.RemovedTransaction);
         }
 

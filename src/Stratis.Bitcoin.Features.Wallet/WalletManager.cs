@@ -10,7 +10,6 @@ using NBitcoin;
 using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -1159,6 +1158,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (uint256 transactionId in transactionsIds)
             {
+                this.logger.LogDebug("Removing transaction '{0}' from wallet '{1}'.", transactionId, walletName);
+
                 DateTimeOffset? dateTimeOffset = this.WalletRepository.RemoveUnconfirmedTransaction(walletName, transactionId);
                 if (dateTimeOffset != null)
                     result.Add((transactionId, (DateTimeOffset)dateTimeOffset));
@@ -1174,6 +1175,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in this.Wallets)
             {
+                this.logger.LogDebug("Removing unconfirmed transaction '{0}' from wallet '{1}'.", transaction.GetHash(), wallet.Name);
                 this.WalletRepository.RemoveUnconfirmedTransaction(wallet.Name, transaction.GetHash());
             }
         }
