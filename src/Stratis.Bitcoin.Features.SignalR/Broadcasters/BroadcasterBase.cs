@@ -38,7 +38,8 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 {
                     foreach (IClientEvent clientEvent in this.GetMessages())
                     {
-                        await this.eventsHub.SendToClientsAsync(clientEvent).ConfigureAwait(false);
+                        await this.eventsHub.SendToClientsAsync(clientEvent)
+                            .ConfigureAwait(false);
                     }
                 },
                 this.nodeLifetime.ApplicationStopping,

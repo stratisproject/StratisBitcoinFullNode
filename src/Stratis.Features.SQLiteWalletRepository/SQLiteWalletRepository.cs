@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -57,6 +58,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private readonly ILogger logger;
         private readonly IDateTimeProvider dateTimeProvider;
         private ProcessBlocksInfo processBlocksInfo;
+        private object lockObj;
 
         // Metrics.
         internal Metrics Metrics;
@@ -70,6 +72,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.ScriptAddressReader = scriptAddressReader;
             this.WriteMetricsToFile = false;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.lockObj = new object();
 
             Reset();
         }
@@ -532,6 +535,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 HDAccount account = conn.GetAccountByName(walletName, accountName);
                 if (!force && !this.TestMode && account.ExtPubKey != null)
                     throw new Exception("Transactions can only be added to watch-only addresses.");
+
                 conn.AddTransactions(account, address, transactions);
                 conn.Commit();
 
@@ -724,41 +728,23 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             if (this.DatabasePerWallet && walletName == null)
             {
-                List<WalletContainer> rounds = this.Wallets.Values.Where(c => c.LockProcessBlocks.Wait(10)).ToList();
+                List<WalletContainer> rounds = this.Wallets.Values.Where(round => this.StartBatch(round, blocks.First().header)).ToList();
 
                 if (rounds.Count > 0)
                 {
-                    foreach (var round in rounds)
+                    foreach ((ChainedHeader chainedHeader, Block block) in blocks.Append((null, null)))
                     {
-                        round.PrevTip = null;
-                        round.NewTip = null;
-                    }
+                        bool done = false;
 
-                    foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
-                    {
-                        this.logger.LogDebug("[WALLET_NAME_NULL]:Processing {0}", header);
+                        this.logger.LogDebug("[WALLET_NAME_NULL]:Processing '{0}'.", chainedHeader);
 
                         Parallel.ForEach(rounds, round =>
                         {
-                            try
-                            {
-                                ParallelProcessBlock(round, block, header);
-                            }
-                            catch (Exception err)
-                            {
-                                throw err;
-                            }
-                            finally
-                            {
-                                if (header == null)
-                                {
-                                    this.logger.LogDebug("[WALLET_NAME_NULL]:Header is null, releasing locks.");
-                                    round.LockProcessBlocks.Release();
-                                }
-                            }
+                            if (!ParallelProcessBlock(round, block, chainedHeader))
+                                done = true;
                         });
 
-                        if (header == null)
+                        if (done)
                             break;
                     }
                 }
@@ -767,154 +753,114 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 ProcessBlocksInfo round = (walletName != null) ? this.Wallets[walletName] : this.processBlocksInfo;
 
-                if (round.LockProcessBlocks.Wait(10))
-                {
-                    round.PrevTip = null;
-                    round.NewTip = null;
-
-                    foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
+                if (this.StartBatch(round, blocks.First().header))
+                    foreach ((ChainedHeader chainedHeader, Block block) in blocks.Append((null, null)))
                     {
-                        this.logger.LogDebug("Processing {0}", header);
+                        this.logger.LogDebug("Processing '{0}'.", chainedHeader);
 
-                        try
-                        {
-                            ParallelProcessBlock(round, block, header);
-                        }
-                        catch (Exception err)
-                        {
-                            throw err;
-                        }
-                        finally
-                        {
-                            if (header == null)
-                            {
-                                this.logger.LogDebug("Header is null, releasing locks.");
-                                round.LockProcessBlocks.Release();
-                            }
-                        }
-
-                        if (header == null)
+                        if (!ParallelProcessBlock(round, block, chainedHeader))
                             break;
                     }
-                }
             }
         }
 
-        private void ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader chainedHeader)
+        private bool ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader chainedHeader)
         {
             try
             {
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
 
-                string lastBlockSyncedHash = (chainedHeader == null) ? null : (chainedHeader.Previous?.HashBlock ?? 0).ToString();
-
-                this.logger.LogDebug("{0}='{1}'", nameof(lastBlockSyncedHash), lastBlockSyncedHash);
-
-                if (round.NewTip != null)
+                if (round.NewTip != null || chainedHeader == null)
                 {
                     // Flush when new wallets are joining. This ensures that PrevTip will match all wallets requiring updating and advancing.
                     bool walletsJoining;
+                    string lastBlockSyncedHash = (chainedHeader == null) ? null : (chainedHeader.Previous?.HashBlock ?? (uint256)0).ToString();
                     if (round.Wallet == null && !this.DatabasePerWallet)
                         walletsJoining = this.Wallets.Any(c => c.Value.Wallet.LastBlockSyncedHash == lastBlockSyncedHash);
                     else
                         walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
                     // See if other threads are waiting to update any of the wallets.
-                    bool threadsWaiting = round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
+                    bool threadsWaiting = round.LockProcessBlocks.WaitingThreads != 0 && round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
                     if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                     {
-                        long flagFall = DateTime.Now.Ticks;
+                        if (chainedHeader == null)
+                            this.logger.LogDebug("Ending batch due to end-of-data.");
+                        else if (walletsJoining)
+                            this.logger.LogDebug("Ending batch due to other wallets joining.");
+                        else if (threadsWaiting)
+                            this.logger.LogDebug("Ending batch due to other threads waiting to update a wallet.");
+                        else if ((round.Outputs.Count + round.PrevOuts.Count) >= 10000)
+                            this.logger.LogDebug("Ending batch due to memory restrictions.");
+                        else if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                            this.logger.LogDebug("Ending batch due to time constraint.");
 
-                        conn.BeginTransaction();
-                        try
+                        if (round.NewTip != null)
                         {
-                            if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
+                            long flagFall = DateTime.Now.Ticks;
+
+                            conn.BeginTransaction();
+                            try
                             {
-                                IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
+                                if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
+                                {
+                                    IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
 
-                                // Ensure that any new addresses are present in the database before accessing the HDAddress table.
-                                foreach (AddressIdentifier addressIdentifier in round.AddressesOfInterest.GetTentative())
-                                    conn.Insert(this.CreateAddress(addressIdentifier));
+                                    // Ensure that any new addresses are present in the database before accessing the HDAddress table.
+                                    foreach (AddressIdentifier addressIdentifier in round.AddressesOfInterest.GetTentative())
+                                        conn.Insert(this.CreateAddress(addressIdentifier));
 
-                                this.logger.LogDebug("Processing {0}='{1}', {2}:'{3}'", nameof(round.NewTip), round.NewTip, nameof(round.PrevTip), round.PrevTip);
-                                conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+                                    this.logger.LogDebug("Processing block '{0}'.", chainedHeader);
 
-                                round.Outputs.Clear();
-                                round.PrevOuts.Clear();
+                                    conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
 
-                                round.AddressesOfInterest.Confirm();
-                                round.TransactionsOfInterest.Confirm();
+                                    round.Outputs.Clear();
+                                    round.PrevOuts.Clear();
+
+                                    round.AddressesOfInterest.Confirm();
+                                    round.TransactionsOfInterest.Confirm();
+
+                                }
+                                else
+                                {
+                                    HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+                                }
+
+                                long flagFall3 = DateTime.Now.Ticks;
+                                conn.Commit();
+                                this.Metrics.CommitTime += (DateTime.Now.Ticks - flagFall3);
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+                                this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
+                                this.logger.LogError(ex.ToString());
+
+                                conn.Rollback();
+
+                                // Ensure locks are released.
+                                this.EndBatch(round);
+
+                                throw;
                             }
 
-                            long flagFall3 = DateTime.Now.Ticks;
-                            conn.Commit();
-                            this.Metrics.CommitTime += (DateTime.Now.Ticks - flagFall3);
-                        }
-                        catch (Exception ex)
-                        {
-                            this.logger.LogError("An exception occurred processing block {0}.", chainedHeader);
-                            this.logger.LogError(ex.ToString());
-
-                            conn.Rollback();
-
-                            throw;
+                            this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                            this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
                         }
 
-                        this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
-
-                        round.PrevTip = null;
-
-                        // Update all wallets found in the DB into the containers.
-                        foreach (HDWallet updatedWallet in HDWallet.GetAll(conn))
-                        {
-                            if (!this.Wallets.TryGetValue(updatedWallet.Name, out WalletContainer walletContainer))
-                                continue;
-
-                            walletContainer.Wallet.LastBlockSyncedHash = updatedWallet.LastBlockSyncedHash;
-                            walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
-                            walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
-                        }
-
-                        this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
-
-                        // Release all locks.
-                        if (round.ParticipatingWallets.Count > 0)
-                        {
-                            foreach (string walletName in round.ParticipatingWallets)
-                                this.Wallets[walletName].WriteLockRelease();
-                        }
-
-                        round.ParticipatingWallets.Clear();
-
-                        if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
-                            round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+                        this.EndBatch(round);
                     }
                 }
 
                 if (chainedHeader == null)
-                    return;
+                    return false;
 
                 if (round.PrevTip == null)
                 {
-                    // Determine participating wallets.
-                    if (round.Wallet == null && !this.DatabasePerWallet)
-                        round.ParticipatingWallets = this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name).ToList();
-                    else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                        round.ParticipatingWallets = new List<string> { round.Wallet.Name };
-                    else
-                        round.ParticipatingWallets = new List<string>();
+                    if (!this.StartBatch(round, chainedHeader))
+                        return false;
 
-                    // Now grab the wallet locks.
-                    foreach (string walletName in round.ParticipatingWallets)
-                        this.Wallets[walletName].WriteLockWait();
-
-                    // Batch starting.
-                    round.PrevTip = (chainedHeader.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(chainedHeader.Previous);
+                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                 }
 
                 if (block != null)
@@ -939,6 +885,115 @@ namespace Stratis.Features.SQLiteWalletRepository
                 this.logger.LogError(ex.ToString());
 
                 throw;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Start processing a batch of blocks.
+        /// </summary>
+        /// <param name="round">The processing context of a wallet or group of wallets.</param>
+        /// <param name="header">The first block being processed. This is matched to the wallet tips to select participating wallets.</param>
+        /// <returns>Returns <c>true</c> if the batch can be started.</returns>
+        private bool StartBatch(ProcessBlocksInfo round, ChainedHeader header)
+        {
+            lock (this.lockObj)
+            {
+                if (!round.LockProcessBlocks.Wait(0))
+                {
+                    this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
+                    return false;
+                }
+
+                // Determine participating wallets.
+                string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
+                if (round.Wallet == null && !this.DatabasePerWallet)
+                    round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
+                else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
+                    round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
+                else
+                {
+                    this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
+                    round.LockProcessBlocks.Release();
+                    return false;
+                }
+
+                // See if all the wallet locks can be obtained, otherwise do nothing.
+                this.logger.LogDebug("Obtaining locks for {0} wallets.", round.ParticipatingWallets.Count);
+
+                bool failed = false;
+                Parallel.ForEach(round.ParticipatingWallets, walletName =>
+                {
+                    WalletContainer walletContainer = this.Wallets[walletName];
+
+                    if (walletContainer.LockUpdateWallet.Wait(0))
+                    {
+                        if (walletContainer.ReaderCount == 0)
+                            return;
+
+                        walletContainer.LockUpdateWallet.Release();
+                    }
+
+                    this.logger.LogDebug("Could not obtain lock for wallet '{0}'.", walletName);
+
+                    failed = true;
+
+                    Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
+                });
+
+                if (failed)
+                {
+                    this.logger.LogDebug("Releasing locks and postponing until next sync event.");
+                    Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
+                    round.LockProcessBlocks.Release();
+                    return false;
+                }
+
+                // Initialize round.
+                round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
+                round.NewTip = null;
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Ends the processing of a batch of blocks.
+        /// </summary>
+        /// <param name="round">The processing context of a wallet or group of wallets.</param>
+        private void EndBatch(ProcessBlocksInfo round)
+        {
+            lock (this.lockObj)
+            {
+                this.logger.LogDebug("Ending processing of a batch of blocks.");
+
+                try
+                {
+                    round.PrevTip = null;
+
+                    // Update all wallets found in the DB into the containers.
+                    this.logger.LogDebug("Refreshing in-memory wallet information.");
+                    foreach (HDWallet updatedWallet in HDWallet.GetAll(round.Conn))
+                    {
+                        if (!this.Wallets.TryGetValue(updatedWallet.Name, out WalletContainer walletContainer))
+                            continue;
+
+                        walletContainer.Wallet.LastBlockSyncedHash = updatedWallet.LastBlockSyncedHash;
+                        walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
+                        walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
+                    }
+                }
+                finally
+                {
+                    // Release all locks.
+                    this.logger.LogDebug("Releasing all wallet locks.");
+                    foreach (string walletName in round.ParticipatingWallets)
+                        this.Wallets[walletName].WriteLockRelease();
+
+                    round.ParticipatingWallets.Clear();
+                    round.LockProcessBlocks.Release();
+                }
             }
         }
 
@@ -997,11 +1052,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
+            walletContainer.LockUpdateWallet.Wait();
             walletContainer.LockProcessBlocks.Wait();
 
             try
             {
-                var processBlocksInfo = new ProcessBlocksInfo(conn, walletContainer, wallet);
+                var processBlocksInfo = walletContainer;
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
                     var transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, processBlocksInfo);
@@ -1023,12 +1079,14 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.logger.LogError(ex.ToString());
 
                     conn.Rollback();
+
                     throw;
                 }
             }
             finally
             {
                 walletContainer.LockProcessBlocks.Release();
+                walletContainer.LockUpdateWallet.Release();
             }
         }
 

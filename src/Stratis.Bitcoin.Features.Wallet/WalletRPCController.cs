@@ -313,20 +313,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                     feeSent = inputsAmount - outputsAmount;
                 }
 
-                var modelDict = spendingDetails.Payments.ToDictionary(p => p.DestinationAddress, p => new GetTransactionDetailsModel()
-                {
-                    Address = p.DestinationAddress,
-                    Category = GetTransactionDetailsCategoryModel.Send,
-                    OutputIndex = p.OutputIndex,
-                    Amount = 0,
-                    Fee = -feeSent.ToDecimal(MoneyUnit.BTC)
-                });
+                var details = spendingDetails.Payments
+                    .GroupBy(detail => detail.DestinationAddress)
+                    .Select(p => new GetTransactionDetailsModel()
+                    {
+                        Address = p.Key,
+                        Category = GetTransactionDetailsCategoryModel.Send,
+                        OutputIndex = p.First().OutputIndex,
+                        Amount = 0 - p.Sum(detail => detail.Amount.ToDecimal(MoneyUnit.BTC)),
+                        Fee = -feeSent.ToDecimal(MoneyUnit.BTC)
+                    });
 
-                foreach (PaymentDetails paymentDetail in spendingDetails.Payments)
-                    modelDict[paymentDetail.DestinationAddress].Amount -= paymentDetail.Amount.ToDecimal(MoneyUnit.BTC);
-
-                foreach (GetTransactionDetailsModel getTransactionDetailsModel in modelDict.Values)
-                    model.Details.Add(getTransactionDetailsModel);
+                model.Details.AddRange(details);
             }
 
             // Receive transactions details.
