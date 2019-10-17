@@ -381,7 +381,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (this.signals != null)
             {
-                this.signals.Publish(new TxAdded(entry.Transaction));
+                this.signals.Publish(new TransactionAddedToMemoryPool(entry.Transaction));
             }
 
             return true;
@@ -719,7 +719,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (this.signals != null)
             {
-                this.signals.Publish(new TxRemoved(entry.Transaction));
+                this.signals.Publish(new TransactionRemovedFromMemoryPool(entry.Transaction));
             }
         }
 

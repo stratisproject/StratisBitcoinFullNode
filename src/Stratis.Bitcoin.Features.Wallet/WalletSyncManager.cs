@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
         private readonly INodeLifetime nodeLifetime;
         private IAsyncLoop walletSynchronisationLoop;
-        //private SubscriptionToken transactionReceivedSubscription;
         private SubscriptionToken transactionAddedSubscription;
         private SubscriptionToken transactionRemovedSubscription;
         private CancellationTokenSource syncCancellationToken;
@@ -85,16 +84,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(1));
 
-            this.transactionAddedSubscription = this.signals.Subscribe<TxAdded>(this.OnTransactionAdded);
-            this.transactionRemovedSubscription = this.signals.Subscribe<TxRemoved>(this.OnTransactionRemoved);
+            this.transactionAddedSubscription = this.signals.Subscribe<TransactionAddedToMemoryPool>(this.OnTransactionAdded);
+            this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
         }
 
-        private void OnTransactionAdded(TxAdded transactionAdded)
+        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAdded)
         {
             this.walletManager.ProcessTransaction(transactionAdded.AddedTransaction);
         }
 
-        private void OnTransactionRemoved(TxRemoved transactionRemoved)
+        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemoved)
         {
             this.walletManager.RemoveUnconfirmedTransaction(transactionRemoved.RemovedTransaction);
         }

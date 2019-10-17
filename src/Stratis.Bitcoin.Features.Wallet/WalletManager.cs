@@ -208,12 +208,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletRepository = walletRepository;
             this.ExcludeTransactionsFromWalletImports = true;
 
-            // register events
-            if (this.broadcasterManager != null)
-            {
-                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
-            }
-
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
@@ -241,19 +235,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public virtual IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking()
         {
             return new List<BuilderExtension>();
-        }
-
-        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
-        {
-            if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
-            {
-                this.ProcessTransaction(transactionEntry.Transaction);
-            }
-            else
-            {
-                this.logger.LogDebug("Exception occurred: {0}", transactionEntry.ErrorMessage);
-                this.logger.LogTrace("(-)[EXCEPTION]");
-            }
         }
 
         public void Start()
