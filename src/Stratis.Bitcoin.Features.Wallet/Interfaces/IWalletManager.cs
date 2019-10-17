@@ -182,8 +182,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="accountReference">The name of the wallet and account.</param>
         /// <param name="count">The number of addresses to create.</param>
         /// <param name="isChange">A value indicating whether or not the addresses to get should be receiving or change addresses.</param>
+        /// <param name="alwaysnew">A value indicating whether or not the address to get should be a new or unused address.</param>
         /// <returns>A list of unused addresses. New addresses will be created as necessary.</returns>
-        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false, bool alwaysnew = false);
 
         /// <summary>
         /// Gets the history of transactions contained in an account.

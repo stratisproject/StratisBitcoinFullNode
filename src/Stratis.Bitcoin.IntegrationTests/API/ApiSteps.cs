@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(30);
+            commands.Count.Should().Be(32);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>] [<blockhash>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
@@ -441,12 +441,14 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");
             commands.Should().Contain(x => x.Command == "sendtoaddress <address> <amount> <commenttx> <commentdest>");
             commands.Should().Contain(x => x.Command == "getnewaddress <account> <addresstype>");
+            commands.Should().Contain(x => x.Command == "getunusedaddress <account> <addresstype>");
             commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "getblock <blockhash> [<verbosity>]");
             commands.Should().Contain(x => x.Command == "walletlock");
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");
+            commands.Should().Contain(x => x.Command == "listsinceblock <blockHash> [<targetConfirmations>]");
             commands.Should().Contain(x => x.Command == "sendmany <fromaccount> <addressesjson> [<minconf>] [<comment>] [<subtractfeefromjson>] [<isreplaceable>] [<conftarget>] [<estimatemode>]");
             commands.Should().Contain(x => x.Command == "getblockchaininfo");
             commands.Should().Contain(x => x.Command == "getnetworkinfo");

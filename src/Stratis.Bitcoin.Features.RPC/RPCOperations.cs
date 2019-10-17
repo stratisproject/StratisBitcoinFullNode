@@ -29,6 +29,7 @@
         estimatefee,
 
         getnewaddress,
+        getunusedaddress,
         getaccountaddress,
         getrawchangeaddress,
         setaccount,

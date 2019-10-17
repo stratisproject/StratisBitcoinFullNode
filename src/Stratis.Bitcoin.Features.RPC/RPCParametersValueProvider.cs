@@ -75,6 +75,10 @@ namespace Stratis.Bitcoin.Features.RPC
 
             int index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
             var parameters = (JArray)req["params"];
+
+            if (parameters == null)
+                return null;
+
             if ((index < 0) || (index >= parameters.Count))
                 return null;
 
