@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 .Select(t => t.GetHash())
                 .ToList();
 
-            IList<Receipt> contractCreationReceipts = this.receiptRepository.RetrieveMany(transactionHashes)
+            IList<Receipt> contractCreationReceipts = transactionHashes.Select(transactionHash => this.receiptRepository.Retrieve(transactionHash))
                 .Where(r => r != null && r.Success && r.NewContractAddress != null)
                 .Take(MaxRecordsToReturn) // TODO increase?
                 .ToList();
