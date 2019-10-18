@@ -143,6 +143,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 Guard.Assert(!this.IsInTransaction);
 
                 this.SQLiteConnection.BeginTransaction();
+
+                this.Repository.logger.LogDebug("Transaction started on thread {0}.", Thread.CurrentThread.ManagedThreadId);
             }
 
             this.TransactionDepth++;
@@ -168,6 +170,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     rollBackAction(rollBackData);
                 }
 
+                this.Repository.logger.LogDebug("Transaction rolled back on thread {0}.", Thread.CurrentThread.ManagedThreadId);
+
                 this.TransactionLock.Release();
             }
         }
@@ -191,6 +195,10 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     commitAction(commitData);
                 }
+
+                Guard.Assert(!this.SQLiteConnection.IsInTransaction);
+
+                this.Repository.logger.LogDebug("Transaction committed on thread {0}.", Thread.CurrentThread.ManagedThreadId);
 
                 this.TransactionLock.Release();
             }
