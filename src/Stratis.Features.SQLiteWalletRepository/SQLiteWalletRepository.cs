@@ -1098,7 +1098,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AddressType = (int)transactionData.AddressType,
                         PubKey = "", // pubKey.ScriptPubKey.ToHex(),  - See TODO
                         ScriptPubKey = transactionData.ScriptPubKey,
-                        Address = Script.FromHex(transactionData.ScriptPubKey).GetDestinationAddress(this.Network).ToString()
+                        Address = transactionData.Address
                     })
                 };
             }
