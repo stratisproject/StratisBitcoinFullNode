@@ -180,7 +180,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Outpoints = outpoints
             };
 
-            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransactionAsync(request).Result;
             if (result is JsonResult response)
             {
                 return (BuildCreateContractTransactionResponse)response.Value;
@@ -263,7 +263,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 WalletName = this.WalletName
             };
 
-            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
+            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransactionAsync(request).Result;
 
             return (BuildCallContractTransactionResponse)response.Value;
         }
