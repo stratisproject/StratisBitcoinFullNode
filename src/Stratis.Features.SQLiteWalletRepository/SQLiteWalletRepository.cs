@@ -1063,9 +1063,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             walletContainer.LockUpdateWallet.Wait();
             walletContainer.LockProcessBlocks.Wait();
 
+            ProcessBlocksInfo processBlocksInfo = walletContainer;
+
             try
             {
-                var processBlocksInfo = walletContainer;
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
                     var transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, processBlocksInfo);
@@ -1093,8 +1094,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                this.processBlocksInfo.Outputs.Clear();
-                this.processBlocksInfo.PrevOuts.Clear();
+                processBlocksInfo.Outputs.Clear();
+                processBlocksInfo.PrevOuts.Clear();
 
                 walletContainer.LockProcessBlocks.Release();
                 walletContainer.LockUpdateWallet.Release();
