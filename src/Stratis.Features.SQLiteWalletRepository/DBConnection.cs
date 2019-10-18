@@ -49,7 +49,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 if (!logged)
                 {
-                    this.logger.LogDebug("Waiting to acquire '{0}' held by thread {1}.", this.name, this.resourceOwner);
+                    this.logger.LogDebug("Thread {0} is waiting to acquire '{1}' held by thread {2}.", threadId, this.name, this.resourceOwner);
                     logged = true;
                 }
 
