@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
@@ -62,7 +63,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.keyValueRepository = Substitute.For<IKeyValueRepository>();
             this.signals = new Signals(this.loggerFactory, null);
-            this.federationManager = new CollateralFederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals);
+            var settings = new WalletSettings(new NodeSettings(this.network));
+            settings.PoAMiningKey = "test";
+            this.federationManager = new CollateralFederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals, settings);
         }
 
         private FederationGatewayController CreateController()
