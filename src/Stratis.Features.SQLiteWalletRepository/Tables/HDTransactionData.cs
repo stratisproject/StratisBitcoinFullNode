@@ -35,6 +35,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AddressIndex        INTEGER NOT NULL,
                 RedeemScript        TEXT NOT NULL,
                 ScriptPubKey        TEXT NOT NULL,
+                Address             TEXT NOT NULL,
                 Value               DECIMAL NOT NULL,
                 OutputBlockHeight   INTEGER,
                 OutputBlockHash     TEXT,
