@@ -1093,6 +1093,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
+                this.processBlocksInfo.Outputs.Clear();
+                this.processBlocksInfo.PrevOuts.Clear();
+
                 walletContainer.LockProcessBlocks.Release();
                 walletContainer.LockUpdateWallet.Release();
             }
