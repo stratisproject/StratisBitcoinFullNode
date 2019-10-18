@@ -405,7 +405,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
         }
 
-        /// <summary>
+         /// <summary>
         /// Gets the history of a wallet. This includes the transactions held by the entire wallet
         /// or a single account if one is specified.
         /// </summary>
@@ -447,17 +447,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                                 .ThenByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime)
                                                 .ToList();
 
+                    var lookup = items.ToLookup(i => i.Transaction.Id, i => i);
+                    
                     // Represents a sublist containing only the transactions that have already been spent.
-                    List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
+                    var spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null)
+                        .ToLookup(s => s.Transaction.Id, s => s);
+
+                    // Represents a sublist of 'change' transactions.
+                    // NB: Not currently used
+                    // List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
                     // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                     // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
-                    List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
-
-                    // Represents a sublist of 'change' transactions.
-                    List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
-
-                    foreach (FlatHistory item in history)
+                    foreach (FlatHistory item in items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())))
                     {
                         // Count only unique transactions and limit it to MaxHistoryItemsPerAccount.
                         int processedTransactions = uniqueProcessedTxIds.Count;
@@ -474,8 +476,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
                         {
                             // We look for the output(s) related to our spending input.
-                            List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
-                            if (relatedOutputs.Any())
+                            List<FlatHistory> relatedOutputs = lookup.Contains(transaction.Id)
+                                ? lookup[transaction.Id].Where(h =>
+                                    h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList()
+                                : null;
+                            
+                            if (false != relatedOutputs?.Any())
                             {
                                 // Add staking transaction details.
                                 // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
@@ -535,11 +541,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             Money changeAmount = transaction.SpendingDetails.Change.Sum(d => d.Amount);
 
                             // Get the change address for this spending transaction.
-                            FlatHistory changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
+                            // NB: Not currently used
+                            // FlatHistory changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
 
                             // Find all the spending details containing the spending transaction id and aggregate the sums.
                             // This is our best shot at finding the total value of inputs for this transaction.
-                            var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
+                            var inputsAmount = new Money(spendingDetails.Contains(spendingTransactionId) ? spendingDetails[spendingTransactionId].Sum(t => t.Transaction.Amount) : 0);
 
                             // The fee is calculated as follows: funds in utxo - amount spent - amount sent as change.
                             sentItem.Fee = inputsAmount - sentItem.Amount - changeAmount;
@@ -615,6 +622,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
+
 
         /// <summary>
         /// Gets the balance of a wallet in STRAT (or sidechain coin). Both the confirmed and unconfirmed balance are returned.

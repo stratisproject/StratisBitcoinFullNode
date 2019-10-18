@@ -251,18 +251,32 @@ namespace NBitcoin
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
-            if (bytes.Length != WIDTH_BYTE)
-                throw new FormatException("Invalid hex length");
-            this.pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
-            this.pn1 = Utils.ToUInt32(bytes, 4 * 1, true);
-            this.pn2 = Utils.ToUInt32(bytes, 4 * 2, true);
-            this.pn3 = Utils.ToUInt32(bytes, 4 * 3, true);
-            this.pn4 = Utils.ToUInt32(bytes, 4 * 4, true);
-            this.pn5 = Utils.ToUInt32(bytes, 4 * 5, true);
-            this.pn6 = Utils.ToUInt32(bytes, 4 * 6, true);
-            this.pn7 = Utils.ToUInt32(bytes, 4 * 7, true);
-
+            using (var enumerator = Encoder.DecodeDataToUintEnumerable(str).GetEnumerator())
+            {
+                try
+                {
+                    enumerator.MoveNext();
+                    this.pn7 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn6 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn5 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn4 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn3 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn2 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn1 = enumerator.Current;
+                    enumerator.MoveNext();
+                    this.pn0 = enumerator.Current;
+                }
+                catch(InvalidOperationException)
+                {
+                    throw new FormatException("Invalid hex length");
+                }
+            }
         }
 
         public uint256(byte[] vch)
@@ -275,6 +289,10 @@ namespace NBitcoin
             var item = obj as uint256;
             if (item == null)
                 return false;
+            
+            if (this.pn0 != item.pn0)
+                return false;
+            
             bool equals = true;
             equals &= this.pn0 == item.pn0;
             equals &= this.pn1 == item.pn1;
@@ -291,9 +309,12 @@ namespace NBitcoin
         {
             if (ReferenceEquals(a, b))
                 return true;
-            if (((object)a == null) || ((object)b == null))
+            if (((object) a == null) || ((object) b == null))
                 return false;
-
+            
+            if (a.pn0 != b.pn0)
+                return false;
+            
             bool equals = true;
             equals &= a.pn0 == b.pn0;
             equals &= a.pn1 == b.pn1;

@@ -3,6 +3,8 @@ using System.Linq;
 
 namespace NBitcoin.DataEncoders
 {
+    using System.Collections.Generic;
+
     public class HexEncoder : DataEncoder
     {
         public bool Space
@@ -31,24 +33,63 @@ namespace NBitcoin.DataEncoders
             }
             return new string(s);
         }
-
-        public override byte[] DecodeData(string encoded)
+        
+        public IEnumerable<uint> DecodeDataToUintEnumerable(string encoded)
         {
             if(encoded == null)
                 throw new ArgumentNullException("encoded");
             if(encoded.Length % 2 == 1)
                 throw new FormatException("Invalid Hex String");
 
-            var result = new byte[encoded.Length / 2];
+            uint accum = 0;
+            
             for(int i = 0, j = 0; i < encoded.Length; i += 2, j++)
             {
                 int a = IsDigit(encoded[i]);
                 int b = IsDigit(encoded[i + 1]);
                 if(a == -1 || b == -1)
                     throw new FormatException("Invalid Hex String");
-                result[j] = (byte)(((uint)a << 4) | (uint)b);
+
+                var shift = 8 * ((3 - j) % 4);
+                             
+                accum |= (uint) ((byte)(((uint)a << 4) | (uint)b) << shift);
+
+                if (j % 4 == 3)
+                {
+                    yield return accum;
+                    accum = 0;
+                }
             }
-            return result;
+        }
+        
+        /// <summary>
+        /// Decodes hex to IEnumerable<byte> try to use this instead of
+        /// DecodeData as this does not allocate
+        /// </summary>
+        /// <param name="encoded"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="FormatException"></exception>
+        public IEnumerable<byte> DecodeDataToByteEnumerable(string encoded)
+        {
+            if(encoded == null)
+                throw new ArgumentNullException("encoded");
+            if(encoded.Length % 2 == 1)
+                throw new FormatException("Invalid Hex String");
+
+            for(int i = 0, j = 0; i < encoded.Length; i += 2, j++)
+            {
+                int a = IsDigit(encoded[i]);
+                int b = IsDigit(encoded[i + 1]);
+                if(a == -1 || b == -1)
+                    throw new FormatException("Invalid Hex String");
+                yield return (byte)(((uint)a << 4) | (uint)b);
+            }
+        }
+
+        public override byte[] DecodeData(string encoded)
+        {
+            return this.DecodeDataToByteEnumerable(encoded).ToArray();
         }
 
         static HexEncoder()
