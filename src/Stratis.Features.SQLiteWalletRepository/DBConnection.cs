@@ -72,10 +72,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 Guard.Assert(this.IsHeld());
 
-                this.resourceOwner = -1;
-
                 this.logger.LogDebug("Thread {0} released lock '{1}'.", this.resourceOwner, this.name);
 
+                this.resourceOwner = -1;
             }
         }
     }
