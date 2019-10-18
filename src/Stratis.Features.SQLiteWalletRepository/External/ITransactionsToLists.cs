@@ -69,6 +69,11 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                         break;
                 }
             }
+            else
+            {
+                // Some kind of non-standard script. We should still return it here.
+                yield return redeemScript;
+            }
         }
 
         public bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null, long? blockTime = null)
