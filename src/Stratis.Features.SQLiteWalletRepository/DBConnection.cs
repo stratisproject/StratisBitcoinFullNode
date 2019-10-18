@@ -13,6 +13,51 @@ using Stratis.Features.SQLiteWalletRepository.Tables;
 namespace Stratis.Features.SQLiteWalletRepository
 {
     /// <summary>
+    /// Represents a resource that can only be held by one thread at a time.
+    /// </summary>
+    public class SingleThreadResource
+    {
+        private object lockObj;
+        private int resourceOwner = -1;
+
+        public SingleThreadResource()
+        {
+            this.lockObj = new object();
+        }
+
+        public bool Wait()
+        {
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+
+            while (this.resourceOwner != threadId)
+            {
+                lock (this.lockObj)
+                    if (this.resourceOwner == -1)
+                        this.resourceOwner = threadId;
+
+                Thread.Yield();
+            }
+
+            return true;
+        }
+
+        public bool IsHeld()
+        {
+            return this.resourceOwner == Thread.CurrentThread.ManagedThreadId;
+        }
+
+        public void Release()
+        {
+            lock (this.lockObj)
+            {
+                Guard.Assert(this.IsHeld());
+
+                this.resourceOwner = -1;
+            }
+        }
+    }
+
+    /// <summary>
     /// This class represents a connection to the repository. Its a central point for all functionality that can be performed via a connection.
     /// </summary>
     public class DBConnection
@@ -24,7 +69,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal Dictionary<string, DBCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
-        internal SemaphoreSlim TransactionLock;
+        internal SingleThreadResource TransactionLock;
         internal int TransactionDepth;
         internal bool IsInTransaction => this.SQLiteConnection.IsInTransaction;
 
@@ -47,7 +92,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             this.Repository = repo;
-            this.TransactionLock = new SemaphoreSlim(1, 1);
+            this.TransactionLock = new SingleThreadResource();
             this.TransactionDepth = 0;
             this.CommitActions = new Stack<(object, Action<object>)>();
             this.RollBackActions = new Stack<(object, Action<object>)>();
@@ -69,67 +114,63 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void BeginTransaction()
         {
-            lock (this.TransactionLock)
+            this.TransactionLock.Wait();
+
+            if (this.TransactionDepth == 0)
             {
-                if (this.TransactionDepth == 0)
-                {
-                    Guard.Assert(!this.IsInTransaction);
+                Guard.Assert(!this.IsInTransaction);
 
-                    this.TransactionLock.Wait();
-                    this.SQLiteConnection.BeginTransaction();
-                }
-
-                this.TransactionDepth++;
+                this.SQLiteConnection.BeginTransaction();
             }
+
+            this.TransactionDepth++;
         }
 
         internal void Rollback()
         {
-            lock (this.TransactionLock)
+            Guard.Assert(this.TransactionLock.IsHeld());
+
+            this.TransactionDepth--;
+
+            if (this.TransactionDepth == 0)
             {
-                this.TransactionDepth--;
+                Guard.Assert(this.IsInTransaction);
 
-                if (this.TransactionDepth == 0)
+                this.SQLiteConnection.Rollback();
+                this.CommitActions.Clear();
+
+                while (this.RollBackActions.Count > 0)
                 {
-                    Guard.Assert(this.IsInTransaction);
+                    (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
 
-                    this.SQLiteConnection.Rollback();
-                    this.CommitActions.Clear();
-
-                    while (this.RollBackActions.Count > 0)
-                    {
-                        (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
-
-                        rollBackAction(rollBackData);
-                    }
-
-                    this.TransactionLock.Release();
+                    rollBackAction(rollBackData);
                 }
+
+                this.TransactionLock.Release();
             }
         }
 
         internal void Commit()
         {
-            lock (this.TransactionLock)
+            Guard.Assert(this.TransactionLock.IsHeld());
+
+            this.TransactionDepth--;
+
+            if (this.TransactionDepth == 0)
             {
-                this.TransactionDepth--;
+                Guard.Assert(this.IsInTransaction);
 
-                if (this.TransactionDepth == 0)
+                this.SQLiteConnection.Commit();
+                this.RollBackActions.Clear();
+
+                while (this.CommitActions.Count > 0)
                 {
-                    Guard.Assert(this.IsInTransaction);
+                    (dynamic commitData, Action<dynamic> commitAction) = this.CommitActions.Pop();
 
-                    this.SQLiteConnection.Commit();
-                    this.RollBackActions.Clear();
-
-                    while (this.CommitActions.Count > 0)
-                    {
-                        (dynamic commitData, Action<dynamic> commitAction) = this.CommitActions.Pop();
-
-                        commitAction(commitData);
-                    }
-
-                    this.TransactionLock.Release();
+                    commitAction(commitData);
                 }
+
+                this.TransactionLock.Release();
             }
         }
 
