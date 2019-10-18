@@ -517,7 +517,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AddressType = addressType,
                 AddressIndex = addressIndex,
                 PubKey = pubKeyScript?.ToHex(),
-                ScriptPubKey = scriptPubKey?.ToHex()
+                ScriptPubKey = scriptPubKey?.ToHex(),
+                Address = scriptPubKey.GetDestinationAddress(this.Network).ToString()
             };
         }
 
@@ -601,7 +602,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AddressType = (int)addressId.AddressType,
                 AddressIndex = (int)addressId.AddressIndex,
                 PubKey = addressId.PubKeyScript,
-                ScriptPubKey = addressId.ScriptPubKey
+                ScriptPubKey = addressId.ScriptPubKey,
+                Address = Script.FromHex(addressId.ScriptPubKey).GetDestinationAddress(this.Network).ToString()
             };
         }
 
@@ -1095,7 +1097,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AddressIndex = transactionData.AddressIndex,
                         AddressType = (int)transactionData.AddressType,
                         PubKey = "", // pubKey.ScriptPubKey.ToHex(),  - See TODO
-                        ScriptPubKey = transactionData.ScriptPubKey
+                        ScriptPubKey = transactionData.ScriptPubKey,
+                        Address = Script.FromHex(transactionData.ScriptPubKey).GetDestinationAddress(this.Network).ToString()
                     })
                 };
             }
