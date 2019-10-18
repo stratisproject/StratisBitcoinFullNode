@@ -87,6 +87,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAddedToMempool)
         {
+            this.logger.LogDebug("Adding transaction '{0}' as it was added to the mempool.", transactionAddedToMempool.AddedTransaction.GetHash());
             this.walletManager.ProcessTransaction(transactionAddedToMempool.AddedTransaction);
         }
 
