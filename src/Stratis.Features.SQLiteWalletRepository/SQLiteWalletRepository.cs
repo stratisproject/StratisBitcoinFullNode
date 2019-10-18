@@ -179,10 +179,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                     .Select(p => p.Substring(this.DBPath.Length + 1).Split('.')[0]))
                 {
                     DBConnection conn = GetConnection(walletName);
-
-                    if (conn.IsInTransaction)
-                        conn.Rollback();
-
                     conn.Close();
                 }
             }
@@ -191,9 +187,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 DBConnection conn = this.processBlocksInfo?.Conn;
                 if (conn != null)
                 {
-                    if (conn.IsInTransaction)
-                        conn.Rollback();
-
                     conn.Close();
                 }
             }
