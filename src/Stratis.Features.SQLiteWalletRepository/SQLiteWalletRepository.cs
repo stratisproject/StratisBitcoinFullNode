@@ -55,7 +55,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private readonly ILogger logger;
+        internal readonly ILogger logger;
         private readonly IDateTimeProvider dateTimeProvider;
         private ProcessBlocksInfo processBlocksInfo;
         private object lockObj;

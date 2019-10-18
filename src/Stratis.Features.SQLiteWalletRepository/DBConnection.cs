@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using SQLite;
 using Stratis.Bitcoin.Features.Wallet;
@@ -19,9 +20,13 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         private object lockObj;
         private int resourceOwner = -1;
+        private ILogger logger;
+        private string name;
 
-        public SingleThreadResource()
+        public SingleThreadResource(string name, ILogger logger)
         {
+            this.name = name;
+            this.logger = logger;
             this.lockObj = new object();
         }
 
@@ -29,14 +34,29 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
+            bool logged = false;
+
             while (this.resourceOwner != threadId)
             {
                 lock (this.lockObj)
+                {
                     if (this.resourceOwner == -1)
+                    {
                         this.resourceOwner = threadId;
+                        break;
+                    }
+                }
+
+                if (!logged)
+                {
+                    this.logger.LogDebug("Waiting to acquire '{0}' held by thread {1}.", this.name, this.resourceOwner);
+                    logged = true;
+                }
 
                 Thread.Yield();
             }
+
+            this.logger.LogDebug("Thread {0} acquired lock '{1}'.", threadId, this.name);
 
             return true;
         }
@@ -53,6 +73,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 Guard.Assert(this.IsHeld());
 
                 this.resourceOwner = -1;
+
+                this.logger.LogDebug("Thread {0} released lock '{1}'.", this.resourceOwner, this.name);
+
             }
         }
     }
@@ -92,7 +115,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             this.Repository = repo;
-            this.TransactionLock = new SingleThreadResource();
+            this.TransactionLock = new SingleThreadResource(nameof(this.TransactionLock), repo.logger);
             this.TransactionDepth = 0;
             this.CommitActions = new Stack<(object, Action<object>)>();
             this.RollBackActions = new Stack<(object, Action<object>)>();
