@@ -243,6 +243,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void Execute(string query, params object[] args)
         {
+            this.Repository.logger.LogTrace("Execute('{0}', {1})", query, string.Join(", ", args.Select(a => DBParameter.Create(a))));
+
             this.SQLiteConnection.Execute(query, args);
         }
 
