@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
+using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Tables;
@@ -20,7 +20,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal bool MustCommit;
         internal DBConnection Conn;
         internal HDWallet Wallet;
-        internal List<string> ParticipatingWallets;
+        internal ConcurrentHashSet<string> ParticipatingWallets;
         internal long NextScheduledCatchup;
 
         internal DBLock LockProcessBlocks;
@@ -35,7 +35,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.LockProcessBlocks = processBlocksInfo?.LockProcessBlocks ?? new DBLock();
             this.Outputs = TempTable.Create<TempOutput>();
             this.PrevOuts = TempTable.Create<TempPrevOut>();
-            this.ParticipatingWallets = new List<string>();
+            this.ParticipatingWallets = new ConcurrentHashSet<string>();
 
             this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new WalletAddressLookup(conn, wallet?.WalletId);
             this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new WalletTransactionLookup(conn, wallet?.WalletId);
@@ -44,14 +44,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
     internal class WalletContainer : ProcessBlocksInfo
     {
-        private readonly DBLock lockUpdateWallet;
-        private int readers;
-        public bool HaveWaitingThreads => this.lockUpdateWallet.WaitingThreads > 0;
+        internal readonly DBLock LockUpdateWallet;
+        internal int ReaderCount;
+        public bool HaveWaitingThreads => this.LockUpdateWallet.WaitingThreads > 0;
 
         internal WalletContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo = null) : base(conn, processBlocksInfo, wallet)
         {
-            this.lockUpdateWallet = new DBLock();
-            this.readers = 0;
+            this.LockUpdateWallet = new DBLock();
+            this.ReaderCount = 0;
 
             this.Conn = conn;
         }
@@ -61,30 +61,30 @@ namespace Stratis.Features.SQLiteWalletRepository
             // Only take the write lock if there are no readers.
             while (true)
             {
-                this.lockUpdateWallet.Wait();
-                if (this.readers == 0)
+                this.LockUpdateWallet.Wait();
+                if (this.ReaderCount == 0)
                     break;
-                this.lockUpdateWallet.Release();
+                this.LockUpdateWallet.Release();
                 Thread.Sleep(100);
             }
         }
 
         internal void WriteLockRelease()
         {
-            this.lockUpdateWallet.Release();
+            this.LockUpdateWallet.Release();
         }
 
         internal void ReadLockWait()
         {
             // Only take a read-lock if there is no writer.
-            this.lockUpdateWallet.Wait();
-            Interlocked.Increment(ref this.readers);
-            this.lockUpdateWallet.Release();
+            this.LockUpdateWallet.Wait();
+            Interlocked.Increment(ref this.ReaderCount);
+            this.LockUpdateWallet.Release();
         }
 
         internal void ReadLockRelease()
         {
-            Interlocked.Decrement(ref this.readers);
+            Interlocked.Decrement(ref this.ReaderCount);
         }
     }
 }

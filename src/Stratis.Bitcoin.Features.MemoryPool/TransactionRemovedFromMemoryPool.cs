@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Event that is executed when a transaction is removed from the mempool.
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.EventBus.EventBase" />
+    /// <seealso cref="EventBase" />
     public class TransactionRemovedFromMemoryPool : EventBase
     {
         public Transaction RemovedTransaction { get; }
