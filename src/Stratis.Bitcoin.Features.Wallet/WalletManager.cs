@@ -115,9 +115,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly object lockObject;
         protected readonly object lockProcess;
 
-        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop asyncLoop;
-
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
 
@@ -431,53 +428,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Wallet jsonWallet = this.fileStorage.LoadByFileName(fileName);
 
                 check?.Invoke(jsonWallet);
-
-                var blockDict = new Dictionary<int, uint256>();
-
-                // Only load transactions that have block hashes found in the consensus chain.
-                // Let the asynchronous sync take care of the rest.
-                IEnumerable<TransactionData> PreprocessTransactions(TransactionCollection transactions)
-                {
-                    foreach (TransactionData txData in transactions)
-                    {
-                        if (txData.BlockHeight != null)
-                        {
-                            if ((int)txData.BlockHeight > this.ChainIndexer.Tip.Height)
-                                continue;
-
-                            if (!blockDict.TryGetValue((int)txData.BlockHeight, out uint256 blockHash2))
-                            {
-                                blockHash2 = this.ChainIndexer.GetHeader((int)txData.BlockHeight).HashBlock;
-                                blockDict[(int)txData.BlockHeight] = blockHash2;
-                            }
-
-                            if (txData.BlockHash != blockHash2)
-                                continue;
-                        }
-
-                        if (txData.SpendingDetails?.BlockHeight == null)
-                        {
-                            yield return txData;
-                            continue;
-                        }
-
-                        if ((int)txData.SpendingDetails.BlockHeight > this.ChainIndexer.Tip.Height)
-                            continue;
-
-                        if (!blockDict.TryGetValue((int)txData.SpendingDetails.BlockHeight, out uint256 blockHash))
-                        {
-                            blockHash = this.ChainIndexer.GetHeader((int)txData.SpendingDetails.BlockHeight).HashBlock;
-                            blockDict[(int)txData.SpendingDetails.BlockHeight] = blockHash;
-                        }
-
-                        if (txData.SpendingDetails.BlockHash == null)
-                            txData.SpendingDetails.BlockHash = blockHash;
-                        else if (txData.SpendingDetails.BlockHash != blockHash)
-                            continue;
-
-                        yield return txData;
-                    }
-                }
 
                 if (this.ExcludeTransactionsFromWalletImports)
                 {
