@@ -148,18 +148,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             this.TransactionDepth++;
+
+            Guard.Assert(this.IsInTransaction);
         }
 
         internal void Rollback()
         {
             Guard.Assert(this.TransactionLock.IsHeld());
+            Guard.Assert(this.IsInTransaction);
 
             this.TransactionDepth--;
 
             if (this.TransactionDepth == 0)
             {
-                Guard.Assert(this.IsInTransaction);
-
                 this.SQLiteConnection.Rollback();
                 this.CommitActions.Clear();
 
@@ -170,6 +171,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     rollBackAction(rollBackData);
                 }
 
+                Guard.Assert(!this.SQLiteConnection.IsInTransaction);
+
                 this.Repository.logger.LogDebug("Transaction rolled back on thread {0}.", Thread.CurrentThread.ManagedThreadId);
 
                 this.TransactionLock.Release();
@@ -179,13 +182,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal void Commit()
         {
             Guard.Assert(this.TransactionLock.IsHeld());
+            Guard.Assert(this.IsInTransaction);
 
             this.TransactionDepth--;
 
             if (this.TransactionDepth == 0)
             {
-                Guard.Assert(this.IsInTransaction);
-
                 this.SQLiteConnection.Commit();
                 this.RollBackActions.Clear();
 
