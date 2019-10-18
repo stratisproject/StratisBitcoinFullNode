@@ -424,10 +424,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             var removedTxs = new Dictionary<string, long>();
 
             this.Execute($@"
-            DROP    TABLE IF EXISTS temp.TxToDelete");
-
-            this.Execute($@"
-            CREATE  TABLE temp.TxToDelete (
+            CREATE  TABLE IF NOT EXISTS temp.TxToDelete (
                     WalletId INT
             ,       AccountIndex INT
             ,       AddressType INT
@@ -435,6 +432,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       OutputTxId TEXT
             ,       OutputIndex INT
             ,       ScriptPubKey TEXT)");
+
+            this.Execute($@"
+            DELETE  FROM temp.TxToDelete");
 
             this.Execute($@"
             INSERT  INTO temp.TxToDelete (
