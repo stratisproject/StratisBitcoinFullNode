@@ -460,8 +460,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 {
                     Index = i,
                     HdPath = $"{addressCollection.HdPath}/{i}",
-                    Address = key.PubKey.GetAddress(network).ToString(),
-                    ScriptPubKey = key.ScriptPubKey
+                    Address = key.PubKey.Hash.ScriptPubKey.GetDestinationAddress(network).ToString(),
+                    Pubkey = key.PubKey.ScriptPubKey,
+                    ScriptPubKey = key.PubKey.Hash.ScriptPubKey
                 };
 
                 addressCollection.Add(address);
