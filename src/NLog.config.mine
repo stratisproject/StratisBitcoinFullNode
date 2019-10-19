@@ -14,10 +14,10 @@
     </target>
 
     <!-- CONSENSUS -->
-    <target name="debugConsensusFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
+	<target name="debugConsensusFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="consensus.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
-    <target name="debugCHTandCMFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
+	<target name="debugCHTandCMFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="CHTandCM.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
     <target name="debugCoinViewsFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
@@ -39,17 +39,17 @@
       <target xsi:type="File" fileName="mempool.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
 
-    <!-- MINER -->
+      <!-- MINER -->
     <target name="debugMinerFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="miner.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
 
-    <!-- NOTIFICATIONS -->
+      <!-- NOTIFICATIONS -->
     <target name="debugNotificationsFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="notifications.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
 
-    <!-- RPC -->
+      <!-- RPC -->
     <target name="debugRPCFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="rpc.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
@@ -71,9 +71,9 @@
     <target name="debugCMBFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="CBM.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
     </target>
-    <target name="debugTimeSyncFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="timesync.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" />
-    </target>
+    <target name="debugTimeSyncFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">	
+      <target xsi:type="File" fileName="timesync.txt" archiveNumbering="Date" maxArchiveFiles="14" archiveEvery="Day" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 	
+    </target>    
 
     <!-- BLOCK PULLER -->
     <target name="debugBlockPullerFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
@@ -101,12 +101,11 @@
     <logger name="Stratis.Bitcoin.Features.BlockStore.*" minlevel="Trace" writeTo="debugBlockStoreFile" />
 
     <logger name="Stratis.Bitcoin.Features.Consensus.*" minlevel="Trace" writeTo="debugConsensusFile" />
-    <logger name="Stratis.Bitcoin.Consensus.*" minlevel="Trace" writeTo="debugConsensusFile" />
-    <logger name="Stratis.Features.FederatedPeg.Collateral.CheckCollateralFullValidationRule" minlevel="Debug" writeTo="debugConsensusFile" />
-
-    <logger name="Stratis.Bitcoin.Consensus.ChainedHeaderTree" minlevel="Trace" writeTo="debugCHTandCMFile" />
-    <logger name="Stratis.Bitcoin.Consensus.ConsensusManager" minlevel="Trace" writeTo="debugCHTandCMFile" />
-
+	<logger name="Stratis.Bitcoin.Consensus.*" minlevel="Trace" writeTo="debugConsensusFile" />
+	
+	<logger name="Stratis.Bitcoin.Consensus.ChainedHeaderTree" minlevel="Trace" writeTo="debugCHTandCMFile" />
+	<logger name="Stratis.Bitcoin.Consensus.ConsensusManager" minlevel="Trace" writeTo="debugCHTandCMFile" />
+	
     <logger name="Stratis.Bitcoin.Features.Consensus.CoinViews.*" minlevel="Trace" writeTo="debugCoinViewsFile" />
 
     <logger name="Stratis.Bitcoin.Features.Dns.*" minlevel="Trace" writeTo="debugDnsFile" />
@@ -126,12 +125,12 @@
     <logger name="Stratis.Bitcoin.Features.WatchOnlyWallet.*" minlevel="Trace" writeTo="debugWatchOnlyWalletFile" />
 
     <logger name="Stratis.Bitcoin.Consensus.ConsensusManagerBehavior" minlevel="Trace" writeTo="debugCMBFile" />
-    <logger name="Stratis.Bitcoin.Base.*" minlevel="Trace" writeTo="debugBaseFile" />
+    <logger name="Stratis.Bitcoin.Base.*" minlevel="Trace" writeTo="debugBaseFile" /> 
     <logger name="Stratis.Bitcoin.Base.TimeSyncBehaviorState" minlevel="Trace" writeTo="debugTimeSyncFile" />
 
     <logger name="Stratis.Bitcoin.BlockPulling.*" minlevel="Trace" writeTo="debugBlockPullerFile" />
     <logger name="Stratis.Bitcoin.Connection.*" minlevel="Trace" writeTo="debugConnectionFile" />
-
+	
     <logger name="Stratis.Bitcoin.P2P.*" minlevel="Trace" writeTo="debugP2pFile" />
   </rules>
 </nlog>
