@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 // The transaction should not be in it.
                 Assert.DoesNotContain(block.Transactions, x => x.GetHash() == tx.GetHash());
             }
-            */
         }
+        */
     }
 }
