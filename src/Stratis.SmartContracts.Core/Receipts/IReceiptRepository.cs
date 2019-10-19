@@ -14,5 +14,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// Retrieve a receipt by transaction hash.
         /// </summary>
         Receipt Retrieve(uint256 txHash);
+
+        IList<Receipt> RetrieveMany(IList<uint256> hashes);
     }
 }
