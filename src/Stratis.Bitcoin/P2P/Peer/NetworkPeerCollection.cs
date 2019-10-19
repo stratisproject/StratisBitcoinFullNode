@@ -5,6 +5,7 @@ using System.Net;
 using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -109,11 +110,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.networkPeers.FirstOrDefault(n => n.MatchRemoteIPAddress(ip, port));
         }
 
+        [NoTrace]
         public IEnumerator<INetworkPeer> GetEnumerator()
         {
             return this.networkPeers.GetEnumerator();
         }
 
+        [NoTrace]
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
