@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW.Rules
     {
         public SmartContractPowCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView, ILoggerFactory loggerFactory) 
-            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, loggerFactory)
+            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView, IBlockExecutionResultCache executionCache, ILoggerFactory loggerFactory) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, executionCache, loggerFactory)
         {
         }
 

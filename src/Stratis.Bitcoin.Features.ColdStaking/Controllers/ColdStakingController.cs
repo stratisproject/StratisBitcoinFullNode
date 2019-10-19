@@ -139,9 +139,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
             try
             {
+                HdAddress address = this.ColdStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress);
+
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.ColdStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
+                    Address = request.Segwit ? address?.Bech32Address : address?.Address
                 };
 
                 if (model.Address == null)
@@ -186,7 +188,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
                 Transaction transaction = this.ColdStakingManager.GetColdStakingSetupTransaction(
                     this.walletTransactionHandler, request.ColdWalletAddress, request.HotWalletAddress,
-                    request.WalletName, request.WalletAccount, request.WalletPassword, amount, feeAmount);
+                    request.WalletName, request.WalletAccount, request.WalletPassword, amount, feeAmount, request.SegwitChangeAddress);
 
                 var model = new SetupColdStakingResponse
                 {

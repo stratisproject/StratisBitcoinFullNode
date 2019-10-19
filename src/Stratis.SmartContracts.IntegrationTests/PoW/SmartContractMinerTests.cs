@@ -24,6 +24,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -71,6 +72,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 testContext.network,
                 new SenderRetriever(),
                 testContext.StateRoot,
+                testContext.executionCache, 
+                testContext.callDataSerializer,
                 new NodeDeployments(testContext.network, testContext.ChainIndexer));
         }
 
@@ -173,6 +176,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private SmartContractValidator validator;
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
+            public IBlockExecutionResultCache executionCache;
             public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
@@ -224,6 +228,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 var consensusRulesContainer = new ConsensusRulesContainer();
 
+                this.executionCache = new BlockExecutionResultCache();
+
                 consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(typeof(BitcoinHeaderVersionRule)) as HeaderValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SetActivationDeploymentsFullValidationRule() as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new LoadCoinviewRule() as FullValidationConsensusRule);
@@ -233,7 +239,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
-                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, new LoggerFactory()) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, this.executionCache, new LoggerFactory()) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(
