@@ -166,9 +166,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.ProcessBlocks();
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // TODO: Log the error but keep going.
+                // Log the error but keep going.
+                this.logger.LogError("'{0}' failed with: {1}.", nameof(OrchestrateWalletSync), e.ToString());
             }
         }
 
