@@ -112,27 +112,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
-            lock (this.lockObject)
-            {
+            if (this.walletManager.WalletTipHash == block.Header.HashPrevBlock)
                 this.walletManager.ProcessBlock(block);
-            }
         }
 
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-            lock (this.lockObject)
-            {
-                this.walletManager.ProcessTransaction(transaction);
-            }
+
+            this.walletManager.ProcessTransaction(transaction);
+
         }
 
         private void ProcessBlocks()
         {
-            lock (this.lockObject)
-            {
-                this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFromRange(height, this.chainIndexer.Tip.Height); });
-            }
+            this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFrom(height); });
         }
 
         private void OnBlockConnected(BlockConnected blockConnected)
@@ -180,14 +174,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry)
+        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFrom(int leftBoundry)
         {
-            for (int height = leftBoundry; height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested;)
+            for (int height = leftBoundry; !this.syncCancellationToken.IsCancellationRequested;)
             {
                 var hashes = new List<uint256>();
-                for (int i = 0; i < 100 && (height + i) <= rightBoundry; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     ChainedHeader header = this.chainIndexer.GetHeader(height + i);
+                    if (header == null)
+                        yield break;
+
                     hashes.Add(header.HashBlock);
                 }
 
@@ -196,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 List<Block> blocks = this.blockStore.GetBlocks(hashes);
 
                 var buffer = new List<(ChainedHeader, Block)>();
-                for (int i = 0; i < 100 && height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
+                for (int i = 0; i < blocks.Count && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
                 {
                     ChainedHeader header = this.chainIndexer.GetHeader(height);
                     yield return ((header, blocks[i]));
