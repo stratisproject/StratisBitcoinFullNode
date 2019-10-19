@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IAsyncLoop walletSynchronisationLoop;
         private SubscriptionToken transactionAddedSubscription;
         private SubscriptionToken transactionRemovedSubscription;
+        private SubscriptionToken blockConnectedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
 
@@ -83,6 +85,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.transactionAddedSubscription = this.signals.Subscribe<TransactionAddedToMemoryPool>(this.OnTransactionAdded);
             this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
         private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAddedToMempool)
@@ -124,13 +127,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        /// <inheritdoc />
-        public void ProcessBlocks()
+        private void ProcessBlocks()
         {
             lock (this.lockObject)
             {
                 this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFromRange(height, this.chainIndexer.Tip.Height); });
             }
+        }
+
+        private void OnBlockConnected(BlockConnected blockConnected)
+        {
+            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
         }
 
         /// <inheritdoc />
@@ -173,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        public IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry)
+        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry)
         {
             for (int height = leftBoundry; height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested;)
             {
@@ -203,6 +210,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected void Dispose(bool dispose)
         {
             if (dispose)

@@ -301,10 +301,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
                 await node.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
 
-                // Sync the wallet.
-                var walletSyncManager = (WalletSyncManager)node.FullNode.NodeService<IWalletSyncManager>();
-                walletSyncManager.ProcessBlocks();
-
                 long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 
                 Assert.Equal(network.Consensus.PremineReward.Satoshi, balanceAfterPremine);
