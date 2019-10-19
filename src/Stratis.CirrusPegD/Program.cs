@@ -109,15 +109,13 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetSidechainFullNode(string[] args)
         {
-            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
-            NetworkType networkType = nodeSettings.Network.NetworkType;
-
             var fedPegOptions = new FederatedPegOptions(
-                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType]
+                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)nodeSettings.Network.NetworkType]
             );
 
             IFullNode node = new FullNodeBuilder()

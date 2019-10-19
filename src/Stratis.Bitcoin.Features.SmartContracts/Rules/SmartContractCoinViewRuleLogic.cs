@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
@@ -31,19 +33,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
+        private readonly IBlockExecutionResultCache executionCache;
         private readonly List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
+        private BlockExecutionResultModel cachedResults;
         private readonly IList<Receipt> receipts;
         private uint refundCounter;
         private IStateRepositoryRoot mutableStateRepository;
         private ulong blockGasConsumed;
+        private readonly ILogger logger;
 
         public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
-            ICoinView coinView)
+            ICoinView coinView,
+            IBlockExecutionResultCache executionCache,
+            ILoggerFactory loggerFactory)
         {
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
@@ -51,9 +58,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+            this.executionCache = executionCache;
             this.refundCounter = 1;
             this.blockTxsProcessed = new List<Transaction>();
             this.receipts = new List<Receipt>();
+            this.logger = loggerFactory.CreateLogger<SmartContractCoinViewRuleLogic>();
         }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
@@ -64,16 +73,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.refundCounter = 1;
 
             Block block = context.ValidationContext.BlockToValidate;
+            this.logger.LogDebug("Block to validate '{0}'", block.GetHash());
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
-            byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
-            this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot);
+            uint256 blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot;
 
+            this.logger.LogDebug("Block hash state root '{0}'.", blockRoot);
+
+            this.cachedResults = this.executionCache.GetExecutionResult(block.GetHash());
+
+            if (this.cachedResults == null)
+            {
+                // We have no cached results. Didn't come from our miner. We execute the contracts, so need to set up a new state repository.
+                this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot.ToBytes());
+            }
+            else
+            {
+                // We have already done all of this execution when mining so we will use those results.
+                this.mutableStateRepository = this.cachedResults.MutatedStateRepository;
+
+                foreach (Receipt receipt in this.cachedResults.Receipts)
+                {
+                    // Block hash needs to be set for all. It was set during mining and can only be updated after.
+                    receipt.BlockHash = block.GetHash();
+                    this.receipts.Add(receipt);
+                }
+            }
+
+            // Always call into the base. When the base class calls back in, we will optionally perform execution based on whether this.cachedResults is set.
             await baseRunAsync(context);
 
             var blockHeader = (ISmartContractBlockHeader)block.Header;
 
-            if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
+            var mutableStateRepositoryRoot = new uint256(this.mutableStateRepository.Root);
+            uint256 blockHeaderHashStateRoot = blockHeader.HashStateRoot;
+            this.logger.LogDebug("Compare state roots '{0}' and '{1}'", mutableStateRepositoryRoot, blockHeaderHashStateRoot);
+            if (mutableStateRepositoryRoot != blockHeaderHashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
@@ -91,6 +126,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// </summary>
         public void UpdateCoinView(Action<RuleContext, Transaction> baseUpdateUTXOSet, RuleContext context, Transaction transaction)
         {
+            // We already have results for this block. No need to do any processing other than updating the UTXO set.
+            if (this.cachedResults != null)
+            {
+                baseUpdateUTXOSet(context, transaction);
+                this.blockTxsProcessed.Add(transaction);
+                return;
+            }
+
             if (this.generatedTransaction != null)
             {
                 this.ValidateGeneratedTransaction(transaction);

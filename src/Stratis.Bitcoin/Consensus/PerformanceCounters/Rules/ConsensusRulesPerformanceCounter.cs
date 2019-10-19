@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;

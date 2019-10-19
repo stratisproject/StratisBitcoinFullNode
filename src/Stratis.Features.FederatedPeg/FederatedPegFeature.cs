@@ -23,6 +23,8 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -413,15 +415,20 @@ namespace Stratis.Features.FederatedPeg
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
-                    {
-                        services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
-                        services.AddSingleton<ISlotsManager, SlotsManager>();
-                        services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
-                        services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
-                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                    });
+                features
+                .AddFeature<PoAFeature>()
+                .DependOn<FederatedPegFeature>()
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton<PoABlockHeaderValidator>();
+                    services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
+                    services.AddSingleton<ISlotsManager, SlotsManager>();
+                    services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
+                    services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
+                    services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
+
+                    services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
+                });
             });
 
             // TODO: Consensus and Mining should be separated. Sidechain nodes don't need any of the Federation code but do need Consensus.
@@ -431,7 +438,9 @@ namespace Stratis.Features.FederatedPeg
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<ConsensusFeature>().FeatureServices(services =>
+                features
+                .AddFeature<ConsensusFeature>()
+                .FeatureServices(services =>
                 {
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();

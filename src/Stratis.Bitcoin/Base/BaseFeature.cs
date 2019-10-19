@@ -200,6 +200,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
+            connectionParameters.TemplateBehaviors.Add(new EnforcePeerVersionCheckBehavior(this.chainIndexer, this.nodeSettings, this.network, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             // TODO: Once a proper rate limiting strategy has been implemented, this check will be removed.
@@ -380,8 +381,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISignals, Signals.Signals>();
                     services.AddSingleton<ISubscriptionErrorHandler, DefaultSubscriptionErrorHandler>();
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
-                    services.AddSingleton<ChainIndexer>(new ChainIndexer(fullNodeBuilder.Network));
-                    services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
+                    services.AddSingleton(new ChainIndexer(fullNodeBuilder.Network));
+                    services.AddSingleton(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
                     services.AddSingleton<IChainRepository, ChainRepository>();
@@ -415,7 +416,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<NetworkPeerConnectionParameters>();
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
                     services.AddSingleton<ConnectionManagerSettings>();
-                    services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
+                    services.AddSingleton(new PayloadProvider().DiscoverPayloads());
                     services.AddSingleton<IVersionProvider, VersionProvider>();
                     services.AddSingleton<IBlockPuller, BlockPuller>();
 

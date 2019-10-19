@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
     /// <summary>
     /// Controller providing operations on a watch-only wallet.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class WatchOnlyWalletController : Controller
     {

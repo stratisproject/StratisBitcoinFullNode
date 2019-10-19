@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Features.FederatedPeg.Controllers
 {
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class CollateralVotingController : Controller
     {

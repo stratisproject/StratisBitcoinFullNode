@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    public class MempoolRule : IMempoolRule
+    public abstract class MempoolRule : IMempoolRule
     {
         protected readonly Network network;
 
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         protected readonly ILogger logger;
 
-        public MempoolRule(Network network,
+        protected MempoolRule(Network network,
             ITxMempool mempool,
             MempoolSettings settings,
             ChainIndexer chainIndexer,
@@ -29,10 +29,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
-        
+
         /// <inheritdoc />
-        public virtual void CheckTransaction(MempoolValidationContext context)
-        {
-        }
+        public abstract void CheckTransaction(MempoolValidationContext context);
     }
 }

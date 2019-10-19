@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Features.Apps.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Apps
 {
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class AppsController : Controller, IAppsController
     {

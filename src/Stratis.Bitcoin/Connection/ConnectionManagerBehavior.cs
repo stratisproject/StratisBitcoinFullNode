@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Connection
             INetworkPeer peer = this.AttachedPeer;
             if (peer != null)
             {
-                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
+                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.MatchIpOnly(peer.PeerEndPoint)))
                 {
                     this.Whitelisted = true;
                 }
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Connection
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
                 {
-                    this.infoLogger.LogInformation("Peer '{0}' ({1}) offline, reason: '{2}'.{3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.DisconnectReason?.Reason ?? "unknown", peer.DisconnectReason?.Exception?.Message ?? string.Empty);
+                    this.infoLogger.LogInformation("Peer '{0}' ({1}) offline, reason: '{2}.{3}'", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.DisconnectReason?.Reason ?? "unknown", peer.DisconnectReason?.Exception?.Message != null ? string.Format(" {0}.", peer.DisconnectReason.Exception.Message) : string.Empty);
 
                     this.connectionManager.RemoveConnectedPeer(peer, "Peer offline");
                 }

@@ -611,6 +611,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Invoke call which sends 123 to self. Balance should remain the same.
             BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction(
                 nameof(ReceiveFundsTest.TransferFunds),
+
                 response.NewContractAddress,
                 0,
                 parameters);
