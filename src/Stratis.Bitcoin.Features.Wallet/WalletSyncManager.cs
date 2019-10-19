@@ -112,8 +112,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
-            if (this.walletManager.WalletTipHash == block.Header.HashPrevBlock)
-                this.walletManager.ProcessBlock(block);
         }
 
         /// <inheritdoc />
