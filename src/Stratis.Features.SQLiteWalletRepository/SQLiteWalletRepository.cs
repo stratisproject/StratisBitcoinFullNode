@@ -179,16 +179,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                     .Select(p => p.Substring(this.DBPath.Length + 1).Split('.')[0]))
                 {
                     DBConnection conn = GetConnection(walletName);
-                    conn.Close();
+                    if (conn != null)
+                        conn.SQLiteConnection.Dispose();
                 }
             }
             else
             {
                 DBConnection conn = this.processBlocksInfo?.Conn;
                 if (conn != null)
-                {
-                    conn.Close();
-                }
+                    conn.SQLiteConnection.Dispose();
             }
         }
 

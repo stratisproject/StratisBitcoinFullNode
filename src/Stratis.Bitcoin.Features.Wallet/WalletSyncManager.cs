@@ -183,10 +183,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     ChainedHeader header = this.chainIndexer.GetHeader(height + i);
                     if (header == null)
-                        yield break;
+                        break;
 
                     hashes.Add(header.HashBlock);
                 }
+
+                if (hashes.Count == 0)
+                    yield break;
 
                 long flagFall = DateTime.Now.Ticks;
 
