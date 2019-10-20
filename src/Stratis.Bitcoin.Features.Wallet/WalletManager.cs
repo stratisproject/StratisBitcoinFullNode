@@ -266,6 +266,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Stop()
         {
             this.WalletRepository.Shutdown();
+
+            this.logger.LogInformation("WalletManager stopped.");
         }
 
         /// <inheritdoc />

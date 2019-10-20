@@ -107,6 +107,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSynchronisationLoop?.Dispose();
             this.signals.Unsubscribe(this.transactionAddedSubscription);
             this.signals.Unsubscribe(this.transactionRemovedSubscription);
+
+            this.logger.LogInformation("WalletSyncManager stopped.");
         }
 
         /// <inheritdoc />
