@@ -135,8 +135,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 FROM   HDTransactionData
                 WHERE  (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})
                 AND    SpendTxTime IS NULL { ((address == null) ? "" : $@"
-                AND    Value > 0
-                AND    (AddressType, AddressIndex) IN (SELECT {DBParameter.Create(address?.type)}, {DBParameter.Create(address?.index)})")}");
+                AND    (AddressType, AddressIndex) IN (SELECT {DBParameter.Create(address?.type)}, {DBParameter.Create(address?.index)})")}
+                AND    Value > 0");
 
             return (balanceData.TotalBalance, balanceData.ConfirmedBalance, balanceData.SpendableBalance);
         }
