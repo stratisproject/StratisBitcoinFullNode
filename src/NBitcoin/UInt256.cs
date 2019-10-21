@@ -271,6 +271,10 @@ namespace NBitcoin
                     this.pn1 = enumerator.Current;
                     enumerator.MoveNext();
                     this.pn0 = enumerator.Current;
+                    if (enumerator.MoveNext())
+                    {
+                        throw new InvalidOperationException();
+                    }
                 }
                 catch(InvalidOperationException)
                 {
