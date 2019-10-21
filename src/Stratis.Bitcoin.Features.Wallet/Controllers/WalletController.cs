@@ -477,7 +477,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         {
                             // We look for the output(s) related to our spending input.
                             List<FlatHistory> relatedOutputs = lookup.Contains(transaction.Id)
-                                ? lookup[transaction.Id].Where(h =>
+                                ? lookup[transaction.SpendingDetails.TransactionId].Where(h =>
                                     h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList()
                                 : null;
                             
