@@ -47,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         protected override async Task<IEnumerable<IClientEvent>> GetMessages()
         {
             var events = new List<WalletGeneralInfoClientEvent>();
+            
             foreach (string walletName in this.walletManager.GetWalletsNames())
             {
                 WalletGeneralInfoClientEvent clientEvent = null;
