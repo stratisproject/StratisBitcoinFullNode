@@ -280,7 +280,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 else
                     this.logger.LogDebug("Wallet {0} rewound to height {1} (hash='{2}').", walletName, lastBlockSynced.Height, lastBlockSynced.HashBlock);
 
-                return (true, res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime))));
+                return (true, res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime))).ToList());
             }
             catch (Exception)
             {
@@ -517,7 +517,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AddressType = addressType,
                 AddressIndex = addressIndex,
                 PubKey = pubKeyScript?.ToHex(),
-                ScriptPubKey = scriptPubKey?.ToHex()
+                ScriptPubKey = scriptPubKey?.ToHex(),
+                Address = scriptPubKey?.GetDestinationAddress(this.Network).ToString() ?? ""
             };
         }
 
@@ -601,7 +602,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AddressType = (int)addressId.AddressType,
                 AddressIndex = (int)addressId.AddressIndex,
                 PubKey = addressId.PubKeyScript,
-                ScriptPubKey = addressId.ScriptPubKey
+                ScriptPubKey = addressId.ScriptPubKey,
+                Address = Script.FromHex(addressId.ScriptPubKey).GetDestinationAddress(this.Network).ToString()
             };
         }
 
@@ -1018,7 +1020,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IEnumerable<(string txId, long creationTime)> res = conn.RemoveAllUnconfirmedTransactions(wallet.WalletId);
                 conn.Commit();
 
-                return res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime)));
+                return res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime))).ToList();
             }
             finally
             {
@@ -1095,7 +1097,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AddressIndex = transactionData.AddressIndex,
                         AddressType = (int)transactionData.AddressType,
                         PubKey = "", // pubKey.ScriptPubKey.ToHex(),  - See TODO
-                        ScriptPubKey = transactionData.ScriptPubKey
+                        ScriptPubKey = transactionData.ScriptPubKey,
+                        Address = transactionData.Address
                     })
                 };
             }

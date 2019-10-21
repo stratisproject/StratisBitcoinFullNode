@@ -221,6 +221,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             foreach (HdAddress hdAddress in hdAddresses)
             {
                 HDAddress address = this.Repository.CreateAddress(account, addressType, hdAddress.Index);
+                address.Address = hdAddress.Address;
                 address.ScriptPubKey = hdAddress.ScriptPubKey?.ToHex();
                 address.PubKey = hdAddress.Pubkey?.ToHex();
 
