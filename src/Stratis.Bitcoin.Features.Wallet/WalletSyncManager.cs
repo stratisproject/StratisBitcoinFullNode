@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -10,6 +8,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -29,7 +28,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
         private readonly INodeLifetime nodeLifetime;
         private IAsyncLoop walletSynchronisationLoop;
-        private SubscriptionToken transactionReceivedSubscription;
+        private SubscriptionToken transactionAddedSubscription;
+        private SubscriptionToken transactionRemovedSubscription;
+        private SubscriptionToken blockConnectedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
 
@@ -82,12 +83,21 @@ namespace Stratis.Bitcoin.Features.Wallet
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(1));
 
-            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
+            this.transactionAddedSubscription = this.signals.Subscribe<TransactionAddedToMemoryPool>(this.OnTransactionAdded);
+            this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
-        private void OnTransactionAvailable(TransactionReceived transactionReceived)
+        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAddedToMempool)
         {
-            this.ProcessTransaction(transactionReceived.ReceivedTransaction);
+            this.logger.LogDebug("Adding transaction '{0}' as it was added to the mempool.", transactionAddedToMempool.AddedTransaction.GetHash());
+            this.walletManager.ProcessTransaction(transactionAddedToMempool.AddedTransaction);
+        }
+
+        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemovedFromMempool)
+        {
+            this.logger.LogDebug("Removing transaction '{0}' as it was removed from the mempool.", transactionRemovedFromMempool.RemovedTransaction.GetHash());
+            this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
         }
 
         /// <inheritdoc />
@@ -95,34 +105,33 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.syncCancellationToken.Cancel();
             this.walletSynchronisationLoop?.Dispose();
-            this.signals.Unsubscribe(this.transactionReceivedSubscription);
+            this.signals.Unsubscribe(this.transactionAddedSubscription);
+            this.signals.Unsubscribe(this.transactionRemovedSubscription);
+
+            this.logger.LogInformation("WalletSyncManager stopped.");
         }
 
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
-            lock (this.lockObject)
-            {
-                this.walletManager.ProcessBlock(block);
-            }
         }
 
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-            lock (this.lockObject)
-            {
-                this.walletManager.ProcessTransaction(transaction);
-            }
+
+            this.walletManager.ProcessTransaction(transaction);
+
         }
 
-        /// <inheritdoc />
-        public void ProcessBlocks()
+        private void ProcessBlocks()
         {
-            lock (this.lockObject)
-            {
-                this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFromRange(height, this.chainIndexer.Tip.Height); });
-            }
+            this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFrom(height); });
+        }
+
+        private void OnBlockConnected(BlockConnected blockConnected)
+        {
+            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
         }
 
         /// <inheritdoc />
@@ -159,29 +168,36 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.ProcessBlocks();
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // TODO: Log the error but keep going.
+                // Log the error but keep going.
+                this.logger.LogError("'{0}' failed with: {1}.", nameof(OrchestrateWalletSync), e.ToString());
             }
         }
 
-        public IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry)
+        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFrom(int leftBoundry)
         {
-            for (int height = leftBoundry; height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested;)
+            for (int height = leftBoundry; !this.syncCancellationToken.IsCancellationRequested;)
             {
                 var hashes = new List<uint256>();
-                for (int i = 0; i < 100 && (height + i) <= rightBoundry; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     ChainedHeader header = this.chainIndexer.GetHeader(height + i);
+                    if (header == null)
+                        break;
+
                     hashes.Add(header.HashBlock);
                 }
+
+                if (hashes.Count == 0)
+                    yield break;
 
                 long flagFall = DateTime.Now.Ticks;
 
                 List<Block> blocks = this.blockStore.GetBlocks(hashes);
 
                 var buffer = new List<(ChainedHeader, Block)>();
-                for (int i = 0; i < 100 && height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
+                for (int i = 0; i < blocks.Count && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
                 {
                     ChainedHeader header = this.chainIndexer.GetHeader(height);
                     yield return ((header, blocks[i]));
@@ -195,6 +211,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected void Dispose(bool dispose)
         {
             if (dispose)

@@ -145,8 +145,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.walletManager.Stop();
             this.walletSyncManager.Stop();
+            this.walletManager.Stop();
         }
     }
 
