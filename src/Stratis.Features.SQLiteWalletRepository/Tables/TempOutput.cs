@@ -3,6 +3,7 @@
     internal class TempOutput : TempRow
     {
         public string ScriptPubKey { get; set; }
+        public string Address { get; set; }
         public string RedeemScript { get; set; }
         public int? OutputBlockHeight { get; set; }
         public string OutputBlockHash { get; set; }

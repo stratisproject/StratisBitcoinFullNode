@@ -10,7 +10,6 @@ using NBitcoin;
 using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -116,9 +115,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly object lockObject;
         protected readonly object lockProcess;
 
-        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop asyncLoop;
-
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
 
@@ -208,12 +204,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletRepository = walletRepository;
             this.ExcludeTransactionsFromWalletImports = true;
 
-            // register events
-            if (this.broadcasterManager != null)
-            {
-                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
-            }
-
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
@@ -241,19 +231,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public virtual IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking()
         {
             return new List<BuilderExtension>();
-        }
-
-        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
-        {
-            if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
-            {
-                this.ProcessTransaction(transactionEntry.Transaction);
-            }
-            else
-            {
-                this.logger.LogDebug("Exception occurred: {0}", transactionEntry.ErrorMessage);
-                this.logger.LogTrace("(-)[EXCEPTION]");
-            }
         }
 
         public void Start()
@@ -289,6 +266,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Stop()
         {
             this.WalletRepository.Shutdown();
+
+            this.logger.LogInformation("WalletManager stopped.");
         }
 
         /// <inheritdoc />
@@ -451,53 +430,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Wallet jsonWallet = this.fileStorage.LoadByFileName(fileName);
 
                 check?.Invoke(jsonWallet);
-
-                var blockDict = new Dictionary<int, uint256>();
-
-                // Only load transactions that have block hashes found in the consensus chain.
-                // Let the asynchronous sync take care of the rest.
-                IEnumerable<TransactionData> PreprocessTransactions(TransactionCollection transactions)
-                {
-                    foreach (TransactionData txData in transactions)
-                    {
-                        if (txData.BlockHeight != null)
-                        {
-                            if ((int)txData.BlockHeight > this.ChainIndexer.Tip.Height)
-                                continue;
-
-                            if (!blockDict.TryGetValue((int)txData.BlockHeight, out uint256 blockHash2))
-                            {
-                                blockHash2 = this.ChainIndexer.GetHeader((int)txData.BlockHeight).HashBlock;
-                                blockDict[(int)txData.BlockHeight] = blockHash2;
-                            }
-
-                            if (txData.BlockHash != blockHash2)
-                                continue;
-                        }
-
-                        if (txData.SpendingDetails?.BlockHeight == null)
-                        {
-                            yield return txData;
-                            continue;
-                        }
-
-                        if ((int)txData.SpendingDetails.BlockHeight > this.ChainIndexer.Tip.Height)
-                            continue;
-
-                        if (!blockDict.TryGetValue((int)txData.SpendingDetails.BlockHeight, out uint256 blockHash))
-                        {
-                            blockHash = this.ChainIndexer.GetHeader((int)txData.SpendingDetails.BlockHeight).HashBlock;
-                            blockDict[(int)txData.SpendingDetails.BlockHeight] = blockHash;
-                        }
-
-                        if (txData.SpendingDetails.BlockHash == null)
-                            txData.SpendingDetails.BlockHash = blockHash;
-                        else if (txData.SpendingDetails.BlockHash != blockHash)
-                            continue;
-
-                        yield return txData;
-                    }
-                }
 
                 if (this.ExcludeTransactionsFromWalletImports)
                 {
@@ -912,7 +844,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (string walletName in this.WalletRepository.GetWalletNames())
                 {
+                    int walletId = this.WalletRepository.GetAddressIdentifier(walletName).WalletId;
+
                     if (!this.WalletRepository.GetWalletAddressLookup(walletName).Contains(scriptPubKey, out AddressIdentifier addressIdentifier))
+                        continue;
+
+                    if (addressIdentifier.WalletId != walletId)
                         continue;
 
                     Wallet wallet = this.WalletRepository.GetWallet(walletName);
@@ -1178,12 +1115,26 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (uint256 transactionId in transactionsIds)
             {
+                this.logger.LogDebug("Removing transaction '{0}' from wallet '{1}'.", transactionId, walletName);
+
                 DateTimeOffset? dateTimeOffset = this.WalletRepository.RemoveUnconfirmedTransaction(walletName, transactionId);
                 if (dateTimeOffset != null)
                     result.Add((transactionId, (DateTimeOffset)dateTimeOffset));
             }
 
             return result;
+        }
+
+        /// <inheritdoc />
+        public void RemoveUnconfirmedTransaction(Transaction transaction)
+        {
+            Guard.NotNull(transaction, nameof(transaction));
+
+            foreach (Wallet wallet in this.Wallets)
+            {
+                this.logger.LogDebug("Removing unconfirmed transaction '{0}' from wallet '{1}'.", transaction.GetHash(), wallet.Name);
+                this.WalletRepository.RemoveUnconfirmedTransaction(wallet.Name, transaction.GetHash());
+            }
         }
 
         /// <inheritdoc />

@@ -15,29 +15,26 @@ namespace Stratis.Features.FederatedPeg.Notifications
     public class BlockObserver
     {
         // The monitor we pass the new blocks onto.
-        private readonly IFederationWalletSyncManager walletSyncManager;
+        private readonly IFederationWalletSyncManager federationWalletSyncManager;
 
         private readonly IInputConsolidator inputConsolidator;
 
         private readonly ISignals signals;
 
-        private SubscriptionToken blockConnectedSubscription;
+        private readonly SubscriptionToken blockConnectedSubscription;
 
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
         /// <param name="walletSyncManager">The wallet sync manager to pass new incoming blocks to.</param>
-        /// <param name="depositExtractor">The component used to extract the deposits from the blocks appearing on chain.</param>
-        /// <param name="withdrawalExtractor">The component used to extract withdrawals from blocks.</param>
-        /// <param name="withdrawalReceiver">The component that receives the withdrawals extracted from blocks.</param>
-        /// <param name="federationGatewayClient">Client for federation gateway api.</param>
-        public BlockObserver(IFederationWalletSyncManager walletSyncManager,
+        public BlockObserver(
+            IFederationWalletSyncManager walletSyncManager,
             IInputConsolidator inputConsolidator,
             ISignals signals)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
 
-            this.walletSyncManager = walletSyncManager;
+            this.federationWalletSyncManager = walletSyncManager;
             this.inputConsolidator = inputConsolidator;
             this.signals = signals;
 
@@ -52,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.Notifications
         /// <param name="chainedHeaderBlock">The new block.</param>
         public void OnBlockReceived(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
+            this.federationWalletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
             this.inputConsolidator.ProcessBlock(chainedHeaderBlock);
         }
     }

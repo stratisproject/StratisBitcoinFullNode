@@ -71,6 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 ,      A.AddressIndex
                 ,      T.RedeemScript
                 ,      T.ScriptPubKey
+                ,      T.Address
                 ,      T.Value
                 ,      T.OutputBlockHeight
                 ,      T.OutputBlockHash
@@ -142,6 +143,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 ,      TD.AddressIndex
                 ,      TD.RedeemScript
                 ,      TD.ScriptPubKey
+                ,      TD.Address
                 ,      TD.Value
                 ,      TD.OutputBlockHeight
                 ,      TD.OutputBlockHash

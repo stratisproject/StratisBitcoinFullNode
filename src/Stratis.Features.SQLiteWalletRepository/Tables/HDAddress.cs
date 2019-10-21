@@ -21,6 +21,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AddressIndex { get; set; }
         public string ScriptPubKey { get; set; }
         public string PubKey { get; set; }
+        public string Address { get; set; }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -32,6 +33,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AddressIndex        INTEGER NOT NULL,
                 ScriptPubKey        TEXT    NOT NULL,
                 PubKey              TEXT,
+                Address             TEXT NOT NULL,
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex)
             )";
 
@@ -59,7 +61,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AccountIndex = ?
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
@@ -84,7 +86,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
                 HAVING  MAX(D.WalletId) IS NOT NULL
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
@@ -107,7 +109,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
                 HAVING  MAX(D.WalletId) IS NULL
-                ORDER   BY AddressType, AccountIndex
+                ORDER   BY AddressType, AddressIndex
                 LIMIT   ?;",
                 walletId,
                 accountIndex,
@@ -120,10 +122,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return conn.FindWithQuery<HDAddress>($@"
                 SELECT  *
                 FROM    HDAddress
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}
-                AND     AddressIndex = {addressIndex}");
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?
+                AND     AddressIndex = ?",
+                walletId,
+                accountIndex,
+                addressType,
+                addressIndex);
         }
 
         internal static int GetAddressCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
@@ -131,9 +137,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return 1 + (conn.ExecuteScalar<int?>($@"
                 SELECT  MAX(AddressIndex)
                 FROM    HDAddress
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}") ?? -1);
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?",
+                walletId,
+                accountIndex,
+                addressType) ?? -1);
         }
 
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
