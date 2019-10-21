@@ -37,15 +37,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 int threadId = Thread.CurrentThread.ManagedThreadId;
 
-                Guard.Assert(this.lockDepth >= 0);
+                Guard.Assert(this.lockDepth > 0);
                 Guard.Assert(this.lockLastAcquiredBy != -1);
                 Guard.Assert(this.lockLastReleasedBy == threadId || this.lockLastReleasedBy == -1);
 
                 if (this.lockDepth == 1)
+                {
                     this.lockLastAcquiredBy = -1;
+                    this.lockLastReleasedBy = -1;
+                }
+                else
+                    this.lockLastReleasedBy = threadId;
 
                 this.lockDepth--;
-                this.lockLastReleasedBy = threadId;
             }
         }
 
@@ -53,10 +57,11 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
-            this.lockDepth++;
-
             if (this.lockLastAcquiredBy == threadId)
+            {
+                this.lockDepth++;
                 return true;
+            }
 
             Interlocked.Increment(ref this.waitingThreads);
 
@@ -68,6 +73,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         this.lockLastAcquiredBy = threadId;
                         this.lockLastReleasedBy = -1;
+                        this.lockDepth = 1;
                         break;
                     }
                 }
