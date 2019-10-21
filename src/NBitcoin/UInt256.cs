@@ -219,7 +219,7 @@ namespace NBitcoin
         {
             if (vch.Length != WIDTH_BYTE)
             {
-                throw new FormatException("the byte array should be 256 byte long");
+                throw new FormatException("the byte array should be 32 byte long");
             }
 
             if (!lendian)
@@ -294,7 +294,6 @@ namespace NBitcoin
                 return false;
             
             bool equals = true;
-            equals &= this.pn0 == item.pn0;
             equals &= this.pn1 == item.pn1;
             equals &= this.pn2 == item.pn2;
             equals &= this.pn3 == item.pn3;
@@ -316,7 +315,6 @@ namespace NBitcoin
                 return false;
             
             bool equals = true;
-            equals &= a.pn0 == b.pn0;
             equals &= a.pn1 == b.pn1;
             equals &= a.pn2 == b.pn2;
             equals &= a.pn3 == b.pn3;
