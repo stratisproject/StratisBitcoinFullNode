@@ -114,12 +114,15 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
+                    if (addSpendTx)
+                        this.RecordReceipt(block, null, txOut, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, txId, i, false);
+
                     foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
                     {
                         bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out AddressIdentifier address);
 
                         // Paying to one of our addresses?
-                        if (addSpendTx || containsAddress)
+                        if (containsAddress)
                         {
                             // Check if top-up is required.
                             if (containsAddress && address != null)
