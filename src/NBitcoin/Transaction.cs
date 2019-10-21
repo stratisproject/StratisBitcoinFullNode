@@ -1473,7 +1473,7 @@ namespace NBitcoin
             return @in;
         }
 
-        internal static readonly int WITNESS_SCALE_FACTOR = 4;
+        public static readonly int WITNESS_SCALE_FACTOR = 4;
         /// <summary>
         /// Size of the transaction discounting the witness (Used for fee calculation)
         /// </summary>

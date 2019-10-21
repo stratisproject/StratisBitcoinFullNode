@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         }
 
         /// <summary>The hashed transaction.</summary>
-        [JsonProperty(Order = 0, PropertyName = "hex")]
+        [JsonProperty(Order = 0, PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
 
         public override string ToString()
@@ -76,6 +76,10 @@ namespace Stratis.Bitcoin.Controllers.Models
                 this.VSize = trx.HasWitness ? trx.GetVirtualSize() : trx.GetSerializedSize();
                 this.Version = trx.Version;
                 this.LockTime = trx.LockTime;
+
+                // size = (weight + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
+                // hence, weight = size * WITNESS_SCALE_FACTOR - 3 (only subtract 3 if has witness).
+                this.Weight = this.VSize * Transaction.WITNESS_SCALE_FACTOR - (trx.HasWitness ? 3 : 0);
 
                 this.VIn = trx.Inputs.Select(txin => new Vin(txin.PrevOut, txin.Sequence, txin.ScriptSig)).ToList();
 
