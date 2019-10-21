@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Utilities
                     this.logger.LogInformation("Waiting for {0} to finish or be cancelled.", this.Name);
                     this.RunningTask.Wait();
                 }
-                catch (AggregateException e) when(e.InnerException is OperationCanceledException)
+                catch (AggregateException e) when(e.InnerException is TaskCanceledException)
                 {
                     this.logger.LogInformation("{0} cancelled.", this.Name);
                 }
