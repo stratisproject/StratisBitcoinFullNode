@@ -116,8 +116,10 @@ namespace Stratis.Features.SQLiteWalletRepository.External
 
                     var destinations = this.GetDestinations(txOut.ScriptPubKey);
 
-                    if (addSpendTx && !destinations.Any(d => addressesOfInterest.Contains(d, out AddressIdentifier address2) && address2.AddressType == 1))
-                        this.RecordReceipt(block, null, txOut, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, txId, i, false);
+                    bool isChange = destinations.Any(d => addressesOfInterest.Contains(d, out AddressIdentifier address2) && address2.AddressType == 1);
+
+                    if (addSpendTx)
+                        this.RecordReceipt(block, null, txOut, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, txId, i, isChange);
 
                     foreach (Script pubKeyScript in destinations)
                     {
