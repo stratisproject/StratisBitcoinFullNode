@@ -894,7 +894,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObj)
             {
-                if (!round.LockProcessBlocks.Wait(0))
+                if (!round.LockProcessBlocks.Wait(false))
                 {
                     this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
                     return false;
@@ -921,7 +921,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     WalletContainer walletContainer = this.Wallets[walletName];
 
-                    if (walletContainer.LockUpdateWallet.Wait(0))
+                    if (walletContainer.LockUpdateWallet.Wait(false))
                     {
                         if (walletContainer.ReaderCount == 0)
                             return;

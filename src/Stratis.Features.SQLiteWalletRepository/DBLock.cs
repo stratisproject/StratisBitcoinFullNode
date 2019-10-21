@@ -1,62 +1,78 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
     /// <summary>
     /// Used to lock access to database objects accross threads.
     /// </summary>
+    /// <remarks>
+    /// Lock behavior:
+    /// 1) If the thread that acquired the lock calls Wait again these subsequent calls should be ignored.
+    /// 2) If the thread that released the lock calls Release again these subsequent calls should be ignored.
+    /// 3) Keeps track of the number of threads waiting to acquire the lock.
+    /// </remarks>
     internal class DBLock
     {
-        private readonly SemaphoreSlim slimLock;
-        private Dictionary<int, int> depths;
         private int waitingThreads;
+        private int lockLastAcquiredBy;
+        private int lockLastReleasedBy;
+        private object lockObj;
 
         public int WaitingThreads => this.waitingThreads;
 
         public DBLock()
         {
-            this.slimLock = new SemaphoreSlim(1, 1);
-            this.depths = new Dictionary<int, int>();
             this.waitingThreads = 0;
+            this.lockObj = new object();
+            this.lockLastReleasedBy = -1;
+            this.lockLastAcquiredBy = -1;
         }
 
         public void Release()
         {
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
+            lock (this.lockObj)
             {
-                if (depth > 0)
-                {
-                    this.depths[threadId] = depth - 1;
+                int threadId = Thread.CurrentThread.ManagedThreadId;
+
+                if (this.lockLastReleasedBy == threadId)
                     return;
-                }
 
-                this.depths.Remove(threadId);
+                Guard.Assert(this.lockLastAcquiredBy != -1);
+                Guard.Assert(this.lockLastReleasedBy == -1);
+
+                this.lockLastReleasedBy = threadId;
+                this.lockLastAcquiredBy = -1;
             }
-
-            this.slimLock.Release();
         }
 
-        public bool Wait(int millisecondsTimeout = int.MaxValue)
+        public bool Wait(bool wait = true)
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
-            {
-                this.depths[threadId] = depth + 1;
-                return true;
-            }
 
             Interlocked.Increment(ref this.waitingThreads);
-            bool res = this.slimLock.Wait(millisecondsTimeout);
+
+            while (this.lockLastAcquiredBy != threadId)
+            {
+                lock (this.lockObj)
+                {
+                    if (this.lockLastAcquiredBy == -1)
+                    {
+                        this.lockLastAcquiredBy = threadId;
+                        this.lockLastReleasedBy = -1;
+                        break;
+                    }
+                }
+
+                if (wait)
+                    Thread.Yield();
+                else
+                    break;
+            }
+
             Interlocked.Decrement(ref this.waitingThreads);
 
-            if (!res)
-                return false;
-
-            this.depths[threadId] = 0;
-
-            return true;
+            return this.lockLastAcquiredBy == threadId;
         }
     }
 }
