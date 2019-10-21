@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -14,6 +15,8 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    using System.Threading;
+
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
@@ -43,59 +46,64 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             this.includeAddressBalances = includeAddressBalances;
         }
 
-        protected override IEnumerable<IClientEvent> GetMessages()
+        protected override async Task<IEnumerable<IClientEvent>> GetMessages(CancellationToken cancellationToken)
         {
+            var events = new List<WalletGeneralInfoClientEvent>();
+            
             foreach (string walletName in this.walletManager.GetWalletsNames())
             {
                 WalletGeneralInfoClientEvent clientEvent = null;
                 try
                 {
-                    Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
-                    IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(walletName);
-                    IList<AccountBalanceModel> accountBalanceModels = new List<AccountBalanceModel>();
-                    foreach (var balance in balances)
+                    clientEvent = await Task.Run(() =>
                     {
-                        HdAccount account = wallet.GetAccount(balance.Account.Name);
-
-                        var accountBalanceModel = new AccountBalanceModel
+                        Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
+                        IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(walletName);
+                        IList<AccountBalanceModel> accountBalanceModels = new List<AccountBalanceModel>();
+                        foreach (var balance in balances)
                         {
-                            CoinType = (CoinType) wallet.Network.Consensus.CoinType,
-                            Name = account.Name,
-                            HdPath = account.HdPath,
-                            AmountConfirmed = balance.AmountConfirmed,
-                            AmountUnconfirmed = balance.AmountUnconfirmed,
-                            SpendableAmount = balance.SpendableAmount,
-                            Addresses = this.includeAddressBalances
-                                ? account.GetCombinedAddresses().Select(address =>
-                                {
-                                    (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
-                                    return new AddressModel
+                            HdAccount account = wallet.GetAccount(balance.Account.Name);
+
+                            var accountBalanceModel = new AccountBalanceModel
+                            {
+                                CoinType = (CoinType) wallet.Network.Consensus.CoinType,
+                                Name = account.Name,
+                                HdPath = account.HdPath,
+                                AmountConfirmed = balance.AmountConfirmed,
+                                AmountUnconfirmed = balance.AmountUnconfirmed,
+                                SpendableAmount = balance.SpendableAmount,
+                                Addresses = this.includeAddressBalances
+                                    ? account.GetCombinedAddresses().Select(address =>
                                     {
-                                        Address = address.Address,
-                                        IsUsed = address.Transactions.Any(),
-                                        IsChange = address.IsChangeAddress(),
-                                        AmountConfirmed = confirmedAmount,
-                                        AmountUnconfirmed = unConfirmedAmount
-                                    };
-                                })
-                                : null
+                                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                                        return new AddressModel
+                                        {
+                                            Address = address.Address,
+                                            IsUsed = address.Transactions.Any(),
+                                            IsChange = address.IsChangeAddress(),
+                                            AmountConfirmed = confirmedAmount,
+                                            AmountUnconfirmed = unConfirmedAmount
+                                        };
+                                    })
+                                    : null
+                            };
+
+                            accountBalanceModels.Add(accountBalanceModel);
+                        }
+
+                        return new WalletGeneralInfoClientEvent
+                        {
+                            WalletName = walletName,
+                            Network = wallet.Network,
+                            CreationTime = wallet.CreationTime,
+                            LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
+                            ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
+                            ChainTip = this.consensusManager.HeaderTip,
+                            IsChainSynced = this.chainIndexer.IsDownloaded(),
+                            IsDecrypted = true,
+                            AccountsBalances = accountBalanceModels
                         };
-
-                        accountBalanceModels.Add(accountBalanceModel);
-                    }
-
-                    clientEvent = new WalletGeneralInfoClientEvent
-                    {
-                        WalletName = walletName,
-                        Network = wallet.Network,
-                        CreationTime = wallet.CreationTime,
-                        LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
-                        ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
-                        ChainTip = this.consensusManager.HeaderTip,
-                        IsChainSynced = this.chainIndexer.IsDownloaded(),
-                        IsDecrypted = true,
-                        AccountsBalances = accountBalanceModels
-                    };
+                    }, cancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -104,9 +112,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 
                 if (null != clientEvent)
                 {
-                    yield return clientEvent;
+                    events.Add(clientEvent);
                 }
             }
+            return events;
         }
     }
 }
