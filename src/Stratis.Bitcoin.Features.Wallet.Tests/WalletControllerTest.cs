@@ -48,6 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 int index = -1;
                 Assert.True(Wordlist.English.WordExists(word, out index));
             }
+            
         }
 
         [Fact]
