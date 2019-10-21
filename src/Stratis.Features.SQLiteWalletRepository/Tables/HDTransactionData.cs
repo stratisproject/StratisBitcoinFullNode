@@ -105,6 +105,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     SpendTxTime IS NULL {((confirmations == 0) ? "" : $@"
                 AND     OutputBlockHeight <= {strMaxConfirmationHeight}")}
                 AND     (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {strMaxCoinBaseHeight})
+                AND     Value > 0
                 ORDER   BY OutputBlockHeight
                 ,       OutputTxId
                 ,       OutputIndex");
@@ -134,6 +135,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 FROM   HDTransactionData
                 WHERE  (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})
                 AND    SpendTxTime IS NULL { ((address == null) ? "" : $@"
+                AND    Value > 0
                 AND    (AddressType, AddressIndex) IN (SELECT {DBParameter.Create(address?.type)}, {DBParameter.Create(address?.index)})")}");
 
             return (balanceData.TotalBalance, balanceData.ConfirmedBalance, balanceData.SpendableBalance);
