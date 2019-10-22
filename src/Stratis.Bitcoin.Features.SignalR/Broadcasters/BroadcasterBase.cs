@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                     using (var cancellationTokenSource = new CancellationTokenSource())
                     {
                         cancellationTokenSource.CancelAfter(new TimeSpan(0, 0, 10));
+                        
                         using (var linkedTokenSource =
                             CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, token))
                         {
