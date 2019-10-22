@@ -259,11 +259,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             // Ok seems safe. Adjust the tip and rewind relevant transactions.
             walletContainer.WriteLockWait();
 
-            DBConnection conn = null;
+            DBConnection conn = walletContainer.Conn;
+            conn.BeginTransaction();
             try
             {
-                conn = this.GetConnection(walletName);
-                conn.BeginTransaction();
                 IEnumerable<(string txId, long creationTime)> res = conn.SetLastBlockSynced(wallet, lastBlockSynced);
                 conn.Commit();
 
@@ -272,16 +271,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 else
                     this.logger.LogDebug("Wallet {0} rewound to height {1} (hash='{2}').", walletName, lastBlockSynced.Height, lastBlockSynced.HashBlock);
 
+                walletContainer.WriteLockRelease();
+
                 return (true, res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime))).ToList());
             }
             catch (Exception)
             {
-                conn?.Rollback();
-                throw;
-            }
-            finally
-            {
                 walletContainer.WriteLockRelease();
+                conn.Rollback();
+                throw;
             }
         }
 
