@@ -29,6 +29,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     while (!gotlock[n & ~1])
                         Thread.Yield();
 
+                    Thread.Sleep(10);
+
                     gotlock[n & ~1] = false;
                     dbLock.Release();
                 }
@@ -36,6 +38,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 {
                     dbLock.Wait();
                     gotlock[n] = true;
+
                 }
             });
         }

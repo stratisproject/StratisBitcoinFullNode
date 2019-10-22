@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.SQLiteWalletRepository
@@ -15,19 +17,24 @@ namespace Stratis.Features.SQLiteWalletRepository
     internal class DBLock
     {
         private int waitingThreads;
-        private int lastClaimedBy;
+        private DateTime firstClaimedAt;
+        private int lastClaimedByThread;
+        private int firstClaimedByThread;
+        private int firstClaimedPromise;
+        private string firstClaimedByMethod;
+        private int firstClaimedByLineNumber;
         private int lockDepth;
         private object lockObj;
 
         public int WaitingThreads => this.waitingThreads;
 
-        public bool IsAvailable => this.lastClaimedBy == -1;
+        public bool IsAvailable => this.lastClaimedByThread == -1;
 
         public DBLock()
         {
             this.waitingThreads = 0;
             this.lockObj = new object();
-            this.lastClaimedBy = -1;
+            this.lastClaimedByThread = -1;
             this.lockDepth = 0;
         }
 
@@ -38,28 +45,28 @@ namespace Stratis.Features.SQLiteWalletRepository
             lock (this.lockObj)
             {
                 Guard.Assert(this.lockDepth > 0);
-                Guard.Assert(this.lastClaimedBy != -1);
+                Guard.Assert(this.lastClaimedByThread != -1);
 
                 if (this.lockDepth == 1)
                 {
-                    this.lastClaimedBy = -1;
+                    this.lastClaimedByThread = -1;
                 }
                 else
                 {
-                    this.lastClaimedBy = threadId;
+                    this.lastClaimedByThread = threadId;
                 }
 
                 this.lockDepth--;
             }
         }
 
-        public bool Wait(bool wait = true)
+        public bool Wait(bool wait = true, int timeoutSeconds = 120, [System.Runtime.CompilerServices.CallerMemberName] string memberName = "", [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0)
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
             lock (this.lockObj)
             {
-                if (this.lastClaimedBy == threadId)
+                if (this.lastClaimedByThread == threadId)
                 {
                     this.lockDepth++;
                     return true;
@@ -72,12 +79,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 lock (this.lockObj)
                 {
-                    if (this.lastClaimedBy == -1)
+                    if (this.lastClaimedByThread == -1)
                     {
-                        this.lastClaimedBy = threadId;
+                        this.firstClaimedByMethod = memberName;
+                        this.firstClaimedByLineNumber = sourceLineNumber;
+                        this.firstClaimedAt = DateTime.Now;
+                        this.firstClaimedPromise = timeoutSeconds;
+                        this.firstClaimedByThread = threadId;
+                        this.lastClaimedByThread = threadId;
                         this.lockDepth = 1;
                         break;
                     }
+                    else if (this.firstClaimedAt.AddSeconds(this.firstClaimedPromise) <= DateTime.Now)
+                        throw new SystemException($"Lock held by thread {this.firstClaimedByThread} has not been released after {this.firstClaimedPromise} seconds as promised. The lock was acquired in the '{this.firstClaimedByMethod}' method on line {this.firstClaimedByLineNumber}.");
                 }
 
                 if (wait)
@@ -88,7 +102,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             Interlocked.Decrement(ref this.waitingThreads);
 
-            return this.lastClaimedBy == threadId;
+            return this.lastClaimedByThread == threadId;
         }
     }
 }
