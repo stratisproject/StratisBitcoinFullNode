@@ -522,9 +522,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             walletContainer.WriteLockWait();
 
+            conn.BeginTransaction();
             try
             {
-                conn.BeginTransaction();
                 HDAccount account = conn.GetAccountByName(walletName, accountName);
                 if (!force && !this.TestMode && account.ExtPubKey != null)
                     throw new Exception("Transactions can only be added to watch-only addresses.");
@@ -533,6 +533,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.Commit();
 
                 walletContainer.TransactionsOfInterest.AddAll(account.WalletId, account.AccountIndex);
+            }
+            catch (Exception)
+            {
+                conn.Rollback();
+                throw;
             }
             finally
             {
