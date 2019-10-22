@@ -1473,21 +1473,21 @@ namespace NBitcoin
             return @in;
         }
 
-        public static readonly int WITNESS_SCALE_FACTOR = 4;
         /// <summary>
         /// Size of the transaction discounting the witness (Used for fee calculation)
         /// </summary>
         /// <returns>Transaction size</returns>
-        public int GetVirtualSize()
+        public int GetVirtualSize(ConsensusOptions options)
         {
+            var scaleFactor = options.WitnessScaleFactor;
             int totalSize = this.GetSerializedSize(TransactionOptions.Witness);
             int strippedSize = this.GetSerializedSize(TransactionOptions.None);
             // This implements the weight = (stripped_size * 4) + witness_size formula,
             // using only serialization with and without witness data. As witness_size
             // is equal to total_size - stripped_size, this formula is identical to:
             // weight = (stripped_size * 3) + total_size.
-            int weight = strippedSize * (WITNESS_SCALE_FACTOR - 1) + totalSize;
-            return (weight + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
+            int weight = strippedSize * (scaleFactor - 1) + totalSize;
+            return (weight + scaleFactor - 1) / scaleFactor;
         }
 
         public TxIn AddInput(Transaction prevTx, int outIndex)
@@ -1720,12 +1720,12 @@ namespace NBitcoin
         /// </summary>
         /// <param name="spentCoins">Coins being spent</param>
         /// <returns>Fee or null if some spent coins are missing or if spentCoins is null</returns>
-        public FeeRate GetFeeRate(ICoin[] spentCoins)
+        public FeeRate GetFeeRate(ConsensusOptions options, ICoin[] spentCoins)
         {
             Money fee = GetFee(spentCoins);
             if(fee == null)
                 return null;
-            return new FeeRate(fee, GetVirtualSize());
+            return new FeeRate(fee, GetVirtualSize(options));
         }
 
         public bool IsFinal(ChainedHeader block)

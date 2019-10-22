@@ -73,13 +73,15 @@ namespace Stratis.Bitcoin.Controllers.Models
                 this.TxId = trx.GetHash().ToString();
                 this.Hash = trx.HasWitness ? trx.GetWitHash().ToString() : trx.GetHash().ToString();
                 this.Size = trx.GetSerializedSize();
-                this.VSize = trx.HasWitness ? trx.GetVirtualSize() : trx.GetSerializedSize();
+                this.VSize = trx.HasWitness ? trx.GetVirtualSize(network.Consensus.Options) : trx.GetSerializedSize();
                 this.Version = trx.Version;
                 this.LockTime = trx.LockTime;
 
                 // size = (weight + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
-                // hence, weight = size * WITNESS_SCALE_FACTOR - 3 (only subtract 3 if has witness).
-                this.Weight = this.VSize * Transaction.WITNESS_SCALE_FACTOR - (trx.HasWitness ? 3 : 0);
+                // hence, weight = size * WITNESS_SCALE_FACTOR - (WITNESS_SCALE_FACTOR - 1) (only subtract if has witness).
+                this.Weight = this.VSize * network.Consensus.Options.WitnessScaleFactor;
+                if (trx.HasWitness)
+                    this.Weight -= (network.Consensus.Options.WitnessScaleFactor - 1);
 
                 this.VIn = trx.Inputs.Select(txin => new Vin(txin.PrevOut, txin.Sequence, txin.ScriptSig)).ToList();
 
