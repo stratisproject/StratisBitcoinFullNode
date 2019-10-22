@@ -405,7 +405,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
         }
 
-         /// <summary>
+          /// <summary>
         /// Gets the history of a wallet. This includes the transactions held by the entire wallet
         /// or a single account if one is specified.
         /// </summary>
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     
                     // Represents a sublist containing only the transactions that have already been spent.
                     var spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null)
-                        .ToLookup(s => s.Transaction.Id, s => s);
+                        .ToLookup(s => s.Transaction.SpendingDetails.TransactionId, s => s);
 
                     // Represents a sublist of 'change' transactions.
                     // NB: Not currently used

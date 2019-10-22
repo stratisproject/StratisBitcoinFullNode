@@ -42,6 +42,7 @@ namespace NBitcoin.DataEncoders
                 throw new FormatException("Invalid Hex String");
 
             uint accum = 0;
+            int lastPos = 0;
             
             for(int i = 0, j = 0; i < encoded.Length; i += 2, j++)
             {
@@ -58,8 +59,15 @@ namespace NBitcoin.DataEncoders
                 {
                     yield return accum;
                     accum = 0;
+                    lastPos = i;
                 }
             }
+
+            if (lastPos != encoded.Length -2)
+            {
+                throw new FormatException("Invalid Hex String");
+            }
+            
         }
         
         /// <summary>

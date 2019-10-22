@@ -273,10 +273,10 @@ namespace NBitcoin
                     this.pn0 = enumerator.Current;
                     if (enumerator.MoveNext())
                     {
-                        throw new InvalidOperationException();
+                        throw new FormatException();
                     }
                 }
-                catch(InvalidOperationException)
+                catch(FormatException)
                 {
                     throw new FormatException("Invalid hex length");
                 }
