@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using Stratis.Bitcoin.Utilities;
 
@@ -21,8 +20,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private int lastClaimedByThread;
         private int firstClaimedByThread;
         private int firstClaimedPromise;
-        private string firstClaimedByMethod;
-        private int firstClaimedByLineNumber;
+        private string firstClaimedStackTrace;
         private int lockDepth;
         private object lockObj;
 
@@ -81,8 +79,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     if (this.lastClaimedByThread == -1)
                     {
-                        this.firstClaimedByMethod = memberName;
-                        this.firstClaimedByLineNumber = sourceLineNumber;
+                        this.firstClaimedStackTrace = System.Environment.StackTrace;
                         this.firstClaimedAt = DateTime.Now;
                         this.firstClaimedPromise = timeoutSeconds;
                         this.firstClaimedByThread = threadId;
@@ -91,7 +88,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         break;
                     }
                     else if (this.firstClaimedAt.AddSeconds(this.firstClaimedPromise) <= DateTime.Now)
-                        throw new SystemException($"Lock held by thread {this.firstClaimedByThread} has not been released after {this.firstClaimedPromise} seconds as promised. The lock was acquired in the '{this.firstClaimedByMethod}' method on line {this.firstClaimedByLineNumber}.");
+                        throw new SystemException($"Lock held by thread {this.firstClaimedByThread} has not been released after {this.firstClaimedPromise} seconds as promised. The stack trace when the lock was taken is '{this.firstClaimedStackTrace}`.");
                 }
 
                 if (wait)
