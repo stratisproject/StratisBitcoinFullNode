@@ -451,11 +451,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
             walletContainer.WriteLockWait();
+            conn.BeginTransaction();
 
             try
             {
-                conn.BeginTransaction();
-
                 IEnumerable<HDAccount> accounts = conn.GetAccounts(wallet.WalletId);
 
                 if (accounts.Any(a => a.ExtPubKey != null && ExtPubKey.Parse(a.ExtPubKey) == extPubKey))
@@ -476,12 +475,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.Commit();
 
                 walletContainer.AddressesOfInterest.AddAll(wallet.WalletId, accountIndex);
+                walletContainer.WriteLockRelease();
 
                 return this.ToHdAccount(account);
             }
-            finally
+            catch (Exception)
             {
                 walletContainer.WriteLockRelease();
+                conn.Rollback();
+                throw;
             }
         }
 
@@ -546,13 +548,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         public void AddWatchOnlyAddresses(string walletName, string accountName, int addressType, List<HdAddress> addresses, bool force = false)
         {
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
+            DBConnection conn = walletContainer.Conn;
 
             walletContainer.WriteLockWait();
-
+            conn.BeginTransaction();
             try
             {
-                var conn = this.GetConnection(walletName);
-                conn.BeginTransaction();
                 HDAccount account = conn.GetAccountByName(walletName, accountName);
                 if (!force && !this.TestMode && account.ExtPubKey != null)
                     throw new Exception("Addresses can only be added to watch-only accounts.");
@@ -561,10 +562,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.Commit();
 
                 walletContainer.AddressesOfInterest.AddAll(account.WalletId, account.AccountIndex);
+                walletContainer.WriteLockRelease();
             }
-            finally
+            catch (Exception)
             {
                 walletContainer.WriteLockRelease();
+                conn.Rollback();
+                throw;
             }
         }
 
