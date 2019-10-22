@@ -263,7 +263,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             conn.BeginTransaction();
             try
             {
-                IEnumerable<(string txId, long creationTime)> res = conn.SetLastBlockSynced(wallet, lastBlockSynced);
+                IEnumerable<(string txId, long creationTime)> res = conn.SetLastBlockSynced(wallet, lastBlockSynced).ToList();
                 conn.Commit();
 
                 if (lastBlockSynced == null)
