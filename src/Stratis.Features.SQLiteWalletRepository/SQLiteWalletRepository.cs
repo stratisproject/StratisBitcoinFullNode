@@ -267,18 +267,26 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.Commit();
 
                 if (lastBlockSynced == null)
-                    this.logger.LogDebug("Wallet {0} rewound to start.", walletName);
+                    this.logger.LogDebug("Wallet '{0}' rewound to start.", walletName);
                 else
-                    this.logger.LogDebug("Wallet {0} rewound to height {1} (hash='{2}').", walletName, lastBlockSynced.Height, lastBlockSynced.HashBlock);
+                    this.logger.LogDebug("Wallet '{0}' rewound to height '{1}'.", walletName, lastBlockSynced);
 
                 walletContainer.WriteLockRelease();
 
                 return (true, res.Select(i => (uint256.Parse(i.txId), DateTimeOffset.FromUnixTimeSeconds(i.creationTime))).ToList());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                if (lastBlockSynced == null)
+                    this.logger.LogError("An error occurred rewinding wallet '{0}' to start.", walletName);
+                else
+                    this.logger.LogError("An error occurred rewinding wallet '{0}' to '{1}'.", walletName, lastBlockSynced);
+
+                this.logger.LogError(ex.ToString());
+
                 walletContainer.WriteLockRelease();
                 conn.Rollback();
+
                 throw;
             }
         }
