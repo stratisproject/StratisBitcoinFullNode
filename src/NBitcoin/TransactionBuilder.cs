@@ -1464,7 +1464,7 @@ namespace NBitcoin
         {
             if (tx == null)
                 throw new ArgumentNullException("tx");
-            return Verify(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options), out errors);
+            return Verify(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options.WitnessScaleFactor), out errors);
         }
 
         /// <summary>
@@ -1475,7 +1475,7 @@ namespace NBitcoin
         /// <returns>Detected errors</returns>
         public TransactionPolicyError[] Check(Transaction tx, FeeRate expectedFeeRate)
         {
-            return Check(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options));
+            return Check(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options.WitnessScaleFactor));
         }
 
         /// <summary>

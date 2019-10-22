@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 this.TxId = trx.GetHash().ToString();
                 this.Hash = trx.HasWitness ? trx.GetWitHash().ToString() : trx.GetHash().ToString();
                 this.Size = trx.GetSerializedSize();
-                this.VSize = trx.HasWitness ? trx.GetVirtualSize(network.Consensus.Options) : trx.GetSerializedSize();
+                this.VSize = trx.HasWitness ? trx.GetVirtualSize(network.Consensus.Options.WitnessScaleFactor) : trx.GetSerializedSize();
                 this.Version = trx.Version;
                 this.LockTime = trx.LockTime;
 
