@@ -251,7 +251,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 lastBlockSynced?.Height == wallet.LastBlockSyncedHeight)
                 return (false, new List<(uint256, DateTimeOffset)>());
 
-            // If the rewind location is not conceivably "within" the wallet then "rewindng" may actually advance the wallet
+            // If the rewind location is not conceivably "within" the wallet then "rewinding" may actually advance the wallet
             // and lead to integrity issues. Prevent that from happening.
             if (!wallet.WalletContainsBlock(lastBlockSynced))
                 return (false, new List<(uint256, DateTimeOffset)>());
