@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string[] resultingWords = (viewResult.Value as string).Split(' ');
 
             Assert.Equal(12, resultingWords.Length);
+            
             foreach (string word in resultingWords)
             {
                 int index = -1;
