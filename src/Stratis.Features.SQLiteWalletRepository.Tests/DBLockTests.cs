@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -9,19 +11,31 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         [Fact]
         public void LocksCanLockAndReleaseOverMultipleThreads()
         {
-            var instance = new int[1000];
-            var locks = new DBLock[100];
+            const int threadsPerLock = 10;
+
+            var gotlock = new bool[1000];
+            var locks = new DBLock[gotlock.Length / threadsPerLock];
             for (int i = 0; i < locks.Length; i++)
                 locks[i] = new DBLock();
+            var lockObj = new object();
 
-            Parallel.ForEach(instance.Select((_, n) => n), new ParallelOptions() { MaxDegreeOfParallelism = 20 }, (n) =>
+            Parallel.ForEach(gotlock.Select((_, n) => n), new ParallelOptions() { MaxDegreeOfParallelism = gotlock.Length }, (n) =>
             {
-                var dbLock = locks[n / 10];
+                var dbLock = locks[n / threadsPerLock];
 
-                if (dbLock.Wait() && dbLock.Wait())
+                // Odd numbered threads release locks once they have been taken by the corresponding even numbered thread.
+                if ((n & 1) == 1)
                 {
+                    while (!gotlock[n & ~1])
+                        Thread.Yield();
+
+                    gotlock[n & ~1] = false;
                     dbLock.Release();
-                    dbLock.Release();
+                }
+                else
+                {
+                    dbLock.Wait();
+                    gotlock[n] = true;
                 }
             });
         }
