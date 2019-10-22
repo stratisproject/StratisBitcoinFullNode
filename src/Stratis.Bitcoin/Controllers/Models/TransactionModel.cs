@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Controllers.Models
             this.Hex = trx?.ToHex();
         }
 
-        /// <summary>The hashed transaction.</summary>
+        /// <summary>The transaction hash.</summary>
         [JsonProperty(Order = 0, PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
 
