@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Stop()
         {
             this.syncCancellationToken.Cancel();
-            this.walletSynchronisationLoop?.Dispose();
+            this.walletSynchronisationLoop?.RunningTask.GetAwaiter().GetResult();
             this.signals.Unsubscribe(this.transactionAddedSubscription);
             this.signals.Unsubscribe(this.transactionRemovedSubscription);
 
@@ -119,9 +119,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-
             this.walletManager.ProcessTransaction(transaction);
-
         }
 
         private void ProcessBlocks()
