@@ -521,7 +521,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
             walletContainer.WriteLockWait();
-
             conn.BeginTransaction();
             try
             {
@@ -533,15 +532,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.Commit();
 
                 walletContainer.TransactionsOfInterest.AddAll(account.WalletId, account.AccountIndex);
+                walletContainer.WriteLockRelease();
             }
             catch (Exception)
             {
+                walletContainer.WriteLockRelease();
                 conn.Rollback();
                 throw;
-            }
-            finally
-            {
-                walletContainer.WriteLockRelease();
             }
         }
 
