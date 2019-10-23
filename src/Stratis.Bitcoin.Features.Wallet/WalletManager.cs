@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.GetWallet(walletName);
 
             // Sign the message.
-            HdAddress hdAddress = this.WalletRepository.GetAccounts(walletName).SelectMany(a => this.WalletRepository.GetUsedAddresses(
+            HdAddress hdAddress = this.WalletRepository.GetAccounts(wallet).SelectMany(a => this.WalletRepository.GetUsedAddresses(
                 new WalletAccountReference(walletName, a.Name), false)).Select(a => a.address).FirstOrDefault(addr => addr.Address.ToString() == externalAddress);
 
             Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
@@ -827,8 +827,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 int tipHeight = this.ChainIndexer.Height;
 
-                //Need to make this work for single account but initially just scroll through accounts
-                foreach (HdAccount hdAccount in this.WalletRepository.GetAccounts(walletName, accountName))
+                Wallet hdWallet = this.WalletRepository.GetWallet(walletName);
+                foreach (HdAccount hdAccount in this.WalletRepository.GetAccounts(hdWallet, accountName))
                 {
                     (Money totalAmount, Money confirmedAmount, Money spendableAmount) = this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, hdAccount.Name), tipHeight, confirmations: confirmations);
 

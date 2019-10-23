@@ -220,36 +220,33 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Gets the wallet's <see cref="TransactionData"/> records. Records are sorted by transaction creation time and output index.
         /// </summary>
-        /// <param name="addressIdentifier">The HD Path (can be partial) of the transactions to get.</param>
+        /// <param name="hdAddress">The address for which to retrieve transactions.</param>
         /// <param name="limit">The maximum number of records to return.</param>
         /// <param name="prev">The record preceding the first record to be returned. Can be <c>null</c> to return the first record.</param>
         /// <param name="descending">The default is descending. Set to <c>false</c> to return records in ascending order.</param>
-        /// <param name="includePayments">Set this to include payment information.</param>
         /// <returns>The wallet's <see cref="TransactionData"/> records.</returns>
         /// <remarks>Spending details are not included.</remarks>
-        IEnumerable<TransactionData> GetAllTransactions(AddressIdentifier addressIdentifier, int limit = int.MaxValue, TransactionData prev = null, bool descending = true, bool includePayments = false);
+        IEnumerable<TransactionData> GetAllTransactions(HdAddress hdAddress, int limit = int.MaxValue, TransactionData prev = null, bool descending = true);
 
         /// <summary>
         /// Returns <see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.
         /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="accountName">An optional account name.</param>
+        /// <param name="account">The account.</param>
         /// <param name="transactionTime">The transaction creation time.</param>
         /// <param name="transactionId">The transaction id.</param>
         /// <param name="includePayments">Set to <c>true</c> to include payment details.</param>
         /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
-        IEnumerable<TransactionData> GetTransactionInputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
+        IEnumerable<TransactionData> GetTransactionInputs(HdAccount account, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
 
         /// <summary>
         /// Returns <see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.
         /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="accountName">An optional account name.</param>
+        /// <param name="account">The account.</param>
         /// <param name="transactionTime">The transaction creation time.</param>
         /// <param name="transactionId">The transaction id.</param>
         /// <param name="includePayments">Set to <c>true</c> to include payment details.</param>
         /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
-        IEnumerable<TransactionData> GetTransactionOutputs(string walletName, string accountName, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
+        IEnumerable<TransactionData> GetTransactionOutputs(HdAccount account, DateTimeOffset? transactionTime, uint256 transactionId, bool includePayments = false);
 
         /// <summary>
         /// Determines address groupings.
@@ -261,10 +258,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Get the accounts in the wallet.
         /// </summary>
-        /// <param name="walletName">The name of the wallet to get the accounts for.</param>
+        /// <param name="hdWallet">The wallet to get the accounts for.</param>
         /// <param name="accountName">Specifies a specific account to return.</param>
         /// <returns>The accounts in the wallet.</returns>
-        IEnumerable<HdAccount> GetAccounts(string walletName, string accountName = null);
+        IEnumerable<HdAccount> GetAccounts(Wallet hdWallet, string accountName = null);
 
         /// <summary>
         /// Get the names of the wallets in the repository.
@@ -304,6 +301,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="count">The maximum number of addresses to return.</param>
         /// <returns>The addresses associated with an account.</returns>
         IEnumerable<HdAddress> GetAccountAddresses(WalletAccountReference accountReference, int addressType, int count);
+
+        /// <summary>
+        /// Gets the payment details of a transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="transactionData">The transaction to get the payment details for.</param>
+        /// <param name="isChange">Whether to get payment or change details.</param>
+        /// <returns>Returns the payment or change details.</returns>
+        IEnumerable<PaymentDetails> GetPaymentDetails(string walletName, TransactionData transactionData, bool isChange);
 
         /// <summary>
         /// Adds watch-only addresses.

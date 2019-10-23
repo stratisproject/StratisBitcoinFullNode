@@ -42,7 +42,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SELECT  *
                 FROM    HDPayment
                 WHERE   SpendTxTime = ?
-                AND     SpendTxID = ?
+                AND     SpendTxId = ?
                 AND     OutputTxId = ?
                 AND     OutputIndex = ?
                 AND     ScriptPubKey = ?

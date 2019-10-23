@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class TransactionCollection : ICollection<TransactionData>
     {
         private ICollection<TransactionData> transactions;
-        private HdAddress address;
-        private HdAccount account => this.address?.AddressCollection?.Account;
+        public HdAddress Address { get; set; }
+        private HdAccount account => this.Address?.AddressCollection?.Account;
         private Wallet wallet => this.account?.AccountRoot?.Wallet;
         private IWalletRepository repository => this.wallet?.WalletRepository;
 
@@ -24,15 +24,20 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public AddressIdentifier GetAddressIdentifier()
         {
-            return this.repository.GetAddressIdentifier(this.wallet.Name, this.account.Name, this.address.AddressCollection.AddressType, this.address.Index);
+            return this.repository.GetAddressIdentifier(this.wallet.Name, this.account.Name, this.Address.AddressCollection.AddressType, this.Address.Index);
         }
 
         private IEnumerable<TransactionData> GetTransactions()
         {
-            if (this.repository == null)
-                return this.transactions;
+            // TODO: if (this.transactions == null)
+            {
+                if (this.repository == null)
+                    this.transactions = this.transactions ?? new List<TransactionData>();
+                else
+                    this.transactions = this.repository.GetAllTransactions(this.Address).ToList();
+            }
 
-            return this.repository.GetAllTransactions(this.GetAddressIdentifier(), includePayments: true);
+            return this.transactions;
         }
 
         [JsonConstructor]
@@ -43,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public TransactionCollection(HdAddress address, ICollection<TransactionData> transactions)
         {
-            this.address = address;
+            this.Address = address;
 
             if (this.repository == null)
             {
@@ -64,12 +69,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Add(TransactionData transaction)
         {
             if (transaction.ScriptPubKey == null)
-                transaction.ScriptPubKey = this.address.ScriptPubKey;
+                transaction.ScriptPubKey = this.Address.ScriptPubKey;
 
             if (this.repository == null)
                 this.transactions.Add(transaction);
             else
-                this.repository.AddWatchOnlyTransactions(this.wallet.Name, this.account.Name, this.address, new[] { transaction });
+                this.repository.AddWatchOnlyTransactions(this.wallet.Name, this.account.Name, this.Address, new[] { transaction });
         }
 
         public void Clear()

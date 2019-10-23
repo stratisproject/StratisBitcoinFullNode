@@ -3159,8 +3159,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.ProcessTransaction(transaction1);
 
             // The first transaction should be present in the wallet.
-            Assert.True(walletRepository.GetWalletAddressLookup(wallet.Name).Contains(destinationAddress.ScriptPubKey, out AddressIdentifier addressIdentifier));
-            Assert.Contains(walletRepository.GetAllTransactions(addressIdentifier), t => t.Id == transaction1.GetHash());
+            Assert.Contains(walletRepository.GetAllTransactions(destinationAddress), t => t.Id == transaction1.GetHash());
 
             // Now add transaction 2 via block.
             Block block2 = this.Network.CreateBlock();
@@ -3172,10 +3171,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.ProcessBlock(block2, header2);
 
             // The first transaction should no longer be present in the wallet.
-            Assert.DoesNotContain(walletRepository.GetAllTransactions(addressIdentifier), t => t.Id == transaction1.GetHash());
+            Assert.DoesNotContain(walletRepository.GetAllTransactions(destinationAddress), t => t.Id == transaction1.GetHash());
 
             // The second transaction should be present.
-            Assert.Contains(walletRepository.GetAllTransactions(addressIdentifier), t => t.Id == transaction2.GetHash());
+            Assert.Contains(walletRepository.GetAllTransactions(destinationAddress), t => t.Id == transaction2.GetHash());
         }
 
         [Fact]

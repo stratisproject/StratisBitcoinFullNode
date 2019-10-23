@@ -295,9 +295,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.Equal(Money.COIN * 9, (long)outputs2[0].Transaction.Amount);
 
                     // Check the wallet history.
-                    List<AccountHistory> accountHistories = repo.GetHistory(account.WalletName, account.AccountName).ToList();
-                    Assert.Single(accountHistories);
-                    List<FlatHistory> history = accountHistories[0].History.ToList();
+                    Wallet wallet = repo.GetWallet(account.WalletName);
+                    HdAccount hdAccount = repo.GetAccounts(wallet, account.AccountName).First();
+                    AccountHistory accountHistory = repo.GetHistory(hdAccount);
+                    List<FlatHistory> history = accountHistory.History.ToList();
                     Assert.Equal(2, history.Count);
 
                     // Verify 100 coins sent to first unused external address in the wallet.

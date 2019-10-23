@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class TransactionData
     {
+        [JsonIgnore]
+        public TransactionCollection TransactionCollection { get; set; }
+
         /// <summary>
         /// Transaction id.
         /// </summary>
