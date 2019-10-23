@@ -9,37 +9,43 @@ namespace Stratis.Features.SQLiteWalletRepository
     public class TransactionContext : ITransactionContext
     {
         private int transactionDepth;
-        private readonly DBConnection conn;
+        private readonly WalletContainer walletContainer;
 
-        public TransactionContext(DBConnection conn)
+        internal TransactionContext(WalletContainer walletContainer)
         {
-            this.conn = conn;
-            this.transactionDepth = conn.TransactionDepth;
-            conn.BeginTransaction();
+            this.walletContainer = walletContainer;
+            this.transactionDepth = walletContainer.Conn.TransactionDepth;
+            walletContainer.Conn.BeginTransaction();
         }
 
         public void Rollback()
         {
-            while (this.conn.IsInTransaction)
+            while (this.walletContainer.Conn.IsInTransaction)
             {
-                this.conn.Rollback();
+                this.walletContainer.Conn.Rollback();
             }
+
+            this.walletContainer.LockUpdateWallet.Release();
         }
 
         public void Commit()
         {
-            while (this.conn.IsInTransaction)
+            while (this.walletContainer.Conn.IsInTransaction)
             {
-                this.conn.Commit();
+                this.walletContainer.Conn.Commit();
             }
+
+            this.walletContainer.LockUpdateWallet.Release();
         }
 
         public void Dispose()
         {
-            while (this.conn.IsInTransaction)
+            while (this.walletContainer.Conn.IsInTransaction)
             {
-                this.conn.Rollback();
+                this.walletContainer.Conn.Rollback();
             }
+
+            this.walletContainer.LockUpdateWallet.Release();
         }
     }
 }

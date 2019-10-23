@@ -713,11 +713,21 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             if (walletContainer == null)
             {
-                walletContainer = new WalletContainer(this.GetConnection(walletName), null);
+                if (this.DatabasePerWallet)
+                    walletContainer = new WalletContainer(this.GetConnection(walletName), null);
+                else
+                    walletContainer = new WalletContainer(this.GetConnection(walletName), null, this.processBlocksInfo);
+
+                walletContainer.LockUpdateWallet.Wait();
+
                 this.Wallets[walletName] = walletContainer;
             }
+            else
+            {
+                walletContainer.LockUpdateWallet.Wait();
+            }
 
-            return new TransactionContext(walletContainer.Conn);
+            return new TransactionContext(walletContainer);
         }
 
         /// <inheritdoc />
