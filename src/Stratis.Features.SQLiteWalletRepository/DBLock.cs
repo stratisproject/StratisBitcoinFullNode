@@ -1,62 +1,105 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Threading;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
     /// <summary>
     /// Used to lock access to database objects accross threads.
     /// </summary>
+    /// <remarks>
+    /// Lock behavior:
+    /// 1) If the thread that acquired the lock calls Wait again these subsequent calls should be ignored.
+    /// 2) If the thread that released the lock calls Release again these subsequent calls should be ignored.
+    /// 3) Keeps track of the number of threads waiting to acquire the lock.
+    /// </remarks>
     internal class DBLock
     {
-        private readonly SemaphoreSlim slimLock;
-        private Dictionary<int, int> depths;
         private int waitingThreads;
+        private DateTime firstClaimedAt;
+        private int lastClaimedByThread;
+        private int firstClaimedByThread;
+        private int firstClaimedPromise;
+        private string firstClaimedStackTrace;
+        private int lockDepth;
+        private object lockObj;
 
         public int WaitingThreads => this.waitingThreads;
 
+        public bool IsAvailable => this.lastClaimedByThread == -1;
+
         public DBLock()
         {
-            this.slimLock = new SemaphoreSlim(1, 1);
-            this.depths = new Dictionary<int, int>();
             this.waitingThreads = 0;
+            this.lockObj = new object();
+            this.lastClaimedByThread = -1;
+            this.lockDepth = 0;
         }
 
         public void Release()
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
+
+            lock (this.lockObj)
             {
-                if (depth > 0)
+                Guard.Assert(this.lockDepth > 0);
+                Guard.Assert(this.lastClaimedByThread != -1);
+
+                if (this.lockDepth == 1)
                 {
-                    this.depths[threadId] = depth - 1;
-                    return;
+                    this.lastClaimedByThread = -1;
+                }
+                else
+                {
+                    this.lastClaimedByThread = threadId;
                 }
 
-                this.depths.Remove(threadId);
+                this.lockDepth--;
             }
-
-            this.slimLock.Release();
         }
 
-        public bool Wait(int millisecondsTimeout = int.MaxValue)
+        public bool Wait(bool wait = true, int timeoutSeconds = 120, [System.Runtime.CompilerServices.CallerMemberName] string memberName = "", [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0)
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
+
+            lock (this.lockObj)
             {
-                this.depths[threadId] = depth + 1;
-                return true;
+                if (this.lastClaimedByThread == threadId)
+                {
+                    this.lockDepth++;
+                    return true;
+                }
             }
 
             Interlocked.Increment(ref this.waitingThreads);
-            bool res = this.slimLock.Wait(millisecondsTimeout);
+
+            while (true)
+            {
+                lock (this.lockObj)
+                {
+                    if (this.lastClaimedByThread == -1)
+                    {
+                        this.firstClaimedStackTrace = System.Environment.StackTrace;
+                        this.firstClaimedAt = DateTime.Now;
+                        this.firstClaimedPromise = timeoutSeconds;
+                        this.firstClaimedByThread = threadId;
+                        this.lastClaimedByThread = threadId;
+                        this.lockDepth = 1;
+                        break;
+                    }
+                    else if (this.firstClaimedAt.AddSeconds(this.firstClaimedPromise) <= DateTime.Now)
+                        throw new SystemException($"Lock held by thread {this.firstClaimedByThread} has not been released after {this.firstClaimedPromise} seconds as promised. The stack trace when the lock was taken is '{this.firstClaimedStackTrace}`.");
+                }
+
+                if (wait)
+                    Thread.Yield();
+                else
+                    break;
+            }
+
             Interlocked.Decrement(ref this.waitingThreads);
 
-            if (!res)
-                return false;
-
-            this.depths[threadId] = 0;
-
-            return true;
+            return this.lastClaimedByThread == threadId;
         }
     }
 }
