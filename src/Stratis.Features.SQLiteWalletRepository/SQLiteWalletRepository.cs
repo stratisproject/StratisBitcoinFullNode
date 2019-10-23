@@ -821,7 +821,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                                     // Ensure that any new addresses are present in the database before accessing the HDAddress table.
                                     foreach (AddressIdentifier addressIdentifier in round.AddressesOfInterest.GetTentative())
-                                        conn.Insert(this.CreateAddress(addressIdentifier));
+                                        conn.InsertOrReplace(this.CreateAddress(addressIdentifier));
 
                                     this.logger.LogDebug("Processing block '{0}'.", chainedHeader);
 
@@ -1091,7 +1091,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     this.logger.LogDebug("Processing transaction '{0}'.", transaction.GetHash());
 
+                    // Ensure that any new addresses are present in the database before accessing the HDAddress table.
+                    foreach (AddressIdentifier addressIdentifier in processBlocksInfo.AddressesOfInterest.GetTentative())
+                        conn.InsertOrReplace(this.CreateAddress(addressIdentifier));
+
                     conn.ProcessTransactions(txToScript, wallet);
+
+                    processBlocksInfo.AddressesOfInterest.Confirm();
+                    processBlocksInfo.TransactionsOfInterest.Confirm();
+
                     conn.Commit();
                 }
                 catch (Exception ex)
