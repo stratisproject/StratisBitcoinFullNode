@@ -338,6 +338,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate);
 
         /// <summary>
+        /// Removes unconfirmed transactions from the wallet if they exist.
+        /// </summary>
+        /// <param name="transaction">The unconfirmed transaction to remove.</param>
+        void RemoveUnconfirmedTransaction(Transaction transaction);
+
+        /// <summary>
         /// Finds the fork point between the wallet and the passed header.
         /// </summary>
         /// <param name="walletName">The wallet name to identify the fork for.</param>

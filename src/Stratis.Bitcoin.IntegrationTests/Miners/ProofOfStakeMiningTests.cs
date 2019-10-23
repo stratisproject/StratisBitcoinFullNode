@@ -62,6 +62,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             }
         }
 
+        // TODO: This legacy test case is flawed. It assumes that a real world transaction being built won't also be added to the wallet.
+        //       If that were done it would be clear that the unconfirmed spend of the staking amount will not allow staking to
+        //       proceed and the test case will hang.
+        /*
         [Fact]
         public void Staking_Wont_Include_Time_Ahead_Of_Coinstake_Timestamp()
         {
@@ -97,6 +101,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                     WalletPassword = minerA.WalletPassword,
                     Time = (uint)minerA.FullNode.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
                 });
+
+                // Adding this to the mempool shoud/will add it to the wallet as well.
+                // Staking will not be possible due to the unconfirmed tx spending the stake amount.
+
                 minerA.AddToStratisMempool(tx);
 
                 TestBase.WaitLoop(() => minerA.FullNode.MempoolManager().InfoAll().Count == 1);
@@ -119,5 +127,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 Assert.DoesNotContain(block.Transactions, x => x.GetHash() == tx.GetHash());
             }
         }
+        */
     }
 }

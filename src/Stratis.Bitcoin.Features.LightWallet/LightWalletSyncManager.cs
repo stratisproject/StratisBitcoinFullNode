@@ -8,6 +8,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -37,7 +38,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         protected ChainedHeader walletTip;
 
-        private SubscriptionToken transactionReceivedSubscription;
+        private SubscriptionToken transactionAddedSubscription;
+        private SubscriptionToken transactionRemovedSubscription;
         private SubscriptionToken blockConnectedSubscription;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
@@ -81,7 +83,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Start()
         {
-            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(ev => this.ProcessTransaction(ev.ReceivedTransaction));
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
@@ -93,6 +94,19 @@ namespace Stratis.Bitcoin.Features.LightWallet
             {
                 this.walletTip = this.chainIndexer.GetHeader(this.walletManager.WalletTipHash);
             }
+
+            this.transactionAddedSubscription = this.signals.Subscribe<TransactionAddedToMemoryPool>(this.OnTransactionAdded);
+            this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
+        }
+
+        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAdded)
+        {
+            this.walletManager.ProcessTransaction(transactionAdded.AddedTransaction);
+        }
+
+        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemoved)
+        {
+            this.walletManager.RemoveUnconfirmedTransaction(transactionRemoved.RemovedTransaction);
         }
 
         private void OnBlockConnected(BlockConnected blockConnected)
@@ -109,8 +123,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.asyncLoop = null;
             }
 
-            this.signals.Unsubscribe(this.transactionReceivedSubscription);
             this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.signals.Unsubscribe(this.transactionAddedSubscription);
+            this.signals.Unsubscribe(this.transactionRemovedSubscription);
         }
 
         /// <inheritdoc />

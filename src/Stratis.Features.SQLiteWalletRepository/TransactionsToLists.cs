@@ -50,6 +50,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // The ScriptPubKey from the txOut.
                 RedeemScript = txOut.ScriptPubKey.ToHex(),
 
+                Address = pubKeyScript.GetDestinationAddress(this.conn.Repository.Network).ToString(),
                 OutputBlockHeight = block?.Height,
                 OutputBlockHash = block?.Hash.ToString(),
                 OutputTxIsCoinBase = isCoinBase ? 1 : 0,
