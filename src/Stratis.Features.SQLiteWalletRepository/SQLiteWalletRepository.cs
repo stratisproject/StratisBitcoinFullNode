@@ -304,7 +304,20 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (this.Wallets.Any(w => w.Value.Wallet?.EncryptedSeed == encryptedSeed))
                         throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists.");
 
-                DBConnection conn = GetConnection(walletName);
+                // If in this.BeginTransaction scope then a locked container will already exist (which will unlock external to this code).
+                bool iCreatedContainer = !this.Wallets.TryGetValue(walletName, out WalletContainer walletContainer);
+                if (iCreatedContainer)
+                {
+                    if (this.DatabasePerWallet)
+                        walletContainer = new WalletContainer(this.GetConnection(walletName), null);
+                    else
+                        walletContainer = new WalletContainer(this.GetConnection(walletName), null, this.processBlocksInfo);
+
+                    // No need to lock the container. We will add it to the collection after a successful commit.
+                    iCreatedContainer = true;
+                }
+
+                DBConnection conn = walletContainer.Conn;
 
                 conn.BeginTransaction();
 
@@ -322,43 +335,26 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     wallet.CreateWallet(conn);
 
+                    conn.Commit();
+
                     this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
 
-                    WalletContainer walletContainer;
-                    if (this.DatabasePerWallet)
-                        walletContainer = new WalletContainer(conn, wallet);
-                    else
-                        walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
-
+                    walletContainer.Wallet = wallet;
                     this.Wallets[wallet.Name] = walletContainer;
-
-                    conn.AddRollbackAction(new
-                    {
-                        wallet.Name,
-                    }, (dynamic rollBackData) =>
-                    {
-                        if (this.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer2))
-                        {
-                            walletContainer2.WriteLockWait();
-
-                            if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer _))
-                            {
-                                if (this.DatabasePerWallet)
-                                {
-                                    walletContainer2.Conn.Close();
-                                    File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
-                                }
-                            }
-
-                            walletContainer2.WriteLockRelease();
-                        }
-                    });
-
-                    conn.Commit();
                 }
                 catch (Exception)
                 {
                     conn.Rollback();
+
+                    if (iCreatedContainer)
+                    {
+                        if (this.DatabasePerWallet)
+                        {
+                            walletContainer.Conn.SQLiteConnection.Dispose();
+                            File.Delete(Path.Combine(this.DBPath, $"{walletName}.db"));
+                        }
+                    }
+
                     throw;
                 }
             }
