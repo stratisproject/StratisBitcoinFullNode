@@ -1,4 +1,6 @@
-﻿using Stratis.Bitcoin.Features.Wallet.Interfaces;
+﻿using System.IO;
+using System.Linq;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -25,7 +27,25 @@ namespace Stratis.Features.SQLiteWalletRepository
                 this.walletContainer.Conn.Rollback();
             }
 
+            this.CleanupUnusedWalletFile();
+
             this.walletContainer.LockUpdateWallet.Release();
+        }
+
+        internal void CleanupUnusedWalletFile()
+        {
+            if (this.walletContainer.Wallet == null)
+            {
+                SQLiteWalletRepository repo = this.walletContainer.Conn.Repository;
+
+                if (repo.DatabasePerWallet)
+                {
+                    string walletName = repo.Wallets.FirstOrDefault(w => ReferenceEquals(w.Value, this.walletContainer)).Key;
+                    this.walletContainer.Conn.SQLiteConnection.Dispose();
+                    if (walletName != null)
+                        File.Delete(Path.Combine(repo.DBPath, $"{walletName}.db"));
+                }
+            }
         }
 
         public void Commit()
@@ -34,6 +54,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 this.walletContainer.Conn.Commit();
             }
+
+            this.CleanupUnusedWalletFile();
 
             this.walletContainer.LockUpdateWallet.Release();
         }
