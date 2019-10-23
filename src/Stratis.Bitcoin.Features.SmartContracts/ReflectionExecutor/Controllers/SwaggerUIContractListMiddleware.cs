@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
         private readonly SwaggerUIOptions config;
         private readonly Network network;
+        private List<UrlDescriptor> baseUrls;
 
         private const int MaxRecordsToReturn = 20;
 
@@ -53,6 +54,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return;
             }
 
+            // If we've set no URLs yet, keep a reference to the original config URLs.
+            if (this.baseUrls == null)
+                this.baseUrls = new List<UrlDescriptor>(this.config.ConfigObject.Urls);
+
             // Enumerate all headers is fine for this test use case.
             IEnumerable<uint256> blockHashes = this.chainIndexer.EnumerateAfter(this.chainIndexer.Genesis).Select(h => h.HashBlock);
 
@@ -66,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 .Take(MaxRecordsToReturn) // TODO increase?
                 .ToList();
 
-            var newUrls = new List<UrlDescriptor>(this.config.ConfigObject.Urls);
+            var newUrls = new List<UrlDescriptor>(this.baseUrls);
 
             foreach (Receipt receipt in contractCreationReceipts)
             {
