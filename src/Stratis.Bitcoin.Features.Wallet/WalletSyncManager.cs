@@ -119,9 +119,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-
             this.walletManager.ProcessTransaction(transaction);
-
         }
 
         private void ProcessBlocks()
