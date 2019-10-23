@@ -11,6 +11,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AddressIndex { get; set; }
         public string RedeemScript { get; set; }
         public string ScriptPubKey { get; set; }
+        public string Address { get; set; }
         public decimal Value { get; set; }
         public long OutputTxTime { get; set; }
         public string OutputTxId { get; set; }
@@ -35,6 +36,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AddressIndex        INTEGER NOT NULL,
                 RedeemScript        TEXT NOT NULL,
                 ScriptPubKey        TEXT NOT NULL,
+                Address             TEXT NOT NULL,
                 Value               DECIMAL NOT NULL,
                 OutputBlockHeight   INTEGER,
                 OutputBlockHash     TEXT,

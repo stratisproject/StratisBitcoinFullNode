@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     {
         public abstract class MockWalletManager : WalletManager
         {
-            public MockWalletManager(Network network, ChainIndexer chainIndexer) : base(new Mock<ILoggerFactory>().Object,
+            public MockWalletManager(Network network, ChainIndexer chainIndexer, ILoggerFactory loggerFactory) : base(loggerFactory,
                     network, chainIndexer, new WalletSettings(NodeSettings.Default(network)),
                     NodeSettings.Default(network).DataFolder, new Mock<IWalletFeePolicy>().Object,
                     new Mock<IAsyncProvider>().Object, new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
@@ -56,11 +56,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             this.chainIndexer = chainIndexer;
             this.storeSettings = new StoreSettings(new NodeSettings(KnownNetworks.StratisMain));
-            this.walletManager = new Mock<MockWalletManager>(this.Network, this.chainIndexer) { CallBase = true };
+            this.loggerFactory = new LoggerFactory();
+            this.walletManager = new Mock<MockWalletManager>(this.Network, this.chainIndexer, this.loggerFactory) { CallBase = true };
             this.blockStore = new Mock<IBlockStore>();
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.walletRepository = Mock.Get(((WalletManager)this.walletManager.Object).WalletRepository);
-            this.loggerFactory = new LoggerFactory();
             this.signals = new Signals.Signals(new LoggerFactory(), null);
             this.asyncProvider = new AsyncProvider(new LoggerFactory(), this.signals, this.nodeLifetime.Object);
             this.walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, this.Network,
