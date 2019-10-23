@@ -1235,9 +1235,10 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildWitTransaction()
         {
+            this.stratisMain.Consensus.Options.WitnessScaleFactor = 4;
             Action<Transaction, TransactionBuilder> AssertEstimatedSize = (tx, b) =>
             {
-                int expectedVSize = tx.GetVirtualSize(KnownNetworks.Main.Consensus.Options.WitnessScaleFactor);
+                int expectedVSize = tx.GetVirtualSize(KnownNetworks.StratisMain.Consensus.Options.WitnessScaleFactor);
                 int actualVSize = b.EstimateSize(tx, true);
                 int expectedSize = tx.GetSerializedSize();
                 int actualSize = b.EstimateSize(tx, false);
