@@ -45,12 +45,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.processBlocksInfo.Outputs.Add(new TempOutput()
             {
                 // For matching HDAddress.ScriptPubKey.
-                ScriptPubKey = pubKeyScript.ToHex(),
+                ScriptPubKey = pubKeyScript?.ToHex(),
 
                 // The ScriptPubKey from the txOut.
                 RedeemScript = txOut.ScriptPubKey.ToHex(),
 
-                Address = pubKeyScript.GetDestinationAddress(this.conn.Repository.Network).ToString(),
+                Address = pubKeyScript?.GetDestinationAddress(this.conn.Repository.Network).ToString() ?? "",
                 OutputBlockHeight = block?.Height,
                 OutputBlockHash = block?.Hash.ToString(),
                 OutputTxIsCoinBase = isCoinBase ? 1 : 0,

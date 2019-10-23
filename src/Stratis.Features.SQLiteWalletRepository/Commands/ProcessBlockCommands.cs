@@ -120,6 +120,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 JOIN    temp.TempOutput O
                 ON      O.OutputTxTime = T.SpendTxTime
                 AND     O.OutputTxId = T.SpendTxId
+                AND     O.ScriptPubKey IS NULL
                 JOIN    HDTransactionData TD
                 ON      TD.OutputTxId = T.OutputTxId
                 AND     TD.OutputIndex = T.OutputIndex
