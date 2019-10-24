@@ -18,10 +18,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Thread.CurrentThread.CurrentCulture = ci;
                 Thread.CurrentThread.CurrentUICulture = ci;
 
-                Assert.Equal("1234.56789", DBParameter.Create(1234.56789m));
                 Assert.Equal("1234", DBParameter.Create((int)1234));
                 Assert.Equal("1234", DBParameter.Create((long)1234));
-                Assert.Equal("0.00001", DBParameter.Create(0.00001m));
             }
 
             Thread.CurrentThread.CurrentCulture = culture;
