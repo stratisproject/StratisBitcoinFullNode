@@ -9,7 +9,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AccountIndex { get; set; }
         public int AddressType { get; set; }
         public int AddressIndex { get; set; }
+
+        /// <summary>
+        /// This is the exact bytes in the Script of {OutputTxId-OutputIndex}.
+        /// It should probably be called ScriptPubKey!
+        /// </summary>
         public string RedeemScript { get; set; }
+
+        /// <summary>
+        /// This is the derived ScriptPubKey from IScriptDestinationReader.
+        /// It should probably be called AddressScriptPubKey.
+        /// It will not always contain the actual bytes in the script of {OutputTxId-OutputIndex}.
+        /// </summary>
         public string ScriptPubKey { get; set; }
         public string Address { get; set; }
         public decimal Value { get; set; }
