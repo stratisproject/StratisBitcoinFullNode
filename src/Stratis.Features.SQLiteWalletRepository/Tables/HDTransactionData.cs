@@ -12,7 +12,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public string RedeemScript { get; set; }
         public string ScriptPubKey { get; set; }
         public string Address { get; set; }
-        public decimal Value { get; set; }
+        public long Value { get; set; }
         public long OutputTxTime { get; set; }
         public string OutputTxId { get; set; }
         public int OutputIndex { get; set; }
@@ -24,7 +24,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int? SpendBlockHeight { get; set; }
         public int SpendTxIsCoinBase { get; set; }
         public string SpendBlockHash { get; set; }
-        public decimal? SpendTxTotalOut { get; set; }
+        public long? SpendTxTotalOut { get; set; }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -37,7 +37,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 RedeemScript        TEXT NOT NULL,
                 ScriptPubKey        TEXT NOT NULL,
                 Address             TEXT NOT NULL,
-                Value               DECIMAL NOT NULL,
+                Value               INTEGER NOT NULL,
                 OutputBlockHeight   INTEGER,
                 OutputBlockHash     TEXT,
                 OutputTxIsCoinBase  INTEGER NOT NULL,
@@ -49,7 +49,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SpendTxIsCoinBase   INTEGER,
                 SpendTxTime         INTEGER,
                 SpendTxId           TEXT,
-                SpendTxTotalOut     DECIMAL,
+                SpendTxTotalOut     INTEGER,
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex)
             )";
 
@@ -115,12 +115,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         public class BalanceData
         {
-            public decimal TotalBalance { get; set; }
-            public decimal SpendableBalance { get; set; }
-            public decimal ConfirmedBalance { get; set; }
+            public long TotalBalance { get; set; }
+            public long SpendableBalance { get; set; }
+            public long ConfirmedBalance { get; set; }
         }
 
-        internal static (decimal total, decimal confirmed, decimal spendable) GetBalance(DBConnection conn, int walletId, int accountIndex, (int type, int index)? address, int currentChainHeight, int coinbaseMaturity, int confirmations = 0)
+        internal static (long total, long confirmed, long spendable) GetBalance(DBConnection conn, int walletId, int accountIndex, (int type, int index)? address, int currentChainHeight, int coinbaseMaturity, int confirmations = 0)
         {
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;

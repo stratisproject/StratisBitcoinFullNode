@@ -35,7 +35,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SpendTxTime = spendTime,
                 SpendTxId = spendTxId.ToString(),
                 SpendIndex = spendIndex,
-                SpendTxTotalOut = totalOut.ToDecimal(MoneyUnit.BTC)
+                SpendTxTotalOut = totalOut.Satoshi
             });
         }
 
@@ -57,7 +57,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 OutputTxTime = creationTime,
                 OutputTxId = outputTxId.ToString(),
                 OutputIndex = outputIndex,
-                Value = txOut.Value.ToDecimal(MoneyUnit.BTC),
+                Value = txOut.Value.Satoshi,
                 IsChange = isChange ? 1 : 0
             });
         }
