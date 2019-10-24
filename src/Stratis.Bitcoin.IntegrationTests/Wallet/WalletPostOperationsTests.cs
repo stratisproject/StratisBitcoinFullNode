@@ -877,11 +877,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 firstItem.Fee.Should().Be(Money.Coins(0.00004520m));
                 firstItem.Payments.Count.Should().Be(1);
                 firstItem.Payments.First().Amount.Should().Be(Money.Coins(10));
+                firstItem.Type.Should().Be(TransactionItemType.Send);
 
                 var secondItem = history.ToArray()[1];
                 secondItem.Amount.Should().Be(new Money(20, MoneyUnit.BTC));
                 secondItem.Fee.Should().BeNull();
                 secondItem.Payments.Count.Should().Be(0);
+                secondItem.Type.Should().Be(TransactionItemType.Received);
 
                 // The spendable amount on the sender should be change address.
                 var walletAccountReference = new WalletAccountReference("mywallet", "account 0");
