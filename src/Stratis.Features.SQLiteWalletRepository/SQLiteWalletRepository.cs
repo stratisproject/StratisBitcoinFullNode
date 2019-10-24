@@ -38,6 +38,7 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// </remarks>
     public class SQLiteWalletRepository : IWalletRepository, IDisposable
     {
+        private static readonly ConcurrentDictionary<Script,string> ScriptPubKeyCache = new ConcurrentDictionary<Script, string>();
         public bool DatabasePerWallet { get; private set; }
         public bool WriteMetricsToFile { get; set; }
         public Network Network { get; private set; }
@@ -1203,10 +1204,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             if (transactionData.SpendingDetails == null || this.ScriptAddressReader == null)
                 return res;
 
-            var lookup = res.Select(d => d.DestinationScriptPubKey).Distinct().ToDictionary(d => d, d => (string)null);
+            var lookup = res.Select(d => d.DestinationScriptPubKey).Distinct().ToDictionary(d => d, d => (string) null);
+            
             foreach (Script script in lookup.Keys.ToList())
-                lookup[script] = this.ScriptAddressReader.GetAddressFromScriptPubKey(this.Network, script);
+            {
+                if (!ScriptPubKeyCache.ContainsKey(script))
+                {
+                    ScriptPubKeyCache.TryAdd(script,
+                        this.ScriptAddressReader.GetAddressFromScriptPubKey(this.Network, script));
+                }
 
+                lookup[script] = ScriptPubKeyCache[script];
+            }
+            
             foreach (PaymentDetails paymentDetails in res)
                 paymentDetails.DestinationAddress = lookup[paymentDetails.DestinationScriptPubKey];
 
