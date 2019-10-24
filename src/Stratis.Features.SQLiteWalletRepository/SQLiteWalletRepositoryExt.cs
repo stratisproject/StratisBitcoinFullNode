@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Wallet;
@@ -73,6 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex != 0,
                 // IsPropagated  // Not used currently.
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
+                AddressScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
