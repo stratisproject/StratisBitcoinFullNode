@@ -1192,7 +1192,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 spendingDetails.TransactionId.ToString(),
                 transactionData.Id.ToString(),
                 transactionData.Index,
-                transactionData.ScriptPubKey.ToHex())
+                transactionData.AddressScriptPubKey.ToHex())
                 .Where(p => p.SpendIsChange == (isChange ? 1 : 0)).Select(p => new PaymentDetails()
                 {
                     Amount = new Money(p.SpendValue),
