@@ -83,6 +83,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public PartialMerkleTree MerkleProof { get; set; }
 
         /// <summary>
+        /// This is used by the new wallet.
+        /// It contains the derived ScriptPubKey from IDestinationAddressReader.
+        /// </summary>
+        [JsonProperty(PropertyName = "addressScriptPubKey")]
+        [JsonConverter(typeof(ScriptJsonConverter))]
+        public Script AddressScriptPubKey { get; set; }
+
+        /// <summary>.Get
         /// The script pub key for this address.
         /// </summary>
         [JsonProperty(PropertyName = "scriptPubKey")]
