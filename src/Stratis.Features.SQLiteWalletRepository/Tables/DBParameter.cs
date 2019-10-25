@@ -18,9 +18,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 case string strProp:
                     return $"'{strProp.Replace("'", "''")}'";
 
-                case decimal decProp:
-                    return decProp.ToString("0.#############################", CultureInfo.InvariantCulture);
-
                 case int intProp:
                     return intProp.ToString("F0", CultureInfo.InvariantCulture);
 

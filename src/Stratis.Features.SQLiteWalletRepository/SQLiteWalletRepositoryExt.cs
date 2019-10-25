@@ -60,7 +60,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             var res = new TransactionData()
             {
-                Amount = new Money(transactionData.Value, MoneyUnit.BTC),
+                Amount = new Money(transactionData.Value),
                 BlockHash = (transactionData.OutputBlockHash == null) ? null : uint256.Parse(transactionData.OutputBlockHash),
                 BlockHeight = transactionData.OutputBlockHeight,
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(transactionData.OutputTxTime),
