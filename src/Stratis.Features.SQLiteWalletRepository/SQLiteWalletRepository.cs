@@ -144,10 +144,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     HDWallet wallet = conn.GetWalletByName(walletName);
                     var walletContainer = new WalletContainer(conn, wallet, new ProcessBlocksInfo(conn, null, wallet));
-                    this.Wallets[walletName] = walletContainer;
 
                     walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
                     walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
+
+                    this.Wallets[walletName] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
@@ -161,10 +162,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                 foreach (HDWallet wallet in HDWallet.GetAll(conn))
                 {
                     var walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
-                    this.Wallets[wallet.Name] = walletContainer;
 
                     walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
                     walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
+
+                    this.Wallets[wallet.Name] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
