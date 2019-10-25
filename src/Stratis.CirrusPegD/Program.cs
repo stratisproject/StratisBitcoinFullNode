@@ -18,6 +18,9 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.SignalR;
+using Stratis.Bitcoin.Features.SignalR.Broadcasters;
+using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Collateral;
@@ -90,7 +93,7 @@ namespace Stratis.CirrusPegD
                 walletSyncFromHeight: new int[] { FederatedPegSettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
             );
 
-            IFullNode node = new FullNodeBuilder()
+            var nodeBuilder = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
@@ -103,10 +106,31 @@ namespace Stratis.CirrusPegD
                 .UsePosConsensus()
                 .UseWallet()
                 .AddSQLiteWalletRepository()
-                .AddPowPosMining()
-                .Build();
+                .AddPowPosMining();
+                
 
-            return node;
+            if (nodeSettings.EnableSignalR)
+            {
+                nodeBuilder.AddSignalR(options =>
+                {
+                    options.EventsToHandle = new[]
+                    {
+                        (IClientEvent) new BlockConnectedClientEvent(),
+                        new TransactionReceivedClientEvent()
+                    };
+
+                    options.ClientEventBroadcasters = new[]
+                    {
+                        (Broadcaster: typeof(CirrusWalletInfoBroadcaster),
+                            ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
+                            {
+                                BroadcastFrequencySeconds = 5
+                            })
+                    };
+                });
+            }
+
+            return nodeBuilder.Build();
         }
 
         private static IFullNode GetSidechainFullNode(string[] args)
