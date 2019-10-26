@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         }
 
         [Fact]
-        public void GatewayNodeCanSyncFirst15KBlocks()
+        public void GatewayNodeCanSyncBeforeAndAfterLastCheckpointPowAndPoS()
         {
             Network network = new StratisMain10KCheckpoint();
 
@@ -415,8 +415,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var gatewayParameters = new NodeConfigParameters();
                 gatewayParameters.Add("regtest", "0");
                 gatewayParameters.Add("gateway", "1");
+                gatewayParameters.Add("txindex", "0");
                 gatewayParameters.Add("whitelist", stratisXNode.Endpoint.ToString());
-                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
+                CoreNode gatewayNode =
+                    builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway: true)
+                    .WithReadyBlockchainData(ReadyBlockchain.StratisMainnet9500);
 
                 gatewayNode.Start();
                 stratisXNode.Start();
@@ -426,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 gatewayNodeRpc.AddNode(stratisXNode.Endpoint);
 
-                TestBase.WaitLoop(() => gatewayNode.FullNode.ChainIndexer.Height >= 15_000, waitTimeSeconds: 600);
+                TestBase.WaitLoop(() => gatewayNode.FullNode.ChainIndexer.Height >= 13_000, waitTimeSeconds: 600);
             }
         }
 
