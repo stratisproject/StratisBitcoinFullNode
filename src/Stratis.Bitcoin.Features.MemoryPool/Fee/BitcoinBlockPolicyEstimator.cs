@@ -1,27 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool.Fee.SerializationEntity;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
     /// <summary>
     /// The BlockPolicyEstimator is used for estimating the feerate needed
-    /// for a transaction to be included in a block within a certain number of
-    /// blocks.
+    /// for a transaction to be included in a block within a certain number of blocks.
     /// </summary>
     /// <remarks>
+    /// This is based on the fee estimator used in Bitcoin Core 0.15 onwards; it operates
+    /// differently from the 0.14 version.
+    /// 
     /// At a high level the algorithm works by grouping transactions into buckets
     /// based on having similar feerates and then tracking how long it
-    /// takes transactions in the various buckets to be mined.  It operates under
+    /// takes transactions in the various buckets to be mined. It operates under
     /// the assumption that in general transactions of higher feerate will be
-    /// included in blocks before transactions of lower feerate.   So for
+    /// included in blocks before transactions of lower feerate. So for
     /// example if you wanted to know what feerate you should put on a transaction to
     /// be included in a block within the next 5 blocks, you would start by looking
     /// at the bucket with the highest feerate transactions and verifying that a
@@ -34,10 +34,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
     ///
     /// Here is a brief description of the implementation:
     /// When a transaction enters the mempool, we track the height of the block chain
-    /// at entry.  All further calculations are conducted only on this set of "seen"
+    /// at entry. All further calculations are conducted only on this set of "seen"
     /// transactions.Whenever a block comes in, we count the number of transactions
     /// in each bucket and the total amount of feerate paid in each bucket. Then we
-    /// calculate how many blocks Y it took each transaction to be mined.  We convert
+    /// calculate how many blocks Y it took each transaction to be mined. We convert
     /// from a number of blocks to a number of periods Y' each encompassing "scale"
     /// blocks.This is tracked in 3 different data sets each up to a maximum
     /// number of periods.Within each data set we have an array of counters in each
@@ -46,49 +46,49 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
     /// that many periods. We want to save a history of this information, so at any
     /// time we have a counter of the total number of transactions that happened in a
     /// given feerate bucket and the total number that were confirmed in each of the
-    /// periods or less for any bucket.  We save this history by keeping an
-    /// exponentially decaying moving average of each one of these stats.  This is
+    /// periods or less for any bucket. We save this history by keeping an
+    /// exponentially decaying moving average of each one of these stats. This is
     /// done for a different decay in each of the 3 data sets to keep relevant data
-    /// from different time horizons.  Furthermore we also keep track of the number
+    /// from different time horizons. Furthermore we also keep track of the number
     /// unmined (in mempool or left mempool without being included in a block)
     /// transactions in each bucket and for how many blocks they have been
     /// outstanding and use both of these numbers to increase the number of transactions
     /// we've seen in that feerate bucket when calculating an estimate for any number
     /// of confirmations below the number of blocks they've been outstanding.
     /// </remarks>
-    public class BlockPolicyEstimator
+    public class BitcoinBlockPolicyEstimator : IBlockPolicyEstimator
     {
-        ///<summary>Track confirm delays up to 12 blocks for short horizon</summary>
+        /// <summary>Track confirm delays up to 12 blocks for short horizon</summary>
         private const int ShortBlockPeriods = 12;
         private const int ShortScale = 1;
         
-        ///<summary>Track confirm delays up to 48 blocks for medium horizon</summary>
+        /// <summary>Track confirm delays up to 48 blocks for medium horizon</summary>
         private const int MedBlockPeriods = 24;
         private const int MedScale = 2;
 
-        ///<summary>Track confirm delays up to 1008 blocks for long horizon</summary>
+        /// <summary>Track confirm delays up to 1008 blocks for long horizon</summary>
         private const int LongBlockPeriods = 42;
         private const int LongScale = 24;
 
-        ///<summary>Historical estimates that are older than this aren't valid</summary>
+        /// <summary>Historical estimates that are older than this aren't valid</summary>
         private const int OldestEstimateHistory = 6 * 1008;
 
-        ///<summary>Decay of .962 is a half-life of 18 blocks or about 3 hours</summary>
+        /// <summary>Decay of .962 is a half-life of 18 blocks or about 3 hours</summary>
         private const double ShortDecay = .962;
 
-        ///<summary>Decay of .998 is a half-life of 144 blocks or about 1 day</summary>
+        /// <summary>Decay of .998 is a half-life of 144 blocks or about 1 day</summary>
         private const double MedDecay = .9952;
 
-        ///<summary>Decay of .9995 is a half-life of 1008 blocks or about 1 week</summary>
+        /// <summary>Decay of .9995 is a half-life of 1008 blocks or about 1 week</summary>
         private const double LongDecay = .99931;
 
-        ///<summary>Require greater than 60% of X feerate transactions to be confirmed within Y/2 blocks</summary>
+        /// <summary>Require greater than 60% of X feerate transactions to be confirmed within Y/2 blocks</summary>
         private const double HalfSuccessPct = .6;
 
-        ///<summary>Require greater than 85% of X feerate transactions to be confirmed within Y blocks</summary>
+        /// <summary>Require greater than 85% of X feerate transactions to be confirmed within Y blocks</summary>
         private const double SuccessPct = .85;
 
-        ///<summary>Require greater than 95% of X feerate transactions to be confirmed within 2 * Y blocks</summary>
+        /// <summary>Require greater than 95% of X feerate transactions to be confirmed within 2 * Y blocks</summary>
         private const double DoubleSuccessPct = .95;
 
         /// <summary>Require an avg of 0.1 tx in the combined feerate bucket per block to have stat significance.</summary>
@@ -97,12 +97,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>Require an avg of 0.5 tx when using short decay since there are fewer blocks considered</summary>
         private const double SufficientTxsShort = 0.5;
 
-        /// <summary>Minimum and Maximum values for tracking feerates
-        /// The MinBucketFeeRate should just be set to the lowest reasonable feerate we
-        /// might ever want to track.  Historically this has been 1000 since it was
-        /// inheriting DEFAULT_MIN_RELAY_TX_FEE and changing it is disruptive as it
-        /// invalidates old estimates files. So leave it at 1000 unless it becomes
-        /// necessary to lower it, and then lower it substantially.</summary>
+        /// <summary>
+        /// Minimum and maximum values for tracking feerates.
+        /// The <see cref="MinBucketFeeRate" /> should just be set to the lowest reasonable feerate we
+        /// might ever want to track.  Historically this has been 1000 since it was inheriting
+        /// DEFAULT_MIN_RELAY_TX_FEE and changing it is disruptive as it  invalidates old estimates
+        /// files. So leave it at 1000 unless it becomes  necessary to lower it, and then lower it substantially.
+        /// </summary>
         private const double MinBucketFeeRate = 1000;
         private const double MaxBucketFeeRate = 1e7;
 
@@ -120,6 +121,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private const string FileName = "fee.json";
 
+        // TODO: How is this used? Should probably use ChainIndexer instead
         /// <summary>Best seen block height.</summary>
         private int nBestSeenHeight;
 
@@ -162,10 +164,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>
         /// Constructs an instance of the block policy estimator object.
         /// </summary>
-        /// <param name="mempoolSettings">Mempool settings.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public BlockPolicyEstimator(ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        public BitcoinBlockPolicyEstimator(ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             Guard.Assert(MinBucketFeeRate > 0);
 
@@ -205,11 +206,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.fileStorage = new FileStorage<BlockPolicyData>(nodeSettings.DataFolder.WalletPath);
         }
 
-        /// <summary>
-        /// Process all the transactions that have been included in a block.
-        /// </summary>
-        /// <param name="nBlockHeight">The block height for the block.</param>
-        /// <param name="entries">Collection of memory pool entries.</param>
+        /// <inheritdoc />
         public void ProcessBlock(int nBlockHeight, List<TxMempoolEntry> entries)
         {
             lock (this.lockObject)
@@ -292,11 +289,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             return true;
         }
 
-        /// <summary>
-        ///  Process a transaction accepted to the mempool.
-        /// </summary>
-        /// <param name="entry">Memory pool entry.</param>
-        /// <param name="validFeeEstimate">Whether to update fee estimate.</param>
+        /// <inheritdoc />
         public void ProcessTransaction(TxMempoolEntry entry, bool validFeeEstimate)
         {
             lock (this.lockObject)
@@ -339,39 +332,26 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             }
         }
 
-        /// <summary>
-        /// Remove a transaction from the mempool tracking stats.
-        /// </summary>
-        /// <param name="hash">Transaction hash.</param>
-        /// <returns>Whether the transaction was successfully removed.</returns>
-        /// <remarks>
-        /// This function is called from TxMemPool.RemoveUnchecked to ensure
-        /// txs removed from the mempool for any reason are no longer
-        /// tracked. Txs that were part of a block have already been removed in
-        /// ProcessBlockTx to ensure they are never double tracked, but it is
-        /// of no harm to try to remove them again.
-        /// </remarks>
+        /// <inheritdoc />
         public bool RemoveTx(uint256 hash, bool inBlock)
         {
             lock (this.lockObject)
             {
                 TxStatsInfo pos = this.mapMemPoolTxs.TryGet(hash);
-                if (pos != null)
-                {
-                    this.feeStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.shortStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.longStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
-                    this.mapMemPoolTxs.Remove(hash);
-                    return true;
-                }
-                return false;
+
+                if (pos == null) 
+                    return false;
+
+                this.feeStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.shortStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.longStats.RemoveTx(pos.blockHeight, this.nBestSeenHeight, pos.bucketIndex, inBlock);
+                this.mapMemPoolTxs.Remove(hash);
+
+                return true;
             }
         }
 
-        /// <summary>
-        /// Return an estimate fee according to horizon
-        /// </summary>
-        /// <param name="confTarget">The desired number of confirmations to be included in a block</param>
+        /// <inheritdoc />
         public FeeRate EstimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult result)
         {
             TxConfirmStats stats;
@@ -399,43 +379,30 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                         throw new ArgumentException(nameof(horizon));
                 }
             }
+
             lock(this.lockObject)
             {
                 // Return failure if trying to analyze a target we're not tracking
                 if (confTarget <= 0 || confTarget > stats.GetMaxConfirms())
-                {
                     return new FeeRate(0);
-                }
+
                 if (successThreshold > 1)
-                {
                     return new FeeRate(0);      
-                }
 
-                double median = stats.EstimateMedianVal(confTarget, sufficientTxs, successThreshold,
-                    true, this.nBestSeenHeight, result);
+                double median = stats.EstimateMedianVal(confTarget, sufficientTxs, successThreshold, true, this.nBestSeenHeight, result);
 
-                if (median < 0)
-                    return new FeeRate(0);
-
-                return new FeeRate(Convert.ToInt64(median));
+                return median < 0 ? new FeeRate(0) : new FeeRate(Convert.ToInt64(median));
             }
         }
 
-        /// <summary>
-        /// Return a feerate estimate
-        /// </summary>
-        /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
+        /// <inheritdoc />
         public FeeRate EstimateFee(int confTarget)
         {
             // It's not possible to get reasonable estimates for confTarget of 1
-            if (confTarget <= 1)
-            {
-                return new FeeRate(0);
-            }
-
-            return EstimateRawFee(confTarget, DoubleSuccessPct, FeeEstimateHorizon.MedHalfLife, null);
+            return confTarget <= 1 ? new FeeRate(0) : EstimateRawFee(confTarget, DoubleSuccessPct, FeeEstimateHorizon.MedHalfLife, null);
         }
 
+        /// <inheritdoc />
         public int HighestTargetTracked(FeeEstimateHorizon horizon)
         {
             switch (horizon)
@@ -461,7 +428,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private int BlockSpan()
         {
-            if (this.firstRecordedHeight == 0) return 0;
+            if (this.firstRecordedHeight == 0)
+                return 0;
+
             Guard.Assert(this.nBestSeenHeight >= this.firstRecordedHeight);
 
             return this.nBestSeenHeight - this.firstRecordedHeight;
@@ -469,13 +438,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private int HistoricalBlockSpan()
         {
-            if (this.historicalFirst == 0) return 0;
+            if (this.historicalFirst == 0)
+                return 0;
+
             Guard.Assert(this.historicalBest >= this.historicalFirst);
 
             if (this.nBestSeenHeight - this.historicalBest > OldestEstimateHistory)
-            {
                 return 0;
-            }
 
             return this.historicalBest - this.historicalFirst;
         }
@@ -492,60 +461,62 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// checkShorterHorizon is requested, also allow short time horizon estimates
         /// for a lower target to reduce the given answer
         /// </summary>
-        private double EstimateCombinedFee(int confTarget, double successThreshold, 
-            bool checkShorterHorizon, EstimationResult result)
+        private double EstimateCombinedFee(int confTarget, double successThreshold, bool checkShorterHorizon, EstimationResult result)
         {
             double estimate = -1;
+
             if (confTarget >= 1 && confTarget <= this.longStats.GetMaxConfirms())
             {
                 // Find estimate from shortest time horizon possible
                 if (confTarget <= this.shortStats.GetMaxConfirms())
-                { // short horizon
-                    estimate = this.shortStats.EstimateMedianVal(confTarget, SufficientTxsShort, 
-                        successThreshold, true, this.nBestSeenHeight, result);
+                { 
+                    // short horizon
+                    estimate = this.shortStats.EstimateMedianVal(confTarget, SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, result);
                 }
                 else if (confTarget <= this.feeStats.GetMaxConfirms())
-                { // medium horizon
-                    estimate = this.feeStats.EstimateMedianVal(confTarget, SufficientFeeTxs, 
-                        successThreshold, true, this.nBestSeenHeight, result);
+                { 
+                    // medium horizon
+                    estimate = this.feeStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
                 }
                 else
-                { // long horizon
-                    estimate = this.longStats.EstimateMedianVal(confTarget, SufficientFeeTxs, 
-                        successThreshold, true, this.nBestSeenHeight, result);
+                {
+                    // long horizon
+                    estimate = this.longStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
                 }
+
                 if (checkShorterHorizon)
                 {
-                    EstimationResult tempResult = new EstimationResult();
+                    var tempResult = new EstimationResult();
+
                     // If a lower confTarget from a more recent horizon returns a lower answer use it.
                     if (confTarget > this.feeStats.GetMaxConfirms())
                     {
-                        double medMax = this.feeStats.EstimateMedianVal(this.feeStats.GetMaxConfirms(), 
-                            SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, tempResult);
+                        double medMax = this.feeStats.EstimateMedianVal(this.feeStats.GetMaxConfirms(), SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, tempResult);
+
                         if (medMax > 0 && (estimate == -1 || medMax < estimate))
                         {
                             estimate = medMax;
+
                             if (result != null)
-                            {
                                 result = tempResult;
-                            }
                         }
                     }
+
                     if (confTarget > this.shortStats.GetMaxConfirms())
                     {
-                        double shortMax = this.shortStats.EstimateMedianVal(this.shortStats.GetMaxConfirms(), 
-                            SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, tempResult);
+                        double shortMax = this.shortStats.EstimateMedianVal(this.shortStats.GetMaxConfirms(), SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, tempResult);
+
                         if (shortMax > 0 && (estimate == -1 || shortMax < estimate))
                         {
                             estimate = shortMax;
+
                             if (result != null)
-                            {
                                 result = tempResult;
-                            }
                         }
                     }
                 }
             }
+
             return estimate;
         }
 
@@ -556,41 +527,32 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private double EstimateConservativeFee(int doubleTarget, EstimationResult result)
         {
             double estimate = -1;
-            EstimationResult tempResult = new EstimationResult();
+            var tempResult = new EstimationResult();
+
             if (doubleTarget <= this.shortStats.GetMaxConfirms())
-            {
-                estimate = this.feeStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, 
-                    DoubleSuccessPct, true, this.nBestSeenHeight, result);
-            }
+                estimate = this.feeStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, result);
+
             if (doubleTarget <= this.feeStats.GetMaxConfirms())
             {
-                double longEstimate = this.longStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, 
-                    DoubleSuccessPct, true, this.nBestSeenHeight, tempResult);
+                double longEstimate = this.longStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, tempResult);
+
                 if (longEstimate > estimate)
                 {
                     estimate = longEstimate;
+
                     if (result != null)
-                    {
                         result = tempResult;
-                    }
                 }
             }
+
             return estimate;
         }
 
-        /// <summary>
-        /// Returns the max of the feerates calculated with a 60%
-        /// threshold required at target / 2, an 85% threshold required at target and a
-        /// 95% threshold required at 2 * target.Each calculation is performed at the
-        /// shortest time horizon which tracks the required target.Conservative
-        /// estimates, however, required the 95% threshold at 2 * target be met for any
-        /// longer time horizons also.
-        /// </summary>
+        /// <inheritdoc />
         public FeeRate EstimateSmartFee(int confTarget, FeeCalculation feeCalc, bool conservative)
         {
             lock (this.lockObject)
             {
-
                 if (feeCalc != null)
                 {
                     feeCalc.DesiredTarget = confTarget;
@@ -602,30 +564,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
                 // Return failure if trying to analyze a target we're not tracking
                 if (confTarget <= 0 || confTarget > this.longStats.GetMaxConfirms())
-                {
                     return new FeeRate(0);  // error condition
-                }
 
                 // It's not possible to get reasonable estimates for confTarget of 1
                 if (confTarget == 1)
-                {
                     confTarget = 2;
-                }
 
                 int maxUsableEstimate = MaxUsableEstimate();
+
                 if (confTarget > maxUsableEstimate)
-                {
                     confTarget = maxUsableEstimate;
-                }
+
                 if (feeCalc != null)
-                {
                     feeCalc.ReturnedTarget = confTarget;
-                }
 
                 if (confTarget <= 1)
-                {
                     return new FeeRate(0); // error condition
-                }
 
                 Guard.Assert(confTarget > 0); //estimateCombinedFee and estimateConservativeFee take unsigned ints
 
@@ -639,26 +593,33 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 // the purpose of conservative estimates is not to let short term
                 // fluctuations lower our estimates by too much.
                 double halfEst = EstimateCombinedFee(confTarget / 2, HalfSuccessPct, true, tempResult);
+
                 if (feeCalc != null)
                 {
                     feeCalc.Estimation = tempResult;
                     feeCalc.Reason = FeeReason.HalfEstimate;
                 }
+
                 median = halfEst;
                 double actualEst = EstimateCombinedFee(confTarget, SuccessPct, true, tempResult);
+
                 if (actualEst > median)
                 {
                     median = actualEst;
+
                     if (feeCalc != null)
                     {
                         feeCalc.Estimation = tempResult;
                         feeCalc.Reason = FeeReason.FullEstimate;
                     }
                 }
+
                 double doubleEst = EstimateCombinedFee(2 * confTarget, DoubleSuccessPct, !conservative, tempResult);
+
                 if (doubleEst > median)
                 {
                     median = doubleEst;
+
                     if (feeCalc != null)
                     {
                         feeCalc.Estimation = tempResult;
@@ -669,9 +630,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (conservative || median == -1)
                 {
                     double consEst = EstimateConservativeFee(2 * confTarget, tempResult);
+
                     if (consEst > median)
                     {
                         median = consEst;
+
                         if (feeCalc != null)
                         {
                             feeCalc.Estimation = tempResult;
@@ -680,18 +643,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     }
                 }
 
-                if (median < 0) return new FeeRate(0); // error condition
-
-                return new FeeRate(Convert.ToInt64(median));
+                return median < 0 ? new FeeRate(0) : new FeeRate(Convert.ToInt64(median));
             }
         }
-        /// <summary>
-        /// Write estimation data to a file.
-        /// </summary>
+
+        /// <inheritdoc />
         public void Write()
         {
             var data = new BlockPolicyData();
+
             data.BestSeenHeight = this.nBestSeenHeight;
+
             if (BlockSpan() > HistoricalBlockSpan())
             {
                 data.HistoricalFirst = this.firstRecordedHeight;
@@ -702,18 +664,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 data.HistoricalFirst = this.historicalFirst;
                 data.HistoricalBest = this.historicalBest;
             }
+
             data.Buckets = this.buckets;
             data.ShortStats = this.shortStats.Write();
             data.MedStats = this.feeStats.Write();
             data.LongStats = this.longStats.Write();
+
             this.fileStorage.SaveToFile(data, FileName);
         }
 
-        /// <summary>
-        /// Read estimation data from a file.
-        /// </summary>
-        /// <param name="filein">Stream to read data from.</param>
-        /// <param name="nFileVersion">Version number of the file.</param>
+        /// <inheritdoc />
         public bool Read()
         {
             try
@@ -722,32 +682,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 {
                     var data = this.fileStorage.LoadByFileName(FileName);
                     if (data != null)
-                    {
                         throw new ApplicationException("Corrupt estimates file or file not found");
-                    }
+
                     if (data.HistoricalFirst > data.HistoricalBest || data.HistoricalBest > data.BestSeenHeight)
-                    {
                         throw new ApplicationException("Corrupt estimates file. Historical block range for estimates is invalid");
-                    }
+
                     if (data.Buckets.Count <= 1 || data.Buckets.Count > 1000)
-                    {
                         throw new ApplicationException("Corrupt estimates file. Must have between 2 and 1000 feerate buckets");
-                    }
+
                     this.nBestSeenHeight = data.BestSeenHeight;
                     this.historicalFirst = data.HistoricalFirst;
                     this.historicalBest = data.HistoricalBest;
                     this.buckets = data.Buckets;
                     this.bucketMap = new SortedDictionary<double, int>();
+
                     for(int i = 0; i< this.buckets.Count; i++)
-                    {
                         this.bucketMap.Add(this.buckets[i], i);
-                    }
+
                     this.feeStats = new TxConfirmStats(this.logger);
                     this.feeStats.Initialize(this.buckets, this.bucketMap, MedBlockPeriods, MedDecay, MedScale);
                     this.feeStats.Read(data.MedStats);
+
                     this.shortStats = new TxConfirmStats(this.logger);
                     this.shortStats.Initialize(this.buckets, this.bucketMap, ShortBlockPeriods, ShortDecay, ShortScale);
                     this.shortStats.Read(data.ShortStats);
+                    
                     this.longStats = new TxConfirmStats(this.logger);
                     this.longStats.Initialize(this.buckets, this.bucketMap, LongBlockPeriods, LongDecay, LongScale);
                     this.longStats.Read(data.LongStats);
@@ -758,42 +717,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 this.logger.LogError("Error while reading policy estimation data from file", e);
                 return false;
             }
+
             return true;
         }
 
-        public void FlushUncomfirmed()
+        /// <inheritdoc />
+        public void FlushUnconfirmed()
         {
             lock (this.lockObject)
             {
                 int numEntries = this.mapMemPoolTxs.Count;
+
                 // Remove every entry in mapMemPoolTxs
                 while (this.mapMemPoolTxs.Count > 0)
                 {
                     var mi = this.mapMemPoolTxs.First(); ;
                     RemoveTx(mi.Key, false); // this calls erase() on mapMemPoolTxs
                 }
+
                 this.logger.LogInformation($"Recorded {numEntries} unconfirmed txs from mempool");
-            }
-        }
-                
-        /// <summary>
-        /// Transaction statistics information.
-        /// </summary>
-        public class TxStatsInfo
-        {
-            /// <summary>The block height.</summary>
-            public int blockHeight;
-
-            /// <summary>The index into the confirmed transactions bucket map.</summary>
-            public int bucketIndex;
-
-            /// <summary>
-            /// Constructs a instance of a transaction stats info object.
-            /// </summary>
-            public TxStatsInfo()
-            {
-                this.blockHeight = 0;
-                this.bucketIndex = 0;
             }
         }
     }

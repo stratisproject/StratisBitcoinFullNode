@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
     public interface ITxMempool
     {
         /// <summary>Gets the miner policy estimator.</summary>
-        BlockPolicyEstimator MinerPolicyEstimator { get; }
+        IBlockPolicyEstimator MinerPolicyEstimator { get; }
 
         /// <summary>Get the number of transactions in the memory pool.</summary>
         long Size { get; }

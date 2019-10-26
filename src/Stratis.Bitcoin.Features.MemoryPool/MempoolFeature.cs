@@ -142,12 +142,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Include the memory pool feature and related services in the full node.
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder.</param>
-        /// <param name="injectRules">Whether or not to inject the mempool rules now, or defer it to another feature.</param>
         /// <returns>Full node builder.</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {
+            // TODO: Need to inject appropriate version of IBlockPolicyEstimator. Is it worth splitting this into two different extension methods?
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
-            LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
+            LoggingConfiguration.RegisterFeatureNamespace<BitcoinBlockPolicyEstimator>("estimatefee");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         services.AddSingleton<MempoolSchedulerLock>();
                         services.AddSingleton<ITxMempool, TxMempool>();
-                        services.AddSingleton<BlockPolicyEstimator>();
+                        services.AddSingleton<BitcoinBlockPolicyEstimator>();
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>()

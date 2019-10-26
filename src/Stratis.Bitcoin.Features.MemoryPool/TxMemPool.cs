@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="blockPolicyEstimator">The block policy estimator object.</param>
         /// <param name="loggerFactory">Factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public TxMempool(IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        public TxMempool(IDateTimeProvider dateTimeProvider, IBlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             this.MapTx = new IndexedTransactionSet();
             this.mapLinks = new TxlinksMap();
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>Gets the miner policy estimator.</summary>
-        public BlockPolicyEstimator MinerPolicyEstimator { get; }
+        public IBlockPolicyEstimator MinerPolicyEstimator { get; }
 
         /// <summary>Get the number of transactions in the memory pool.</summary>
         public long Size
