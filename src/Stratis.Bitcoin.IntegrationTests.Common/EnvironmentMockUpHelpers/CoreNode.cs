@@ -230,7 +230,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), this.FullNode?.Network ?? KnownNetworks.RegTest);
+            Network network;
+
+            if (this.runner is StratisXRunner)
+                network = KnownNetworks.StratisRegTest;
+            else
+                network = this.FullNode?.Network ?? KnownNetworks.RegTest;
+
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), network);
         }
 
         public INetworkPeer CreateNetworkPeerClient()
@@ -313,6 +320,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             configParameters.SetDefaultValueIfUndefined("server", "1");
             configParameters.SetDefaultValueIfUndefined("txindex", "1");
 
+            if (this.runner is BitcoinCoreRunner)
+            {
+                // TODO: Migrate to using `generatetoaddress` RPC for newer Core versions
+                configParameters.SetDefaultValueIfUndefined("deprecatedrpc", "generate");
+            }
+
             if (!this.CookieAuth)
             {
                 configParameters.SetDefaultValueIfUndefined("rpcuser", this.creds.UserName);
@@ -335,7 +348,42 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
 
-            File.WriteAllText(this.Config, configParameters.ToString());
+            // Need special handling for config files used by newer versions of Bitcoin Core.
+            // These have specialised sections for [regtest], [test] and [main] in which certain options
+            // only have an effect when they appear in their respective section.
+            var builder = new StringBuilder();
+
+            // Scan for network setting. These need to be at the top of the config file.
+            bool testnet = configParameters.Any(a => a.Key.Equals("testnet") && a.Value.Equals("1"));
+            bool regtest = configParameters.Any(a => a.Key.Equals("regtest") && a.Value.Equals("1"));
+            bool mainnet = !testnet && !regtest;
+
+            if (testnet)
+            {
+                builder.AppendLine("testnet=1");
+                if (this.runner.UseNewConfigStyle) builder.AppendLine("[test]");
+            }
+
+            if (regtest)
+            {
+                builder.AppendLine("regtest=1");
+                if (this.runner.UseNewConfigStyle) builder.AppendLine("[regtest]");
+            }
+
+            if (mainnet)
+            {
+                // Mainnet is implied by the absence of both testnet and regtest. But it should still get its own config section.
+                if (this.runner.UseNewConfigStyle) builder.AppendLine("[main]");
+            }
+
+            foreach (KeyValuePair<string, string> kv in configParameters)
+            {
+                if (kv.Key.Equals("testnet") || kv.Key.Equals("regtest")) continue;
+
+                builder.AppendLine(kv.Key + "=" + kv.Value);
+            }
+
+            File.WriteAllText(this.Config, builder.ToString());
         }
 
         public void Restart()

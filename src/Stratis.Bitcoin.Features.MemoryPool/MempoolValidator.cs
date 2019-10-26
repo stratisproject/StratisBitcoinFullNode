@@ -68,6 +68,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <seealso cref = "MempoolSettings" />
         public const bool DefaultEnableReplacement = true;
 
+        /// <summary>
+        /// Default for -permitbaremultisig, whether or not to regard bare (non-P2SH) multisig transactions as standard.
+        /// </summary>
+        /// <seealso cref = "MempoolSettings" />
+        public const bool DefaultPermitBareMultisig = true;
+
         /// <summary>Maximum age of our tip in seconds for us to be considered current for fee estimation.</summary>
         private const int MaxFeeEstimationTipAge = 3 * 60 * 60;
 
@@ -95,6 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
+        // TODO: Verify these
         /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
@@ -303,7 +310,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Convert these into rules too
             this.PreMempoolChecks(context);
 
-            // create the MemPoolCoinView and load relevant utxoset
+            // Create the MemPoolCoinView and load relevant utxoset
             context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
 
             // adding to the mem pool can only be done sequentially
@@ -392,7 +399,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.Coinstake).Throw();
             }
 
-            bool witnessEnabled = false;
+            // Reject transactions with witness data before segregated witness activates.
+            // https://github.com/bitcoin/bitcoin/blob/ea729d55b4dbd17a53ced474a8457d4759cfb5a5/src/validation.cpp#L463-L467
+
+            // TODO: The Bitcoin Core approach to segwit has changed since the MempoolValidator was first written; it is now regarded as always active
+            // and the following check has been removed. However, as we have not deployed segwit yet we should retain this check for now. It can
+            // be removed at a later stage & the witnessEnabled flags no longer used.
+            // https://github.com/bitcoin/bitcoin/commit/fa7a6cf1b36284db70e941bd2915fd6edbb0f9d6?diff=split#diff-24efdb00bfbe56b140fb006b562cc70bL581
+
+            // Validation of the actual witness data, if applicable, is done later when signature verification is performed.
+
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.chainIndexer.Tip);
+            bool witnessEnabled = flags.ScriptFlags.HasFlag(ScriptVerify.Witness);
+
+            if (context.Transaction.HasWitness && !witnessEnabled)
+            {
+                this.logger.LogTrace("(-)[FAIL_NO_WITNESS_YET]");
+                context.State.Fail(MempoolErrors.NoWitnessYet).Throw();
+            }
 
             // Rather not work on nonstandard transactions (unless -testnet/-regtest)
             if (this.mempoolSettings.RequireStandard)
@@ -400,9 +424,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CheckStandardTransaction(context);
             }
 
-            // Only accept nLockTime-using transactions that can be mined in the next
-            // block; we don't want our mempool filled up with transactions that can't
-            // be mined yet.
+            // Only accept nLockTime-using transactions that can be mined in the next block; we don't want our mempool filled up with transactions that
+            // can't be mined yet.
             if (!CheckFinalTransaction(this.chainIndexer, this.dateTimeProvider, context.Transaction, MempoolValidator.StandardLocktimeVerifyFlags))
             {
                 this.logger.LogTrace("(-)[FAIL_NONSTANDARD]");
@@ -411,11 +434,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Validate the transaction is a standard transaction.
-        /// Checks the version number, transaction size, input signature size,
+        /// Validate the transaction is a standard transaction. Checks the version number, transaction size, input signature size,
         /// output script template, single output, & dust outputs.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp##L82-L144"/>
         /// </summary>
+        /// <remarks>Note that, unfortunately, this does not constitute everything that can be non-standard about a transaction.
+        /// For example, there may be script verification flags that are not consensus-mandatory but are part of the standardness checks.
+        /// These verify flags are checked elsewhere.</remarks>
         /// <param name="context">Current validation context.</param>
         private void CheckStandardTransaction(MempoolValidationContext context)
         {
@@ -426,22 +451,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.Version).Throw();
             }
 
+            // TODO: Move this into its own small rule that only PoS networks use.
             if (this.network.Consensus.IsProofOfStake)
             {
                 long adjustedTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
                 PosFutureDriftRule futureDriftRule = this.consensusRules.GetRule<PosFutureDriftRule>();
 
-                // nTime has different purpose from nLockTime but can be used in similar attacks
+                // nTime has different purpose from nLockTime but can be used in similar attacks.
                 if (tx.Time > adjustedTime + futureDriftRule.GetFutureDrift(adjustedTime))
                 {
                     context.State.Fail(MempoolErrors.TimeTooNew).Throw();
                 }
             }
 
-            // Extremely large transactions with lots of inputs can cost the network
-            // almost as much to process as they cost the sender in fees, because
-            // computing signature hashes is O(ninputs*txsize). Limiting transactions
-            // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
+            // Extremely large transactions with lots of inputs can cost the network almost as much to process as they cost the sender in fees, because
+            // computing signature hashes is O(ninputs*txsize). Limiting transactions to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
             int sz = GetTransactionWeight(tx, this.network.Consensus.Options);
             if (sz >= this.network.Consensus.Options.MaxStandardTxWeight)
             {
@@ -451,13 +475,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             foreach (TxIn txin in tx.Inputs)
             {
-                // Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed
-                // keys (remember the 520 byte limit on redeemScript size). That works
-                // out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)+3=1627
-                // bytes of scriptSig, which we round off to 1650 bytes for some minor
-                // future-proofing. That's also enough to spend a 20-of-20
-                // CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not
-                // considered standard.
+                // Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed keys (remember the 520 byte limit on redeemScript size). That works
+                // out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)+3=1627 bytes of scriptSig, which we round off to 1650 bytes for some minor
+                // future-proofing. That's also enough to spend a 20-of-20 CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not considered standard.
                 if (txin.ScriptSig.Length > 1650)
                 {
                     this.logger.LogTrace("(-)[FAIL_SCRIPTSIGSZ]");
@@ -475,7 +495,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxOut txout in tx.Outputs)
             {
                 ScriptTemplate script = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
-                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
+                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled)) https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     this.logger.LogTrace("(-)[FAIL_SCRIPT_PUBKEY]");
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
@@ -485,10 +505,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     dataOut++;
                 }
-                //else if ((script == PayToMultiSigTemplate.Instance) && !this.mempoolSettings.PermitBareMultisig)
-                //{
-                //    context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
-                //}
+                else if ((script.Type == TxOutType.TX_MULTISIG) && !this.mempoolSettings.PermitBareMultisig)
+                {
+                    context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
+                }
                 else if (txout.IsDust(this.minRelayTxFee))
                 {
                     this.logger.LogTrace("(-)[FAIL_DUST]");
@@ -496,7 +516,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            // only one OP_RETURN txout is permitted
+            // Only one OP_RETURN txout is permitted
             if (dataOut > 1)
             {
                 this.logger.LogTrace("(-)[FAIL_MULTI_OPRETURN]");

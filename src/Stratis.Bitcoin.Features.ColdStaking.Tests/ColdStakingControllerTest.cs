@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new CheckRateLimitMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
                 new CheckAncestorsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
                 new CheckReplacementMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
-                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory),
+                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.nodeDeployments, this.loggerFactory),
                 new CheckTxOutDustRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer,  this.loggerFactory)
             };
 
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(this.Network.Consensus.MempoolRules.Count, mempoolRules.Count);
 
             var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.chainIndexer,
-                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, mempoolRules, new NodeDeployments(this.Network, this.chainIndexer));
+                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, mempoolRules, this.nodeDeployments);
 
             // Create mempool manager.
             var mempoolPersistence = new Mock<IMempoolPersistence>();

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -142,7 +143,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Include the memory pool feature and related services in the full node.
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder.</param>
-        /// <param name="injectRules">Whether or not to inject the mempool rules now, or defer it to another feature.</param>
         /// <returns>Full node builder.</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {

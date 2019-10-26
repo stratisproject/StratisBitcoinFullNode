@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         private readonly string bitcoinDPath;
         private Process process;
 
-        public BitcoinCoreRunner(string dataDir, string bitcoinDPath)
-            : base(dataDir, null)
+        public BitcoinCoreRunner(string dataDir, string bitcoinDPath, bool useNewConfigStyle)
+            : base(dataDir, null, useNewConfigStyle)
         {
             this.bitcoinDPath = bitcoinDPath;
             this.Network = KnownNetworks.RegTest;

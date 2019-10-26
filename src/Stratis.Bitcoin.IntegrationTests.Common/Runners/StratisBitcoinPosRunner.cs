@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         {
             var settings = new NodeSettings(this.Network, ProtocolVersion.PROVEN_HEADER_VERSION, this.Agent, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
-            if (this.isGateway)
-                settings.MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION;
+            // For stratisX tests we need the minimum protocol version to be 70000.
+            settings.MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION;
 
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)

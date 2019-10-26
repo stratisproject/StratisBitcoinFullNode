@@ -1530,9 +1530,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (HdAddress address in addresses)
                 {
+                    // Track the P2PKH of this pubic key
                     this.scriptToAddressLookup[address.ScriptPubKey] = address;
+
+                    // Track the P2PK of this public key
                     if (address.Pubkey != null)
                         this.scriptToAddressLookup[address.Pubkey] = address;
+
+                    // Track the P2WPKH of this pubic key
+                    if (address.Bech32Address != null)
+                        this.scriptToAddressLookup[new BitcoinWitPubKeyAddress(address.Bech32Address, this.network).ScriptPubKey] = address;
                 }
             }
         }
