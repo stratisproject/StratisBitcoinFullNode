@@ -10,11 +10,17 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee.SerializationEntity;
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
     /// <summary>
-    /// Transation confirmation statistics.
+    /// Transaction confirmation statistics.
     /// </summary>
+    /// <remarks>
+    /// We will instantiate an instance of this class to track transactions that were
+    /// included in a block. We will lump transactions into a bucket according to their
+    /// approximate feerate and then track how long it took for those txs to be included in a block.
+    /// The tracking of unconfirmed (mempool) transactions is completely independent of the
+    /// historical tracking of transactions that have been confirmed in a block.
+    /// </remarks>
     public class TxConfirmStats
     {
-        /// <summary>Instance logger for logging messages.</summary>
         private readonly ILogger logger;
 
         /// <summary>
@@ -87,8 +93,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         /// <summary>Transactions still unconfirmed after MAX_CONFIRMS for each bucket</summary>
         private List<int> oldUnconfTxs;
-
-
+        
         /// <summary>
         /// Constructs an instance of the transaction confirmation stats object.
         /// </summary>
@@ -108,6 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         public void Initialize(List<double> defaultBuckets, IDictionary<double, int> defaultBucketMap,  int maxPeriods, double decay, int scale)
         {
             Guard.Assert(scale != 0);
+
             this.decay = decay;
             this.scale = scale;
             this.confAvg = new List<List<double>>();
@@ -121,19 +127,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 this.confAvg.Insert(i, Enumerable.Repeat(default(double), this.buckets.Count).ToList());
                 this.failAvg.Insert(i, Enumerable.Repeat(default(double), this.buckets.Count).ToList());
             }
-
-
+            
             this.txCtAvg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
             this.avg = new List<double>(Enumerable.Repeat(default(double), this.buckets.Count));
+
             ClearInMemoryCounters(this.buckets.Count);
         }
 
         private void ClearInMemoryCounters(int bucketsCount)
         {
             for (int i = 0; i < GetMaxConfirms(); i++)
-            {
                 this.unconfTxs.Insert(i, Enumerable.Repeat(default(int), bucketsCount).ToList());
-            }
+
             this.oldUnconfTxs = new List<int>(Enumerable.Repeat(default(int), bucketsCount));
         }
 
@@ -160,12 +165,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // blocksToConfirm is 1-based
             if (blocksToConfirm < 1)
                 return;
+
             int periodsToConfirm = (blocksToConfirm + this.scale - 1) / this.scale;
             int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
+
             for (int i = periodsToConfirm; i <= this.confAvg.Count; i++)
-            {
                 this.confAvg[i - 1][bucketindex]++;
-            }
+
             this.txCtAvg[bucketindex]++;
             this.avg[bucketindex] += val;
         }
@@ -181,6 +187,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
             int blockIndex = nBlockHeight % this.unconfTxs.Count;
             this.unconfTxs[blockIndex][bucketindex]++;
+
             return bucketindex;
         }
 
@@ -194,8 +201,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         {
             //nBestSeenHeight is not updated yet for the new block
             int blocksAgo = nBestSeenHeight - entryHeight;
+
             if (nBestSeenHeight == 0) // the BlockPolicyEstimator hasn't seen any blocks yet
                 blocksAgo = 0;
+
             if (blocksAgo < 0)
             {
                 this.logger.LogInformation($"Blockpolicy error, blocks ago is negative for mempool tx");
@@ -207,31 +216,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (this.oldUnconfTxs[bucketIndex] > 0)
                     this.oldUnconfTxs[bucketIndex]--;
                 else
-                {
-                    this.logger.LogInformation(
-                        $"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
-                }
+                    this.logger.LogInformation($"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
             }
             else
             {
                 int blockIndex = entryHeight % this.unconfTxs.Count;
+
                 if (this.unconfTxs[blockIndex][bucketIndex] > 0)
                     this.unconfTxs[blockIndex][bucketIndex]--;
                 else
-                {
-                    this.logger.LogInformation(
-                        $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
-                }
+                    this.logger.LogInformation($"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
             }
 
             if(!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
             {
                 Guard.Assert(this.scale != 0);
                 int periodsAgo = blocksAgo / this.scale;
+
                 for (int i = 0; i < periodsAgo && i < this.failAvg.Count; i++)
-                {
                     this.failAvg[i][bucketIndex]++;
-                }
             }
         }
 
@@ -245,8 +248,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             {
                 for (var i = 0; i < this.confAvg.Count; i++)
                     this.confAvg[i][j] = this.confAvg[i][j] * this.decay;
+
                 for (var i = 0; i < this.failAvg.Count; i++)
                     this.failAvg[i][j] = this.failAvg[i][j] * this.decay;
+
                 this.avg[j] = this.avg[j] * this.decay;
                 this.txCtAvg[j] = this.txCtAvg[j] * this.decay;
             }
@@ -263,8 +268,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="requireGreater">Return the lowest feerate such that all higher values pass minSuccess OR return the highest feerate such that all lower values fail minSuccess.</param>
         /// <param name="nBlockHeight">The current block height.</param>
         /// <returns></returns>
-        public double EstimateMedianVal(int confTarget, double sufficientTxVal, double successBreakPoint,
-            bool requireGreater, int nBlockHeight, EstimationResult result)
+        public double EstimateMedianVal(int confTarget, double sufficientTxVal, double successBreakPoint, bool requireGreater, int nBlockHeight, EstimationResult result)
         {
             // Counters for a bucket (or range of buckets)
             double nConf = 0; // Number of tx's confirmed within the confTarget
@@ -307,15 +311,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     curNearBucket = bucket;
                     newBucketRange = false;
                 }
+
                 curFarBucket = bucket;
                 nConf += this.confAvg[periodTarget - 1][bucket];
                 totalNum += this.txCtAvg[bucket];
                 failNum += this.failAvg[periodTarget - 1][bucket];
+
                 for (int confct = confTarget; confct < this.GetMaxConfirms(); confct++)
-                {
                     extraNum += this.unconfTxs[Math.Abs(nBlockHeight - confct) % bins][bucket];
-                }
+
                 extraNum += this.oldUnconfTxs[bucket];
+
                 // If we have enough transaction data points in this range of buckets,
                 // we can test for success
                 // (Only count the confirmed data points, so that each confirmation count
@@ -325,10 +331,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     double curPct = nConf / (totalNum + failNum + extraNum);
 
                     // Check to see if we are no longer getting confirmed at the success rate
-                    if ((requireGreater && curPct < successBreakPoint)||
-                        (!requireGreater && curPct > successBreakPoint))
+                    if ((requireGreater && curPct < successBreakPoint) || (!requireGreater && curPct > successBreakPoint))
                     {
-                        if (passing == true)
+                        if (passing)
                         {
                             // First time we hit a failure record the failed bucket
                             int failMinBucket =  Math.Min(curNearBucket, curFarBucket);
@@ -341,13 +346,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                             failBucket.LeftMempool = failNum;
                             passing = false;
                         }
+
                         continue;
                     }
-
-                    // Otherwise update the cumulative stats, and the bucket variables
-                    // and reset the counters
                     else
                     {
+                        // Otherwise update the cumulative stats, and the bucket variables and reset the counters
                         failBucket = new EstimatorBucket(); // Reset any failed bucket, currently passing
                         foundAnswer = true;
                         passing = true;
@@ -375,13 +379,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // and reporting the average which is less accurate
             int minBucket = Math.Min(bestNearBucket, bestFarBucket);
             int maxBucket = Math.Max(bestNearBucket, bestFarBucket);
+
             for (int j = minBucket; j <= maxBucket; j++)
             {
                 txSum += this.txCtAvg[j];
             }
+
             if (foundAnswer && txSum != 0)
             {
                 txSum = txSum / 2;
+
                 for (int j = minBucket; j <= maxBucket; j++)
                 {
                     if (this.txCtAvg[j] < txSum)
@@ -413,7 +420,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 failBucket.LeftMempool = failNum;
             }
 
-            this.logger.LogInformation(
+            this.logger.LogDebug(
                 $"FeeEst: {confTarget} {(requireGreater ? $">" : $"<")} " +
                 $"{successBreakPoint} decay {this.decay} feerate: {median}" +
                 $" from ({passBucket.Start} - {passBucket.End}" +
@@ -432,6 +439,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 result.Decay = this.decay;
                 result.Scale = this.scale;
             }
+
             return median;
         }
 
@@ -471,50 +479,41 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             try
             {
                 if (data == null)
-                {
                     throw new ArgumentNullException(nameof(data));
-                }
+
                 if(data.Decay <= 0 || data.Decay >= 1)
-                {
                     throw new ApplicationException("Corrupt estimates file. Decay must be between 0 and 1 (non-inclusive)");
-                }
+
                 if(data.Scale == 0)
-                {
                     throw new ApplicationException("Corrupt estimates file. Scale must be non-zero");
-                }
+
                 if(data.Avg.Count != this.buckets.Count)
-                {
                     throw new ApplicationException("Corrupt estimates file. Mismatch in feerate average bucket count");
-                }
+
                 if (data.TxCtAvg.Count != this.buckets.Count)
-                {
                     throw new ApplicationException("Corrupt estimates file. Mismatch in tx count bucket count");
-                }
+
                 int maxPeriods = data.ConfAvg.Count;
                 double maxConfirms = data.Scale * maxPeriods;
 
                 if (maxConfirms <= 0 || maxConfirms > 6 * 24 * 7)
-                {
                     throw new ApplicationException("Corrupt estimates file.  Must maintain estimates for between 1 and 1008 (one week) confirms");
-                }
+
                 for (int i = 0; i < maxPeriods; i++)
                 {
                     if (data.ConfAvg[i].Count != this.buckets.Count)
-                    {
                         throw new ApplicationException("Corrupt estimates file. Mismatch in feerate conf average bucket count");
-                    }
                 }
+
                 if (maxPeriods != data.FailAvg.Count)
-                {
                     throw new ApplicationException("Corrupt estimates file. Mismatch in confirms tracked for failures");
-                }
+
                 for (int i = 0; i < maxPeriods; i++)
                 {
                     if (data.FailAvg[i].Count != this.buckets.Count)
-                    {
                         throw new ApplicationException("Corrupt estimates file. Mismatch in one of failure average bucket counts");
-                    }
                 }
+
                 this.decay = data.Decay;
                 this.scale = data.Scale;
                 this.avg = data.Avg;

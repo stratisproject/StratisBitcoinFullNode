@@ -168,6 +168,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         public BlockPolicyEstimator(ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             Guard.Assert(MinBucketFeeRate > 0);
+
             this.lockObject = new object();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
@@ -180,21 +181,27 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
             int bucketIndex = 0;
-            for(double bucketBoundary = MinBucketFeeRate; bucketBoundary <= MaxBucketFeeRate; bucketBoundary *= FeeSpacing, bucketIndex++)
+
+            for (double bucketBoundary = MinBucketFeeRate; bucketBoundary <= MaxBucketFeeRate; bucketBoundary *= FeeSpacing, bucketIndex++)
             {
                 this.buckets.Add(bucketBoundary);
                 this.bucketMap.Add(bucketBoundary, bucketIndex);
             }
+
             this.buckets.Add(InfFeeRate);
             this.bucketMap.Add(InfFeeRate, bucketIndex);
+
             Guard.Assert(this.bucketMap.Count == this.buckets.Count);
 
             this.feeStats = new TxConfirmStats(this.logger);
             this.feeStats.Initialize(this.buckets, this.bucketMap, MedBlockPeriods, MedDecay, MedScale);
+
             this.shortStats = new TxConfirmStats(this.logger);
             this.shortStats.Initialize(this.buckets, this.bucketMap, ShortBlockPeriods, ShortDecay, ShortScale);
+
             this.longStats = new TxConfirmStats(this.logger);
             this.longStats.Initialize(this.buckets, this.bucketMap, LongBlockPeriods, LongDecay, LongScale);
+
             this.fileStorage = new FileStorage<BlockPolicyData>(nodeSettings.DataFolder.WalletPath);
         }
 
@@ -208,15 +215,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             lock (this.lockObject)
             {
                 if (nBlockHeight <= this.nBestSeenHeight)
-                    // Ignore side chains and re-orgs; assuming they are random
-                    // they don't affect the estimate.
-                    // And if an attacker can re-org the chain at will, then
-                    // you've got much bigger problems than "attacker can influence
-                    // transaction fees."
+                {
+                    // Ignore side chains and re-orgs; assuming they are random they don't affect the estimate.
+                    // And if an attacker can re-org the chain at will, then you've got much bigger problems than "attacker can influence transaction fees."
                     return;
+                }
 
-                // Must update nBestSeenHeight in sync with ClearCurrent so that
-                // calls to removeTx (via processBlockTx) correctly calculate age
+                // Must update nBestSeenHeight in sync with ClearCurrent so that calls to removeTx (via processBlockTx) correctly calculate age
                 // of unconfirmed txs to remove from tracking.
                 this.nBestSeenHeight = nBlockHeight;
 
@@ -231,8 +236,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 this.longStats.UpdateMovingAverages();
 
                 int countedTxs = 0;
+
                 // Repopulate the current block states
-                foreach (var entry in entries)
+                foreach (TxMempoolEntry entry in entries)
                 {
                     if (this.ProcessBlockTx(nBlockHeight, entry))
                         countedTxs++;
@@ -244,7 +250,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     this.logger.LogInformation("Blockpolicy first recorded height {0}", this.firstRecordedHeight);
                 }
 
-                // TODO: this makes too  much noise right now, put it back when logging is can be switched on by categories (and also consider disabling during IBD)
+                // TODO: this makes too much noise right now, put it back when logging is can be switched on by categories (and also consider disabling during IBD)
                 // Logging.Logs.EstimateFee.LogInformation(
                 // $"Blockpolicy after updating estimates for {countedTxs} of {entries.Count} txs in block, since last block {trackedTxs} of {trackedTxs + untrackedTxs} tracked, new mempool map size {mapMemPoolTxs.Count}");
 
@@ -268,10 +274,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // blocksToConfirm is 1-based, so a transaction included in the earliest
             // possible block has confirmation count of 1
             int blocksToConfirm = nBlockHeight - entry.EntryHeight;
+
             if (blocksToConfirm <= 0)
             {
-                // This can't happen because we don't process transactions from a block with a height
-                // lower than our greatest seen height
+                // This can't happen because we don't process transactions from a block with a height lower than our greatest seen height.
                 this.logger.LogInformation($"Blockpolicy error Transaction had negative blocksToConfirm");
                 return false;
             }
@@ -282,6 +288,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             this.shortStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             this.longStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
+
             return true;
         }
 
@@ -296,6 +303,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             {
                 int txHeight = entry.EntryHeight;
                 uint256 hash = entry.TransactionHash;
+
                 if (this.mapMemPoolTxs.ContainsKey(hash))
                 {
                     this.logger.LogInformation($"Blockpolicy error mempool tx {hash} already being tracked");
@@ -305,24 +313,27 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 if (txHeight != this.nBestSeenHeight)
                     return;
 
-                // Only want to be updating estimates when our blockchain is synced,
-                // otherwise we'll miscalculate how many blocks its taking to get included.
+                // Only want to be updating estimates when our blockchain is synced, otherwise we'll miscalculate how many blocks its taking to get included.
                 if (!validFeeEstimate)
                 {
                     this.untrackedTxs++;
                     return;
                 }
+
                 this.trackedTxs++;
 
-            // Feerates are stored and reported as BTC-per-kb:
-            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+                // Feerates are stored and reported as BTC-per-kb:
+                var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
                 this.mapMemPoolTxs.Add(hash, new TxStatsInfo());
                 this.mapMemPoolTxs[hash].blockHeight = txHeight;
+
                 int bucketIndex = this.feeStats.NewTx(txHeight, feeRate.FeePerK.Satoshi);
                 this.mapMemPoolTxs[hash].bucketIndex = bucketIndex;
+
                 int bucketIndex2 = this.shortStats.NewTx(txHeight, feeRate.FeePerK.Satoshi);
                 Guard.Assert(bucketIndex == bucketIndex2);
+
                 int bucketIndex3 = this.longStats.NewTx(txHeight, feeRate.FeePerK.Satoshi);
                 Guard.Assert(bucketIndex == bucketIndex3);
             }
