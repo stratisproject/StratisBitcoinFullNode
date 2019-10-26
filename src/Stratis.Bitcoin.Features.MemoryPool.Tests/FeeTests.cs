@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var dateTimeSet = new DateTimeProviderSet();
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
-            var mpool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var mpool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
             var basefee = new Money(2000);
             var deltaFee = new Money(100);

@@ -269,7 +269,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     timeutc = DateTimeProvider.Default.GetUtcNow()
                 };
 
-                this.mempool = new TxMempool(dateTimeProviderSet, new BlockPolicyEstimator(new MempoolSettings(this.NodeSettings), this.loggerFactory, this.NodeSettings), this.loggerFactory, this.NodeSettings);
+                this.mempool = new TxMempool(dateTimeProviderSet, new BlockPolicyEstimator(this.loggerFactory, this.NodeSettings), this.loggerFactory, this.NodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 var blocks = new List<NBitcoin.Block>();

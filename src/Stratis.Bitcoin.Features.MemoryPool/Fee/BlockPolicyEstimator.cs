@@ -587,7 +587,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 }
 
                 double median = -1;
-                EstimationResult tempResult = new EstimationResult();
+                var tempResult = new EstimationResult();
 
                 // Return failure if trying to analyze a target we're not tracking
                 if (confTarget <= 0 || confTarget > this.longStats.GetMaxConfirms())

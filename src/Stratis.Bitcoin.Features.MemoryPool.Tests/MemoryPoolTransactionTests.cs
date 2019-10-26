@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             }
 
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
-            var testPool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var testPool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
 
             // Nothing in pool, remove should do nothing:
             long poolSize = testPool.Size;
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void MempoolIndexingTest()
         {
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
-            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
 
             /* 3rd highest fee */
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void MempoolAncestorIndexingTest()
         {
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
-            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
 
             /* 3rd highest fee */
@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
             var dateTimeSet = new DateTimeProviderSet();
-            var pool = new TxMempool(dateTimeSet, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var pool = new TxMempool(dateTimeSet, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
             entry.Priority(10.0);
 
@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void MempoolConcurrencyTest()
         {
             NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
-            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var scheduler = new SchedulerLock();
             var rand = new Random();
 

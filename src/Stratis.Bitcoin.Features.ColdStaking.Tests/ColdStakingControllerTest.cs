@@ -138,8 +138,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.mempoolSettings = new MempoolSettings(this.nodeSettings);
             this.consensusSettings = new ConsensusSettings(this.nodeSettings);
-            this.txMemPool = new TxMempool(this.dateTimeProvider, new BlockPolicyEstimator(
-                new MempoolSettings(this.nodeSettings), this.loggerFactory, this.nodeSettings), this.loggerFactory, this.nodeSettings);
+            this.txMemPool = new TxMempool(this.dateTimeProvider, new BlockPolicyEstimator(this.loggerFactory, this.nodeSettings), this.loggerFactory, this.nodeSettings);
             this.chainIndexer = new ChainIndexer(this.Network);
             this.nodeDeployments = new NodeDeployments(this.Network, this.chainIndexer);
 
