@@ -99,7 +99,8 @@ namespace NBitcoin
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            int witnessScaleFactor)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
 
@@ -107,7 +108,7 @@ namespace NBitcoin
             // will result in all checks comparing size in bytes.
             this.MaxBlockWeight = maxBlockBaseSize;
             this.MaxBlockSerializedSize = maxBlockBaseSize;
-            this.WitnessScaleFactor = 1;
+            this.WitnessScaleFactor = witnessScaleFactor;
 
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
@@ -179,8 +180,9 @@ namespace NBitcoin
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost
-            ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            int witnessScaleFactor
+            ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, witnessScaleFactor)
         {
         }
 

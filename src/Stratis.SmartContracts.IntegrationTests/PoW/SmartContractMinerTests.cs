@@ -31,6 +31,7 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -71,6 +72,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 testContext.network,
                 new SenderRetriever(),
                 testContext.StateRoot,
+                new NodeDeployments(testContext.network, testContext.ChainIndexer),
                 testContext.executionCache, 
                 testContext.callDataSerializer);
         }

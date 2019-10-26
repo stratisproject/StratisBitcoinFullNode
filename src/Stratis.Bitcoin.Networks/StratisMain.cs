@@ -77,7 +77,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5
+                maxStandardTxSigopsCost: 20_000 / 5,
+                witnessScaleFactor: 4
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -89,7 +90,19 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new StratisBIP9Deployments()
             {
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2,
+                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28,
+                    new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
+
+                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0,
+                    new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
+
+                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1,
+                    new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
+
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2, 
                     new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
             };
@@ -128,6 +141,8 @@ namespace Stratis.Bitcoin.Networks
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
             );
+
+            this.Consensus.PosEmptyCoinbase = true;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
@@ -179,12 +194,9 @@ namespace Stratis.Bitcoin.Networks
             };
 
             this.Bech32Encoders = new Bech32Encoder[2];
-            // Bech32 is currently unsupported on Stratis - once supported uncomment lines below
-            //var encoder = new Bech32Encoder("bc");
-            //this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
-            //this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = null;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = null;
+            var encoder = new Bech32Encoder("strat");
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
             this.DNSSeeds = new List<DNSSeedData>
             {

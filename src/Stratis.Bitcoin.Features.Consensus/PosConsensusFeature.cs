@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Behaviors;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -87,6 +88,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
+            base.InitializeAsync();
+
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
 
             var defaultConsensusManagerBehavior = connectionParameters.TemplateBehaviors.FirstOrDefault(behavior => behavior is ConsensusManagerBehavior);

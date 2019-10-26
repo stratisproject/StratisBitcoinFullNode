@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Crypto;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -39,6 +42,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>The current network.</summary>
         protected readonly Network Network;
+
+        private readonly NodeDeployments nodeDeployments;
 
         /// <summary>Assembler options specific to the assembler e.g. <see cref="BlockDefinitionOptions.BlockMaxSize"/>.</summary>
         protected BlockDefinitionOptions Options;
@@ -116,7 +121,8 @@ namespace Stratis.Bitcoin.Features.Miner
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
-            Network network)
+            Network network,
+            NodeDeployments nodeDeployments)
         {
             this.ConsensusManager = consensusManager;
             this.DateTimeProvider = dateTimeProvider;
@@ -124,6 +130,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.Mempool = mempool;
             this.MempoolLock = mempoolLock;
             this.Network = network;
+            this.nodeDeployments = nodeDeployments;
 
             this.Options = minerSettings.BlockDefinitionOptions;
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
@@ -142,6 +149,13 @@ namespace Stratis.Bitcoin.Features.Miner
             this.height = this.ChainTip.Height + 1;
             var headerVersionRule = this.ConsensusManager.ConsensusRules.GetRule<HeaderVersionRule>();
             this.block.Header.Version = headerVersionRule.ComputeBlockVersion(this.ChainTip);
+        }
+
+        protected virtual bool IsWitnessEnabled(ChainedHeader chainedHeader)
+        {
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(chainedHeader);
+
+            return flags.ScriptFlags.HasFlag(ScriptVerify.Witness);
         }
 
         /// <summary>
@@ -193,25 +207,13 @@ namespace Stratis.Bitcoin.Features.Miner
             this.CreateCoinbase();
             this.ComputeBlockVersion();
 
-            // TODO: MineBlocksOnDemand
-            // -regtest only: allow overriding block.nVersion with
-            // -blockversion=N to test forking scenarios
-            //if (this.network. chainparams.MineBlocksOnDemand())
-            //    pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
-
             this.MedianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
             this.LockTimeCutoff = MempoolValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
                 ? this.MedianTimePast
                 : this.block.Header.Time;
 
-            // TODO: Implement Witness Code
             // Decide whether to include witness transactions
-            // This is only needed in case the witness softfork activation is reverted
-            // (which would require a very deep reorganization) or when
-            // -promiscuousmempoolflags is used.
-            // TODO: replace this with a call to main to assess validity of a mempool
-            // transaction (which in most cases can be a no-op).
-            this.IncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+            this.IncludeWitness = this.IsWitnessEnabled(chainTip);
 
             // Add transactions from the mempool
             this.AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated);
@@ -220,9 +222,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.LastBlockSize = this.BlockSize;
             this.LastBlockWeight = this.BlockWeight;
 
-            // TODO: Implement Witness Code
-            // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-
             var coinviewRule = this.ConsensusManager.ConsensusRules.GetRule<CoinViewRule>();
             this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
@@ -230,10 +229,36 @@ namespace Stratis.Bitcoin.Features.Miner
             // We need the fee details per transaction to be readily available in case we have to remove transactions from the block later.
             this.BlockTemplate.FeeDetails = this.inBlock.Select(i => new { i.TransactionHash, i.Fee }).ToDictionary(d => d.TransactionHash, d => d.Fee);
 
+            if (this.IncludeWitness)
+            {
+                this.AddOrUpdateCoinbaseCommitmentToBlock(this.block);
+            }
+
             int nSerializeSize = this.block.GetSerializedSize();
             this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.block.GetBlockWeight(this.Network.Consensus), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
             this.UpdateHeaders();
+        }
+
+        /// <summary>
+        /// Adds the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
+        /// </summary>
+        /// <param name="block">The new block that is being mined.</param>
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
+        public void AddOrUpdateCoinbaseCommitmentToBlock(Block block)
+        {
+            WitnessCommitmentsRule.ClearWitnessCommitment(this.Network, block);
+            WitnessCommitmentsRule.CreateWitnessCommitment(this.Network, block);
+        }
+
+        public virtual void BlockModified(ChainedHeader chainTip, Block block)
+        {
+            if (this.IncludeWitness)
+            {
+                this.AddOrUpdateCoinbaseCommitmentToBlock(this.block);
+            }
+
+            block.UpdateMerkleRoot();
         }
 
         /// <summary>

@@ -29,6 +29,11 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         void AddConnectedPeer(INetworkPeer peer);
 
+        /// <summary>
+        /// Add a <see cref="NetworkPeerServices"/> type requirement to the <see cref="PeerConnectorDiscovery"/> connector.
+        /// The required services are only applied to outbound nodes.
+        /// </summary>
+        /// <param name="services">The services to set as a requirement.</param>
         void AddDiscoveredNodesRequirement(NetworkPeerServices services);
 
         Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint);

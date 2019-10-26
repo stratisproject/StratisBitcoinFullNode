@@ -72,9 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
-            if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-                this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+            base.InitializeAsync();
 
             return Task.CompletedTask;
         }

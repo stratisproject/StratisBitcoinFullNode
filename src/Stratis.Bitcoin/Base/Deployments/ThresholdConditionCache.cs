@@ -88,8 +88,10 @@ namespace Stratis.Bitcoin.Base.Deployments
                 int currentHeight = indexPrev.Height + 1;
                 int period = this.consensus.MinerConfirmationWindow;
 
-                // First ancestor outside last confirmation window.
-                ChainedHeader periodStartsHeader = indexPrev.GetAncestor(indexPrev.Height - (currentHeight % period));
+                // First ancestor outside last confirmation window. If we haven't reached block height 2016 yet this will be the genesis block.
+                int periodStart = (indexPrev.Height - (currentHeight % period)) > 0 ? (indexPrev.Height - (currentHeight % period)) : 0;
+                ChainedHeader periodStartsHeader = indexPrev.GetAncestor(periodStart);
+
                 int periodEndsHeight = periodStartsHeader.Height + period;
 
                 var hexVersions = new Dictionary<string, int>();

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -46,8 +47,9 @@ namespace Stratis.Features.FederatedPeg
             IBlockExecutionResultCache executionCache,
             ICallDataSerializer callDataSerializer,
             MinerSettings minerSettings,
-            FederatedPegSettings federatedPegSettings)
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, executionCache, callDataSerializer, minerSettings)
+            FederatedPegSettings federatedPegSettings,
+            NodeDeployments nodeDeployments)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, executionCache, callDataSerializer, minerSettings, nodeDeployments)
         {
             this.payToMultisigScript = federatedPegSettings.MultiSigAddress.ScriptPubKey;
 

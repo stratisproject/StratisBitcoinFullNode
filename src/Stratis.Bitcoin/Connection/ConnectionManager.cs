@@ -225,6 +225,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogInformation(logs.ToString());
         }
 
+        /// <inheritdoc />
         public void AddDiscoveredNodesRequirement(NetworkPeerServices services)
         {
             IPeerConnector peerConnector = this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorDiscovery);
@@ -233,7 +234,8 @@ namespace Stratis.Bitcoin.Connection
                 peerConnector.Requirements.RequiredServices |= services;
                 foreach (INetworkPeer peer in peerConnector.ConnectorPeers)
                 {
-                    if (peer.Inbound) continue;
+                    if (peer.Inbound)
+                        continue;
 
                     if (!peer.PeerVersion.Services.HasFlag(services))
                         peer.Disconnect("The peer does not support the required services requirement.");

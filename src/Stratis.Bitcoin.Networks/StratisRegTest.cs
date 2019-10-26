@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
@@ -55,7 +56,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5
+                maxStandardTxSigopsCost: 20_000 / 5,
+                witnessScaleFactor: 4
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -68,7 +70,10 @@ namespace Stratis.Bitcoin.Networks
             var bip9Deployments = new StratisBIP9Deployments()
             {
                 // Always active on StratisRegTest.
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -106,16 +111,19 @@ namespace Stratis.Bitcoin.Networks
                 proofOfStakeReward: Money.COIN
             );
 
+            this.Consensus.PosEmptyCoinbase = true;
+
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
 
-            this.Checkpoints = new Dictionary<int, CheckpointInfo>()
-            {
-                // Fake checkpoint to prevent PH to be activated.
-                // TODO: Once PH is complete, this should be removed
-                // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
-            };
+            this.Bech32Encoders = new Bech32Encoder[2];
+            var encoder = new Bech32Encoder("tstrat");
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 

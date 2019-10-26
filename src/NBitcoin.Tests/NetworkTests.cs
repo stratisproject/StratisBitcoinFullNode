@@ -344,8 +344,8 @@ namespace NBitcoin.Tests
             Assert.Equal("STRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
+            Assert.Equal(new Bech32Encoder("strat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("strat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (63) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -377,7 +377,6 @@ namespace NBitcoin.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);
@@ -421,8 +420,8 @@ namespace NBitcoin.Tests
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
+            Assert.Equal(new Bech32Encoder("tstrat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("tstrat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -454,7 +453,6 @@ namespace NBitcoin.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);
@@ -498,8 +496,8 @@ namespace NBitcoin.Tests
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
-            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
+            Assert.Equal(new Bech32Encoder("tstrat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("tstrat").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -531,7 +529,6 @@ namespace NBitcoin.Tests
             Assert.True(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);
