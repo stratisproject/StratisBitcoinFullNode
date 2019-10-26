@@ -10,7 +10,7 @@ namespace NBitcoin
     /// </summary>
     public class Target
     {
-        static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
+        private static Target _Difficulty1 = new Target(new byte[] { 0x1d, 0x00, 0xff, 0xff });
         public static Target Difficulty1
         {
             get
@@ -37,16 +37,15 @@ namespace NBitcoin
         }
 
 
-
-        BigInteger _Target;
+        private BigInteger _Target;
 
         public Target(byte[] compact)
         {
             if(compact.Length == 4)
             {
-                var exp = compact[0];
+                byte exp = compact[0];
                 var val = new BigInteger(compact.SafeSubarray(1, 3));
-                _Target = val.ShiftLeft(8  * (exp - 3));
+                this._Target = val.ShiftLeft(8  * (exp - 3));
             }
             else
                 throw new FormatException("Invalid number of bytes");
@@ -54,13 +53,13 @@ namespace NBitcoin
         
         public Target(BigInteger target)
         {
-            _Target = target;
-            _Target = new Target(this.ToCompact())._Target;
+            this._Target = target;
+            this._Target = new Target(ToCompact())._Target;
         }
         public Target(uint256 target)
         {
-            _Target = new BigInteger(target.ToBytes(false));
-            _Target = new Target(this.ToCompact())._Target;
+            this._Target = new BigInteger(target.ToBytes(false));
+            this._Target = new Target(ToCompact())._Target;
         }
 
         public static implicit operator Target(uint a)
@@ -69,11 +68,13 @@ namespace NBitcoin
         }
         public static implicit operator uint(Target a)
         {
-            var bytes = a._Target.ToByteArray();
-            var val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
+            byte[] bytes = a._Target.ToByteArray();
+            byte[] val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
             Array.Reverse(val);
-            var exp = (byte)(bytes.Length);
-            var missing = 4 - val.Length;
+            byte exp = (byte)(bytes.Length);
+            if (exp == 1 && bytes[0] == 0)
+                exp = 0;
+            int missing = 4 - val.Length;
             if(missing > 0)
                 val = val.Concat(new byte[missing]).ToArray();
             if(missing < 0)
@@ -81,49 +82,48 @@ namespace NBitcoin
             return (uint)val[0] + (uint)(val[1] << 8) + (uint)(val[2] << 16) + (uint)(exp << 24);
         }
 
-        double? _Difficulty;
+        private double? _Difficulty;
         
         public double Difficulty
         {
             get
             {
-                if(_Difficulty == null)
+                if(this._Difficulty == null)
                 {
-                    var qr = Difficulty1._Target.DivideAndRemainder(_Target);
-                    var quotient = qr[0];
-                    var remainder = qr[1];
-                    var decimalPart = BigInteger.Zero;
+                    BigInteger[] qr = Difficulty1._Target.DivideAndRemainder(this._Target);
+                    BigInteger quotient = qr[0];
+                    BigInteger remainder = qr[1];
+                    BigInteger decimalPart = BigInteger.Zero;
                     for(int i = 0; i < 12; i++)
                     {
-                        var div = (remainder.Multiply(BigInteger.Ten)).Divide(_Target);
+                        BigInteger div = (remainder.Multiply(BigInteger.Ten)).Divide(this._Target);
 
                         decimalPart = decimalPart.Multiply(BigInteger.Ten);
                         decimalPart = decimalPart.Add(div);
 
-                        remainder = remainder.Multiply(BigInteger.Ten).Subtract(div.Multiply(_Target));
+                        remainder = remainder.Multiply(BigInteger.Ten).Subtract(div.Multiply(this._Target));
                     }
-                    _Difficulty = double.Parse(quotient.ToString() + "." + decimalPart.ToString(), new NumberFormatInfo()
+
+                    this._Difficulty = double.Parse(quotient.ToString() + "." + decimalPart.ToString(), new NumberFormatInfo()
                     {
                         NegativeSign = "-",
                         NumberDecimalSeparator = "."
                     });
                 }
-                return _Difficulty.Value;
+                return this._Difficulty.Value;
             }
         }
 
-
-
         public override bool Equals(object obj)
         {
-            Target item = obj as Target;
+            var item = obj as Target;
             if(item == null)
                 return false;
-            return _Target.Equals(item._Target);
+            return this._Target.Equals(item._Target);
         }
         public static bool operator ==(Target a, Target b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -137,12 +137,12 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _Target.GetHashCode();
+            return this._Target.GetHashCode();
         }
         
         public BigInteger ToBigInteger()
         {
-            return _Target;
+            return this._Target;
         }
 
         public uint ToCompact()
@@ -152,26 +152,27 @@ namespace NBitcoin
 
         public uint256 ToUInt256()
         {
-            return ToUInt256(_Target);
+            return ToUInt256(this._Target);
         }
 
         internal static uint256 ToUInt256(BigInteger input)
         {
-            var array = input.ToByteArray();
+            byte[] array = input.ToByteArray();
 
-            var missingZero = 32 - array.Length;
+            int missingZero = 32 - array.Length;
+
             if(missingZero < 0)
                 throw new InvalidOperationException("Awful bug, this should never happen");
+
             if(missingZero != 0)
-            {
-                array = new byte[missingZero].Concat(array).ToArray();
-            }
+                return new uint256(new byte[missingZero].Concat(array), false);
+
             return new uint256(array, false);
         }
 
         public override string ToString()
         {
-            return ToUInt256().ToString();
+            return this.ToUInt256().ToString();
         }
     }
 }

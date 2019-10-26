@@ -55,7 +55,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"testnet\",\n\t\"name\": \"testwallet\"\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"name\": \"testwallet\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/create",
@@ -74,37 +74,6 @@
 			"response": []
 		},
 		{
-			"name": "Create wallet - validation errors",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "\n{\n\t\"network\": \"Main\",\n\t\"localFilePath\": \"Wallets/TestWallet2.json\"\n}"
-				},
-				"url": {
-					"raw": "http://localhost:37220/api/wallet/create",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "37220",
-					"path": [
-						"api",
-						"wallet",
-						"create"
-					]
-				},
-				"description": "with errors"
-			},
-			"response": []
-		},
-		{
 			"name": "Load wallet",
 			"request": {
 				"method": "POST",
@@ -116,7 +85,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"name\": \"myFirstWadllet\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/load",
@@ -146,7 +115,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myRecoveredWallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2016-02-25 16:20:33\"\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"name\": \"myRecoveredWallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2016-02-25 16:20:33\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:37220/api/wallet/recover",

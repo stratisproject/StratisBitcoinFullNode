@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
 
@@ -15,9 +17,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         protected override void InitializeFixture()
         {
             this.Builder = NodeBuilder.Create(this);
-            this.Node = this.Builder.CreateBitcoinCoreNode();
+            this.Node = this.Builder.CreateBitcoinCoreNode().Start();
             this.InitializeTestWallet(this.Node.DataFolder);
-            this.Builder.StartAll();
 
             this.RpcClient = this.Node.CreateRPCClient();
 
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <seealso cref="https://github.com/MetacoSA/NBitcoin/blob/master/NBitcoin.Tests/RPCClientTests.cs">NBitcoin test CanGetTxOutAsyncFromRPC</seealso>
         /// </summary>
         [Fact]
-        public async void GetTxOutAsyncWithValidTxThenReturnsCorrectUnspentTxAsync()
+        public async Task GetTxOutAsyncWithValidTxThenReturnsCorrectUnspentTxAsync()
         {
             RPCClient rpc = this.rpcTestFixture.RpcClient;
             UnspentCoin[] unspent = rpc.ListUnspent();
@@ -152,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void InvalidCommandSendRPCException()
         {
-            RPCException ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
+            var ex = Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand("donotexist"));
             Assert.True(ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND);
         }
     }

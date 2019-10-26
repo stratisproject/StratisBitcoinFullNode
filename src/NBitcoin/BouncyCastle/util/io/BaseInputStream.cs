@@ -11,7 +11,7 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
         {
             get
             {
-                return !closed;
+                return !this.closed;
             }
         }
         public sealed override bool CanSeek
@@ -29,12 +29,12 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
             }
         }
 
-#if PORTABLE || NETCORE
+#if NETCORE
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                closed = true;
+                this.closed = true;
             }
             base.Dispose(disposing);
         }

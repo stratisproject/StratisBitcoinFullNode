@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <Version>1.0.2.0-beta</Version>
+    <Authors>Stratis Group Ltd.</Authors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DocumentationFile>bin\Debug\netcoreapp2.1\Stratis.Bitcoin.Features.SmartContracts.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="3.0.1" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
+    <PackageReference Include="Tracer.Fody" Version="3.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
+  </ItemGroup>
+
+</Project>

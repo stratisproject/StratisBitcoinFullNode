@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var session = new SchedulerLock();
             var collector = new List<int>();
 
-            var task = Task.Run(async () =>
+            Task task = Task.Run(async () =>
             {
                 await await session.WriteAsync(async () =>
                 {

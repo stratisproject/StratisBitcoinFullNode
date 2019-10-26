@@ -12,8 +12,10 @@ namespace NBitcoin.Tests
         {
             // This list contain types that inherit IBitcoinSerializable but don't have a public
             // parameterless constructor for a good reason so they should not fail this test.
-            List<Type> exceptionalTypes = new List<Type>()
+            var exceptionalTypes = new List<Type>()
             {
+                typeof(BlockHeader),
+                typeof(ProvenBlockHeader),
                 typeof(ExtKey),
                 typeof(ExtPubKey),
                 typeof(PubKey),
@@ -23,12 +25,12 @@ namespace NBitcoin.Tests
                 typeof(Protocol.CompactVarInt),
             };
 
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(x =>x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin"))
+            IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(x => x.FullName.Contains("Stratis") || x.FullName.Contains("NBitcoin"))
                 .SelectMany(s => s.GetTypes())
                 .Where(p => typeof(IBitcoinSerializable).IsAssignableFrom(p) && !p.IsInterface && p.IsClass);
 
-            foreach (var type in types)
+            foreach (Type type in types)
             {
                 if (exceptionalTypes.Contains(type))
                     continue;

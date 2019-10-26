@@ -15,14 +15,14 @@ namespace NBitcoin.BouncyCastle.Crypto
         {
             get
             {
-                return privateKey;
+                return this.privateKey;
             }
         }
 
         public override bool Equals(
             object obj)
         {
-            AsymmetricKeyParameter other = obj as AsymmetricKeyParameter;
+            var other = obj as AsymmetricKeyParameter;
 
             if(other == null)
             {
@@ -35,12 +35,12 @@ namespace NBitcoin.BouncyCastle.Crypto
         protected bool Equals(
             AsymmetricKeyParameter other)
         {
-            return privateKey == other.privateKey;
+            return this.privateKey == other.privateKey;
         }
 
         public override int GetHashCode()
         {
-            return privateKey.GetHashCode();
+            return this.privateKey.GetHashCode();
         }
     }
 }

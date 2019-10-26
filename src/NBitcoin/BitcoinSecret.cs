@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin.DataEncoders;
 
 namespace NBitcoin
@@ -12,7 +13,7 @@ namespace NBitcoin
 
         private static byte[] ToBytes(Key key)
         {
-            var keyBytes = key.ToBytes();
+            byte[] keyBytes = key.ToBytes();
             if(!key.IsCompressed)
                 return keyBytes;
             else
@@ -27,14 +28,14 @@ namespace NBitcoin
 
         public BitcoinPubKeyAddress GetAddress()
         {
-            return _address ?? (_address = PrivateKey.PubKey.GetAddress(Network));
+            return this._address ?? (this._address = this.PrivateKey.PubKey.GetAddress(this.Network));
         }
 
         public virtual KeyId PubKeyHash
         {
             get
             {
-                return PrivateKey.PubKey.Hash;
+                return this.PrivateKey.PubKey.Hash;
             }
         }
 
@@ -42,17 +43,18 @@ namespace NBitcoin
         {
             get
             {
-                return PrivateKey.PubKey;
+                return this.PrivateKey.PubKey;
             }
         }
 
         #region ISecret Members
-        Key _Key;
+
+        private Key _Key;
         public Key PrivateKey
         {
             get
             {
-                return _Key ?? (_Key = new Key(vchData, 32, IsCompressed));
+                return this._Key ?? (this._Key = new Key(this.vchData, 32, this.IsCompressed));
             }
         }
         #endregion
@@ -61,12 +63,12 @@ namespace NBitcoin
         {
             get
             {
-                if(vchData.Length != 33 && vchData.Length != 32)
+                if(this.vchData.Length != 33 && this.vchData.Length != 32)
                     return false;
 
-                if(vchData.Length == 33 && IsCompressed)
+                if(this.vchData.Length == 33 && this.IsCompressed)
                     return true;
-                if(vchData.Length == 32 && !IsCompressed)
+                if(this.vchData.Length == 32 && !this.IsCompressed)
                     return true;
                 return false;
             }
@@ -74,23 +76,23 @@ namespace NBitcoin
 
         public BitcoinEncryptedSecret Encrypt(string password)
         {
-            return PrivateKey.GetEncryptedBitcoinSecret(password, Network);
+            return this.PrivateKey.GetEncryptedBitcoinSecret(password, this.Network);
         }
 
 
         public BitcoinSecret Copy(bool? compressed)
         {
             if(compressed == null)
-                compressed = IsCompressed;
+                compressed = this.IsCompressed;
 
-            if(compressed.Value && IsCompressed)
+            if(compressed.Value && this.IsCompressed)
             {
-                return new BitcoinSecret(wifData, Network);
+                return new BitcoinSecret(this.wifData, this.Network);
             }
             else
             {
-                byte[] result = Encoders.Base58Check.DecodeData(wifData);
-                var resultList = result.ToList();
+                byte[] result = Encoders.Base58Check.DecodeData(this.wifData);
+                List<byte> resultList = result.ToList();
 
                 if(compressed.Value)
                 {
@@ -100,7 +102,7 @@ namespace NBitcoin
                 {
                     resultList.RemoveAt(resultList.Count - 1);
                 }
-                return new BitcoinSecret(Encoders.Base58Check.EncodeData(resultList.ToArray()), Network);
+                return new BitcoinSecret(Encoders.Base58Check.EncodeData(resultList.ToArray()), this.Network);
             }
         }
 
@@ -108,7 +110,7 @@ namespace NBitcoin
         {
             get
             {
-                return vchData.Length > 32 && vchData[32] == 1;
+                return this.vchData.Length > 32 && this.vchData[32] == 1;
             }
         }
 

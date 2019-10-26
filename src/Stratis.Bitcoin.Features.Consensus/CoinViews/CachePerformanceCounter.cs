@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -66,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Adds new sample to the number of missed cache queries.
         /// </summary>
         /// <param name="count">Number of missed queries to add.</param>
+        [NoTrace]
         public void AddMissCount(long count)
         {
             Interlocked.Add(ref this.missCount, count);
@@ -75,6 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Adds new sample to the number of hit cache queries.
         /// </summary>
         /// <param name="count">Number of hit queries to add.</param>
+        [NoTrace]
         public void AddHitCount(long count)
         {
             Interlocked.Add(ref this.hitCount, count);
@@ -84,6 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Creates a snapshot of the current state of the performance counter.
         /// </summary>
         /// <returns>Newly created snapshot.</returns>
+        [NoTrace]
         public CachePerformanceSnapshot Snapshot()
         {
             var snap = new CachePerformanceSnapshot(this.missCount, this.hitCount)
@@ -139,6 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="missCount">Number of cache queries for which the result was not found in the cache.</param>
         /// <param name="hitCount">Number of cache queries for which the result was found in the cache.</param>
+        [NoTrace]
         public CachePerformanceSnapshot(long missCount, long hitCount)
         {
             this.missCount = missCount;
@@ -156,6 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <returns>Snapshot of the difference between the two performance counter snapshots.</returns>
         /// <remarks>The two snapshots should be taken from a single performance counter.
         /// Otherwise the start times of the snapshots will be different, which is not allowed.</remarks>
+        [NoTrace]
         public static CachePerformanceSnapshot operator -(CachePerformanceSnapshot end, CachePerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -174,10 +180,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override string ToString()
         {
             long total = this.TotalMissCount + this.TotalHitCount;
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             builder.AppendLine("====Cache Stats(%)====");
             if (total != 0)
             {

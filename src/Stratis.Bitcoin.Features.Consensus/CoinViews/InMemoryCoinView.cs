@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using ReaderWriterLock = NBitcoin.ReaderWriterLock;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -10,48 +11,55 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// Coinview that holds all information in the memory, which is used in tests.
     /// </summary>
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
-    public class InMemoryCoinView : CoinView
+    public class InMemoryCoinView : ICoinView
     {
-        /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="blockHash"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="tipHash"/>.</summary>
         private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
 
         /// <summary>Information about unspent outputs mapped by transaction IDs the outputs belong to.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private readonly Dictionary<uint256, UnspentOutputs> unspents = new Dictionary<uint256, UnspentOutputs>();
 
-        /// <summary>Hash of the block headers of the tip of the coinview.</summary>
+        /// <summary>Hash of the block header which is the tip of the coinview.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
-        private uint256 blockHash;
+        private uint256 tipHash;
 
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        /// <param name="blockHash">Hash of the block headers of the tip of the coinview.</param>
-        public InMemoryCoinView(uint256 blockHash)
+        /// <param name="tipHash">Hash of the block headers of the tip of the coinview.</param>
+        public InMemoryCoinView(uint256 tipHash)
         {
-            this.blockHash = blockHash;
+            this.tipHash = tipHash;
         }
 
         /// <inheritdoc />
-        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+        public uint256 GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return this.tipHash;
+        }
+
+        /// <inheritdoc />
+        public FetchCoinsResponse FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
 
             using (this.lockobj.LockRead())
             {
-                UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
+                var result = new UnspentOutputs[txIds.Length];
                 for (int i = 0; i < txIds.Length; i++)
                 {
                     result[i] = this.unspents.TryGet(txIds[i]);
                     if (result[i] != null)
                         result[i] = result[i].Clone();
                 }
-                return Task.FromResult(new FetchCoinsResponse(result, this.blockHash));
+
+                return new FetchCoinsResponse(result, this.tipHash);
             }
         }
 
         /// <inheritdoc />
-        public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public void SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -59,10 +67,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (this.lockobj.LockWrite())
             {
-                if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
-                    return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
+                if ((this.tipHash != null) && (oldBlockHash != this.tipHash))
+                    throw new InvalidOperationException("Invalid oldBlockHash");
 
-                this.blockHash = nextBlockHash;
+                this.tipHash = nextBlockHash;
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     UnspentOutputs existing;
@@ -80,12 +88,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.unspents.Remove(unspent.TransactionId);
                 }
             }
-
-            return Task.FromResult(true);
         }
 
         /// <inheritdoc />
-        public override Task<uint256> Rewind()
+        public uint256 Rewind()
+        {
+            throw new NotImplementedException();
+        }
+
+        public RewindData GetRewindData(int height)
         {
             throw new NotImplementedException();
         }

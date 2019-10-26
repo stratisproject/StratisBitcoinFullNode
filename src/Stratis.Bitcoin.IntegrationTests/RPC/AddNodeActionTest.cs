@@ -1,7 +1,7 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+using System.Net.Sockets;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -14,12 +14,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             string testDirectory = CreateTestDir(this);
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
-            ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            fullNode.Start();
 
-            Assert.ThrowsAny<System.Net.Sockets.SocketException>(() => { controller.AddNode("0.0.0.0", "onetry"); });
-            Assert.Throws<ArgumentException>(() => { controller.AddNode("0.0.0.0", "notarealcommand"); });
-            Assert.Throws<FormatException>(() => { controller.AddNode("a.b.c.d", "onetry"); });
-            Assert.True(controller.AddNode("0.0.0.0", "remove"));
+            var controller = fullNode.NodeController<ConnectionManagerController>();
+
+            Assert.True(controller.AddNodeRPC("0.0.0.0", "add"));
+            Assert.Throws<ArgumentException>(() => { controller.AddNodeRPC("0.0.0.0", "notarealcommand"); });
+            Assert.ThrowsAny<SocketException>(() => { controller.AddNodeRPC("a.b.c.d", "onetry"); });
+            Assert.True(controller.AddNodeRPC("0.0.0.0", "remove"));
         }
 
         [Fact]
@@ -29,11 +31,11 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
 
-            ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            var controller = fullNode.NodeController<ConnectionManagerController>();
 
             var connectionManager = fullNode.NodeService<IConnectionManager>();
-            controller.AddNode("0.0.0.0", "add");
-            Assert.Single(connectionManager.ConnectionSettings.AddNode);
+            controller.AddNodeRPC("0.0.0.0", "add");
+            Assert.Single(connectionManager.ConnectionSettings.RetrieveAddNodes());
         }
     }
 }

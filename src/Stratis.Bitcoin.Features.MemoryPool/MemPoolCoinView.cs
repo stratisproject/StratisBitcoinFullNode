@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Memory pool coin view.
     /// Provides coin view representation of memory pool transactions via a backed coin view.
     /// </summary>
-    public class MempoolCoinView : CoinView, IBackedCoinView
+    public class MempoolCoinView : ICoinView, IBackedCoinView
     {
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(CoinView inner, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(ICoinView inner, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
             this.Inner = inner;
             this.memPool = memPool;
@@ -50,41 +51,52 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
-        public CoinView Inner { get; }
+        public ICoinView Inner { get; }
 
         /// <inheritdoc />
-        public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
-            uint256 nextBlockHash)
+        public void SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
+            uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+        public uint256 GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public override Task<uint256> Rewind()
+        public FetchCoinsResponse FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public uint256 Rewind()
+        {
+            throw new NotImplementedException();
+        }
+
+        public RewindData GetRewindData(int height)
         {
             throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Load the coin view for a memory pool transaction.
+        /// Load the coin view for a memory pool transaction. This should only be called
+        /// inside the memory pool lock.
         /// </summary>
         /// <param name="trx">Memory pool transaction.</param>
-        public async Task LoadViewAsync(Transaction trx)
+        public void LoadViewLocked(Transaction trx)
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = this.Inner.FetchCoins(ids.ToArray());
+
             // find coins currently in the mempool
-            List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
-            {
-                return this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
-            });
+            List<Transaction> mempoolcoins = this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
+
             IEnumerable<UnspentOutputs> memOutputs = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
             coins = new FetchCoinsResponse(coins.UnspentOutputs.Concat(memOutputs).ToArray(), coins.BlockHash);
 

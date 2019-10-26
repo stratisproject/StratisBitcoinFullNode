@@ -24,17 +24,17 @@ namespace NBitcoin.BouncyCastle.Asn1
         public override void AddObject(
             Asn1Encodable obj)
         {
-            new DerOutputStream(_bOut).WriteObject(obj);
+            new DerOutputStream(this._bOut).WriteObject(obj);
         }
 
         public override Stream GetRawOutputStream()
         {
-            return _bOut;
+            return this._bOut;
         }
 
         public override void Close()
         {
-            WriteDerEncoded(Asn1Tags.Constructed | Asn1Tags.Sequence, _bOut.ToArray());
+            WriteDerEncoded(Asn1Tags.Constructed | Asn1Tags.Sequence, this._bOut.ToArray());
         }
     }
 }

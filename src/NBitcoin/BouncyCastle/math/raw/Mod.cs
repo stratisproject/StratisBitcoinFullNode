@@ -89,7 +89,7 @@ namespace NBitcoin.BouncyCastle.Math.Raw
 
             do
             {
-                byte[] bytes = new byte[len << 2];
+                var bytes = new byte[len << 2];
                 RandomSource.NextBytes(bytes);
                 Pack.BE_To_UInt32(bytes, 0, s);
                 s[len - 1] &= m;

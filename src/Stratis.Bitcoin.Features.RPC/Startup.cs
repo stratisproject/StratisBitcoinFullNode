@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NBitcoin;
-using NBitcoin.JsonConverters;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -28,6 +30,10 @@ namespace Stratis.Bitcoin.Features.RPC
                 .AddJsonFormatters()
                 .AddFormatterMappings();
             services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, RPCJsonMvcOptionsSetup>());
+
+            // We have added API versioning to the URLs of the version2-onwards controllers, so to not break routing we need this line.
+            // Even though RPC will not actually use these endpoints.
+            services.Configure<RouteOptions>(options => options.ConstraintMap.Add("apiVersion", typeof(ApiVersionRouteConstraint)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -43,8 +49,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
             var fullNode = serviceProvider.GetService<FullNode>();
 
-            RPCAuthorization authorizedAccess = new RPCAuthorization();
-            var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
+            var authorizedAccess = new RPCAuthorization();
+            string cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
             File.WriteAllText(fullNode.DataFolder.RpcCookieFile, cookieStr);
             authorizedAccess.Authorized.Add(cookieStr);
             if (rpcSettings.RpcPassword != null)
@@ -53,7 +59,7 @@ namespace Stratis.Bitcoin.Features.RPC
             }
             authorizedAccess.AllowIp.AddRange(rpcSettings.AllowIp);
 
-            var options = GetMVCOptions(serviceProvider);
+            MvcJsonOptions options = GetMVCOptions(serviceProvider);
             Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
             app.UseMiddleware(typeof(RPCMiddleware), authorizedAccess);
             app.UseRPC();

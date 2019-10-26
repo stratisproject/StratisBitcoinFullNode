@@ -39,15 +39,15 @@ namespace NBitcoin.BouncyCastle.Crypto
                 throw new ArgumentNullException("cipher");
 
             this.cipher = cipher;
-            buf = new byte[cipher.GetBlockSize()];
-            bufOff = 0;
+            this.buf = new byte[cipher.GetBlockSize()];
+            this.bufOff = 0;
         }
 
         public override string AlgorithmName
         {
             get
             {
-                return cipher.AlgorithmName;
+                return this.cipher.AlgorithmName;
             }
         }
 
@@ -69,7 +69,7 @@ namespace NBitcoin.BouncyCastle.Crypto
 
             Reset();
 
-            cipher.Init(forEncryption, parameters);
+            this.cipher.Init(forEncryption, parameters);
         }
 
         /**
@@ -79,7 +79,7 @@ namespace NBitcoin.BouncyCastle.Crypto
         */
         public override int GetBlockSize()
         {
-            return cipher.GetBlockSize();
+            return this.cipher.GetBlockSize();
         }
 
         /**
@@ -93,8 +93,8 @@ namespace NBitcoin.BouncyCastle.Crypto
         public override int GetUpdateOutputSize(
             int length)
         {
-            int total = length + bufOff;
-            int leftOver = total % buf.Length;
+            int total = length + this.bufOff;
+            int leftOver = total % this.buf.Length;
             return total - leftOver;
         }
 
@@ -110,7 +110,7 @@ namespace NBitcoin.BouncyCastle.Crypto
             int length)
         {
             // Note: Can assume IsPartialBlockOkay is true for purposes of this calculation
-            return length + bufOff;
+            return length + this.bufOff;
         }
 
         /**
@@ -128,15 +128,15 @@ namespace NBitcoin.BouncyCastle.Crypto
             byte[] output,
             int outOff)
         {
-            buf[bufOff++] = input;
+            this.buf[this.bufOff++] = input;
 
-            if(bufOff == buf.Length)
+            if(this.bufOff == this.buf.Length)
             {
-                if((outOff + buf.Length) > output.Length)
+                if((outOff + this.buf.Length) > output.Length)
                     throw new DataLengthException("output buffer too short");
 
-                bufOff = 0;
-                return cipher.ProcessBlock(buf, 0, output, outOff);
+                this.bufOff = 0;
+                return this.cipher.ProcessBlock(this.buf, 0, output, outOff);
             }
 
             return 0;
@@ -153,7 +153,7 @@ namespace NBitcoin.BouncyCastle.Crypto
 
             if(outLength > 0 && pos < outLength)
             {
-                byte[] tmp = new byte[pos];
+                var tmp = new byte[pos];
                 Array.Copy(outBytes, 0, tmp, 0, pos);
                 outBytes = tmp;
             }
@@ -179,7 +179,7 @@ namespace NBitcoin.BouncyCastle.Crypto
 
             if(outLength > 0 && pos < outLength)
             {
-                byte[] tmp = new byte[pos];
+                var tmp = new byte[pos];
                 Array.Copy(outBytes, 0, tmp, 0, pos);
                 outBytes = tmp;
             }
@@ -223,27 +223,27 @@ namespace NBitcoin.BouncyCastle.Crypto
             }
 
             int resultLen = 0;
-            int gapLen = buf.Length - bufOff;
+            int gapLen = this.buf.Length - this.bufOff;
             if(length > gapLen)
             {
-                Array.Copy(input, inOff, buf, bufOff, gapLen);
-                resultLen += cipher.ProcessBlock(buf, 0, output, outOff);
-                bufOff = 0;
+                Array.Copy(input, inOff, this.buf, this.bufOff, gapLen);
+                resultLen += this.cipher.ProcessBlock(this.buf, 0, output, outOff);
+                this.bufOff = 0;
                 length -= gapLen;
                 inOff += gapLen;
-                while(length > buf.Length)
+                while(length > this.buf.Length)
                 {
-                    resultLen += cipher.ProcessBlock(input, inOff, output, outOff + resultLen);
+                    resultLen += this.cipher.ProcessBlock(input, inOff, output, outOff + resultLen);
                     length -= blockSize;
                     inOff += blockSize;
                 }
             }
-            Array.Copy(input, inOff, buf, bufOff, length);
-            bufOff += length;
-            if(bufOff == buf.Length)
+            Array.Copy(input, inOff, this.buf, this.bufOff, length);
+            this.bufOff += length;
+            if(this.bufOff == this.buf.Length)
             {
-                resultLen += cipher.ProcessBlock(buf, 0, output, outOff + resultLen);
-                bufOff = 0;
+                resultLen += this.cipher.ProcessBlock(this.buf, 0, output, outOff + resultLen);
+                this.bufOff = 0;
             }
             return resultLen;
         }
@@ -260,7 +260,7 @@ namespace NBitcoin.BouncyCastle.Crypto
                 int pos = DoFinal(outBytes, 0);
                 if(pos < outBytes.Length)
                 {
-                    byte[] tmp = new byte[pos];
+                    var tmp = new byte[pos];
                     Array.Copy(outBytes, 0, tmp, 0, pos);
                     outBytes = tmp;
                 }
@@ -297,7 +297,7 @@ namespace NBitcoin.BouncyCastle.Crypto
 
                 if(pos < outBytes.Length)
                 {
-                    byte[] tmp = new byte[pos];
+                    var tmp = new byte[pos];
                     Array.Copy(outBytes, 0, tmp, 0, pos);
                     outBytes = tmp;
                 }
@@ -330,17 +330,17 @@ namespace NBitcoin.BouncyCastle.Crypto
         {
             try
             {
-                if(bufOff != 0)
+                if(this.bufOff != 0)
                 {
-                    Check.DataLength(!cipher.IsPartialBlockOkay, "data not block size aligned");
-                    Check.OutputLength(output, outOff, bufOff, "output buffer too short for DoFinal()");
+                    Check.DataLength(!this.cipher.IsPartialBlockOkay, "data not block size aligned");
+                    Check.OutputLength(output, outOff, this.bufOff, "output buffer too short for DoFinal()");
 
                     // NB: Can't copy directly, or we may write too much output
-                    cipher.ProcessBlock(buf, 0, buf, 0);
-                    Array.Copy(buf, 0, output, outOff, bufOff);
+                    this.cipher.ProcessBlock(this.buf, 0, this.buf, 0);
+                    Array.Copy(this.buf, 0, output, outOff, this.bufOff);
                 }
 
-                return bufOff;
+                return this.bufOff;
             }
             finally
             {
@@ -354,10 +354,10 @@ namespace NBitcoin.BouncyCastle.Crypto
         */
         public override void Reset()
         {
-            Array.Clear(buf, 0, buf.Length);
-            bufOff = 0;
+            Array.Clear(this.buf, 0, this.buf.Length);
+            this.bufOff = 0;
 
-            cipher.Reset();
+            this.cipher.Reset();
         }
     }
 }

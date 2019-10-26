@@ -1,0 +1,47 @@
+==Deployments==
+
+List of proposed deployments for Stratis.
+
+State can be defined, active, failed. Dates are in UTC.
+
+{| class="wikitable sortable"
+! Name
+! Bit
+! StratisMain Start
+! StratisMain Expire
+! StratisMain State
+! StratisTest Start
+! StratisTest Expire
+! StratisTest State
+! BIPs
+|-
+| csv
+| 0
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| [[https://github.com/bitcoin/bips/edit/master/bip-0068.mediawiki|68]], [[https://github.com/bitcoin/bips/edit/master/bip-0112.mediawiki|112]], [[https://github.com/bitcoin/bips/edit/master/bip-0113.mediawiki|113]]
+|-
+| segwit
+| 1
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| [[https://github.com/bitcoin/bips/edit/master/bip-0141.mediawiki|141]], [[https://github.com/bitcoin/bips/edit/master/bip-0143.mediawiki|143]], [[https://github.com/bitcoin/bips/edit/master/bip-0147.mediawiki|147]]
+|-
+| coldstaking
+| 2
+| 2018-12-01 00:00:00
+| 2019-12-01 00:00:00
+| TBD
+| 2018-11-01 00:00:00
+| 2019-02-01 00:00:00
+| TBD
+| [[https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/coldstaking.md|ColdStaking]]
+|}

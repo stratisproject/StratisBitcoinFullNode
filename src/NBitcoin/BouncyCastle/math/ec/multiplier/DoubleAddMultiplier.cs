@@ -8,7 +8,7 @@
          */
         protected override ECPoint MultiplyPositive(ECPoint p, BigInteger k)
         {
-            ECPoint[] R = new ECPoint[] { p.Curve.Infinity, p };
+            var R = new ECPoint[] { p.Curve.Infinity, p };
 
             int n = k.BitLength;
             for(int i = 0; i < n; ++i)

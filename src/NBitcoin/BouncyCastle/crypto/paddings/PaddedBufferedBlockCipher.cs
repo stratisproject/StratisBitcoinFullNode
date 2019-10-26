@@ -28,8 +28,8 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
             this.cipher = cipher;
             this.padding = padding;
 
-            buf = new byte[cipher.GetBlockSize()];
-            bufOff = 0;
+            this.buf = new byte[cipher.GetBlockSize()];
+            this.bufOff = 0;
         }
 
         /**
@@ -59,8 +59,8 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
             SecureRandom initRandom = null;
 
             Reset();
-            padding.Init(initRandom);
-            cipher.Init(forEncryption, parameters);
+            this.padding.Init(initRandom);
+            this.cipher.Init(forEncryption, parameters);
         }
 
         /**
@@ -74,20 +74,20 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
         public override int GetOutputSize(
             int length)
         {
-            int total = length + bufOff;
-            int leftOver = total % buf.Length;
+            int total = length + this.bufOff;
+            int leftOver = total % this.buf.Length;
 
             if(leftOver == 0)
             {
-                if(forEncryption)
+                if(this.forEncryption)
                 {
-                    return total + buf.Length;
+                    return total + this.buf.Length;
                 }
 
                 return total;
             }
 
-            return total - leftOver + buf.Length;
+            return total - leftOver + this.buf.Length;
         }
 
         /**
@@ -101,12 +101,12 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
         public override int GetUpdateOutputSize(
             int length)
         {
-            int total = length + bufOff;
-            int leftOver = total % buf.Length;
+            int total = length + this.bufOff;
+            int leftOver = total % this.buf.Length;
 
             if(leftOver == 0)
             {
-                return total - buf.Length;
+                return total - this.buf.Length;
             }
 
             return total - leftOver;
@@ -129,13 +129,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
         {
             int resultLen = 0;
 
-            if(bufOff == buf.Length)
+            if(this.bufOff == this.buf.Length)
             {
-                resultLen = cipher.ProcessBlock(buf, 0, output, outOff);
-                bufOff = 0;
+                resultLen = this.cipher.ProcessBlock(this.buf, 0, output, outOff);
+                this.bufOff = 0;
             }
 
-            buf[bufOff++] = input;
+            this.buf[this.bufOff++] = input;
 
             return resultLen;
         }
@@ -173,30 +173,30 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
             }
 
             int resultLen = 0;
-            int gapLen = buf.Length - bufOff;
+            int gapLen = this.buf.Length - this.bufOff;
 
             if(length > gapLen)
             {
-                Array.Copy(input, inOff, buf, bufOff, gapLen);
+                Array.Copy(input, inOff, this.buf, this.bufOff, gapLen);
 
-                resultLen += cipher.ProcessBlock(buf, 0, output, outOff);
+                resultLen += this.cipher.ProcessBlock(this.buf, 0, output, outOff);
 
-                bufOff = 0;
+                this.bufOff = 0;
                 length -= gapLen;
                 inOff += gapLen;
 
-                while(length > buf.Length)
+                while(length > this.buf.Length)
                 {
-                    resultLen += cipher.ProcessBlock(input, inOff, output, outOff + resultLen);
+                    resultLen += this.cipher.ProcessBlock(input, inOff, output, outOff + resultLen);
 
                     length -= blockSize;
                     inOff += blockSize;
                 }
             }
 
-            Array.Copy(input, inOff, buf, bufOff, length);
+            Array.Copy(input, inOff, this.buf, this.bufOff, length);
 
-            bufOff += length;
+            this.bufOff += length;
 
             return resultLen;
         }
@@ -219,12 +219,12 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
             byte[] output,
             int outOff)
         {
-            int blockSize = cipher.GetBlockSize();
+            int blockSize = this.cipher.GetBlockSize();
             int resultLen = 0;
 
-            if(forEncryption)
+            if(this.forEncryption)
             {
-                if(bufOff == blockSize)
+                if(this.bufOff == blockSize)
                 {
                     if((outOff + 2 * blockSize) > output.Length)
                     {
@@ -233,22 +233,22 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
                         throw new OutputLengthException("output buffer too short");
                     }
 
-                    resultLen = cipher.ProcessBlock(buf, 0, output, outOff);
-                    bufOff = 0;
+                    resultLen = this.cipher.ProcessBlock(this.buf, 0, output, outOff);
+                    this.bufOff = 0;
                 }
 
-                padding.AddPadding(buf, bufOff);
+                this.padding.AddPadding(this.buf, this.bufOff);
 
-                resultLen += cipher.ProcessBlock(buf, 0, output, outOff + resultLen);
+                resultLen += this.cipher.ProcessBlock(this.buf, 0, output, outOff + resultLen);
 
                 Reset();
             }
             else
             {
-                if(bufOff == blockSize)
+                if(this.bufOff == blockSize)
                 {
-                    resultLen = cipher.ProcessBlock(buf, 0, buf, 0);
-                    bufOff = 0;
+                    resultLen = this.cipher.ProcessBlock(this.buf, 0, this.buf, 0);
+                    this.bufOff = 0;
                 }
                 else
                 {
@@ -259,9 +259,9 @@ namespace NBitcoin.BouncyCastle.Crypto.Paddings
 
                 try
                 {
-                    resultLen -= padding.PadCount(buf);
+                    resultLen -= this.padding.PadCount(this.buf);
 
-                    Array.Copy(buf, 0, output, outOff, resultLen);
+                    Array.Copy(this.buf, 0, output, outOff, resultLen);
                 }
                 finally
                 {

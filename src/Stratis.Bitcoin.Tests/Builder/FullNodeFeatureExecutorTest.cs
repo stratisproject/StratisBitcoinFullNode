@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             get
             {
-                Mock<IFullNodeFeature> feature = new Mock<IFullNodeFeature>();
+                var feature = new Mock<IFullNodeFeature>();
                 feature.Setup(f => f.ValidateDependencies(It.IsAny<IFullNodeServiceProvider>()))
                     .Throws(new MissingDependencyException());
 
@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             this.executor.Initialize();
 
-            this.feature.Verify(f => f.Initialize(), Times.Exactly(1));
-            this.feature2.Verify(f => f.Initialize(), Times.Exactly(1));
+            this.feature.Verify(f => f.InitializeAsync(), Times.Exactly(1));
+            this.feature2.Verify(f => f.InitializeAsync(), Times.Exactly(1));
         }
 
         [Fact]
@@ -70,9 +70,9 @@ namespace Stratis.Bitcoin.Tests.Builder
         {
             Assert.Throws<AggregateException>(() =>
             {
-                this.feature.Setup(f => f.Initialize())
+                this.feature.Setup(f => f.InitializeAsync())
                     .Throws(new ArgumentNullException());
-                this.feature2.Setup(f => f.Initialize())
+                this.feature2.Setup(f => f.InitializeAsync())
                     .Throws(new ArgumentNullException());
 
                 this.executor.Initialize();

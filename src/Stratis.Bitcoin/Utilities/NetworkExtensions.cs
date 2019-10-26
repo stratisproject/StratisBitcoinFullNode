@@ -14,10 +14,20 @@ namespace Stratis.Bitcoin.Utilities
         /// Determines whether this network is a test network.
         /// </summary>
         /// <param name="network">The network.</param>
-        /// <returns><c>true</c> if the specified network is test, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c> if the specified network is a test network, <c>false</c> otherwise.</returns>
         public static bool IsTest(this Network network)
         {
-            return network.Name.ToLowerInvariant().Contains("test");
+            return network.NetworkType == NetworkType.Testnet || network.NetworkType == NetworkType.Regtest;
+        }
+
+        /// <summary>
+        /// Determines whether this network is a regtest network.
+        /// </summary>
+        /// <param name="network">The network.</param>
+        /// <returns><c>true</c> if the specified network is a regtest network, <c>false</c> otherwise.</returns>
+        public static bool IsRegTest(this Network network)
+        {
+            return network.NetworkType == NetworkType.Regtest;
         }
 
         /// <summary>
@@ -27,6 +37,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if the specified network is bitcoin, <c>false</c> otherwise.</returns>
         public static bool IsBitcoin(this Network network)
         {
+            // TODO: Need a more elegant way of determining this
             return !network.Name.ToLowerInvariant().Contains("stratis");
         }
     }

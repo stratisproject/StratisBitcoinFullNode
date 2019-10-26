@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Utilities
         public static async Task RunAsync(this IFullNode node)
         {
             var done = new ManualResetEventSlim(false);
-            using (CancellationTokenSource cts = new CancellationTokenSource())
+            using (var cts = new CancellationTokenSource())
             {
                 Action shutdown = () =>
                 {
@@ -34,11 +35,11 @@ namespace Stratis.Bitcoin.Utilities
                             Console.WriteLine(exception.Message);
                         }
                     }
-                    
+
                     done.Wait();
                 };
 
-                var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
+                AssemblyLoadContext assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
                 assemblyLoadContext.Unloading += context => shutdown();
 
                 Console.CancelKeyPress += (sender, eventArgs) =>
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Utilities
 
                 try
                 {
-                    await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
+                    await node.RunAsync(cts.Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -64,42 +65,41 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="node">Full node to run.</param>
         /// <param name="cancellationToken">Cancellation token that triggers when the node should be shut down.</param>
-        /// <param name="shutdownMessage">Message to display on the console to instruct the user on how to invoke the shutdown.</param>
-        /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
-        public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
+        public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken)
         {
-            node.Start();
-            
-            if (!string.IsNullOrEmpty(shutdownMessage))
-            {
-                Console.WriteLine();
-                Console.WriteLine(shutdownMessage);
-                Console.WriteLine();
-            }
+            // node.NodeLifetime is not initialized yet. Use this temporary variable as to avoid side-effects to node.
+            var nodeLifetime = node.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
 
             cancellationToken.Register(state =>
             {
                 ((INodeLifetime)state).StopApplication();
             },
-            node.NodeLifetime);
+            nodeLifetime);
 
             var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            node.NodeLifetime.ApplicationStopping.Register(obj =>
+            nodeLifetime.ApplicationStopping.Register(obj =>
             {
                 var tcs = (TaskCompletionSource<object>)obj;
                 tcs.TrySetResult(null);
             }, waitForStop);
 
+            Console.WriteLine();
+            Console.WriteLine("Application starting, press Ctrl+C to cancel.");
+            Console.WriteLine();
+
+            node.Start();
+
+            Console.WriteLine();
+            Console.WriteLine("Application started, press Ctrl+C to stop.");
+            Console.WriteLine();
+
             await waitForStop.Task.ConfigureAwait(false);
 
             node.Dispose();
 
-            if (!string.IsNullOrEmpty(shutdownCompleteMessage))
-            {
-                Console.WriteLine();
-                Console.WriteLine(shutdownCompleteMessage);
-                Console.WriteLine();
-            }
+            Console.WriteLine();
+            Console.WriteLine("Application stopped.");
+            Console.WriteLine();
         }
     }
 }

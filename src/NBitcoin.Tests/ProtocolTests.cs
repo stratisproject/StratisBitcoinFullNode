@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NBitcoin.Tests
@@ -108,7 +107,7 @@ namespace NBitcoin.Tests
             _Server1.Dispose();
             _Server2.Dispose();
             */
-            foreach(var dispo in _Disposables)
+            foreach(IDisposable dispo in this._Disposables)
                 dispo.Dispose();
         }
 
@@ -116,10 +115,10 @@ namespace NBitcoin.Tests
 
         public static string NATRuleName = "NBitcoin Tests";
 
-        List<IDisposable> _Disposables = new List<IDisposable>();
+        private List<IDisposable> _Disposables = new List<IDisposable>();
         internal void AddDisposable(IDisposable disposable)
         {
-            _Disposables.Add(disposable);
+            this._Disposables.Add(disposable);
         }
     }
     public class ProtocolTests
@@ -708,4 +707,3 @@ namespace NBitcoin.Tests
 
 */    }
 }
-#endif

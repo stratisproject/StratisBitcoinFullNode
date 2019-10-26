@@ -1,14 +1,6 @@
-| Windows | Linux | OS X
+| Windows | MacOs | Ubuntu64
 | :---- | :------ | :---- |
-[![Windows build status][1]][2] | [![Linux build status][3]][4] | [![OS X build status][5]][6] | 
-
-[1]: https://ci.appveyor.com/api/projects/status/451tv98n7xvxm5ol/branch/master?svg=true
-[2]: https://ci.appveyor.com/project/stratis/stratisbitcoinfullnode
-[3]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
-[4]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
-[5]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
-[6]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
-
+| [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedWindowsContainer-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=4) | [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedmacOS-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=6) | [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedUbuntu1604-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=5)
 
 Stratis Bitcoin
 ===============
@@ -25,7 +17,8 @@ Stratis Bitcoin is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin)
 For Proof of Stake support on the Stratis token the node is using [NStratis](https://github.com/stratisproject/NStratis) which is a POS implementation of NBitcoin.  
 
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
-Join our community on [slack](https://stratisplatform.slack.com).  
+
+Join our community on [discord](https://discord.gg/9tDyfZs).  
 
 The design
 ----------
@@ -67,19 +60,28 @@ Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBi
 Running a FullNode
 ------------------
 
-Our full node is currently in alpha.  
+The master branch is actively developed and regularly committed to, and it can become unstable.  
+To compile a stable (production) release use any of the release tags form version 3.0.x.x and upwards.  
 
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
 cd StratisBitcoinFullNode\src
 
-dotnet restore
 dotnet build
 
 ```
 
-To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
-To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
+To run on the Bitcoin network:
+```
+cd Stratis.BitcoinD
+dotnet run
+```  
+
+To run on the Stratis network:
+```
+cd Stratis.StratisD
+dotnet run
+```  
 
 Getting Started Guide
 -----------
@@ -95,21 +97,8 @@ Check this guides for more info:
 * [Wiki Page](https://stratisplatform.atlassian.net/wiki/spaces/WIKI/overview)
 
 There is a lot to do and we welcome contributers developers and testers who want to get some Blockchain experience.
-You can find tasks at the issues/projects or visit our [C# dev](https://stratisplatform.slack.com/messages/csharp_development/) slack channel.
+You can find tasks at the issues/projects or visit the dev_general channel on [discord](https://discord.gg/9tDyfZs).
 
 Testing
 -------
 * [Testing Guidelines](Documentation/testing-guidelines.md)
-
-CI build
------------
-
-We use [AppVeyor](https://www.appveyor.com/) for our CI build and to create nuget packages.
-Every time someone pushes to the master branch or create a pull request on it, a build is triggered and new nuget packages are created.
-
-To skip a build, for example if you've made very minor changes, include the text **[skip ci]** or **[ci skip]** in your commits' comment (with the squared brackets).
-
-If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: 
-* [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.7-alpha.nupkg?job=Configuration%3A%20Release)
-
-

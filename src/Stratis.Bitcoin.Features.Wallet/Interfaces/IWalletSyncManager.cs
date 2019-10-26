@@ -22,27 +22,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Processes a new block.
         /// </summary>
-        /// <param name="block"></param>
+        /// <param name="block">The block to process.</param>
         void ProcessBlock(Block block);
 
         /// <summary>
         /// Processes a new transaction which is in a pending state (not included in a block).
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">The transaction to process.</param>
         void ProcessTransaction(Transaction transaction);
 
         /// <summary>
         /// Synchronize the wallet starting from the date passed as a parameter.
         /// </summary>
         /// <param name="date">The date from which to start the sync process.</param>
-        /// <returns>The height of the block sync will start from.</returns>
         void SyncFromDate(DateTime date);
 
         /// <summary>
         /// Synchronize the wallet starting from the height passed as a parameter.
         /// </summary>
         /// <param name="height">The height from which to start the sync process.</param>
-        /// <returns>The height of the block sync will start from.</returns>
         void SyncFromHeight(int height);
 
         /// <summary>

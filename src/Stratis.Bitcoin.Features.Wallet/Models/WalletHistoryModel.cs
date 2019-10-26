@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Utilities.JsonConverters;
@@ -81,6 +80,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonProperty(PropertyName = "timestamp")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Timestamp { get; set; }
+
+        /// <summary>
+        /// The index of this transaction in the block in which it is contained.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockIndex { get; set; }
     }
 
     public class PaymentDetailModel

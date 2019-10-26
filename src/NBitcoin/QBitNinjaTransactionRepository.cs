@@ -1,5 +1,4 @@
-﻿#if !NOHTTPCLIENT
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -7,14 +6,8 @@ namespace NBitcoin
 {
     public class QBitNinjaTransactionRepository : ITransactionRepository
     {
-        private readonly Uri _BaseUri;
-        public Uri BaseUri
-        {
-            get
-            {
-                return _BaseUri;
-            }
-        }
+        public readonly Uri BaseUri;
+        private readonly Network network;
 
         /// <summary>
         /// Use qbitninja public servers
@@ -22,38 +15,38 @@ namespace NBitcoin
         /// <param name="network"></param>
         public QBitNinjaTransactionRepository(Network network)
         {
-            if(network == null)
-                throw new ArgumentNullException("network");
-            _BaseUri = new Uri("http://" + (network == Network.Main ? "" : "t") + "api.qbit.ninja/");
+            this.network = network ?? throw new ArgumentNullException("network");
+
+            bool isTest = this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest;
+
+            this.BaseUri = new Uri("http://" + (isTest ? "t" : string.Empty) + "api.qbit.ninja/");
         }
 
         public QBitNinjaTransactionRepository(Uri baseUri)
             : this(baseUri.AbsoluteUri)
         {
-
         }
 
         public QBitNinjaTransactionRepository(string baseUri)
         {
-            if(!baseUri.EndsWith("/"))
+            if (!baseUri.EndsWith("/"))
                 baseUri += "/";
-            _BaseUri = new Uri(baseUri, UriKind.Absolute);
+
+            this.BaseUri = new Uri(baseUri, UriKind.Absolute);
         }
-
-
-
-        #region ITransactionRepository Members
 
         public async Task<Transaction> GetAsync(uint256 txId)
         {
-            using(HttpClient client = new HttpClient())
+            using (var client = new HttpClient())
             {
-                var tx = await client.GetAsync(BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
-                if(tx.StatusCode == System.Net.HttpStatusCode.NotFound)
+                HttpResponseMessage tx = await client.GetAsync(this.BaseUri.AbsoluteUri + "transactions/" + txId + "?format=raw").ConfigureAwait(false);
+                if (tx.StatusCode == System.Net.HttpStatusCode.NotFound)
                     return null;
+
                 tx.EnsureSuccessStatusCode();
-                var bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                return new Transaction(bytes);
+
+                byte[] bytes = await tx.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                return this.network.CreateTransaction(bytes);
             }
         }
 
@@ -61,8 +54,5 @@ namespace NBitcoin
         {
             return Task.FromResult(false);
         }
-
-        #endregion
     }
 }
-#endif

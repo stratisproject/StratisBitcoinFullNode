@@ -19,7 +19,7 @@ namespace NBitcoin.Protocol
 
         public byte[] GetString()
         {
-            return this.GetString(false);
+            return GetString(false);
         }
 
         public byte[] GetString(bool @unsafe)

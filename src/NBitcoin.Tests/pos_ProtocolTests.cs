@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-namespace NBitcoin.Tests
+﻿namespace NBitcoin.Tests
 {
     public class pos_ProtocolTests
     {
@@ -74,7 +73,7 @@ namespace NBitcoin.Tests
 
             foreach (var test in tests)
             {
-                var message = Network.StratisMain.ParseMessage(TestUtils.ParseHex(test.Message), test.Version);
+                var message = StratisNetworks.StratisMain.ParseMessage(TestUtils.ParseHex(test.Message), test.Version);
                 test.Test(message.Payload);
                 var bytes = message.ToBytes(test.Version);
                 var old = message;
@@ -182,7 +181,7 @@ namespace NBitcoin.Tests
                 cts.Cancel();
                 try
                 {
-                    var client = Node.Connect(Network.StratisMain, "127.0.0.1:" + node.ProtocolPort.ToString(), new NodeConnectionParameters()
+                    var client = Node.Connect(StratisNetworks.StratisMain, "127.0.0.1:" + node.ProtocolPort.ToString(), new NodeConnectionParameters()
                     {
                         ConnectCancellation = cts.Token
                     });
@@ -206,7 +205,7 @@ namespace NBitcoin.Tests
                 node.ConfigParameters.Add("whitelist", "127.0.0.1");
                 //node.Start();
                 //node.Generate(101);
-                //node.CreateRPCClient().SendToAddress(new Key().PubKey.GetAddress(Network.StratisMain), Money.Coins(1.0m));
+                //node.CreateRPCClient().SendToAddress(new Key().PubKey.GetAddress(StratisNetworks.StratisMain), Money.Coins(1.0m));
                 var client = node.CreateNodeClient();
                 client.VersionHandshake();
                 var transactions = client.GetMempoolTransactions();
@@ -490,7 +489,7 @@ namespace NBitcoin.Tests
                 node.VersionHandshake();
                 node.SendMessageAsync(new GetDataPayload(new InventoryVector()
                 {
-                    Hash = Network.StratisMain.GenesisHash,
+                    Hash = StratisNetworks.StratisMain.GenesisHash,
                     Type = InventoryType.MSG_BLOCK
                 }));
 
@@ -573,5 +572,3 @@ namespace NBitcoin.Tests
 
 */    }
 }
-#endif
-      

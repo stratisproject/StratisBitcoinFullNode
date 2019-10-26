@@ -5,14 +5,14 @@ using System.Text;
 
 namespace NBitcoin
 {
-    class BitReader
+    internal class BitReader
     {
-        BitArray array;
+        private BitArray array;
         public BitReader(byte[] data, int bitCount)
         {
-            BitWriter writer = new BitWriter();
+            var writer = new BitWriter();
             writer.Write(data, bitCount);
-            array = writer.ToBitArray();
+            this.array = writer.ToBitArray();
         }
 
         public BitReader(BitArray array)
@@ -24,8 +24,8 @@ namespace NBitcoin
 
         public bool Read()
         {
-            var v = array.Get(Position);
-            Position++;
+            bool v = this.array.Get(this.Position);
+            this.Position++;
             return v;
         }
 
@@ -40,7 +40,7 @@ namespace NBitcoin
             uint value = 0;
             for(int i = 0; i < bitCount; i++)
             {
-                var v = Read() ? 1U : 0U;
+                uint v = Read() ? 1U : 0U;
                 value += (v << i);
             }
             return value;
@@ -50,36 +50,36 @@ namespace NBitcoin
         {
             get
             {
-                return array.Length;
+                return this.array.Length;
             }
         }
 
         public BitArray ToBitArray()
         {
-            BitArray result = new BitArray(array.Length);
-            for(int i = 0; i < array.Length; i++)
-                result.Set(i, array.Get(i));
+            var result = new BitArray(this.array.Length);
+            for(int i = 0; i < this.array.Length; i++)
+                result.Set(i, this.array.Get(i));
             return result;
         }
 
         public BitWriter ToWriter()
         {
             var writer = new BitWriter();
-            writer.Write(array);
+            writer.Write(this.array);
             return writer;
         }
 
         public void Consume(int count)
         {
-            Position += count;
+            this.Position += count;
         }
 
         public bool Same(BitReader b)
         {
-            while(Position != Count && b.Position != b.Count)
+            while(this.Position != this.Count && b.Position != b.Count)
             {
-                var valuea = Read();
-                var valueb = b.Read();
+                bool valuea = Read();
+                bool valueb = b.Read();
                 if(valuea != valueb)
                     return false;
             }
@@ -88,30 +88,31 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder(array.Length);
-            for(int i = 0; i < Count; i++)
+            var builder = new StringBuilder(this.array.Length);
+            for(int i = 0; i < this.Count; i++)
             {
                 if(i != 0 && i % 8 == 0)
                     builder.Append(' ');
-                builder.Append(array.Get(i) ? "1" : "0");
+                builder.Append(this.array.Get(i) ? "1" : "0");
             }
             return builder.ToString();
         }
     }
-    class BitWriter
+
+    internal class BitWriter
     {
-        List<bool> values = new List<bool>();
+        private List<bool> values = new List<bool>();
         public int Count
         {
             get
             {
-                return values.Count;
+                return this.values.Count;
             }
         }
         public void Write(bool value)
         {
-            values.Insert(Position, value);
-            _Position++;
+            this.values.Insert(this.Position, value);
+            this._Position++;
         }
 
         internal void Write(byte[] bytes)
@@ -122,26 +123,26 @@ namespace NBitcoin
         public void Write(byte[] bytes, int bitCount)
         {
             bytes = SwapEndianBytes(bytes);
-            BitArray array = new BitArray(bytes);
-            values.InsertRange(Position, array.OfType<bool>().Take(bitCount));
-            _Position += bitCount;
+            var array = new BitArray(bytes);
+            this.values.InsertRange(this.Position, array.OfType<bool>().Take(bitCount));
+            this._Position += bitCount;
         }
 
         public byte[] ToBytes()
         {
-            var array = ToBitArray();
-            var bytes = ToByteArray(array);
+            BitArray array = ToBitArray();
+            byte[] bytes = ToByteArray(array);
             bytes = SwapEndianBytes(bytes);
             return bytes;
         }
 
         //BitArray.CopyTo do not exist in portable lib
-        static byte[] ToByteArray(BitArray bits)
+        private static byte[] ToByteArray(BitArray bits)
         {
             int arrayLength = bits.Length / 8;
             if(bits.Length % 8 != 0)
                 arrayLength++;
-            byte[] array = new byte[arrayLength];
+            var array = new byte[arrayLength];
 
             for(int i = 0; i < bits.Length; i++)
             {
@@ -155,19 +156,19 @@ namespace NBitcoin
 
         public BitArray ToBitArray()
         {
-            return new BitArray(values.ToArray());
+            return new BitArray(this.values.ToArray());
         }
 
         public int[] ToIntegers()
         {
-            var array = new BitArray(values.ToArray());
+            var array = new BitArray(this.values.ToArray());
             return Wordlist.ToIntegers(array);
         }
 
 
-        static byte[] SwapEndianBytes(byte[] bytes)
+        private static byte[] SwapEndianBytes(byte[] bytes)
         {
-            byte[] output = new byte[bytes.Length];
+            var output = new byte[bytes.Length];
             for(int i = 0; i < output.Length; i++)
             {
                 byte newByte = 0;
@@ -191,16 +192,16 @@ namespace NBitcoin
             }
         }
 
-        int _Position;
+        private int _Position;
         public int Position
         {
             get
             {
-                return _Position;
+                return this._Position;
             }
             set
             {
-                _Position = value;
+                this._Position = value;
             }
         }
 
@@ -236,12 +237,12 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder(values.Count);
-            for(int i = 0; i < Count; i++)
+            var builder = new StringBuilder(this.values.Count);
+            for(int i = 0; i < this.Count; i++)
             {
                 if(i != 0 && i % 8 == 0)
                     builder.Append(' ');
-                builder.Append(values[i] ? "1" : "0");
+                builder.Append(this.values[i] ? "1" : "0");
             }
             return builder.ToString();
         }

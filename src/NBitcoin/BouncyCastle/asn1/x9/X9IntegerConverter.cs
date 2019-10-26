@@ -22,13 +22,13 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
 
             if(qLength < bytes.Length)
             {
-                byte[] tmp = new byte[qLength];
+                var tmp = new byte[qLength];
                 Array.Copy(bytes, bytes.Length - tmp.Length, tmp, 0, tmp.Length);
                 return tmp;
             }
             else if(qLength > bytes.Length)
             {
-                byte[] tmp = new byte[qLength];
+                var tmp = new byte[qLength];
                 Array.Copy(bytes, 0, tmp, tmp.Length - bytes.Length, bytes.Length);
                 return tmp;
             }

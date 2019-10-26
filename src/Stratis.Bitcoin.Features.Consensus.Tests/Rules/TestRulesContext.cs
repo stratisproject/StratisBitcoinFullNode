@@ -1,18 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Xunit.Sdk;
 
@@ -23,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     internal class TestRulesContext
     {
-        public ConsensusRules Consensus { get; set; }
+        public ConsensusRuleEngine ConsensusRuleEngine { get; set; }
 
         public IDateTimeProvider DateTimeProvider { get; set; }
 
@@ -31,18 +37,54 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public NodeSettings NodeSettings { get; set; }
 
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
         public ICheckpoints Checkpoints { get; set; }
 
-        public T CreateRule<T>() where T : ConsensusRule, new()
+        public IChainState ChainState { get; set; }
+
+        public ISignals Signals { get; set; }
+        public IAsyncProvider AsyncProvider { get; internal set; }
+
+        public T CreateRule<T>() where T : ConsensusRuleBase, new()
         {
-            T rule = new T();
-            rule.Parent = this.Consensus;
+            var rule = new T();
+            rule.Parent = this.ConsensusRuleEngine;
             rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
             rule.Initialize();
+            return rule;
+        }
+    }
+
+    public class RuleRegistrationHelper
+    {
+        private readonly ConsensusRuleEngine ruleEngine;
+        private readonly ConsensusRulesContainer consensusRulesContainer;
+
+        public RuleRegistrationHelper(ConsensusRuleEngine ruleEngine, ConsensusRulesContainer consensusRulesContainer)
+        {
+            this.ruleEngine = ruleEngine;
+            this.consensusRulesContainer = consensusRulesContainer;
+        }
+
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
+        {
+            var rule = new T();
+
+            if (rule is IHeaderValidationConsensusRule validationConsensusRule)
+                this.consensusRulesContainer.HeaderValidationRules = new List<HeaderValidationConsensusRule>() { validationConsensusRule as HeaderValidationConsensusRule };
+            else if (rule is IIntegrityValidationConsensusRule consensusRule)
+                this.consensusRulesContainer.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>() { consensusRule as IntegrityValidationConsensusRule };
+            else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+                this.consensusRulesContainer.PartialValidationRules = new List<PartialValidationConsensusRule>() { partialValidationConsensusRule as PartialValidationConsensusRule };
+            else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+                this.consensusRulesContainer.FullValidationRules = new List<FullValidationConsensusRule>() { fullValidationConsensusRule as FullValidationConsensusRule };
+            else
+                throw new Exception("Rule type wasn't recognized.");
+
+            this.ruleEngine.SetupRulesEngineParent();
             return rule;
         }
     }
@@ -50,48 +92,58 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// <summary>
     /// Test consensus rules for unit tests.
     /// </summary>
-    public class TestConsensusRules : ConsensusRules
-    {        
-        private Mock<IRuleRegistration> ruleRegistration;
+    public class TestConsensusRules : ConsensusRuleEngine
+    {
+        public RuleContext RuleContext { get; set; }
 
-        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        private RuleRegistrationHelper ruleRegistrationHelper;
+
+        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer, NodeDeployments nodeDeployments,
+            ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, consensusRulesContainer)
         {
-            this.ruleRegistration = new Mock<IRuleRegistration>();
+            this.ruleRegistrationHelper = new RuleRegistrationHelper(this, consensusRulesContainer);
         }
 
-        public T RegisterRule<T>() where T : ConsensusRule, new()
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            T rule = new T();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(new List<ConsensusRule>() { rule });
+            return this.ruleRegistrationHelper.RegisterRule<T>();
+        }
 
-            this.Register(this.ruleRegistration.Object);
-            return rule;
-        }       
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        {
+            return this.RuleContext ?? new PowRuleContext();
+        }
+
+        public override uint256 GetBlockHash()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<RewindState> RewindAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
     /// Test PoS consensus rules for unit tests.
     /// </summary>
-    public class TestPosConsensusRules : PosConsensusRules
+    public class TestPosConsensusRules : PosConsensusRuleEngine
     {
-        private Mock<IRuleRegistration> ruleRegistration;
+        private RuleRegistrationHelper ruleRegistrationHelper;
 
-        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView uxtoSet, ILookaheadBlockPuller lookaheadBlockPuller, IStakeChain stakeChain, IStakeValidator stakeValidator)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, lookaheadBlockPuller, stakeChain, stakeValidator)
+        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
+            NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain,
+            IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache, IAsyncProvider asyncProvider, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, asyncProvider, consensusRulesContainer)
         {
-            this.ruleRegistration = new Mock<IRuleRegistration>();
+            this.ruleRegistrationHelper = new RuleRegistrationHelper(this, consensusRulesContainer);
         }
 
-        public T RegisterRule<T>() where T : ConsensusRule, new()
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            T rule = new T();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(new List<ConsensusRule>() { rule });
-
-            this.Register(this.ruleRegistration.Object);
-            return rule;
+            return this.ruleRegistrationHelper.RegisterRule<T>();
         }
     }
 
@@ -111,40 +163,45 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             string dataDir = Path.Combine("TestData", pathName);
             Directory.CreateDirectory(dataDir);
 
-            testRulesContext.NodeSettings = new NodeSettings(network, args:new[] { $"-datadir={dataDir}" });
+            testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
-            network.Consensus.Options = new PowConsensusOptions();
+            network.Consensus.Options = new ConsensusOptions();
 
-            ConsensusSettings consensusSettings = new ConsensusSettings().Load(testRulesContext.NodeSettings);
+            var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.Chain = new ConcurrentChain(network);
+            testRulesContext.ChainIndexer = new ChainIndexer(network);
+            testRulesContext.ChainState = new ChainState();
+            testRulesContext.Signals = new Signals.Signals(testRulesContext.LoggerFactory, null);
+            testRulesContext.AsyncProvider = new AsyncProvider(testRulesContext.LoggerFactory, testRulesContext.Signals, new NodeLifetime());
 
-            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
+            testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
+                testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState,
+                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default, testRulesContext.LoggerFactory), testRulesContext.AsyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
 
             return testRulesContext;
         }
 
-        public static Block MineBlock(Network network, ConcurrentChain chain)
+        public static Block MineBlock(Network network, ChainIndexer chainIndexer)
         {
-            var block = new Block();
+            var block = network.Consensus.ConsensusFactory.CreateBlock();
             var coinbase = new Transaction();
-            coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+            coinbase.AddInput(TxIn.CreateCoinbase(chainIndexer.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
             block.AddTransaction(coinbase);
 
             block.Header.Version = (int)ThresholdConditionCache.VersionbitsTopBits;
 
-            block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chain.Tip);
-            block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+            block.Header.HashPrevBlock = chainIndexer.Tip.HashBlock;
+            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chainIndexer.Tip);
+            block.Header.Bits = block.Header.GetWorkRequired(network, chainIndexer.Tip);
             block.Header.Nonce = 0;
 
-            var maxTries = int.MaxValue;
+            int maxTries = int.MaxValue;
 
-            while (maxTries > 0 && !block.CheckProofOfWork(network.Consensus))
+            while (maxTries > 0 && !block.CheckProofOfWork())
             {
                 ++block.Header.Nonce;
                 --maxTries;
@@ -155,6 +212,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             return block;
         }
-
     }
 }

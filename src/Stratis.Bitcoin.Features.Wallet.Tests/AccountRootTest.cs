@@ -7,9 +7,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetFirstUnusedAccountWithoutAccountsReturnsNull()
         {
-            var accountRoot = CreateAccountRoot(CoinType.Stratis);
+            AccountRoot accountRoot = CreateAccountRoot(CoinType.Stratis);
 
-            var result = accountRoot.GetFirstUnusedAccount();
+            HdAccount result = accountRoot.GetFirstUnusedAccount();
 
             Assert.Null(result);
         }
@@ -17,26 +17,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetFirstUnusedAccountReturnsAccountWithLowerIndexHavingNoAddresses()
         {
-            var accountRoot = CreateAccountRoot(CoinType.Stratis);
-            var unused = CreateAccount("unused1");
+            AccountRoot accountRoot = CreateAccountRoot(CoinType.Stratis);
+            HdAccount unused = CreateAccount("unused1");
             unused.Index = 2;
             accountRoot.Accounts.Add(unused);
 
-            var unused2 = CreateAccount("unused2");
+            HdAccount unused2 = CreateAccount("unused2");
             unused2.Index = 1;
             accountRoot.Accounts.Add(unused2);
 
-            var used = CreateAccount("used");
+            HdAccount used = CreateAccount("used");
             used.ExternalAddresses.Add(CreateAddress());
             used.Index = 3;
             accountRoot.Accounts.Add(used);
 
-            var used2 = CreateAccount("used2");
+            HdAccount used2 = CreateAccount("used2");
             used2.InternalAddresses.Add(CreateAddress());
             used2.Index = 4;
             accountRoot.Accounts.Add(used2);
 
-            var result = accountRoot.GetFirstUnusedAccount();
+            HdAccount result = accountRoot.GetFirstUnusedAccount();
 
             Assert.NotNull(result);
             Assert.Equal(1, result.Index);
@@ -46,20 +46,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAccountByNameWithMatchingNameReturnsAccount()
         {
-            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
+            AccountRoot accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
-            var result = accountRoot.GetAccountByName("Test");
+            HdAccount result = accountRoot.GetAccountByName("Test");
 
             Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
         }
 
         [Fact]
-        public void GetAccountByNameWithNonMatchingNameThrowsException()
+        public void GetAccountByNameWithNonMatchingNameReturnsNull()
         {
-            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
+            AccountRoot accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
-            Assert.Throws<WalletException>(() => { accountRoot.GetAccountByName("test"); });
+            Assert.Null(accountRoot.GetAccountByName("test"));
         }
     }
 }

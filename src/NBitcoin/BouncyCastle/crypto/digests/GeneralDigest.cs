@@ -19,34 +19,34 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         internal GeneralDigest()
         {
-            xBuf = new byte[4];
+            this.xBuf = new byte[4];
         }
 
         internal GeneralDigest(GeneralDigest t)
         {
-            xBuf = new byte[t.xBuf.Length];
+            this.xBuf = new byte[t.xBuf.Length];
             CopyIn(t);
         }
 
         protected void CopyIn(GeneralDigest t)
         {
-            Array.Copy(t.xBuf, 0, xBuf, 0, t.xBuf.Length);
+            Array.Copy(t.xBuf, 0, this.xBuf, 0, t.xBuf.Length);
 
-            xBufOff = t.xBufOff;
-            byteCount = t.byteCount;
+            this.xBufOff = t.xBufOff;
+            this.byteCount = t.byteCount;
         }
 
         public void Update(byte input)
         {
-            xBuf[xBufOff++] = input;
+            this.xBuf[this.xBufOff++] = input;
 
-            if(xBufOff == xBuf.Length)
+            if(this.xBufOff == this.xBuf.Length)
             {
-                ProcessWord(xBuf, 0);
-                xBufOff = 0;
+                ProcessWord(this.xBuf, 0);
+                this.xBufOff = 0;
             }
 
-            byteCount++;
+            this.byteCount++;
         }
 
         public void BlockUpdate(
@@ -60,15 +60,15 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             // fill the current word
             //
             int i = 0;
-            if(xBufOff != 0)
+            if(this.xBufOff != 0)
             {
                 while(i < length)
                 {
-                    xBuf[xBufOff++] = input[inOff + i++];
-                    if(xBufOff == 4)
+                    this.xBuf[this.xBufOff++] = input[inOff + i++];
+                    if(this.xBufOff == 4)
                     {
-                        ProcessWord(xBuf, 0);
-                        xBufOff = 0;
+                        ProcessWord(this.xBuf, 0);
+                        this.xBufOff = 0;
                         break;
                     }
                 }
@@ -88,22 +88,22 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             while(i < length)
             {
-                xBuf[xBufOff++] = input[inOff + i++];
+                this.xBuf[this.xBufOff++] = input[inOff + i++];
             }
 
-            byteCount += length;
+            this.byteCount += length;
         }
 
         public void Finish()
         {
-            long bitLength = (byteCount << 3);
+            long bitLength = (this.byteCount << 3);
 
             //
             // add the pad bytes.
             //
             Update((byte)128);
 
-            while(xBufOff != 0)
+            while(this.xBufOff != 0)
                 Update((byte)0);
             ProcessLength(bitLength);
             ProcessBlock();
@@ -111,9 +111,9 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public virtual void Reset()
         {
-            byteCount = 0;
-            xBufOff = 0;
-            Array.Clear(xBuf, 0, xBuf.Length);
+            this.byteCount = 0;
+            this.xBufOff = 0;
+            Array.Clear(this.xBuf, 0, this.xBuf.Length);
         }
 
         public int GetByteLength()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 
 namespace NBitcoin
 {
@@ -26,13 +27,13 @@ namespace NBitcoin
         {
             get
             {
-                return _Network;
+                return this._Network;
             }
         }
 
         protected Base58Data(string base64, Network expectedNetwork = null)
         {
-            _Network = expectedNetwork;
+            this._Network = expectedNetwork;
             SetString(base64);
         }
 
@@ -40,32 +41,32 @@ namespace NBitcoin
         {
             if(network == null)
                 throw new ArgumentNullException("network");
-            _Network = network;
+            this._Network = network;
             SetData(rawBytes);
         }
 
-        private void SetString(string psz)
+        private void SetString(string base64)
         {
-            if(_Network == null)
+            if(this._Network == null)
             {
-                _Network = Network.GetNetworkFromBase58Data(psz, Type);
-                if(_Network == null)
-                    throw new FormatException("Invalid " + this.GetType().Name);
+                this._Network = NetworkRegistration.GetNetworkFromBase58Data(base64, this.Type);
+                if(this._Network == null)
+                    throw new FormatException("Invalid " + GetType().Name);
             }
 
-            byte[] vchTemp = Encoders.Base58Check.DecodeData(psz);
-            var expectedVersion = _Network.GetVersionBytes(Type, true);
+            byte[] vchTemp = Encoders.Base58Check.DecodeData(base64);
+            byte[] expectedVersion = this._Network.GetVersionBytes(this.Type, true);
 
 
-            vchVersion = vchTemp.SafeSubarray(0, expectedVersion.Length);
-            if(!Utils.ArrayEqual(vchVersion, expectedVersion))
+            this.vchVersion = vchTemp.SafeSubarray(0, expectedVersion.Length);
+            if(!Utils.ArrayEqual(this.vchVersion, expectedVersion))
                 throw new FormatException("The version prefix does not match the expected one " + String.Join(",", expectedVersion));
 
-            vchData = vchTemp.SafeSubarray(expectedVersion.Length);
-            wifData = psz;
+            this.vchData = vchTemp.SafeSubarray(expectedVersion.Length);
+            this.wifData = base64;
 
-            if(!IsValid)
-                throw new FormatException("Invalid " + this.GetType().Name);
+            if(!this.IsValid)
+                throw new FormatException("Invalid " + GetType().Name);
 
         }
 
@@ -73,11 +74,11 @@ namespace NBitcoin
         private void SetData(byte[] vchData)
         {
             this.vchData = vchData;
-            this.vchVersion = _Network.GetVersionBytes(Type, true);
-            wifData = Encoders.Base58Check.EncodeData(vchVersion.Concat(vchData).ToArray());
+            this.vchVersion = this._Network.GetVersionBytes(this.Type, true);
+            this.wifData = Encoders.Base58Check.EncodeData(this.vchVersion.Concat(vchData).ToArray());
 
-            if(!IsValid)
-                throw new FormatException("Invalid " + this.GetType().Name);
+            if(!this.IsValid)
+                throw new FormatException("Invalid " + GetType().Name);
         }
 
 
@@ -98,27 +99,27 @@ namespace NBitcoin
 
         public string ToWif()
         {
-            return wifData;
+            return this.wifData;
         }
         public byte[] ToBytes()
         {
-            return vchData.ToArray();
+            return this.vchData.ToArray();
         }
         public override string ToString()
         {
-            return wifData;
+            return this.wifData;
         }
 
         public override bool Equals(object obj)
         {
-            Base58Data item = obj as Base58Data;
+            var item = obj as Base58Data;
             if(item == null)
                 return false;
             return ToString().Equals(item.ToString());
         }
         public static bool operator ==(Base58Data a, Base58Data b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;

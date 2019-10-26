@@ -24,9 +24,6 @@ using System.Threading.Tasks;
 using NBitcoin.BouncyCastle.Crypto.Parameters;
 using NBitcoin.Crypto.Internal;
 
-#if !USEBC
-#endif
-
 namespace NBitcoin.Crypto
 {
     // See http://www.tarsnap.com/scrypt/scrypt.pdf for algorithm details.
@@ -38,7 +35,7 @@ namespace NBitcoin.Crypto
     /// </summary>
     public static class SCrypt
     {
-        const int hLen = 32;
+        private const int hLen = 32;
 
         /// <summary>
         /// Computes a derived key.
@@ -140,7 +137,7 @@ namespace NBitcoin.Crypto
         ///     <c>null</c> will use as many threads as possible.
         /// </param>
         /// <returns>The derived key stream.</returns>
-#if !(USEBC || NETCORE)
+#if !NETCORE
         internal static Pbkdf2 GetStream(byte[] key, byte[] salt,
                                        int cost, int blockSize, int parallel, int? maxThreads)
         {
@@ -157,13 +154,13 @@ namespace NBitcoin.Crypto
             byte[] B = GetEffectivePbkdf2Salt(key, salt, cost, blockSize, parallel, maxThreads);
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha256Digest());
             mac.Init(new KeyParameter(key));
-            Pbkdf2 kdf = new Pbkdf2(mac, B, 1);
+            var kdf = new Pbkdf2(mac, B, 1);
             Security.Clear(B);
             return kdf;
         }
 #endif
 
-        static byte[] MFcrypt(byte[] P, byte[] S,
+        private static byte[] MFcrypt(byte[] P, byte[] S,
                               int cost, int blockSize, int parallel, int? maxThreads)
         {
             int MFLen = blockSize * 128;
@@ -180,14 +177,14 @@ namespace NBitcoin.Crypto
             Check.Range("parallel", parallel, 1, int.MaxValue / MFLen);
             Check.Range("maxThreads", (int)maxThreads, 1, int.MaxValue);
 
-#if !(USEBC || NETCORE)
+#if !NETCORE
             byte[] B = Pbkdf2.ComputeDerivedKey(new HMACSHA256(P), S, 1, parallel * MFLen);
 #else
             var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new NBitcoin.BouncyCastle.Crypto.Digests.Sha256Digest());
             mac.Init(new KeyParameter(P));
             byte[] B = Pbkdf2.ComputeDerivedKey(mac, S, 1, parallel * MFLen);
 #endif
-            uint[] B0 = new uint[B.Length / 4];
+            var B0 = new uint[B.Length / 4];
             for(int i = 0; i < B0.Length; i++)
             {
                 B0[i] = BitPacking.UInt32FromLEBytes(B, i * 4);
@@ -201,7 +198,7 @@ namespace NBitcoin.Crypto
 
             return B;
         }
-#if !(USEBC || NETCORE)
+#if !NETCORE
         static void ThreadSMixCalls(uint[] B0, int MFLen,
                                     int cost, int blockSize, int parallel, int maxThreads)
         {
@@ -234,7 +231,7 @@ namespace NBitcoin.Crypto
         }
 
 #else
-        static void ThreadSMixCalls(uint[] B0, int MFLen,
+        private static void ThreadSMixCalls(uint[] B0, int MFLen,
                                     int cost, int blockSize, int parallel, int maxThreads)
         {
             int current = 0;
@@ -253,7 +250,7 @@ namespace NBitcoin.Crypto
             };
 
             int threadCount = Math.Max(1, Math.Min(Environment.ProcessorCount, Math.Min(maxThreads, parallel)));
-            Task[] threads = new Task[threadCount - 1];
+            var threads = new Task[threadCount - 1];
             for(int i = 0 ; i < threads.Length ; i++)
             {
                 threads[i] = Task.Run(workerThread);
@@ -265,16 +262,16 @@ namespace NBitcoin.Crypto
             }
         }
 #endif
-        static void SMix(uint[] B, int Boffset, uint[] Bp, int Bpoffset, uint N, int r)
+        private static void SMix(uint[] B, int Boffset, uint[] Bp, int Bpoffset, uint N, int r)
         {
             uint Nmask = N - 1;
             int Bs = 16 * 2 * r;
-            uint[] scratch1 = new uint[16];
+            var scratch1 = new uint[16];
             uint[] scratchX = new uint[16], scratchY = new uint[Bs];
-            uint[] scratchZ = new uint[Bs];
+            var scratchZ = new uint[Bs];
 
-            uint[] x = new uint[Bs];
-            uint[][] v = new uint[N][];
+            var x = new uint[Bs];
+            var v = new uint[N][];
             for(int i = 0; i < v.Length; i++)
             {
                 v[i] = new uint[Bs];
@@ -310,7 +307,7 @@ namespace NBitcoin.Crypto
             Security.Clear(scratch1);
         }
 
-        static void BlockMix
+        private static void BlockMix
             (uint[] B,        // 16*2*r
              int Boffset,
              uint[] Bp,       // 16*2*r
@@ -353,12 +350,12 @@ namespace NBitcoin.Crypto
         //•Use of the parallelization parameter provides a modest opportunity for speedups in environments where concurrent threading is available - such environments would be selected for processes that must handle bulk quantities of encryption/decryption operations. Estimated time for an operation is in the tens or hundreds of milliseconds.
         public static byte[] BitcoinComputeDerivedKey(byte[] password, byte[] salt, int outputCount = 64)
         {
-            return NBitcoin.Crypto.SCrypt.ComputeDerivedKey(password, salt, 16384, 8, 8, 8, outputCount);
+            return ComputeDerivedKey(password, salt, 16384, 8, 8, 8, outputCount);
         }
 
         public static byte[] BitcoinComputeDerivedKey2(byte[] password, byte[] salt, int outputCount = 64)
         {
-            return NBitcoin.Crypto.SCrypt.ComputeDerivedKey(password, salt, 1024, 1, 1, 1, outputCount);
+            return ComputeDerivedKey(password, salt, 1024, 1, 1, 1, outputCount);
         }
 
         public static byte[] BitcoinComputeDerivedKey(string password, byte[] salt)

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AddAndEnumerationWithLessThanCapacityItemsWorksCorrectly()
         {
-            CircularArray<int> carray = new CircularArray<int>(8, false);
+            var carray = new CircularArray<int>(8, false);
 
             carray.Add(10, out int oldItem);
             carray.Add(20, out oldItem);
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AddAndEnumerationWithMoreThanCapacityItemsWorksCorrectly()
         {
-            CircularArray<int> carray = new CircularArray<int>(5, false);
+            var carray = new CircularArray<int>(5, false);
 
             carray.Add(10, out int oldItem);
             carray.Add(20, out oldItem);
@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EnumerationOrderWithLessThanCapacityItemsIsCorrect()
         {
-            int[] array = new int[] { 7, 5, 6 };
-            CircularArray<int> carray = new CircularArray<int>(5, false);
+            var array = new int[] { 7, 5, 6 };
+            var carray = new CircularArray<int>(5, false);
 
             // Add all items from normal array to circular array.
             for (int i = 0; i < array.Length; i++)
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Create a new array from enumeration over circular array.
             int index = 0;
-            int[] arrayCopy = new int[array.Length];
+            var arrayCopy = new int[array.Length];
             foreach (int item in carray)
                 arrayCopy[index++] = item;
 
@@ -87,8 +87,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EnumerationOrderMoreThanCapacityItemsIsCorrect()
         {
-            int[] array = new int[] { 7, 5, 6, 12, 1, 18, 8 };
-            CircularArray<int> carray = new CircularArray<int>(5, false);
+            var array = new int[] { 7, 5, 6, 12, 1, 18, 8 };
+            var carray = new CircularArray<int>(5, false);
 
             // Add all items from normal array to circular array.
             for (int i = 0; i < array.Length; i++)
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Create a new array from enumeration over circular array.
             int index = 0;
-            int[] arrayCopy = new int[carray.Capacity];
+            var arrayCopy = new int[carray.Capacity];
             foreach (int item in carray)
                 arrayCopy[index++] = item;
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AddReplacementsWorkCorrectly()
         {
-            CircularArray<IPHostEntry> carray = new CircularArray<IPHostEntry>(5);
+            var carray = new CircularArray<IPHostEntry>(5);
 
             IPHostEntry oldItem;
             bool replaced = carray.Add(new IPHostEntry { HostName = "a" }, out oldItem);

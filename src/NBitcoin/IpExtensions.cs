@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,132 +7,171 @@ namespace NBitcoin
 {
     public static class IpExtensions
     {
-#if WIN
-        interface ICompatibility
+        /// <summary>192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 Documentation. Not globally reachable.</summary>
+        public static bool IsRFC5737(this IPAddress address)
         {
-            IPAddress MapToIPv6(IPAddress address);
-            bool IsIPv4MappedToIPv6(IPAddress address);
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                (bytes[15 - 3] == 192 && bytes[15 - 2] == 0 && bytes[15 - 1] == 2) ||
+                (bytes[15 - 3] == 198 && bytes[15 - 2] == 51 && bytes[15 - 1] == 100) ||
+                (bytes[15 - 3] == 203 && bytes[15 - 2] == 0 && bytes[15 - 1] == 113));
         }
-        class MonoCompatibility : ICompatibility
-        {
-            public bool IsIPv4MappedToIPv6(IPAddress address)
-            {
-                return Utils.IsIPv4MappedToIPv6(address);
-            }
 
-            public IPAddress MapToIPv6(IPAddress address)
-            {
-                return Utils.MapToIPv6(address);
-            }
-        }
-        class WinCompatibility : ICompatibility
+        /// <summary>100.64.0.0/10 Shared Address Space. Not globally reachable.</summary>
+        public static bool IsRFC6598(this IPAddress address)
         {
-            public bool IsIPv4MappedToIPv6(IPAddress address)
-            {
-                return address.IsIPv4MappedToIPv6;
-            }
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 100 && (bytes[15 - 2] & 0xc0) == 64);
+        }
 
-            public IPAddress MapToIPv6(IPAddress address)
-            {
-                return address.MapToIPv6();
-            }
-        }
-        static ICompatibility _Compatibility;
-        static ICompatibility Compatibility
+        /// <summary>192.31.196.0/24 AS112-v4. Globally reachable.</summary>
+        public static bool IsRFC7535(this IPAddress address)
         {
-            get
-            {
-                if(_Compatibility == null)
-                {
-                    _Compatibility = IsRunningOnMono() ? (ICompatibility)new MonoCompatibility() : new WinCompatibility();
-                }
-                return _Compatibility;
-            }
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2]  == 31 && bytes[15 - 1] == 196);
         }
-#endif
+
+        /// <summary>192.52.193.0/24 AMT. Globally reachable.</summary>
+        public static bool IsRFC7450(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2] == 52 && bytes[15 - 1] == 193);
+        }
+
+        /// <summary>192.88.99.0/24 Deprecated (6to4 Relay Anycast).</summary>
+        public static bool IsRFC7526(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2] == 88 && bytes[15 - 1] == 99);
+        }
+
+        /// <summary>192.175.48.0/24 Direct Delegation AS112 Service. Globally reachable. Not globally unique.</summary>
+        public static bool IsRFC7534(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2] == 175 && bytes[15 - 1] == 48);
+        }
+
+        /// <summary>198.18.0.0/15 Benchmarking. Not globally reachable.</summary>
+        public static bool IsRFC2544(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 198 && (bytes[15 - 2] & 254) == 18);
+        }
+
+        /// <summary>240.0.0.0/4 Reserved.</summary>
+        public static bool IsRFC1112(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                (bytes[15 - 3] & 240) == 240);
+        }
+
+        /// <summary>192.0.0.0/24 IETF Protocol Assignments.</summary>
+        public static bool IsRFC6890(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2] == 0 && bytes[15 - 1] == 0);
+        }
+
         public static bool IsRFC1918(this IPAddress address)
         {
             address = address.EnsureIPv6();
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return address.IsIPv4() && (
                 bytes[15 - 3] == 10 ||
                 (bytes[15 - 3] == 192 && bytes[15 - 2] == 168) ||
                 (bytes[15 - 3] == 172 && (bytes[15 - 2] >= 16 && bytes[15 - 2] <= 31)));
         }
 
-
         public static bool IsIPv4(this IPAddress address)
         {
-            return address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork || address.IsIPv4MappedToIPv6Ex();
+            return address.AddressFamily == AddressFamily.InterNetwork || address.IsIPv4MappedToIPv6Ex();
         }
 
         public static bool IsRFC3927(this IPAddress address)
         {
             address = address.EnsureIPv6();
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return address.IsIPv4() && (bytes[15 - 3] == 169 && bytes[15 - 2] == 254);
         }
 
         public static bool IsRFC3849(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return bytes[15 - 15] == 0x20 && bytes[15 - 14] == 0x01 && bytes[15 - 13] == 0x0D && bytes[15 - 12] == 0xB8;
         }
 
         public static bool IsRFC3964(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return (bytes[15 - 15] == 0x20 && bytes[15 - 14] == 0x02);
         }
 
         public static bool IsRFC6052(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
-            byte[] pchRFC6052 = new byte[] { 0, 0x64, 0xFF, 0x9B, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] bytes = address.GetAddressBytes();
+            var pchRFC6052 = new byte[] { 0, 0x64, 0xFF, 0x9B, 0, 0, 0, 0, 0, 0, 0, 0 };
             return ((Utils.ArrayEqual(bytes, 0, pchRFC6052, 0, pchRFC6052.Length) ? 0 : 1) == 0);
         }
 
         public static bool IsRFC4380(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return (bytes[15 - 15] == 0x20 && bytes[15 - 14] == 0x01 && bytes[15 - 13] == 0 && bytes[15 - 12] == 0);
         }
 
         public static bool IsRFC4862(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
-            byte[] pchRFC4862 = new byte[] { 0xFE, 0x80, 0, 0, 0, 0, 0, 0 };
+            byte[] bytes = address.GetAddressBytes();
+            var pchRFC4862 = new byte[] { 0xFE, 0x80, 0, 0, 0, 0, 0, 0 };
             return ((Utils.ArrayEqual(bytes, 0, pchRFC4862, 0, pchRFC4862.Length) ? 0 : 1) == 0);
         }
 
         public static bool IsRFC4193(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return ((bytes[15 - 15] & 0xFE) == 0xFC);
         }
 
         public static bool IsRFC6145(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
-            byte[] pchRFC6145 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0 };
+            byte[] bytes = address.GetAddressBytes();
+            var pchRFC6145 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0 };
             return ((Utils.ArrayEqual(bytes, 0, pchRFC6145, 0, pchRFC6145.Length) ? 0 : 1) == 0);
         }
 
         public static bool IsRFC4843(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return (bytes[15 - 15] == 0x20 && bytes[15 - 14] == 0x01 && bytes[15 - 13] == 0x00 && (bytes[15 - 12] & 0xF0) == 0x10);
         }
 
         public static byte[] GetGroup(this IPAddress address)
         {
-            List<byte> vchRet = new List<byte>();
+            var vchRet = new List<byte>();
             int nClass = 2;
             int nStartByte = 0;
             int nBits = 16;
 
             address = address.EnsureIPv6();
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
 
             // all local addresses belong to the same group
             if(address.IsLocal())
@@ -143,7 +181,8 @@ namespace NBitcoin
             }
 
             // all unroutable addresses belong to the same group
-            if(!address.IsRoutable(true))
+            // RFC6598 is a special case that is not globally routable but still locally routable.
+            if(!address.IsRoutable(true) && !address.IsRFC6598())
             {
                 nClass = 0;
                 nBits = 0;
@@ -196,10 +235,10 @@ namespace NBitcoin
             return vchRet.ToArray();
         }
 
-        static byte[] pchOnionCat = new byte[] { 0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43 };
+        private static byte[] pchOnionCat = new byte[] { 0xFD, 0x87, 0xD8, 0x7E, 0xEB, 0x43 };
         public static bool IsTor(this IPAddress address)
         {
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return ((Utils.ArrayEqual(bytes, 0, pchOnionCat, 0, pchOnionCat.Length) ? 0 : 1) == 0);
         }
         public static IPAddress EnsureIPv6(this IPAddress address)
@@ -209,7 +248,7 @@ namespace NBitcoin
             return address.MapToIPv6Ex();
         }
 
-        static bool? _IsRunningOnMono;
+        private static bool? _IsRunningOnMono;
         public static bool IsRunningOnMono()
         {
             if(_IsRunningOnMono == null)
@@ -219,32 +258,24 @@ namespace NBitcoin
 
         public static IPAddress MapToIPv6Ex(this IPAddress address)
         {
-#if WIN
-            return Compatibility.MapToIPv6(address);
-#else
             return Utils.MapToIPv6(address);
-#endif
         }
+
         public static bool IsIPv4MappedToIPv6Ex(this IPAddress address)
         {
-#if WIN
-            return Compatibility.IsIPv4MappedToIPv6(address);
-#else
             return Utils.IsIPv4MappedToIPv6(address);
-#endif
-
         }
 
         public static bool IsLocal(this IPAddress address)
         {
             address = address.EnsureIPv6();
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             // IPv4 loopback
             if(address.IsIPv4() && (bytes[15 - 3] == 127 || bytes[15 - 3] == 0))
                 return true;
 
             // IPv6 loopback (::1/128)
-            byte[] pchLocal = new byte[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+            var pchLocal = new byte[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
             if((Utils.ArrayEqual(bytes, 0, pchLocal, 0, 16) ? 0 : 1) == 0)
                 return true;
 
@@ -254,32 +285,39 @@ namespace NBitcoin
         public static bool IsMulticast(this IPAddress address)
         {
             address = address.EnsureIPv6();
-            var bytes = address.GetAddressBytes();
+            byte[] bytes = address.GetAddressBytes();
             return (address.IsIPv4() && (bytes[15 - 3] & 0xF0) == 0xE0)
                    || (bytes[15 - 15] == 0xFF);
         }
 
         /// <summary>
-        /// Specific IP address ranges that are reserved specifically as non - routable addresses to be used in 
-        /// private networks: 10.0.0.0 through 10.255.255.255. 172.16.0.0 through 172.32.255.255. 192.168.0.0 
+        /// Specific IP address ranges that are reserved specifically as non - routable addresses to be used in
+        /// private networks: 10.0.0.0 through 10.255.255.255. 172.16.0.0 through 172.32.255.255. 192.168.0.0
         /// through 192.168.255.255.
         /// </summary>
         public static bool IsRoutable(this IPAddress address, bool allowLocal)
         {
             return address.IsValid() && !(
                                             (!allowLocal && address.IsRFC1918()) ||
+                                            address.IsRFC6890() ||
+                                            address.IsRFC5737() ||
+                                            address.IsRFC6598() ||
+                                            address.IsRFC7534() ||
+                                            address.IsRFC2544() ||
+                                            address.IsRFC1112() ||
                                             address.IsRFC3927() ||
                                             address.IsRFC4862() ||
                                             (address.IsRFC4193() && !address.IsTor()) ||
                                             address.IsRFC4843() || (!allowLocal && address.IsLocal())
                                             );
         }
+
         public static bool IsValid(this IPAddress address)
         {
             address = address.EnsureIPv6();
-            var ip = address.GetAddressBytes();
+            byte[] ip = address.GetAddressBytes();
             // unspecified IPv6 address (::/128)
-            byte[] ipNone = new byte[16];
+            var ipNone = new byte[16];
             if((Utils.ArrayEqual(ip, 0, ipNone, 0, 16) ? 0 : 1) == 0)
                 return false;
 
@@ -302,4 +340,3 @@ namespace NBitcoin
         }
     }
 }
-#endif

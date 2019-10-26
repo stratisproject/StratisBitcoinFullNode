@@ -77,10 +77,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void LockAndLockAsync_PreventConcurrentExecution()
         {
-            WorkerContext context = new WorkerContext();
+            var context = new WorkerContext();
 
             int taskCount = 20;
-            Task[] tasks = new Task[taskCount];
+            var tasks = new Task[taskCount];
             for (int i = 0; i < taskCount; i += 2)
             {
                 // Start one task that will use the lock in async environment.
@@ -137,10 +137,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution()
         {
-            WorkerContext context = new WorkerContext(5000);
+            var context = new WorkerContext(5000);
 
             int taskCount = 20;
-            Task[] tasks = new Task[taskCount];
+            var tasks = new Task[taskCount];
             for (int i = 0; i < taskCount; i += 2)
             {
                 // Start one task that will use the lock in async environment.

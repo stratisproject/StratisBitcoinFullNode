@@ -37,7 +37,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return identifier;
+                return this.identifier;
             }
         }
 
@@ -53,7 +53,7 @@ namespace NBitcoin.BouncyCastle.Asn1
          */
         public virtual bool On(DerObjectIdentifier stem)
         {
-            string id = Id, stemId = stem.Id;
+            string id = this.Id, stemId = stem.Id;
             return id.Length > stemId.Length && id[stemId.Length] == '.' && Platform.StartsWith(id, stemId);
         }
 
@@ -67,7 +67,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             Stream outputStream,
             long fieldValue)
         {
-            byte[] result = new byte[9];
+            var result = new byte[9];
             int pos = 8;
             result[pos] = (byte)(fieldValue & 0x7f);
             while(fieldValue >= (1L << 7))
@@ -90,7 +90,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             else
             {
                 BigInteger tmpValue = fieldValue;
-                byte[] tmp = new byte[byteCount];
+                var tmp = new byte[byteCount];
                 for(int i = byteCount - 1; i >= 0; i--)
                 {
                     tmp[i] = (byte)((tmpValue.IntValue & 0x7f) | 0x80);
@@ -103,13 +103,13 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         protected override int Asn1GetHashCode()
         {
-            return identifier.GetHashCode();
+            return this.identifier.GetHashCode();
         }
 
         protected override bool Asn1Equals(
             Asn1Object asn1Object)
         {
-            DerObjectIdentifier other = asn1Object as DerObjectIdentifier;
+            var other = asn1Object as DerObjectIdentifier;
 
             if(other == null)
                 return false;
@@ -119,7 +119,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         public override string ToString()
         {
-            return identifier;
+            return this.identifier;
         }
 
         private static bool IsValidBranchID(
@@ -171,7 +171,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         private static string MakeOidStringFromBytes(
             byte[] bytes)
         {
-            StringBuilder objId = new StringBuilder();
+            var objId = new StringBuilder();
             long value = 0;
             BigInteger bigValue = null;
             bool first = true;

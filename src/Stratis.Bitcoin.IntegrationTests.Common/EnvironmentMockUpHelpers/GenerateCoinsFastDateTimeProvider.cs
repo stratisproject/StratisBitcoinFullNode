@@ -1,5 +1,6 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -10,27 +11,32 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
     /// This date time provider substitutes the node's usual DTP when running certain
     /// integration tests so that we can generate coins faster.
     /// </summary>
-    public sealed class GenerateCoinsFastDateTimeProvider : SignalObserver<Block>, IDateTimeProvider
+    public sealed class GenerateCoinsFastDateTimeProvider : IDateTimeProvider
     {
-        private TimeSpan adjustedTimeOffset;
-        private DateTime startFrom;
+        private static TimeSpan adjustedTimeOffset;
+        private static DateTime startFrom;
 
-        public GenerateCoinsFastDateTimeProvider(Signals.Signals signals)
+        private SubscriptionToken blockConnectedSubscription;
+
+        static GenerateCoinsFastDateTimeProvider()
         {
-            this.adjustedTimeOffset = TimeSpan.Zero;
-            this.startFrom = new DateTime(2018, 1, 1);
+            adjustedTimeOffset = TimeSpan.Zero;
+            startFrom = new DateTime(2018, 1, 1);
+        }
 
-            signals.SubscribeForBlocks(this);
+        public GenerateCoinsFastDateTimeProvider(ISignals signals)
+        {
+            this.blockConnectedSubscription =  signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
         public long GetTime()
         {
-            return this.startFrom.ToUnixTimestamp();
+            return startFrom.ToUnixTimestamp();
         }
 
         public DateTime GetUtcNow()
         {
-            return this.startFrom;
+            return startFrom;
         }
 
         /// <summary>
@@ -38,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         public DateTime GetAdjustedTime()
         {
-            return this.startFrom;
+            return startFrom;
         }
 
         /// <summary>
@@ -53,14 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         public DateTimeOffset GetTimeOffset()
         {
-            return this.startFrom;
+            return startFrom;
         }
 
         /// <summary>
-        /// This gets called when the coin stake block gets created in <see cref="Features.Miner.PosMinting"/>.
+        /// This gets called when the coin stake block gets created in <see cref="PosMinting"/>.
         /// This gets called when the transaction's time gets set in <see cref="Features.Miner.PowBlockDefinition"/>.
         /// <para>
-        /// Please see the <see cref="Features.Miner.PosMinting.GenerateBlocksAsync"/> method.
+        /// Please see the <see cref="PosMinting.GenerateBlocksAsync"/> method.
         /// </para>
         /// <para>
         /// Please see the <see cref="Features.Miner.PowBlockDefinition.CreateCoinbase"/> method.
@@ -68,21 +74,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         public long GetAdjustedTimeAsUnixTimestamp()
         {
-            return this.startFrom.ToUnixTimestamp();
+            return startFrom.ToUnixTimestamp();
         }
 
-        public void SetAdjustedTimeOffset(TimeSpan adjustedTimeOffset)
+        public void SetAdjustedTimeOffset(TimeSpan adjusted)
         {
-            this.adjustedTimeOffset = adjustedTimeOffset;
+            adjustedTimeOffset = adjusted;
         }
 
         /// <summary>
         /// Every time a new block gets generated, this date time provider will be signaled,
         /// updating the last block time by 65 seconds.
         /// </summary>
-        protected override void OnNextCore(Block value)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
-            this.startFrom = this.startFrom.AddSeconds(65);
+            startFrom = startFrom.AddSeconds(65);
         }
     }
 }

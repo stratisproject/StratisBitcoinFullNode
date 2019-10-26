@@ -8,49 +8,54 @@ namespace NBitcoin
     {
         public class MutableUint256 : IBitcoinSerializable
         {
-            uint256 _Value;
+            private uint256 _Value;
+
             public uint256 Value
             {
                 get
                 {
-                    return _Value;
+                    return this._Value;
                 }
                 set
                 {
-                    _Value = value;
+                    this._Value = value;
                 }
             }
+
+            public uint256 MaxValue => uint256.Parse("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
             public MutableUint256()
             {
-                _Value = uint256.Zero;
+                this._Value = Zero;
             }
             public MutableUint256(uint256 value)
             {
-                _Value = value;
+                this._Value = value;
             }
 
             public void ReadWrite(BitcoinStream stream)
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = this.Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
-                    _Value = new uint256(b);
+                    this._Value = new uint256(b);
                 }
             }
         }
-        static readonly uint256 _Zero = new uint256();
+
+        private static readonly uint256 _Zero = new uint256();
         public static uint256 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint256 _One = new uint256(1);
+        private static readonly uint256 _One = new uint256(1);
         public static uint256 One
         {
             get { return _One; }
@@ -62,14 +67,14 @@ namespace NBitcoin
 
         public uint256(uint256 b)
         {
-            pn0 = b.pn0;
-            pn1 = b.pn1;
-            pn2 = b.pn2;
-            pn3 = b.pn3;
-            pn4 = b.pn4;
-            pn5 = b.pn5;
-            pn6 = b.pn6;
-            pn7 = b.pn7;
+            this.pn0 = b.pn0;
+            this.pn1 = b.pn1;
+            this.pn2 = b.pn2;
+            this.pn3 = b.pn3;
+            this.pn4 = b.pn4;
+            this.pn5 = b.pn5;
+            this.pn6 = b.pn6;
+            this.pn7 = b.pn7;
         }
 
         private const int WIDTH = 256 / 32;
@@ -96,7 +101,7 @@ namespace NBitcoin
 
         public static uint256 operator <<(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -112,7 +117,7 @@ namespace NBitcoin
 
         public static uint256 operator >>(uint256 a, int shift)
         {
-            var source = a.ToArray();
+            uint[] source = a.ToArray();
             var target = new uint[source.Length];
             int k = shift / 32;
             shift = shift % 32;
@@ -158,34 +163,34 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
                 case 0:
-                    value = pn0;
+                    value = this.pn0;
                     break;
                 case 1:
-                    value = pn1;
+                    value = this.pn1;
                     break;
                 case 2:
-                    value = pn2;
+                    value = this.pn2;
                     break;
                 case 3:
-                    value = pn3;
+                    value = this.pn3;
                     break;
                 case 4:
-                    value = pn4;
+                    value = this.pn4;
                     break;
                 case 5:
-                    value = pn5;
+                    value = this.pn5;
                     break;
                 case 6:
-                    value = pn6;
+                    value = this.pn6;
                     break;
                 case 7:
-                    value = pn7;
+                    value = this.pn7;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("index");
@@ -200,14 +205,14 @@ namespace NBitcoin
 
         public uint256(ulong b)
         {
-            pn0 = (uint)b;
-            pn1 = (uint)(b >> 32);
-            pn2 = 0;
-            pn3 = 0;
-            pn4 = 0;
-            pn5 = 0;
-            pn6 = 0;
-            pn7 = 0;
+            this.pn0 = (uint)b;
+            this.pn1 = (uint)(b >> 32);
+            this.pn2 = 0;
+            this.pn3 = 0;
+            this.pn4 = 0;
+            this.pn5 = 0;
+            this.pn6 = 0;
+            this.pn7 = 0;
         }
 
         public uint256(byte[] vch, bool lendian = true)
@@ -220,43 +225,43 @@ namespace NBitcoin
             if (!lendian)
                 vch = vch.Reverse().ToArray();
 
-            pn0 = Utils.ToUInt32(vch, 4 * 0, true);
-            pn1 = Utils.ToUInt32(vch, 4 * 1, true);
-            pn2 = Utils.ToUInt32(vch, 4 * 2, true);
-            pn3 = Utils.ToUInt32(vch, 4 * 3, true);
-            pn4 = Utils.ToUInt32(vch, 4 * 4, true);
-            pn5 = Utils.ToUInt32(vch, 4 * 5, true);
-            pn6 = Utils.ToUInt32(vch, 4 * 6, true);
-            pn7 = Utils.ToUInt32(vch, 4 * 7, true);
+            this.pn0 = Utils.ToUInt32(vch, 4 * 0, true);
+            this.pn1 = Utils.ToUInt32(vch, 4 * 1, true);
+            this.pn2 = Utils.ToUInt32(vch, 4 * 2, true);
+            this.pn3 = Utils.ToUInt32(vch, 4 * 3, true);
+            this.pn4 = Utils.ToUInt32(vch, 4 * 4, true);
+            this.pn5 = Utils.ToUInt32(vch, 4 * 5, true);
+            this.pn6 = Utils.ToUInt32(vch, 4 * 6, true);
+            this.pn7 = Utils.ToUInt32(vch, 4 * 7, true);
 
         }
 
         public uint256(string str)
         {
-            pn0 = 0;
-            pn1 = 0;
-            pn2 = 0;
-            pn3 = 0;
-            pn4 = 0;
-            pn5 = 0;
-            pn6 = 0;
-            pn7 = 0;
+            this.pn0 = 0;
+            this.pn1 = 0;
+            this.pn2 = 0;
+            this.pn3 = 0;
+            this.pn4 = 0;
+            this.pn5 = 0;
+            this.pn6 = 0;
+            this.pn7 = 0;
             str = str.Trim();
 
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
-            pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
-            pn1 = Utils.ToUInt32(bytes, 4 * 1, true);
-            pn2 = Utils.ToUInt32(bytes, 4 * 2, true);
-            pn3 = Utils.ToUInt32(bytes, 4 * 3, true);
-            pn4 = Utils.ToUInt32(bytes, 4 * 4, true);
-            pn5 = Utils.ToUInt32(bytes, 4 * 5, true);
-            pn6 = Utils.ToUInt32(bytes, 4 * 6, true);
-            pn7 = Utils.ToUInt32(bytes, 4 * 7, true);
+            this.pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
+            this.pn1 = Utils.ToUInt32(bytes, 4 * 1, true);
+            this.pn2 = Utils.ToUInt32(bytes, 4 * 2, true);
+            this.pn3 = Utils.ToUInt32(bytes, 4 * 3, true);
+            this.pn4 = Utils.ToUInt32(bytes, 4 * 4, true);
+            this.pn5 = Utils.ToUInt32(bytes, 4 * 5, true);
+            this.pn6 = Utils.ToUInt32(bytes, 4 * 6, true);
+            this.pn7 = Utils.ToUInt32(bytes, 4 * 7, true);
 
         }
 
@@ -271,20 +276,20 @@ namespace NBitcoin
             if (item == null)
                 return false;
             bool equals = true;
-            equals &= pn0 == item.pn0;
-            equals &= pn1 == item.pn1;
-            equals &= pn2 == item.pn2;
-            equals &= pn3 == item.pn3;
-            equals &= pn4 == item.pn4;
-            equals &= pn5 == item.pn5;
-            equals &= pn6 == item.pn6;
-            equals &= pn7 == item.pn7;
+            equals &= this.pn0 == item.pn0;
+            equals &= this.pn1 == item.pn1;
+            equals &= this.pn2 == item.pn2;
+            equals &= this.pn3 == item.pn3;
+            equals &= this.pn4 == item.pn4;
+            equals &= this.pn5 == item.pn5;
+            equals &= this.pn6 == item.pn6;
+            equals &= this.pn7 == item.pn7;
             return equals;
         }
 
         public static bool operator ==(uint256 a, uint256 b)
         {
-            if (System.Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
             if (((object)a == null) || ((object)b == null))
                 return false;
@@ -321,7 +326,7 @@ namespace NBitcoin
             return Comparison(a, b) >= 0;
         }
 
-        private static int Comparison(uint256 a, uint256 b)
+        public static int Comparison(uint256 a, uint256 b)
         {
             if (a == null)
                 throw new ArgumentNullException("a");
@@ -387,14 +392,14 @@ namespace NBitcoin
         public byte[] ToBytes(bool lendian = true)
         {
             var arr = new byte[WIDTH_BYTE];
-            Buffer.BlockCopy(Utils.ToBytes(pn0, true), 0, arr, 4 * 0, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn1, true), 0, arr, 4 * 1, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn2, true), 0, arr, 4 * 2, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn3, true), 0, arr, 4 * 3, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn4, true), 0, arr, 4 * 4, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn5, true), 0, arr, 4 * 5, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn6, true), 0, arr, 4 * 6, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn7, true), 0, arr, 4 * 7, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn0, true), 0, arr, 4 * 0, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn1, true), 0, arr, 4 * 1, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn2, true), 0, arr, 4 * 2, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn3, true), 0, arr, 4 * 3, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn4, true), 0, arr, 4 * 4, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn5, true), 0, arr, 4 * 5, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn6, true), 0, arr, 4 * 6, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn7, true), 0, arr, 4 * 7, 4);
             if (!lendian)
                 Array.Reverse(arr);
             return arr;
@@ -420,78 +425,68 @@ namespace NBitcoin
 
         public ulong GetLow64()
         {
-            return pn0 | (ulong)pn1 << 32;
+            return this.pn0 | (ulong) this.pn1 << 32;
         }
 
         public uint GetLow32()
         {
-            return pn0;
+            return this.pn0;
         }
 
         public override int GetHashCode()
         {
-            int hash = 17;
-            unchecked
-            {
-                hash = hash * 31 + (int)pn0;
-                hash = hash * 31 + (int)pn1;
-                hash = hash * 31 + (int)pn2;
-                hash = hash * 31 + (int)pn3;
-                hash = hash * 31 + (int)pn4;
-                hash = hash * 31 + (int)pn5;
-                hash = hash * 31 + (int)pn6;
-                hash = hash * 31 + (int)pn7;
-            }
-            return hash;
+            return (int)this.pn0;
         }
     }
+
     public class uint160
     {
         public class MutableUint160 : IBitcoinSerializable
         {
-            uint160 _Value;
+            private uint160 _Value;
             public uint160 Value
             {
                 get
                 {
-                    return _Value;
+                    return this._Value;
                 }
                 set
                 {
-                    _Value = value;
+                    this._Value = value;
                 }
             }
             public MutableUint160()
             {
-                _Value = uint160.Zero;
+                this._Value = Zero;
             }
             public MutableUint160(uint160 value)
             {
-                _Value = value;
+                this._Value = value;
             }
 
             public void ReadWrite(BitcoinStream stream)
             {
                 if (stream.Serializing)
                 {
-                    var b = Value.ToBytes();
+                    byte[] b = this.Value.ToBytes();
                     stream.ReadWrite(ref b);
                 }
                 else
                 {
-                    byte[] b = new byte[WIDTH_BYTE];
+                    var b = new byte[WIDTH_BYTE];
                     stream.ReadWrite(ref b);
-                    _Value = new uint160(b);
+                    this._Value = new uint160(b);
                 }
             }
         }
-        static readonly uint160 _Zero = new uint160();
+
+        private static readonly uint160 _Zero = new uint160();
         public static uint160 Zero
         {
             get { return _Zero; }
         }
 
-        static readonly uint160 _One = new uint160(1);
+        private static readonly uint160 _One = new uint160(1);
         public static uint160 One
         {
             get { return _One; }
@@ -503,11 +498,11 @@ namespace NBitcoin
 
         public uint160(uint160 b)
         {
-            pn0 = b.pn0;
-            pn1 = b.pn1;
-            pn2 = b.pn2;
-            pn3 = b.pn3;
-            pn4 = b.pn4;
+            this.pn0 = b.pn0;
+            this.pn1 = b.pn1;
+            this.pn2 = b.pn2;
+            this.pn3 = b.pn3;
+            this.pn4 = b.pn4;
         }
 
         public static uint160 Parse(string hex)
@@ -539,25 +534,25 @@ namespace NBitcoin
 
         public byte GetByte(int index)
         {
-            var uintIndex = index / sizeof(uint);
-            var byteIndex = index % sizeof(uint);
+            int uintIndex = index / sizeof(uint);
+            int byteIndex = index % sizeof(uint);
             UInt32 value;
             switch (uintIndex)
             {
                 case 0:
-                    value = pn0;
+                    value = this.pn0;
                     break;
                 case 1:
-                    value = pn1;
+                    value = this.pn1;
                     break;
                 case 2:
-                    value = pn2;
+                    value = this.pn2;
                     break;
                 case 3:
-                    value = pn3;
+                    value = this.pn3;
                     break;
                 case 4:
-                    value = pn4;
+                    value = this.pn4;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("index");
@@ -572,11 +567,11 @@ namespace NBitcoin
 
         public uint160(ulong b)
         {
-            pn0 = (uint)b;
-            pn1 = (uint)(b >> 32);
-            pn2 = 0;
-            pn3 = 0;
-            pn4 = 0;
+            this.pn0 = (uint)b;
+            this.pn1 = (uint)(b >> 32);
+            this.pn2 = 0;
+            this.pn3 = 0;
+            this.pn4 = 0;
         }
 
         public uint160(byte[] vch, bool lendian = true)
@@ -589,34 +584,34 @@ namespace NBitcoin
             if (!lendian)
                 vch = vch.Reverse().ToArray();
 
-            pn0 = Utils.ToUInt32(vch, 4 * 0, true);
-            pn1 = Utils.ToUInt32(vch, 4 * 1, true);
-            pn2 = Utils.ToUInt32(vch, 4 * 2, true);
-            pn3 = Utils.ToUInt32(vch, 4 * 3, true);
-            pn4 = Utils.ToUInt32(vch, 4 * 4, true);
+            this.pn0 = Utils.ToUInt32(vch, 4 * 0, true);
+            this.pn1 = Utils.ToUInt32(vch, 4 * 1, true);
+            this.pn2 = Utils.ToUInt32(vch, 4 * 2, true);
+            this.pn3 = Utils.ToUInt32(vch, 4 * 3, true);
+            this.pn4 = Utils.ToUInt32(vch, 4 * 4, true);
 
         }
 
         public uint160(string str)
         {
-            pn0 = 0;
-            pn1 = 0;
-            pn2 = 0;
-            pn3 = 0;
-            pn4 = 0;
+            this.pn0 = 0;
+            this.pn1 = 0;
+            this.pn2 = 0;
+            this.pn3 = 0;
+            this.pn4 = 0;
             str = str.Trim();
 
             if (str.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 str = str.Substring(2);
 
-            var bytes = Encoder.DecodeData(str).Reverse().ToArray();
+            byte[] bytes = Encoder.DecodeData(str).Reverse().ToArray();
             if (bytes.Length != WIDTH_BYTE)
                 throw new FormatException("Invalid hex length");
-            pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
-            pn1 = Utils.ToUInt32(bytes, 4 * 1, true);
-            pn2 = Utils.ToUInt32(bytes, 4 * 2, true);
-            pn3 = Utils.ToUInt32(bytes, 4 * 3, true);
-            pn4 = Utils.ToUInt32(bytes, 4 * 4, true);
+            this.pn0 = Utils.ToUInt32(bytes, 4 * 0, true);
+            this.pn1 = Utils.ToUInt32(bytes, 4 * 1, true);
+            this.pn2 = Utils.ToUInt32(bytes, 4 * 2, true);
+            this.pn3 = Utils.ToUInt32(bytes, 4 * 3, true);
+            this.pn4 = Utils.ToUInt32(bytes, 4 * 4, true);
 
         }
 
@@ -631,17 +626,17 @@ namespace NBitcoin
             if (item == null)
                 return false;
             bool equals = true;
-            equals &= pn0 == item.pn0;
-            equals &= pn1 == item.pn1;
-            equals &= pn2 == item.pn2;
-            equals &= pn3 == item.pn3;
-            equals &= pn4 == item.pn4;
+            equals &= this.pn0 == item.pn0;
+            equals &= this.pn1 == item.pn1;
+            equals &= this.pn2 == item.pn2;
+            equals &= this.pn3 == item.pn3;
+            equals &= this.pn4 == item.pn4;
             return equals;
         }
 
         public static bool operator ==(uint160 a, uint160 b)
         {
-            if (System.Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
             if (((object)a == null) || ((object)b == null))
                 return false;
@@ -724,11 +719,11 @@ namespace NBitcoin
         public byte[] ToBytes(bool lendian = true)
         {
             var arr = new byte[WIDTH_BYTE];
-            Buffer.BlockCopy(Utils.ToBytes(pn0, true), 0, arr, 4 * 0, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn1, true), 0, arr, 4 * 1, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn2, true), 0, arr, 4 * 2, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn3, true), 0, arr, 4 * 3, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn4, true), 0, arr, 4 * 4, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn0, true), 0, arr, 4 * 0, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn1, true), 0, arr, 4 * 1, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn2, true), 0, arr, 4 * 2, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn3, true), 0, arr, 4 * 3, 4);
+            Buffer.BlockCopy(Utils.ToBytes(this.pn4, true), 0, arr, 4 * 4, 4);
             if (!lendian)
                 Array.Reverse(arr);
             return arr;
@@ -754,26 +749,17 @@ namespace NBitcoin
 
         public ulong GetLow64()
         {
-            return pn0 | (ulong)pn1 << 32;
+            return this.pn0 | (ulong) this.pn1 << 32;
         }
 
         public uint GetLow32()
         {
-            return pn0;
+            return this.pn0;
         }
 
         public override int GetHashCode()
         {
-            int hash = 17;
-            unchecked
-            {
-                hash = hash * 31 + (int)pn0;
-                hash = hash * 31 + (int)pn1;
-                hash = hash * 31 + (int)pn2;
-                hash = hash * 31 + (int)pn3;
-                hash = hash * 31 + (int)pn4;
-            }
-            return hash;
+            return (int)this.pn0;
         }
     }
 }

@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// instead of <see cref="System.Diagnostics.Stopwatch"/>. It was argued that there was some kind of measurement
         /// error when the later was used. Most likely the problem was in mixing <see cref="System.DateTime.Ticks"/>
         /// units with incompatible <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+        /// Issue that cover this subject is <see href="https://github.com/stratisproject/StratisBitcoinFullNode/issues/2391"/>.
         /// <para>
         /// This test aims to verify that the time measurement with the disposable stopwatch achieves correct results.
         /// It performs a series of small work simlating delays which represent a measured code block. Each delay
@@ -40,15 +41,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Give the testing environment a chance to settle down a little bit.
             Thread.Sleep(5000);
 
-            int epsilonMs = 100;
+            int epsilonMs = 500;
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
 
             DateTime startTime = DateTime.UtcNow;
-            System.Diagnostics.Stopwatch diagStopwatch = new System.Diagnostics.Stopwatch();
+            var diagStopwatch = new System.Diagnostics.Stopwatch();
 
             int delayTimeMs = 0;
-            Random rnd = new Random();
+            var rnd = new Random();
             for (int i = 0; i < 10; i++)
             {
                 int delay = rnd.Next(1000);
@@ -72,8 +73,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             DateTime endTime = DateTime.UtcNow.AddMilliseconds(-delayTimeMs);
             TimeSpan elapsedTimeByDateTime = endTime - startTime;
-            TimeSpan elapsedTimeByDiagStopwatch = new TimeSpan(diagStopwatch.Elapsed.Ticks);
-            TimeSpan elapsedTimeByDispStopwatch = new TimeSpan(elapsedTicksByDispStopwatch);
+            var elapsedTimeByDiagStopwatch = new TimeSpan(diagStopwatch.Elapsed.Ticks);
+            var elapsedTimeByDispStopwatch = new TimeSpan(elapsedTicksByDispStopwatch);
             TimeSpan elapsedTimeByCalculation = TimeSpan.FromMilliseconds(expectedElapsedMs);
 
             // Check that the measured times do not differ by more than "epsilonMs".

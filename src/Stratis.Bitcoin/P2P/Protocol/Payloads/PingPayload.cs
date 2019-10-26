@@ -6,6 +6,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class PingPayload : Payload
     {
         private ulong nonce;
+
         public ulong Nonce { get { return this.nonce; } set { this.nonce = value; } }
 
         public PingPayload()

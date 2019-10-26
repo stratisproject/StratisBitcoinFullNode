@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DBreeze.Utils;
 using NBitcoin;
-using NBitcoin.BitcoinCore;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -11,16 +11,11 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
-        public Network Network { get; private set; }
+        private readonly ConsensusFactory consensusFactory;
 
-        /// <summary>
-        /// Initializes custom serializers for DBreeze engine.
-        /// </summary>
-        public void Initialize(Network network) 
+        public DBreezeSerializer(ConsensusFactory consensusFactory)
         {
-            this.Network = network;
-            CustomSerializator.ByteArraySerializator = this.Serializer;
-            CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
+            this.consensusFactory = consensusFactory;
         }
 
         /// <summary>
@@ -28,35 +23,33 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        internal byte[] Serializer(object obj)
+        public byte[] Serialize(object obj)
         {
-            IBitcoinSerializable serializable = obj as IBitcoinSerializable;
-            if (serializable != null)
-                return serializable.ToBytes(network: this.Network);
+            if (obj is IBitcoinSerializable serializable)
+                return serializable.ToBytes(this.consensusFactory);
 
-            uint256 u256 = obj as uint256;
-            if (u256 != null)
+            if (obj is uint256 u256)
                 return u256.ToBytes();
 
-            uint160 u160 = obj as uint160;
-            if (u160 != null)
+            if (obj is uint160 u160)
                 return u160.ToBytes();
 
-            uint? u32 = obj as uint?;
-            if (u32 != null)
+            if (obj is uint u32)
                 return u32.ToBytes();
 
-            object[] arr = obj as object[];
-            if (arr != null)
+            if (obj is IEnumerable<object> collection)
             {
-                byte[][] serializedItems = new byte[arr.Length][];
+                object[] array = obj as object[] ?? collection.ToArray();
+
+                var serializedItems = new byte[array.Length][];
                 int itemIndex = 0;
-                foreach (object arrayObject in arr)
+                foreach (object arrayObject in array)
                 {
-                    byte[] serializedObject = this.Serializer(arrayObject);
+                    byte[] serializedObject = this.Serialize(arrayObject);
                     serializedItems[itemIndex] = serializedObject;
                     itemIndex++;
                 }
+
                 return ConcatArrays(serializedItems);
             }
 
@@ -71,14 +64,20 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>Based on https://stackoverflow.com/a/415396/3835864 .</remarks>
         private static byte[] ConcatArrays(byte[][] arrays)
         {
-            byte[] res = new byte[arrays.Sum(a => a.Length)];
+            var res = new byte[arrays.Sum(a => a.Length)];
             int offset = 0;
             foreach (byte[] array in arrays)
             {
                 Buffer.BlockCopy(array, 0, res, offset, array.Length);
                 offset += array.Length;
             }
+
             return res;
+        }
+
+        public T Deserialize<T>(byte[] bytes)
+        {
+            return (T) this.Deserialize(bytes, typeof(T));
         }
 
         /// <summary>
@@ -87,37 +86,49 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        internal object Deserializer(byte[] bytes, Type type)
+        public object Deserialize(byte[] bytes, Type type)
         {
-            if (type == typeof(Coins))
-            {
-                Coins coin = new Coins();
-                coin.ReadWrite(bytes, network: this.Network);
-                return coin;
-            }
-
             if (type == typeof(BlockHeader))
             {
-                BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.ReadWrite(bytes, network: this.Network);
+                BlockHeader header = this.consensusFactory.CreateBlockHeader();
+                header.ReadWrite(bytes, this.consensusFactory);
                 return header;
             }
 
-            if (type == typeof(RewindData))
+            if (type == typeof(Transaction))
             {
-                RewindData rewind = new RewindData();
-                rewind.ReadWrite(bytes, network: this.Network);
-                return rewind;
+                Transaction transaction = this.consensusFactory.CreateTransaction();
+                transaction.ReadWrite(bytes, this.consensusFactory);
+                return transaction;
             }
 
             if (type == typeof(uint256))
                 return new uint256(bytes);
 
             if (type == typeof(Block))
-                return Block.Load(bytes, this.Network);
+                return Block.Load(bytes, this.consensusFactory);
 
             if (type == typeof(BlockStake))
-                return new BlockStake(bytes);
+                return BlockStake.Load(bytes, this.consensusFactory);
+
+            if (type == typeof(ProvenBlockHeader))
+            {
+                ProvenBlockHeader provenBlockHeader =
+                    ((PosConsensusFactory)this.consensusFactory).CreateProvenBlockHeader();
+
+                provenBlockHeader.ReadWrite(bytes, this.consensusFactory);
+                return provenBlockHeader;
+            }
+
+            if (type == typeof(HashHeightPair))
+                return HashHeightPair.Load(bytes, this.consensusFactory);
+
+            if (typeof(IBitcoinSerializable).IsAssignableFrom(type))
+            {
+                var result = (IBitcoinSerializable)Activator.CreateInstance(type);
+                result.ReadWrite(bytes, this.consensusFactory);
+                return result;
+            }
 
             throw new NotSupportedException();
         }

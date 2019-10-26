@@ -35,7 +35,7 @@
 
     public static class Encoders
     {
-        static readonly ASCIIEncoder _ASCII = new ASCIIEncoder();
+        private static readonly ASCIIEncoder _ASCII = new ASCIIEncoder();
         public static DataEncoder ASCII
         {
             get
@@ -44,7 +44,7 @@
             }
         }
 
-        static readonly HexEncoder _Hex = new HexEncoder();
+        private static readonly HexEncoder _Hex = new HexEncoder();
         public static DataEncoder Hex
         {
             get
@@ -53,7 +53,7 @@
             }
         }
 
-        static readonly Base58Encoder _Base58 = new Base58Encoder();
+        private static readonly Base58Encoder _Base58 = new Base58Encoder();
         public static DataEncoder Base58
         {
             get
@@ -71,7 +71,7 @@
             }
         }
 
-        static readonly Base64Encoder _Base64 = new Base64Encoder();
+        private static readonly Base64Encoder _Base64 = new Base64Encoder();
         public static DataEncoder Base64
         {
             get

@@ -2,9 +2,7 @@
 using System.IO;
 using System.Linq;
 using NBitcoin.BouncyCastle.Crypto.Digests;
-#if !WINDOWS_UWP && !USEBC
 using System.Security.Cryptography;
-#endif
 
 namespace NBitcoin.Crypto
 {
@@ -23,10 +21,10 @@ namespace NBitcoin.Crypto
 
         public static uint256 Hash256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
-            Sha256Digest sha256 = new Sha256Digest();
+#if NETCORE
+            var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[32];
+            var rv = new byte[32];
             sha256.DoFinal(rv, 0);
             sha256.BlockUpdate(rv, 0, rv.Length);
             sha256.DoFinal(rv, 0);
@@ -71,10 +69,10 @@ namespace NBitcoin.Crypto
 
         public static byte[] RIPEMD160(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
-            RipeMD160Digest ripemd = new RipeMD160Digest();
+#if NETCORE
+            var ripemd = new RipeMD160Digest();
             ripemd.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[20];
+            var rv = new byte[20];
             ripemd.DoFinal(rv, 0);
             return rv;
 #else
@@ -89,45 +87,45 @@ namespace NBitcoin.Crypto
 
         public class SipHasher
         {
-            ulong v_0;
-            ulong v_1;
-            ulong v_2;
-            ulong v_3;
-            ulong count;
-            ulong tmp;
+            private ulong v_0;
+            private ulong v_1;
+            private ulong v_2;
+            private ulong v_3;
+            private ulong count;
+            private ulong tmp;
             public SipHasher(ulong k0, ulong k1)
             {
-                v_0 = 0x736f6d6570736575UL ^ k0;
-                v_1 = 0x646f72616e646f6dUL ^ k1;
-                v_2 = 0x6c7967656e657261UL ^ k0;
-                v_3 = 0x7465646279746573UL ^ k1;
-                count = 0;
-                tmp = 0;
+                this.v_0 = 0x736f6d6570736575UL ^ k0;
+                this.v_1 = 0x646f72616e646f6dUL ^ k1;
+                this.v_2 = 0x6c7967656e657261UL ^ k0;
+                this.v_3 = 0x7465646279746573UL ^ k1;
+                this.count = 0;
+                this.tmp = 0;
             }
 
             public SipHasher Write(ulong data)
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
                 v3 ^= data;
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);
                 v0 ^= data;
 
-                v_0 = v0;
-                v_1 = v1;
-                v_2 = v2;
-                v_3 = v3;
+                this.v_0 = v0;
+                this.v_1 = v1;
+                this.v_2 = v2;
+                this.v_3 = v3;
 
-                count += 8;
+                this.count += 8;
                 return this;
             }
 
             public SipHasher Write(byte[] data)
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
-                var size = data.Length;
-                var t = tmp;
-                var c = count;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
+                int size = data.Length;
+                ulong t = this.tmp;
+                ulong c = this.count;
                 int offset = 0;
 
                 while(size-- != 0)
@@ -144,21 +142,21 @@ namespace NBitcoin.Crypto
                     }
                 }
 
-                v_0 = v0;
-                v_1 = v1;
-                v_2 = v2;
-                v_3 = v3;
-                count = c;
-                tmp = t;
+                this.v_0 = v0;
+                this.v_1 = v1;
+                this.v_2 = v2;
+                this.v_3 = v3;
+                this.count = c;
+                this.tmp = t;
 
                 return this;
             }
 
             public ulong Finalize()
             {
-                ulong v0 = v_0, v1 = v_1, v2 = v_2, v3 = v_3;
+                ulong v0 = this.v_0, v1 = this.v_1, v2 = this.v_2, v3 = this.v_3;
 
-                ulong t = tmp | (((ulong)count) << 56);
+                ulong t = this.tmp | (((ulong) this.count) << 56);
 
                 v3 ^= t;
                 SIPROUND(ref v0, ref v1, ref v2, ref v3);
@@ -229,7 +227,7 @@ namespace NBitcoin.Crypto
                 }
             }
 
-            static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
+            private static void SIPROUND(ref ulong v_0, ref ulong v_1, ref ulong v_2, ref ulong v_3)
             {
                 v_0 += v_1;
                 v_1 = rotl64(v_1, 13);
@@ -257,7 +255,7 @@ namespace NBitcoin.Crypto
         {
             var sha1 = new Sha1Digest();
             sha1.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[20];
+            var rv = new byte[20];
             sha1.DoFinal(rv, 0);
             return rv;
         }
@@ -269,10 +267,10 @@ namespace NBitcoin.Crypto
 
         public static byte[] SHA256(byte[] data, int offset, int count)
         {
-#if USEBC || WINDOWS_UWP || NETCORE
-            Sha256Digest sha256 = new Sha256Digest();
+#if NETCORE
+            var sha256 = new Sha256Digest();
             sha256.BlockUpdate(data, offset, count);
-            byte[] rv = new byte[32];
+            var rv = new byte[32];
             sha256.DoFinal(rv, 0);
             return rv;
 #else
@@ -312,7 +310,7 @@ namespace NBitcoin.Crypto
             uint k1 = 0;
             uint streamLength = 0;
 
-            using(BinaryReader reader = new BinaryReader(new MemoryStream(vDataToHash)))
+            using(var reader = new BinaryReader(new MemoryStream(vDataToHash)))
             {
                 byte[] chunk = reader.ReadBytes(4);
                 while(chunk.Length > 0)
@@ -377,25 +375,14 @@ namespace NBitcoin.Crypto
             }
         }
 
-#if USEBC || WINDOWS_UWP
-        public static byte[] HMACSHA512(byte[] key, byte[] data)
-        {
-            var mac = new NBitcoin.BouncyCastle.Crypto.Macs.HMac(new Sha512Digest());
-            mac.Init(new KeyParameter(key));
-            mac.Update(data);
-            byte[] result = new byte[mac.GetMacSize()];
-            mac.DoFinal(result, 0);
-            return result;
-        }
-#else
         public static byte[] HMACSHA512(byte[] key, byte[] data)
         {
             return new HMACSHA512(key).ComputeHash(data);
         }
-#endif
+
         public static byte[] BIP32Hash(byte[] chainCode, uint nChild, byte header, byte[] data)
         {
-            byte[] num = new byte[4];
+            var num = new byte[4];
             num[0] = (byte)((nChild >> 24) & 0xFF);
             num[1] = (byte)((nChild >> 16) & 0xFF);
             num[2] = (byte)((nChild >> 8) & 0xFF);

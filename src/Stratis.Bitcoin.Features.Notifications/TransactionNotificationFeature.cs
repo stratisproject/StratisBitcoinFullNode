@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -21,9 +22,11 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.transactionBehavior = transactionBehavior;
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.transactionBehavior);
+
+            return Task.CompletedTask;
         }
     }
 
@@ -41,9 +44,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<TransactionNotificationProgress>();
-                        services.AddSingleton<TransactionNotification>();
                         services.AddSingleton<TransactionReceiver>();
-                        services.AddSingleton<NotificationsController>();
                     });
             });
 

@@ -29,7 +29,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         {
             get
             {
-                return m_preComp;
+                return this.m_preComp;
             }
             set
             {
@@ -41,7 +41,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         {
             get
             {
-                return m_preCompNeg;
+                return this.m_preCompNeg;
             }
             set
             {
@@ -53,7 +53,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         {
             get
             {
-                return m_twice;
+                return this.m_twice;
             }
             set
             {

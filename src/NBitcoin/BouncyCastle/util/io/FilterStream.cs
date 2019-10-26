@@ -12,47 +12,47 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
         {
             get
             {
-                return s.CanRead;
+                return this.s.CanRead;
             }
         }
         public override bool CanSeek
         {
             get
             {
-                return s.CanSeek;
+                return this.s.CanSeek;
             }
         }
         public override bool CanWrite
         {
             get
             {
-                return s.CanWrite;
+                return this.s.CanWrite;
             }
         }
         public override long Length
         {
             get
             {
-                return s.Length;
+                return this.s.Length;
             }
         }
         public override long Position
         {
             get
             {
-                return s.Position;
+                return this.s.Position;
             }
             set
             {
-                s.Position = value;
+                this.s.Position = value;
             }
         }
-#if PORTABLE || NETCORE
+#if NETCORE
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                Platform.Dispose(s);
+                Platform.Dispose(this.s);
             }
             base.Dispose(disposing);
         }
@@ -65,31 +65,31 @@ namespace NBitcoin.BouncyCastle.Utilities.IO
 #endif
         public override void Flush()
         {
-            s.Flush();
+            this.s.Flush();
         }
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return s.Seek(offset, origin);
+            return this.s.Seek(offset, origin);
         }
         public override void SetLength(long value)
         {
-            s.SetLength(value);
+            this.s.SetLength(value);
         }
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return s.Read(buffer, offset, count);
+            return this.s.Read(buffer, offset, count);
         }
         public override int ReadByte()
         {
-            return s.ReadByte();
+            return this.s.ReadByte();
         }
         public override void Write(byte[] buffer, int offset, int count)
         {
-            s.Write(buffer, offset, count);
+            this.s.Write(buffer, offset, count);
         }
         public override void WriteByte(byte value)
         {
-            s.WriteByte(value);
+            this.s.WriteByte(value);
         }
         protected readonly Stream s;
     }

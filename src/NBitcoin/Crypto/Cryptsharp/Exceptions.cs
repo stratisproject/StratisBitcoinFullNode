@@ -21,7 +21,7 @@ using System;
 
 namespace NBitcoin.Crypto.Internal
 {
-    static class Exceptions
+    internal static class Exceptions
     {
         public static ArgumentException Argument
             (string valueName, string message, params object[] args)

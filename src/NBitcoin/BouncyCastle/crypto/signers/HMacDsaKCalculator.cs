@@ -27,8 +27,8 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
         public HMacDsaKCalculator(IDigest digest)
         {
             this.hMac = new HMac(digest);
-            this.V = new byte[hMac.GetMacSize()];
-            this.K = new byte[hMac.GetMacSize()];
+            this.V = new byte[this.hMac.GetMacSize()];
+            this.K = new byte[this.hMac.GetMacSize()];
         }
 
         public virtual bool IsDeterministic
@@ -48,15 +48,15 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
         {
             this.n = n;
 
-            Arrays.Fill(V, (byte)0x01);
-            Arrays.Fill(K, (byte)0);
+            Arrays.Fill(this.V, (byte)0x01);
+            Arrays.Fill(this.K, (byte)0);
 
-            byte[] x = new byte[(n.BitLength + 7) / 8];
+            var x = new byte[(n.BitLength + 7) / 8];
             byte[] dVal = BigIntegers.AsUnsignedByteArray(d);
 
             Array.Copy(dVal, 0, x, x.Length - dVal.Length, dVal.Length);
 
-            byte[] m = new byte[(n.BitLength + 7) / 8];
+            var m = new byte[(n.BitLength + 7) / 8];
 
             BigInteger mInt = BitsToInt(message);
 
@@ -69,38 +69,38 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
 
             Array.Copy(mVal, 0, m, m.Length - mVal.Length, mVal.Length);
 
-            hMac.Init(new KeyParameter(K));
+            this.hMac.Init(new KeyParameter(this.K));
 
-            hMac.BlockUpdate(V, 0, V.Length);
-            hMac.Update((byte)0x00);
-            hMac.BlockUpdate(x, 0, x.Length);
-            hMac.BlockUpdate(m, 0, m.Length);
+            this.hMac.BlockUpdate(this.V, 0, this.V.Length);
+            this.hMac.Update((byte)0x00);
+            this.hMac.BlockUpdate(x, 0, x.Length);
+            this.hMac.BlockUpdate(m, 0, m.Length);
 
-            hMac.DoFinal(K, 0);
+            this.hMac.DoFinal(this.K, 0);
 
-            hMac.Init(new KeyParameter(K));
+            this.hMac.Init(new KeyParameter(this.K));
 
-            hMac.BlockUpdate(V, 0, V.Length);
+            this.hMac.BlockUpdate(this.V, 0, this.V.Length);
 
-            hMac.DoFinal(V, 0);
+            this.hMac.DoFinal(this.V, 0);
 
-            hMac.BlockUpdate(V, 0, V.Length);
-            hMac.Update((byte)0x01);
-            hMac.BlockUpdate(x, 0, x.Length);
-            hMac.BlockUpdate(m, 0, m.Length);
+            this.hMac.BlockUpdate(this.V, 0, this.V.Length);
+            this.hMac.Update((byte)0x01);
+            this.hMac.BlockUpdate(x, 0, x.Length);
+            this.hMac.BlockUpdate(m, 0, m.Length);
 
-            hMac.DoFinal(K, 0);
+            this.hMac.DoFinal(this.K, 0);
 
-            hMac.Init(new KeyParameter(K));
+            this.hMac.Init(new KeyParameter(this.K));
 
-            hMac.BlockUpdate(V, 0, V.Length);
+            this.hMac.BlockUpdate(this.V, 0, this.V.Length);
 
-            hMac.DoFinal(V, 0);
+            this.hMac.DoFinal(this.V, 0);
         }
 
         public virtual BigInteger NextK()
         {
-            byte[] t = new byte[((n.BitLength + 7) / 8)];
+            var t = new byte[((this.n.BitLength + 7) / 8)];
 
             for(;;)
             {
@@ -108,42 +108,42 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
 
                 while(tOff < t.Length)
                 {
-                    hMac.BlockUpdate(V, 0, V.Length);
+                    this.hMac.BlockUpdate(this.V, 0, this.V.Length);
 
-                    hMac.DoFinal(V, 0);
+                    this.hMac.DoFinal(this.V, 0);
 
-                    int len = System.Math.Min(t.Length - tOff, V.Length);
-                    Array.Copy(V, 0, t, tOff, len);
+                    int len = System.Math.Min(t.Length - tOff, this.V.Length);
+                    Array.Copy(this.V, 0, t, tOff, len);
                     tOff += len;
                 }
 
                 BigInteger k = BitsToInt(t);
 
-                if(k.SignValue > 0 && k.CompareTo(n) < 0)
+                if(k.SignValue > 0 && k.CompareTo(this.n) < 0)
                 {
                     return k;
                 }
 
-                hMac.BlockUpdate(V, 0, V.Length);
-                hMac.Update((byte)0x00);
+                this.hMac.BlockUpdate(this.V, 0, this.V.Length);
+                this.hMac.Update((byte)0x00);
 
-                hMac.DoFinal(K, 0);
+                this.hMac.DoFinal(this.K, 0);
 
-                hMac.Init(new KeyParameter(K));
+                this.hMac.Init(new KeyParameter(this.K));
 
-                hMac.BlockUpdate(V, 0, V.Length);
+                this.hMac.BlockUpdate(this.V, 0, this.V.Length);
 
-                hMac.DoFinal(V, 0);
+                this.hMac.DoFinal(this.V, 0);
             }
         }
 
         private BigInteger BitsToInt(byte[] t)
         {
-            BigInteger v = new BigInteger(1, t);
+            var v = new BigInteger(1, t);
 
-            if(t.Length * 8 > n.BitLength)
+            if(t.Length * 8 > this.n.BitLength)
             {
-                v = v.ShiftRight(t.Length * 8 - n.BitLength);
+                v = v.ShiftRight(t.Length * 8 - this.n.BitLength);
             }
 
             return v;

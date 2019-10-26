@@ -48,6 +48,10 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         [JsonProperty(PropertyName = "netStakeWeight")]
         public long NetStakeWeight { get; set; }
 
+        /// <summary>The amount in the wallet which is not suitable for staking due to having insufficient confirmations.</summary>
+        [JsonProperty(PropertyName = "immature")]
+        public long Immature { get; set; }
+
         /// <summary>Expected time of the node to find new block in seconds.</summary>
         [JsonProperty(PropertyName = "expectedTime")]
         public long ExpectedTime { get; set; }
@@ -55,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         /// <inheritdoc />
         public object Clone()
         {
-            GetStakingInfoModel res = new GetStakingInfoModel
+            var res = new GetStakingInfoModel
             {
                 Enabled = this.Enabled,
                 Staking = this.Staking,
@@ -67,10 +71,53 @@ namespace Stratis.Bitcoin.Features.Miner.Models
                 SearchInterval = this.SearchInterval,
                 Weight = this.Weight,
                 NetStakeWeight = this.NetStakeWeight,
+                Immature = this.Immature,
                 ExpectedTime = this.ExpectedTime
             };
 
             return res;
+        }
+
+        /// <summary>
+        /// Reset Weight and ExpectedTime values and set Staking to false.
+        /// </summary>
+        public void PauseStaking()
+        {
+            this.Staking = false;
+            this.Weight = 0;
+            this.ExpectedTime = 0;
+        }
+
+        /// <summary>
+        /// Resume staking. Set staking to true.
+        /// </summary>
+        /// <param name="weight">Weight</param>
+        /// <param name="expectedTime">Expected time</param>
+        public void ResumeStaking(long weight, long expectedTime)
+        {
+            this.Staking = true;
+            this.Weight = weight;
+            this.ExpectedTime = expectedTime;
+            this.Errors = null;
+        }
+
+        /// <summary>
+        /// Reset all values to default.
+        /// </summary>
+        public void StopStaking()
+        {
+            this.Enabled = false;
+            this.Staking = false;
+            this.Errors = null;
+            this.CurrentBlockSize = 0;
+            this.CurrentBlockTx = 0;
+            this.PooledTx = 0;
+            this.Difficulty = 0;
+            this.SearchInterval = 0;
+            this.Weight = 0;
+            this.NetStakeWeight = 0;
+            this.Immature = 0;
+            this.ExpectedTime = 0;
         }
     }
 }

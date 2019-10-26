@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 .Returns(new VirtualPathData(this.inner.Object, "/~/root/"));
 
             var context = new VirtualPathContext(new DefaultHttpContext(), new RouteValueDictionary(), new RouteValueDictionary());
-            var result = this.handler.GetVirtualPath(context);
+            VirtualPathData result = this.handler.GetVirtualPath(context);
 
             Assert.Equal("/~/root/", result.VirtualPath);
             Assert.Equal(this.inner.Object, result.Router);
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.actionDescriptor.Setup(a => a.ActionDescriptors)
                 .Returns(desciptors);
 
-            var task = this.handler.RouteAsync(context);
+            Task task = this.handler.RouteAsync(context);
             task.Wait();
 
             Assert.Equal("GET", callback.RouteData.Values["action"]);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         private static void SetupRequestBody(HttpRequestFeature request, string requestBody)
         {
             request.Body = new MemoryStream();
-            var bytes = Encoding.ASCII.GetBytes(requestBody);
+            byte[] bytes = Encoding.ASCII.GetBytes(requestBody);
             request.Body.Write(bytes, 0, bytes.Length);
             request.Body.Position = 0;
         }

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace NBitcoin.Crypto
 {
-    internal class HashStream : Stream
+    public class HashStream : Stream
     {
         public HashStream()
         {
@@ -80,45 +80,45 @@ namespace NBitcoin.Crypto
             int toCopy = 0;
             while(copied != count)
             {
-                toCopy = Math.Min(_Buffer.Length - _Pos, count - copied);
-                Buffer.BlockCopy(buffer, offset + copied, _Buffer, _Pos, toCopy);
+                toCopy = Math.Min(this._Buffer.Length - this._Pos, count - copied);
+                Buffer.BlockCopy(buffer, offset + copied, this._Buffer, this._Pos, toCopy);
                 copied += (byte)toCopy;
-                _Pos += (byte)toCopy;
+                this._Pos += (byte)toCopy;
                 ProcessBlockIfNeeded();
             }
         }
 
 
-        byte[] _Buffer = new byte[32];
-        byte _Pos;
+        private byte[] _Buffer = new byte[32];
+        private byte _Pos;
         public override void WriteByte(byte value)
         {
-            _Buffer[_Pos++] = value;
+            this._Buffer[this._Pos++] = value;
             ProcessBlockIfNeeded();
         }
 
         private void ProcessBlockIfNeeded()
         {
-            if(_Pos == _Buffer.Length)
+            if(this._Pos == this._Buffer.Length)
                 ProcessBlock();
         }
 
-#if(USEBC || WINDOWS_UWP || NETCORE)
-        BouncyCastle.Crypto.Digests.Sha256Digest sha = new BouncyCastle.Crypto.Digests.Sha256Digest();
+#if NETCORE
+        private BouncyCastle.Crypto.Digests.Sha256Digest sha = new BouncyCastle.Crypto.Digests.Sha256Digest();
         private void ProcessBlock()
         {
-            sha.BlockUpdate(_Buffer, 0, _Pos);
-            _Pos = 0;
+            this.sha.BlockUpdate(this._Buffer, 0, this._Pos);
+            this._Pos = 0;
         }
 
         public uint256 GetHash()
         {
             ProcessBlock();
-            sha.DoFinal(_Buffer, 0);
-            _Pos = 32;
+            this.sha.DoFinal(this._Buffer, 0);
+            this._Pos = 32;
             ProcessBlock();
-            sha.DoFinal(_Buffer, 0);
-            return new uint256(_Buffer);
+            this.sha.DoFinal(this._Buffer, 0);
+            return new uint256(this._Buffer);
         }
 
 #else

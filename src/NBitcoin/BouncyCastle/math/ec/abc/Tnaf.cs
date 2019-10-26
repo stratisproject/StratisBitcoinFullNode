@@ -325,7 +325,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             int maxLength = log2Norm > 30 ? log2Norm + 4 : 34;
 
             // The array holding the TNAF
-            sbyte[] u = new sbyte[maxLength];
+            var u = new sbyte[maxLength];
             int i = 0;
 
             // The actual length of the TNAF
@@ -377,7 +377,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             length++;
 
             // Reduce the TNAF array to its actual length
-            sbyte[] tnaf = new sbyte[length];
+            var tnaf = new sbyte[length];
             Array.Copy(u, 0, tnaf, 0, length);
             return tnaf;
         }
@@ -650,7 +650,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         */
         public static AbstractF2mPoint MultiplyRTnaf(AbstractF2mPoint p, BigInteger k)
         {
-            AbstractF2mCurve curve = (AbstractF2mCurve)p.Curve;
+            var curve = (AbstractF2mCurve)p.Curve;
             int m = curve.FieldSize;
             int a = curve.A.ToBigInteger().IntValue;
             sbyte mu = GetMu(a);
@@ -671,7 +671,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         */
         public static AbstractF2mPoint MultiplyTnaf(AbstractF2mPoint p, ZTauElement lambda)
         {
-            AbstractF2mCurve curve = (AbstractF2mCurve)p.Curve;
+            var curve = (AbstractF2mCurve)p.Curve;
             sbyte mu = GetMu(curve.A);
             sbyte[] u = TauAdicNaf(mu, lambda);
 
@@ -692,8 +692,8 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         public static AbstractF2mPoint MultiplyFromTnaf(AbstractF2mPoint p, sbyte[] u)
         {
             ECCurve curve = p.Curve;
-            AbstractF2mPoint q = (AbstractF2mPoint)curve.Infinity;
-            AbstractF2mPoint pNeg = (AbstractF2mPoint)p.Negate();
+            var q = (AbstractF2mPoint)curve.Infinity;
+            var pNeg = (AbstractF2mPoint)p.Negate();
             int tauCount = 0;
             for(int i = u.Length - 1; i >= 0; i--)
             {
@@ -744,7 +744,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
             int maxLength = log2Norm > 30 ? log2Norm + 4 + width : 34 + width;
 
             // The array holding the TNAF
-            sbyte[] u = new sbyte[maxLength];
+            var u = new sbyte[maxLength];
 
             // 2^(width - 1)
             BigInteger pow2wMin1 = pow2w.ShiftRight(1);
@@ -826,15 +826,15 @@ namespace NBitcoin.BouncyCastle.Math.EC.Abc
         */
         public static AbstractF2mPoint[] GetPreComp(AbstractF2mPoint p, sbyte a)
         {
-            sbyte[][] alphaTnaf = (a == 0) ? Tnaf.Alpha0Tnaf : Tnaf.Alpha1Tnaf;
+            sbyte[][] alphaTnaf = (a == 0) ? Alpha0Tnaf : Alpha1Tnaf;
 
-            AbstractF2mPoint[] pu = new AbstractF2mPoint[(uint)(alphaTnaf.Length + 1) >> 1];
+            var pu = new AbstractF2mPoint[(uint)(alphaTnaf.Length + 1) >> 1];
             pu[0] = p;
 
             uint precompLen = (uint)alphaTnaf.Length;
             for(uint i = 3; i < precompLen; i += 2)
             {
-                pu[i >> 1] = Tnaf.MultiplyFromTnaf(p, alphaTnaf[i]);
+                pu[i >> 1] = MultiplyFromTnaf(p, alphaTnaf[i]);
             }
 
             p.Curve.NormalizeAll(pu);

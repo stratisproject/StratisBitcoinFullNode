@@ -11,10 +11,10 @@ namespace NBitcoin
     {
         public static Money Sum(this IEnumerable<Money> moneys)
         {
-            if(moneys == null)
+            if (moneys == null)
                 throw new ArgumentNullException("moneys");
             long result = 0;
-            foreach(var money in moneys)
+            foreach (Money money in moneys)
             {
                 result = checked(result + money.Satoshi);
             }
@@ -23,12 +23,12 @@ namespace NBitcoin
 
         public static IMoney Sum(this IEnumerable<IMoney> moneys, IMoney zero)
         {
-            if(moneys == null)
+            if (moneys == null)
                 throw new ArgumentNullException("moneys");
-            if(zero == null)
+            if (zero == null)
                 throw new ArgumentNullException("zero");
             IMoney result = zero;
-            foreach(var money in moneys)
+            foreach (IMoney money in moneys)
             {
                 result = result.Add(money);
             }
@@ -38,21 +38,21 @@ namespace NBitcoin
 
         public static AssetMoney Sum(this IEnumerable<AssetMoney> moneys, AssetId assetId)
         {
-            if(moneys == null)
+            if (moneys == null)
                 throw new ArgumentNullException("moneys");
-            if(assetId == null)
+            if (assetId == null)
                 throw new ArgumentNullException("assetId");
             long result = 0;
             AssetId id = null;
-            foreach(var money in moneys)
+            foreach (AssetMoney money in moneys)
             {
                 result = checked(result + money.Quantity);
-                if(id == null)
+                if (id == null)
                     id = money.Id;
-                else if(id != money.Id)
+                else if (id != money.Id)
                     throw new ArgumentException("Impossible to add AssetMoney with different asset ids", "moneys");
             }
-            if(id == null)
+            if (id == null)
                 return new AssetMoney(assetId);
             return new AssetMoney(id, result);
         }
@@ -96,7 +96,7 @@ namespace NBitcoin
 
         private MoneyBag(IEnumerable<IMoney> bag)
         {
-            foreach(var money in bag)
+            foreach (IMoney money in bag)
             {
                 AppendMoney(money);
             }
@@ -104,7 +104,7 @@ namespace NBitcoin
 
         private void AppendMoney(MoneyBag money)
         {
-            foreach(var m in money._bag)
+            foreach (IMoney m in money._bag)
             {
                 AppendMoney(m);
             }
@@ -113,24 +113,23 @@ namespace NBitcoin
         private void AppendMoney(IMoney money)
         {
             var moneyBag = money as MoneyBag;
-            if(moneyBag != null)
+            if (moneyBag != null)
             {
                 AppendMoney(moneyBag);
                 return;
             }
 
-            var firstCompatible = _bag.FirstOrDefault(x => x.IsCompatible(money));
-            if(firstCompatible == null)
+            IMoney firstCompatible = this._bag.FirstOrDefault(x => x.IsCompatible(money));
+            if (firstCompatible == null)
             {
-                _bag.Add(money);
+                this._bag.Add(money);
             }
             else
             {
-                _bag.Remove(firstCompatible);
-                var zero = firstCompatible.Sub(firstCompatible);
-                var total = firstCompatible.Add(money);
-                if(!zero.Equals(total))
-                    _bag.Add(total);
+                this._bag.Remove(firstCompatible);
+                IMoney zero = firstCompatible.Sub(firstCompatible);
+                IMoney total = firstCompatible.Add(money);
+                if (!zero.Equals(total)) this._bag.Add(total);
             }
         }
 
@@ -149,33 +148,33 @@ namespace NBitcoin
         }
         public bool Equals(IMoney other)
         {
-            if(other == null)
+            if (other == null)
                 return false;
             var m = new MoneyBag(other);
-            return m._bag.SequenceEqual(_bag);
+            return m._bag.SequenceEqual(this._bag);
         }
 
         public static MoneyBag operator -(MoneyBag left, IMoney right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return (MoneyBag)((IMoney)left).Sub(right);
         }
 
         public static MoneyBag operator +(MoneyBag left, IMoney right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return (MoneyBag)((IMoney)left).Add(right);
         }
 
         IMoney IMoney.Add(IMoney money)
         {
-            var m = new MoneyBag(_bag);
+            var m = new MoneyBag(this._bag);
             m.AppendMoney(money);
             return m;
         }
@@ -187,7 +186,7 @@ namespace NBitcoin
 
         IMoney IMoney.Negate()
         {
-            return new MoneyBag(_bag.Select(x => x.Negate()));
+            return new MoneyBag(this._bag.Select(x => x.Negate()));
         }
 
         bool IMoney.IsCompatible(IMoney money)
@@ -202,7 +201,7 @@ namespace NBitcoin
         /// <returns>Never returns null, eithers the AssetMoney or Money if assetId is null</returns>
         public IMoney GetAmount(AssetId assetId = null)
         {
-            if(assetId == null)
+            if (assetId == null)
                 return this.OfType<Money>().FirstOrDefault() ?? Money.Zero;
             else
                 return this.OfType<AssetMoney>().Where(a => a.Id == assetId).FirstOrDefault() ?? new AssetMoney(assetId, 0);
@@ -211,7 +210,7 @@ namespace NBitcoin
         public override string ToString()
         {
             var sb = new StringBuilder();
-            foreach(var money in _bag)
+            foreach (IMoney money in this._bag)
             {
                 sb.AppendFormat("{0} ", money);
             }
@@ -220,12 +219,12 @@ namespace NBitcoin
 
         public IEnumerator<IMoney> GetEnumerator()
         {
-            return _bag.GetEnumerator();
+            return this._bag.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return _bag.GetEnumerator();
+            return this._bag.GetEnumerator();
         }
 
         /// <summary>
@@ -235,18 +234,18 @@ namespace NBitcoin
         /// <returns>The splitted money</returns>
         public IEnumerable<MoneyBag> Split(int parts)
         {
-            if(parts <= 0)
+            if (parts <= 0)
                 throw new ArgumentOutOfRangeException("Parts should be more than 0", "parts");
-            List<List<IMoney>> splits = new List<List<IMoney>>();
-            foreach(var money in this)
+            var splits = new List<List<IMoney>>();
+            foreach (IMoney money in this)
             {
                 splits.Add(money.Split(parts).ToList());
             }
 
-            for(int i = 0; i < parts; i++)
+            for (int i = 0; i < parts; i++)
             {
-                MoneyBag bag = new MoneyBag();
-                foreach(var split in splits)
+                var bag = new MoneyBag();
+                foreach (List<IMoney> split in splits)
                 {
                     bag += split[i];
                 }
@@ -285,7 +284,7 @@ namespace NBitcoin
             nRet = null;
 
             decimal value;
-            if(!decimal.TryParse(bitcoin, BitcoinStyle, CultureInfo.InvariantCulture, out value))
+            if (!decimal.TryParse(bitcoin, BitcoinStyle, CultureInfo.InvariantCulture, out value))
             {
                 return false;
             }
@@ -295,7 +294,7 @@ namespace NBitcoin
                 nRet = new Money(value, MoneyUnit.BTC);
                 return true;
             }
-            catch(OverflowException)
+            catch (OverflowException)
             {
                 return false;
             }
@@ -309,25 +308,25 @@ namespace NBitcoin
         public static Money Parse(string bitcoin)
         {
             Money result;
-            if(TryParse(bitcoin, out result))
+            if (TryParse(bitcoin, out result))
             {
                 return result;
             }
             throw new FormatException("Impossible to parse the string in a bitcoin amount");
         }
 
-        long _Satoshis;
+        private long _Satoshis;
         public long Satoshi
         {
             get
             {
-                return _Satoshis;
+                return this._Satoshis;
             }
             // used as a central point where long.MinValue checking can be enforced 
             private set
             {
                 CheckLongMinValue(value);
-                _Satoshis = value;
+                this._Satoshis = value;
             }
         }
 
@@ -337,25 +336,25 @@ namespace NBitcoin
         /// <returns></returns>
         public Money Abs()
         {
-            var a = this;
-            if(a < Money.Zero)
+            Money a = this;
+            if (a < Zero)
                 a = -a;
             return a;
-        }        
+        }
 
         public Money(int satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(uint satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(long satoshis)
         {
-            Satoshi = satoshis;
+            this.Satoshi = satoshis;
         }
 
         public Money(ulong satoshis)
@@ -364,7 +363,7 @@ namespace NBitcoin
             // ulong.MaxValue is greater than long.MaxValue
             checked
             {
-                Satoshi = (long)satoshis;
+                this.Satoshi = (long)satoshis;
             }
         }
 
@@ -374,8 +373,8 @@ namespace NBitcoin
             CheckMoneyUnit(unit, "unit");
             checked
             {
-                var satoshi = amount * (int)unit;
-                Satoshi = (long)satoshi;
+                decimal satoshi = amount * (int)unit;
+                this.Satoshi = (long)satoshi;
             }
         }
 
@@ -387,14 +386,14 @@ namespace NBitcoin
         /// <returns>The splitted money</returns>
         public IEnumerable<Money> Split(int parts)
         {
-            if(parts <= 0)
+            if (parts <= 0)
                 throw new ArgumentOutOfRangeException("Parts should be more than 0", "parts");
             long remain;
-            long result = DivRem(_Satoshis, parts, out remain);
+            long result = DivRem(this._Satoshis, parts, out remain);
 
-            for(int i = 0; i < parts; i++)
+            for (int i = 0; i < parts; i++)
             {
-                yield return Money.Satoshis(result + (remain > 0 ? 1 : 0));
+                yield return Satoshis(result + (remain > 0 ? 1 : 0));
                 remain--;
             }
         }
@@ -420,7 +419,7 @@ namespace NBitcoin
             CheckMoneyUnit(unit, "unit");
             // overflow safe because (long / int) always fit in decimal 
             // decimal operations are checked by default
-            return (decimal)Satoshi / (int)unit;
+            return (decimal)this.Satoshi / (int)unit;
         }
         /// <summary>
         /// Convert Money to decimal (same as ToUnit)
@@ -472,16 +471,16 @@ namespace NBitcoin
 
         public bool Equals(Money other)
         {
-            if(other == null)
+            if (other == null)
                 return false;
-            return _Satoshis.Equals(other._Satoshis);
+            return this._Satoshis.Equals(other._Satoshis);
         }
 
         public int CompareTo(Money other)
         {
-            if(other == null)
+            if (other == null)
                 return 1;
-            return _Satoshis.CompareTo(other._Satoshis);
+            return this._Satoshis.CompareTo(other._Satoshis);
         }
 
         #endregion
@@ -490,15 +489,15 @@ namespace NBitcoin
 
         public int CompareTo(object obj)
         {
-            if(obj == null)
+            if (obj == null)
                 return 1;
-            Money m = obj as Money;
-            if(m != null)
-                return _Satoshis.CompareTo(m._Satoshis);
-#if !(PORTABLE || NETCORE)
+            var m = obj as Money;
+            if (m != null)
+                return this._Satoshis.CompareTo(m._Satoshis);
+#if !NETCORE
             return _Satoshis.CompareTo(obj);
 #else
-            return _Satoshis.CompareTo((long)obj);
+            return this._Satoshis.CompareTo((long)obj);
 #endif
         }
 
@@ -506,88 +505,88 @@ namespace NBitcoin
 
         public static Money operator -(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return new Money(checked(left._Satoshis - right._Satoshis));
         }
         public static Money operator -(Money left)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
             return new Money(checked(-left._Satoshis));
         }
         public static Money operator +(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return new Money(checked(left._Satoshis + right._Satoshis));
         }
         public static Money operator *(int left, Money right)
         {
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
 
         public static Money operator *(Money right, int left)
         {
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(right._Satoshis * left));
+            return Satoshis(checked(right._Satoshis * left));
         }
         public static Money operator *(long left, Money right)
         {
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
         public static Money operator *(Money right, long left)
         {
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
-            return Money.Satoshis(checked(left * right._Satoshis));
+            return Satoshis(checked(left * right._Satoshis));
         }
 
         public static Money operator /(Money left, long right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
             return new Money(checked(left._Satoshis / right));
         }
 
         public static bool operator <(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return left._Satoshis < right._Satoshis;
         }
         public static bool operator >(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return left._Satoshis > right._Satoshis;
         }
         public static bool operator <=(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return left._Satoshis <= right._Satoshis;
         }
         public static bool operator >=(Money left, Money right)
         {
-            if(left == null)
+            if (left == null)
                 throw new ArgumentNullException("left");
-            if(right == null)
+            if (right == null)
                 throw new ArgumentNullException("right");
             return left._Satoshis >= right._Satoshis;
         }
@@ -623,21 +622,21 @@ namespace NBitcoin
 
         public static implicit operator Money(string value)
         {
-            return Money.Parse(value);
+            return Parse(value);
         }
 
         public override bool Equals(object obj)
         {
-            Money item = obj as Money;
-            if(item == null)
+            var item = obj as Money;
+            if (item == null)
                 return false;
-            return _Satoshis.Equals(item._Satoshis);
+            return this._Satoshis.Equals(item._Satoshis);
         }
         public static bool operator ==(Money a, Money b)
         {
-            if(Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
-            if(((object)a == null) || ((object)b == null))
+            if (((object)a == null) || ((object)b == null))
                 return false;
             return a._Satoshis == b._Satoshis;
         }
@@ -649,7 +648,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _Satoshis.GetHashCode();
+            return this._Satoshis.GetHashCode();
         }
 
 
@@ -670,14 +669,14 @@ namespace NBitcoin
         /// <returns></returns>
         public string ToString(bool fplus, bool trimExcessZero = true)
         {
-            var fmt = string.Format("{{0:{0}{1}B}}",
+            string fmt = string.Format("{{0:{0}{1}B}}",
                                     (fplus ? "+" : null),
                                     (trimExcessZero ? "2" : "8"));
-            return string.Format(BitcoinFormatter.Formatter, fmt, _Satoshis);
+            return string.Format(BitcoinFormatter.Formatter, fmt, this._Satoshis);
         }
 
 
-        static Money _Zero = new Money(0);
+        private static Money _Zero = new Money(0);
         public static Money Zero
         {
             get
@@ -694,9 +693,9 @@ namespace NBitcoin
         /// <returns>true if equals, else false</returns>
         public bool Almost(Money amount, Money dust)
         {
-            if(amount == null)
+            if (amount == null)
                 throw new ArgumentNullException("amount");
-            if(dust == null)
+            if (dust == null)
                 throw new ArgumentNullException("dust");
             return (amount - this).Abs() <= dust;
         }
@@ -709,46 +708,46 @@ namespace NBitcoin
         /// <returns>true if equals, else false</returns>
         public bool Almost(Money amount, decimal margin)
         {
-            if(amount == null)
+            if (amount == null)
                 throw new ArgumentNullException("amount");
-            if(margin < 0.0m || margin > 1.0m)
+            if (margin < 0.0m || margin > 1.0m)
                 throw new ArgumentOutOfRangeException("margin", "margin should be between 0 and 1");
-            var dust = Money.Satoshis((decimal)this.Satoshi * margin);
+            Money dust = Satoshis((decimal)this.Satoshi * margin);
             return Almost(amount, dust);
         }
 
         public static Money Min(Money a, Money b)
         {
-            if(a == null)
+            if (a == null)
                 throw new ArgumentNullException("a");
-            if(b == null)
+            if (b == null)
                 throw new ArgumentNullException("b");
-            if(a <= b)
+            if (a <= b)
                 return a;
             return b;
         }
 
         public static Money Max(Money a, Money b)
         {
-            if(a == null)
+            if (a == null)
                 throw new ArgumentNullException("a");
-            if(b == null)
+            if (b == null)
                 throw new ArgumentNullException("b");
-            if(a >= b)
+            if (a >= b)
                 return a;
             return b;
         }
 
         private static void CheckLongMinValue(long value)
         {
-            if(value == long.MinValue)
+            if (value == long.MinValue)
                 throw new OverflowException("satoshis amount should be greater than long.MinValue");
         }
 
         private static void CheckMoneyUnit(MoneyUnit value, string paramName)
         {
-            var typeOfMoneyUnit = typeof(MoneyUnit);
-            if(!Enum.IsDefined(typeOfMoneyUnit, value))
+            Type typeOfMoneyUnit = typeof(MoneyUnit);
+            if (!Enum.IsDefined(typeOfMoneyUnit, value))
             {
                 throw new ArgumentException("Invalid value for MoneyUnit", paramName);
             }
@@ -777,7 +776,7 @@ namespace NBitcoin
 
         int IComparable.CompareTo(object obj)
         {
-            return this.CompareTo(obj);
+            return CompareTo(obj);
         }
 
         #endregion
@@ -786,7 +785,7 @@ namespace NBitcoin
 
         int IComparable<IMoney>.CompareTo(IMoney other)
         {
-            return this.CompareTo(other);
+            return CompareTo(other);
         }
 
         #endregion
@@ -795,12 +794,12 @@ namespace NBitcoin
 
         bool IEquatable<IMoney>.Equals(IMoney other)
         {
-            return this.Equals(other);
+            return Equals(other);
         }
 
         bool IMoney.IsCompatible(IMoney money)
         {
-            if(money == null)
+            if (money == null)
                 throw new ArgumentNullException("money");
             return money is Money;
         }
@@ -823,7 +822,7 @@ namespace NBitcoin
         #endregion
     }
 
-    static class CharExtensions
+    internal static class CharExtensions
     {
         // .NET Char class already provides an static IsDigit method however
         // it behaves differently depending on if char is a Latin or not.
@@ -844,31 +843,31 @@ namespace NBitcoin
 
         public string Format(string format, object arg, IFormatProvider formatProvider)
         {
-            if(!this.Equals(formatProvider))
+            if (!Equals(formatProvider))
             {
                 return null;
             }
-            var i = 0;
-            var plus = format[i] == '+';
-            if(plus)
+            int i = 0;
+            bool plus = format[i] == '+';
+            if (plus)
                 i++;
             int decPos = 0;
-            if(int.TryParse(format.Substring(i, 1), out decPos))
+            if (int.TryParse(format.Substring(i, 1), out decPos))
             {
                 i++;
             }
-            var unit = format[i];
+            char unit = format[i];
             var unitToUseInCalc = MoneyUnit.BTC;
-            switch(unit)
+            switch (unit)
             {
                 case 'B':
                     unitToUseInCalc = MoneyUnit.BTC;
                     break;
             }
-            var val = Convert.ToDecimal(arg) / (int)unitToUseInCalc;
-            var zeros = new string('0', decPos);
-            var rest = new string('#', 10 - decPos);
-            var fmt = plus && val > 0 ? "+" : string.Empty;
+            decimal val = Convert.ToDecimal(arg) / (int)unitToUseInCalc;
+            string zeros = new string('0', decPos);
+            string rest = new string('#', 10 - decPos);
+            string fmt = plus && val > 0 ? "+" : string.Empty;
 
             fmt += "{0:0" + (decPos > 0 ? "." + zeros + rest : string.Empty) + "}";
             return string.Format(CultureInfo.InvariantCulture, fmt, val);

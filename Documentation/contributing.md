@@ -70,6 +70,7 @@ DOs and DON'Ts
 * **DO** keep the discussions focused. When a new or related topic comes up
   it's often better to create new issue than to side track the discussion.
 * **DO** blog and tweet (or whatever) about your contributions, frequently!
+* **DO** favour fixing merge conflicts using `git rebase` over `git merge`.
 
 * **DO NOT** send PRs for style changes. 
 * **DON'T** surprise us with big pull requests. Instead, file an issue and start

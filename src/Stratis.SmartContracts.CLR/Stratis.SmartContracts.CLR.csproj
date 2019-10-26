@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
+    <Version>1.0.2.0-beta</Version>
+    <Authors>Stratis Group Ltd.</Authors>
+    <Product>Stratis.SmartContracts.CLR</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="3.2.0.3856" />
+    <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
+    <PackageReference Include="Tracer.Fody" Version="3.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,272 +1,144 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class NodeSyncTests
     {
-        [Fact]
-        public void NodesCanConnectToEachOthers()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                var node1 = builder.CreateStratisPowNode();
-                var node2 = builder.CreateStratisPowNode();
-                builder.StartAll();
-                Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
-                Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
-                var rpc1 = node1.CreateRPCClient();
-                rpc1.AddNode(node2.Endpoint, true);
-                Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
-                Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
+        private readonly Network powNetwork;
+        private readonly Network posNetwork;
 
-                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
-                Assert.False(behavior.Inbound);
-                Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
-                Assert.True(behavior.Inbound);
-                Assert.False(behavior.OneTry);
+        public NodeSyncTests()
+        {
+            this.powNetwork = new BitcoinRegTest();
+            this.posNetwork = new StratisRegTest();
+        }
+
+        public class StratisRegTestMaxReorg : StratisRegTest
+        {
+            public StratisRegTestMaxReorg()
+            {
+                this.Name = Guid.NewGuid().ToString();
+
+                Type consensusType = typeof(NBitcoin.Consensus);
+                consensusType.GetProperty("MaxReorgLength").SetValue(this.Consensus, (uint)10);
             }
         }
 
         [Fact]
-        public void CanStratisSyncFromCore()
+        public void Pow_CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNode = builder.CreateBitcoinCoreNode();
-                builder.StartAll();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode coreNode = builder.CreateBitcoinCoreNode().Start();
 
-                stratisNode.NotInIBD();
+                Block tip = coreNode.FindBlock(10).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreNode);
 
-                var tip = coreNode.FindBlock(10).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                TestHelper.Disconnect(stratisNode, coreNode);
 
-                //Now check if Core connect to stratis
-                stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-                TestHelper.WaitLoop(() => coreNode.CreateRPCClient().GetPeersInfo().Length == 0);
-
-                tip = coreNode.FindBlock(10).Last();
-                coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                coreNode.FindBlock(10).Last();
+                TestHelper.ConnectAndSync(coreNode, stratisNode);
             }
         }
 
         [Fact]
-        public void CanStratisSyncFromStratis()
+        public void Pow_CanStratisSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                var coreCreateNode = builder.CreateBitcoinCoreNode();
-                builder.StartAll();
-
-                stratisNode.NotInIBD();
-                stratisNodeSync.NotInIBD();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode coreCreateNode = builder.CreateBitcoinCoreNode().Start();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
-                var tip = coreCreateNode.FindBlock(5).Last();
-                stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-                var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Block tip = coreCreateNode.FindBlock(5).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreCreateNode);
 
-                // add a new stratis node which will download
+                TestBase.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
+
+                // Add a new stratis node which will download
                 // the blocks using the GetData payload
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-
-                // wait for download and assert
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-                bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                TestHelper.ConnectAndSync(stratisNodeSync, stratisNode);
+                TestBase.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
             }
         }
 
         [Fact]
-        public void CanCoreSyncFromStratis()
+        public void Pow_CanCoreSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNodeSync = builder.CreateBitcoinCoreNode();
-                var coreCreateNode = builder.CreateBitcoinCoreNode();
-                builder.StartAll();
-
-                stratisNode.NotInIBD();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode coreNodeSync = builder.CreateBitcoinCoreNode().Start();
+                CoreNode coreCreateNode = builder.CreateBitcoinCoreNode().Start();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
-                var tip = coreCreateNode.FindBlock(5).Last();
-                stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode.FullNode.GetBlockStoreTip().HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
-
-                var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Block tip = coreCreateNode.FindBlock(5).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreCreateNode);
+                TestBase.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
 
                 // add a new stratis node which will download
                 // the blocks using the GetData payload
-                coreNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-
-                // wait for download and assert
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
-                bestBlockHash = coreNodeSync.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                TestHelper.ConnectAndSync(coreNodeSync, stratisNode);
             }
         }
 
         [Fact]
-        public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
+        public void Pos_Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
-            // Temporary fix so the Network static initialize will not break.
-            var m = Network.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisMiner = builder.CreateStratisPosNode();
-                var stratisSyncer = builder.CreateStratisPosNode();
-                var stratisReorg = builder.CreateStratisPosNode();
+                var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
 
-                builder.StartAll();
-                stratisMiner.NotInIBD();
-                stratisSyncer.NotInIBD();
-                stratisReorg.NotInIBD();
+                CoreNode miner = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-miner").WithDummyWallet().Start();
+                CoreNode syncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-syncer").Start();
+                CoreNode reorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-reorg").WithDummyWallet().Start();
 
-                // TODO: set the max allowed reorg threshold here
-                // assume a reorg of 10 blocks is not allowed.
-                stratisMiner.FullNode.ChainBehaviorState.MaxReorgLength = 10;
-                stratisSyncer.FullNode.ChainBehaviorState.MaxReorgLength = 10;
-                stratisReorg.FullNode.ChainBehaviorState.MaxReorgLength = 10;
+                TestHelper.MineBlocks(miner, 1);
 
-                stratisMiner.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMiner.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
+                // Sync miner with syncer and reorg
+                TestHelper.ConnectAndSync(miner, reorg);
+                TestHelper.ConnectAndSync(miner, syncer);
 
-                stratisMiner.GenerateStratisWithMiner(1);
+                // Create a reorg by mining on two different chains
+                TestHelper.Disconnect(miner, reorg);
+                TestHelper.Disconnect(miner, syncer);
+                TestHelper.MineBlocks(miner, 11);
+                TestHelper.MineBlocks(reorg, 12);
 
-                // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
+                // Make sure the nodes are actually on different chains.
+                Assert.NotEqual(miner.FullNode.ChainIndexer.GetHeader(2).HashBlock, reorg.FullNode.ChainIndexer.GetHeader(2).HashBlock);
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
-
-                // create a reorg by mining on two different chains
-                // ================================================
-
-                stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
-                stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
-
-                var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(11));
-                var t2 = Task.Delay(1000).ContinueWith(t => stratisReorg.GenerateStratisWithMiner(12));
-                Task.WaitAll(t1, t2);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
-
-                // make sure the nodes are actually on different chains.
-                Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
-
-                TestHelper.TriggerSync(stratisSyncer);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                TestHelper.ConnectAndSync(miner, syncer);
 
                 // The hash before the reorg node is connected.
-                var hashBeforeReorg = stratisMiner.FullNode.Chain.Tip.HashBlock;
+                uint256 hashBeforeReorg = miner.FullNode.ChainIndexer.Tip.HashBlock;
 
-                // connect the reorg chain
-                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                stratisSyncer.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                // Connect the reorg chain
+                TestHelper.ConnectNoCheck(miner, reorg);
+                TestHelper.ConnectNoCheck(syncer, reorg);
 
-                // trigger nodes to sync
-                TestHelper.TriggerSync(stratisMiner);
-                TestHelper.TriggerSync(stratisReorg);
-                TestHelper.TriggerSync(stratisSyncer);
+                // Wait for the synced chain to get headers updated.
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnected(reorg));
 
-                // wait for the synced chain to get headers updated.
-                TestHelper.WaitLoop(() => !stratisReorg.FullNode.ConnectionManager.ConnectedPeers.Any());
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(reorg, miner) == false);
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(reorg, syncer) == false);
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReorg, stratisMiner) == false);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReorg, stratisSyncer) == false);
-
-                // check that a reorg did not happen.
-                Assert.Equal(hashBeforeReorg, stratisSyncer.FullNode.Chain.Tip.HashBlock);
-            }
-        }
-
-        /// <summary>
-        /// This tests simulates scenario 2 from issue 636.
-        /// <para>
-        /// The test mines a block and roughly at the same time, but just after that, a new block at the same height
-        /// arrives from the puller. Then another block comes from the puller extending the chain without the block we mined.
-        /// </para>
-        /// </summary>
-        /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Fact]
-        public void PullerVsMinerRaceCondition()
-        {
-            // Temporary fix so the Network static initialize will not break.
-            var m = Network.Main;
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                // This represents local node.
-                var stratisMinerLocal = builder.CreateStratisPosNode();
-
-                // This represents remote, which blocks are received by local node using its puller.
-                var stratisMinerRemote = builder.CreateStratisPosNode();
-
-                builder.StartAll();
-                stratisMinerLocal.NotInIBD();
-                stratisMinerRemote.NotInIBD();
-
-                stratisMinerLocal.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerLocal.FullNode.Network));
-                stratisMinerRemote.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerRemote.FullNode.Network));
-
-                // Let's mine block Ap and Bp.
-                stratisMinerRemote.GenerateStratisWithMiner(2);
-
-                // Wait for block repository for block sync to work.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMinerRemote));
-                stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
-
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMinerLocal, stratisMinerRemote));
-
-                // Now disconnect the peers and mine block C2p on remote.
-                stratisMinerLocal.CreateRPCClient().RemoveNode(stratisMinerRemote.Endpoint);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisMinerRemote));
-
-                // Mine block C2p.
-                stratisMinerRemote.GenerateStratisWithMiner(1);
-                Thread.Sleep(2000);
-
-                // Now reconnect nodes and mine block C1s before C2p arrives.
-                stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
-                stratisMinerLocal.GenerateStratisWithMiner(1);
-
-                // Mine block Dp.
-                uint256 dpHash = stratisMinerRemote.GenerateStratisWithMiner(1)[0];
-
-                // Now we wait until the local node's chain tip has correct hash of Dp.
-                TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
-
-                // Then give it time to receive the block from the puller.
-                Thread.Sleep(2500);
-
-                // Check that local node accepted the Dp as consensus tip.
-                Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.ConsensusTip.HashBlock, dpHash);
+                // Check that a reorg did not happen.
+                Assert.Equal(hashBeforeReorg, syncer.FullNode.ChainIndexer.Tip.HashBlock);
             }
         }
 
@@ -278,70 +150,44 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         [Fact]
-        public void MiningNodeWithOneConnectionAlwaysSynced()
+        public void Pow_MiningNodeWithOneConnection_AlwaysSynced()
         {
-            NetworkSimulator simulator = new NetworkSimulator(this);
+            string testFolderPath = Path.Combine(this.GetType().Name, nameof(Pow_MiningNodeWithOneConnection_AlwaysSynced));
 
-            simulator.Initialize(4);
-
-            var miner = simulator.Nodes[0];
-            var connector = simulator.Nodes[1];
-            var networkNode1 = simulator.Nodes[2];
-            var networkNode2 = simulator.Nodes[3];
-
-            // Connect nodes with each other. Miner is connected to connector and connector, node1, node2 are connected with each other.
-            miner.CreateRPCClient().AddNode(connector.Endpoint, true);
-            connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);
-            connector.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
-            networkNode1.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
-
-            simulator.MakeSureEachNodeCanMineAndSync();
-
-            int networkHeight = miner.FullNode.Chain.Height;
-            Assert.Equal(networkHeight, simulator.Nodes.Count);
-
-            // Random node on network generates a block.
-            networkNode1.GenerateStratis(1);
-
-            // Wait until connector get the hash of network's block.
-            while ((connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
-                   (networkNode1.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight))
-                Thread.Sleep(1);
-
-            // Make sure that miner did not advance yet but connector did.
-            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
-            Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
-            Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
-            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight + 1);
-
-            // Miner mines the block.
-            miner.GenerateStratis(1);
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
-
-            networkHeight++;
-
-            // Make sure that at this moment miner's tip != network's and connector's tip.
-            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
-            Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
-            Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
-            Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight);
-
-            connector.GenerateStratis(1);
-            networkHeight++;
-
-            int delay = 0;
-
-            while (true)
+            using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
-                Thread.Sleep(50);
-                if (simulator.DidAllNodesReachHeight(networkHeight))
-                    break;
-                delay += 50;
+                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
 
-                Assert.True(delay < 10 * 1000, "Miner node was not able to advance!");
+                TestHelper.Connect(minerNode, connectorNode);
+                TestHelper.Connect(connectorNode, firstNode);
+                TestHelper.Connect(connectorNode, secondNode);
+                TestHelper.Connect(firstNode, secondNode);
+
+                List<CoreNode> nodes = new List<CoreNode> { minerNode, connectorNode, firstNode, secondNode };
+
+                nodes.ForEach(n =>
+                {
+                    TestHelper.MineBlocks(n, 1);
+                    TestHelper.WaitForNodeToSync(nodes.ToArray());
+                });
+
+                Assert.Equal(minerNode.FullNode.ChainIndexer.Height, nodes.Count);
+
+                // Random node on network generates a block.
+                TestHelper.MineBlocks(firstNode, 1);
+                TestHelper.WaitForNodeToSync(firstNode, connectorNode, secondNode);
+
+                // Miner mines the block.
+                TestHelper.MineBlocks(minerNode, 1);
+                TestHelper.WaitForNodeToSync(minerNode, connectorNode);
+
+                TestHelper.MineBlocks(connectorNode, 1);
+
+                TestHelper.WaitForNodeToSync(nodes.ToArray());
             }
-
-            Assert.Equal(networkNode1.FullNode.Chain.Tip.HashBlock, miner.FullNode.Chain.Tip.HashBlock);
         }
     }
 }

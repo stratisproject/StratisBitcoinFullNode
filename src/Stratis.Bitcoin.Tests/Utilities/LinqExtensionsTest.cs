@@ -9,9 +9,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EmptySetTest()
         {
-            List<long> list = new List<long>();
+            var list = new List<long>();
 
-            var median = list.Median();
+            long median = list.Median();
 
             Assert.Equal(0, median);
         }
@@ -19,9 +19,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void SingleSetTest()
         {
-            List<long> list = new List<long> { 22 };
+            var list = new List<long> { 22 };
 
-            var median = list.Median();
+            long median = list.Median();
 
             Assert.Equal(22, median);
         }
@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void OddSetTest()
         {
-            List<long> list = new List<long> { 0, 1, 4, 8, 9, 12 };
+            var list = new List<long> { 0, 1, 4, 8, 9, 12 };
 
-            var median = list.Median();
+            long median = list.Median();
 
             Assert.Equal(6, median);
         }
@@ -39,9 +39,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EvenSetTest()
         {
-            List<long> list = new List<long> { 1, 4, 8, 9, 12 };
+            var list = new List<long> { 1, 4, 8, 9, 12 };
 
-            var median = list.Median();
+            long median = list.Median();
 
             Assert.Equal(8, median);
         }
@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void UnorderedSetTest()
         {
-            List<long> list = new List<long> { 12, 0, 1, 4, 8, 9 };
+            var list = new List<long> { 12, 0, 1, 4, 8, 9 };
 
-            var median = list.Median();
+            long median = list.Median();
 
             Assert.Equal(6, median);
         }

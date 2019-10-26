@@ -7,7 +7,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Tests.Utilities
 {
     /// <summary>
-    /// Tests of <see cref="AsyncExecutionEvent{TSender, TArg}"/> class.
+    /// Tests of <see cref="AsyncExecutionEvent{TSender,TArg}"/> class.
     /// </summary>
     public class AsyncExecutionEventTest
     {
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// are correct.
         /// </summary>
         [Fact]
-        public async void AsyncExecutionEvent_OnlyRegisteredCallbackIsCalled_Async()
+        public async Task AsyncExecutionEvent_OnlyRegisteredCallbackIsCalled_Async()
         {
             using (var executionEvent = new AsyncExecutionEvent<int, int>())
             {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AsyncExecutionEvent_UnregisterGuarantee()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             using (var executionEvent = new AsyncExecutionEvent<object, bool>())
             {
                 for (int i = 0; i < 100; i++)
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Checks that if multiple callbacks are registered, they are all called and they are called in correct order.
         /// </summary>
         [Fact]
-        public async void AsyncExecutionEvent_MultipleCallbacksExecutedInCorrectOrder_Async()
+        public async Task AsyncExecutionEvent_MultipleCallbacksExecutedInCorrectOrder_Async()
         {
             using (var executionEvent = new AsyncExecutionEvent<object, object>())
             {
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Checks that the callback method can unregister itself.
         /// </summary>
         [Fact]
-        public async void AsyncExecutionEvent_CanUnregisterFromCallback_Async()
+        public async Task AsyncExecutionEvent_CanUnregisterFromCallback_Async()
         {
             using (var executionEvent = new AsyncExecutionEvent<object, object>())
             {
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Checks that the callback method can unregister itself and dispose the execution event.
         /// </summary>
         [Fact]
-        public async void AsyncExecutionEvent_CanDisposeFromCallback_Async()
+        public async Task AsyncExecutionEvent_CanDisposeFromCallback_Async()
         {
             var executionEvent = new AsyncExecutionEvent<object, object>();
 

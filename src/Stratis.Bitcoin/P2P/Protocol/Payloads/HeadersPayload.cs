@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -24,41 +25,44 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 this.Header = header;
             }
 
+            [NoTrace]
             public void ReadWrite(BitcoinStream stream)
             {
                 stream.ReadWrite(ref this.Header);
-                VarInt txCount = new VarInt(0);
+                var txCount = new VarInt(0);
                 stream.ReadWrite(ref txCount);
 
                 // Stratis adds an additional byte to the end of a header need to investigate why.
-                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
+                if (stream.ConsensusFactory is PosConsensusFactory)
                     stream.ReadWrite(ref txCount);
             }
         }
 
         private List<BlockHeader> headers = new List<BlockHeader>();
+
         public List<BlockHeader> Headers { get { return this.headers; } }
 
         public HeadersPayload()
         {
         }
 
-        public HeadersPayload(params BlockHeader[] headers)
+        public HeadersPayload(IEnumerable<BlockHeader> headers)
         {
             this.Headers.AddRange(headers);
         }
 
+        [NoTrace]
         public override void ReadWriteCore(BitcoinStream stream)
         {
             if (stream.Serializing)
             {
-                List<BlockHeaderWithTxCount> heardersOff = this.headers.Select(h => new BlockHeaderWithTxCount(h)).ToList();
-                stream.ReadWrite(ref heardersOff);
+                List<BlockHeaderWithTxCount> headersOff = this.headers.Select(h => new BlockHeaderWithTxCount(h)).ToList();
+                stream.ReadWrite(ref headersOff);
             }
             else
             {
                 this.headers.Clear();
-                List<BlockHeaderWithTxCount> headersOff = new List<BlockHeaderWithTxCount>();
+                var headersOff = new List<BlockHeaderWithTxCount>();
                 stream.ReadWrite(ref headersOff);
                 this.headers.AddRange(headersOff.Select(h => h.Header));
             }

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
+            var masterFile = new DnsSeedMasterFile();
             Action a = () => { masterFile.Load(null); };
 
             // Act and assert.
@@ -33,10 +33,10 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsIPAddressResourceRecord_AndIsIPv4_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
+            var domain = new Domain("stratis.test.com");
 
-            IPAddressResourceRecord testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("192.168.0.1"));
-            Question question = new Question(domain, RecordType.A);
+            var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("192.168.0.1"));
+            var question = new Question(domain, RecordType.A);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -56,10 +56,10 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsIPAddressResourceRecord_AndIsIPv6_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
+            var domain = new Domain("stratis.test.com");
 
-            IPAddressResourceRecord testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("2001:db8:85a3:0:0:8a2e:370:7334"));
-            Question question = new Question(domain, RecordType.AAAA);
+            var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("2001:db8:85a3:0:0:8a2e:370:7334"));
+            var question = new Question(domain, RecordType.AAAA);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -79,11 +79,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsCanonicalNameResourceRecord_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain cNameDomain = new Domain("www.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var cNameDomain = new Domain("www.stratis.test.com");
 
-            CanonicalNameResourceRecord testResourceRecord = new CanonicalNameResourceRecord(domain, cNameDomain);
-            Question question = new Question(domain, RecordType.CNAME);
+            var testResourceRecord = new CanonicalNameResourceRecord(domain, cNameDomain);
+            var question = new Question(domain, RecordType.CNAME);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -103,13 +103,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsMailExchangeResourceRecord_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain exchangeDomain = new Domain("mail.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var exchangeDomain = new Domain("mail.stratis.test.com");
             int preference = 10;
 
-            MailExchangeResourceRecord testResourceRecord = new MailExchangeResourceRecord(domain, preference, exchangeDomain);
+            var testResourceRecord = new MailExchangeResourceRecord(domain, preference, exchangeDomain);
 
-            Question question = new Question(domain, RecordType.MX);
+            var question = new Question(domain, RecordType.MX);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -130,12 +130,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsNameServerResourceRecord_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain nsDomain = new Domain("ns");
+            var domain = new Domain("stratis.test.com");
+            var nsDomain = new Domain("ns");
 
-            NameServerResourceRecord testResourceRecord = new NameServerResourceRecord(domain, nsDomain);
+            var testResourceRecord = new NameServerResourceRecord(domain, nsDomain);
 
-            Question question = new Question(domain, RecordType.NS);
+            var question = new Question(domain, RecordType.NS);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -155,12 +155,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsPointerResourceRecord_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain nsDomain = new Domain("pointer.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var nsDomain = new Domain("pointer.stratis.test.com");
 
-            PointerResourceRecord testResourceRecord = new PointerResourceRecord(domain, nsDomain);
+            var testResourceRecord = new PointerResourceRecord(domain, nsDomain);
 
-            Question question = new Question(domain, RecordType.PTR);
+            var question = new Question(domain, RecordType.PTR);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -180,16 +180,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsStartOfAuthorityResourceRecord_ThenEntryIsPopulated()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain masterDomain = new Domain("master.test.com");
-            Domain responsibleDomain = new Domain("responsible.test.com");
+            var domain = new Domain("stratis.test.com");
+            var masterDomain = new Domain("master.test.com");
+            var responsibleDomain = new Domain("responsible.test.com");
             long serialNumber = 12121212;
-            TimeSpan refreshInterval = new TimeSpan(1111111111);
-            TimeSpan retryInterval = new TimeSpan(2222222222);
-            TimeSpan expireInterval = new TimeSpan(3333333333);
-            TimeSpan minimumTimeToLive = new TimeSpan(4444444444);
+            var refreshInterval = new TimeSpan(1111111111);
+            var retryInterval = new TimeSpan(2222222222);
+            var expireInterval = new TimeSpan(3333333333);
+            var minimumTimeToLive = new TimeSpan(4444444444);
 
-            StartOfAuthorityResourceRecord testResourceRecord =
+            var testResourceRecord =
                 new StartOfAuthorityResourceRecord(
                     domain,
                     masterDomain,
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     expireInterval,
                     minimumTimeToLive);
 
-            Question question = new Question(domain, RecordType.SOA);
+            var question = new Question(domain, RecordType.SOA);
 
             // Act.
             IList<IResourceRecord> resourceRecords = this.WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(testResourceRecord, question);
@@ -226,10 +226,10 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenLoad_AndStreamContainsEntries_ThenEntriesArePopulated()
         {
             // Arrange.
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 string domainName = "stratis.test.com";
-                DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
+                var masterFile = new DnsSeedMasterFile();
 
                 IList<IResourceRecord> testResourceRecords = new List<IResourceRecord>()
                 {
@@ -256,8 +256,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 }
 
                 // Assert.
-                Domain domain = new Domain(domainName);
-                Question question = new Question(domain, RecordType.A);
+                var domain = new Domain(domainName);
+                var question = new Question(domain, RecordType.A);
 
                 IList<IResourceRecord> resourceRecords = masterFile.Get(question);
                 resourceRecords.Should().NotBeNullOrEmpty();
@@ -277,13 +277,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsIPAddressResourceRecord_AndIsIPv4_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
+            var domain = new Domain("stratis.test.com");
 
-            IPAddressResourceRecord testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("192.168.0.1"));
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("192.168.0.1"));
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -307,13 +306,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsIPAddressResourceRecord_AndIsIPv6_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
+            var domain = new Domain("stratis.test.com");
 
-            IPAddressResourceRecord testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("2001:db8:85a3:0:0:8a2e:370:7334"));
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("2001:db8:85a3:0:0:8a2e:370:7334"));
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -337,14 +335,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsCanonicalNameResourceRecord_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain cNameDomain = new Domain("www.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var cNameDomain = new Domain("www.stratis.test.com");
 
-            CanonicalNameResourceRecord testResourceRecord = new CanonicalNameResourceRecord(domain, cNameDomain);
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var testResourceRecord = new CanonicalNameResourceRecord(domain, cNameDomain);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -368,14 +365,14 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsMailExchangeResourceRecord_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain exchangeDomain = new Domain("mail.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var exchangeDomain = new Domain("mail.stratis.test.com");
             int preference = 10;
 
-            MailExchangeResourceRecord testResourceRecord = new MailExchangeResourceRecord(domain, preference, exchangeDomain);
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
-            using (MemoryStream stream = new MemoryStream())
+            var testResourceRecord = new MailExchangeResourceRecord(domain, preference, exchangeDomain);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
+
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -400,14 +397,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsNameServerResourceRecord_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain nsDomain = new Domain("ns");
+            var domain = new Domain("stratis.test.com");
+            var nsDomain = new Domain("ns");
 
-            NameServerResourceRecord testResourceRecord = new NameServerResourceRecord(domain, nsDomain);
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var testResourceRecord = new NameServerResourceRecord(domain, nsDomain);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -431,14 +427,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsPointerResourceRecord_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain nsDomain = new Domain("pointer.stratis.test.com");
+            var domain = new Domain("stratis.test.com");
+            var nsDomain = new Domain("pointer.stratis.test.com");
 
-            PointerResourceRecord testResourceRecord = new PointerResourceRecord(domain, nsDomain);
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var testResourceRecord = new PointerResourceRecord(domain, nsDomain);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -462,16 +457,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndMasterListContainsStartOfAuthorityResourceRecord_ThenEntryIsSaved()
         {
             // Arrange
-            Domain domain = new Domain("stratis.test.com");
-            Domain masterDomain = new Domain("master.test.com");
-            Domain responsibleDomain = new Domain("responsible.test.com");
+            var domain = new Domain("stratis.test.com");
+            var masterDomain = new Domain("master.test.com");
+            var responsibleDomain = new Domain("responsible.test.com");
             long serialNumber = 12121212;
-            TimeSpan refreshInterval = new TimeSpan(1111111111);
-            TimeSpan retryInterval = new TimeSpan(2222222222);
-            TimeSpan expireInterval = new TimeSpan(3333333333);
-            TimeSpan minimumTimeToLive = new TimeSpan(4444444444);
+            var refreshInterval = new TimeSpan(1111111111);
+            var retryInterval = new TimeSpan(2222222222);
+            var expireInterval = new TimeSpan(3333333333);
+            var minimumTimeToLive = new TimeSpan(4444444444);
 
-            StartOfAuthorityResourceRecord testResourceRecord =
+            var testResourceRecord =
                 new StartOfAuthorityResourceRecord(
                     domain,
                     masterDomain,
@@ -482,10 +477,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     expireInterval,
                     minimumTimeToLive);
 
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -524,13 +518,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     new IPAddressResourceRecord(new Domain(domainName), IPAddress.Parse("192.168.100.4"))
                 };
 
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
-            foreach (IResourceRecord testResourceRecord in testResourceRecords)
-            {
-                masterFile.Add(testResourceRecord);
-            }
+            var masterFile = new DnsSeedMasterFile(testResourceRecords);
 
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 // Act.
                 masterFile.Save(stream);
@@ -555,7 +545,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenSave_AndStreamIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
+            var masterFile = new DnsSeedMasterFile();
             Action a = () => { masterFile.Save(null); };
 
             // Act and assert.
@@ -565,9 +555,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         private IList<IResourceRecord> WhenLoad_AndStreamContainsEntry_ThenEntryIsPopulated(IResourceRecord testResourceRecord, Question question)
         {
             // Arrange.
-            using (MemoryStream stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
-                DnsSeedMasterFile masterFile = new DnsSeedMasterFile();
+                var masterFile = new DnsSeedMasterFile();
 
                 IList<IResourceRecord> testResourceRecords = new List<IResourceRecord>()
                 {
@@ -609,7 +599,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IList<IResourceRecord> resourceRecords = null;
             stream.Seek(0, SeekOrigin.Begin);
 
-            using (JsonTextReader textReader = new JsonTextReader(new StreamReader(stream)))
+            using (var textReader = new JsonTextReader(new StreamReader(stream)))
             {
                 JsonSerializer serializer = this.CreateSerializer();
                 resourceRecords = serializer.Deserialize<List<IResourceRecord>>(textReader);

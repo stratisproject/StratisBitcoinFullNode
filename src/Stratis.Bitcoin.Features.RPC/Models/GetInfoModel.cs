@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.RPC.Converters;
+using Stratis.Bitcoin.Controllers.Converters;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {

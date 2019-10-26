@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin.Features.RPC.Models;
+using NBitcoin;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -11,6 +12,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
     /// <summary>
     /// Controller providing operations on a watch-only wallet.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class WatchOnlyWalletController : Controller
     {
@@ -33,7 +35,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// <param name="address">The base58 address to add to the watch list.</param>
         [Route("watch")]
         [HttpPost]
-        public IActionResult Watch([FromQuery]string address)
+        public IActionResult Watch([FromBody]string address)
         {
             // Checks the request is valid.
             if (string.IsNullOrEmpty(address))
@@ -63,35 +65,36 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
             try
             {
                 // Map a watch-only wallet to a model object for display in the front end.
-                var watchOnlyWallet = this.watchOnlyWalletManager.GetWatchOnlyWallet();
-                WatchOnlyWalletModel model = new WatchOnlyWalletModel
+                WatchOnlyWallet watchOnlyWallet = this.watchOnlyWalletManager.GetWatchOnlyWallet();
+                var model = new WatchOnlyWalletModel
                 {
                     CoinType = watchOnlyWallet.CoinType,
                     Network = watchOnlyWallet.Network,
                     CreationTime = watchOnlyWallet.CreationTime
                 };
 
-                foreach (var watchAddress in watchOnlyWallet.WatchedAddresses)
+                foreach (KeyValuePair<string, WatchedAddress> watchAddress in watchOnlyWallet.WatchedAddresses)
                 {
-                    WatchedAddressModel watchedAddressModel = new WatchedAddressModel
+                    var watchedAddressModel = new WatchedAddressModel
                     {
                         Address = watchAddress.Value.Address,
                         Transactions = new List<TransactionVerboseModel>()
                     };
 
-                    foreach (var transactionData in watchAddress.Value.Transactions)
+                    foreach (KeyValuePair<string, TransactionData> transactionData in watchAddress.Value.Transactions)
                     {
-                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transactionData.Value.Transaction, watchOnlyWallet.Network));
+                        Transaction transaction = watchOnlyWallet.Network.CreateTransaction(transactionData.Value.Hex);
+                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transaction, watchOnlyWallet.Network));
                     }
 
                     model.WatchedAddresses.Add(watchedAddressModel);
                 }
 
-                foreach (var transaction in watchOnlyWallet.WatchedTransactions)
+                foreach (KeyValuePair<string, TransactionData> transaction in watchOnlyWallet.WatchedTransactions)
                 {
-                    WatchedTransactionModel watchedTransactionModel = new WatchedTransactionModel
+                    var watchedTransactionModel = new WatchedTransactionModel
                     {
-                        Transaction = new TransactionVerboseModel(transaction.Value.Transaction, watchOnlyWallet.Network)
+                        Transaction = new TransactionVerboseModel(watchOnlyWallet.Network.CreateTransaction(transaction.Value.Hex), watchOnlyWallet.Network)
                     };
 
                     model.WatchedTransactions.Add(watchedTransactionModel);

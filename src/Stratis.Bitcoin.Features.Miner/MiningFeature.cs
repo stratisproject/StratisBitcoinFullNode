@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -8,13 +10,17 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Mining;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -23,6 +29,8 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class MiningFeature : FullNodeFeature
     {
+        private readonly ConnectionManagerSettings connectionManagerSettings;
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
@@ -44,17 +52,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>
-        /// Initializes the instance of the object.
-        /// </summary>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="minerSettings">Settings relevant to mining or staking.</param>
-        /// <param name="nodeSettings">The node's configuration settings.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
-        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
-        /// <param name="powMining">POW miner.</param>
-        /// <param name="posMinting">POS staker.</param>
         public MiningFeature(
+            ConnectionManagerSettings connectionManagerSettings,
             Network network,
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
@@ -63,6 +62,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IPowMining powMining,
             IPosMinting posMinting = null)
         {
+            this.connectionManagerSettings = connectionManagerSettings;
             this.network = network;
             this.minerSettings = minerSettings;
             this.nodeSettings = nodeSettings;
@@ -70,12 +70,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.posMinting = posMinting;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        /// <inheritdoc />
-        public override void LoadConfiguration()
-        {
-            this.minerSettings.Load(this.nodeSettings);
         }
 
         /// <summary>
@@ -106,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
             {
-                var errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
+                string errorMessage = "Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
                                     + "Please adjust your system time and restart the node.";
                 this.logger.LogError(errorMessage);
                 throw new ConfigurationException(errorMessage);
@@ -116,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posMinting.Stake(new PosMinting.WalletSecret
+                this.posMinting.Stake(new WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
@@ -124,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
             else
             {
-                var errorMessage = "Staking not started, wallet name or password were not provided.";
+                string errorMessage = "Staking not started, wallet name or password were not provided.";
                 this.logger.LogError(errorMessage);
                 throw new ConfigurationException(errorMessage);
             }
@@ -149,8 +143,11 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            if ((this.minerSettings.Mine || this.minerSettings.Stake) && this.connectionManagerSettings.IsGateway)
+                throw new ConfigurationException("The node cannot be configured as a gateway and mine or stake at the same time.");
+
             if (this.minerSettings.Mine)
             {
                 string mineToAddress = this.minerSettings.MineAddress;
@@ -169,6 +166,8 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -183,15 +182,15 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (services.ServiceProvider.GetService<IPosMinting>() != null)
             {
-                services.Features.EnsureFeature<WalletFeature>();
+                services.Features.EnsureFeature<BaseWalletFeature>();
             }
 
             // Mining and staking require block store feature.
             if (this.minerSettings.Mine || this.minerSettings.Stake)
             {
                 services.Features.EnsureFeature<BlockStoreFeature>();
-                StoreSettings blockSettings = services.ServiceProvider.GetService<StoreSettings>();
-                if (blockSettings.Prune)
+                var storeSettings = services.ServiceProvider.GetService<StoreSettings>();
+                if (storeSettings.PruningEnabled)
                     throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
             }
         }
@@ -206,9 +205,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Adds a mining feature to the node being initialized.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
-        public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
+        public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
@@ -218,15 +216,13 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    .DependOn<BaseWalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, BlockProvider>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
-                        services.AddSingleton<MinerSettings>(new MinerSettings(setup));
+                        services.AddSingleton<MinerSettings>();
                     });
             });
 
@@ -237,9 +233,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Adds POW and POS miner components to the node, so that it can mine or stake.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
-        public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
+        public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
@@ -249,7 +244,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
+                    // Alternatively "DependsOn" should take a list of features that will satisfy the dependency.
+                    //.DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
@@ -257,9 +254,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<IBlockProvider, BlockProvider>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
-                        services.AddSingleton<MinerSettings>(new MinerSettings(setup));
+                        services.AddSingleton<BlockDefinition, PosPowBlockDefinition>();
+                        services.AddSingleton<MinerSettings>();
                     });
             });
 

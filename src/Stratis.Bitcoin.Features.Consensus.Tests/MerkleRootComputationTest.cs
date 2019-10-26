@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -17,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 new uint256("f4570fd8c54fded84b696ba3eb986a5421b0a41109dea6e10ba96aec70f78f00")
             };
             bool mutated;
-            var root = ComputeMerkleRoot(leaves, out mutated);
+            uint256 root = BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
 
             Assert.Equal("cd00f5d5aada62c8e49a9f01378998cbd016d04b725d0d8497877e5f75ffc722", root.ToString());
             Assert.False(mutated);
@@ -41,16 +40,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 new uint256("ac2dcf5c46d9a801389b6c0630b435ce5c2fa850cfac5456f16937dd8ae697d3")
             };
             bool mutated;
-            var root = this.ComputeMerkleRoot(leaves, out mutated);
+            uint256 root = BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
 
             Assert.Equal("95aa5bba66381c3817df338895349acd3fc3e8ce226e04a5e2acbb53db18b9c0", root.ToString());
             Assert.True(mutated);
-        }
-
-        private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
-        {
-            Network.Main.Consensus.Options = new PosConsensusOptions();
-            return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
     }
 }

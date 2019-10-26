@@ -22,7 +22,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             BigInteger _3k = k.ShiftLeft(1).Add(k);
 
             int bits = _3k.BitLength;
-            int[] naf = new int[bits >> 1];
+            var naf = new int[bits >> 1];
 
             BigInteger diff = _3k.Xor(k);
 
@@ -65,7 +65,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             if(k.SignValue == 0)
                 return EMPTY_INTS;
 
-            int[] wnaf = new int[k.BitLength / width + 1];
+            var wnaf = new int[k.BitLength / width + 1];
 
             // 2^width and a mask and sign bit set accordingly
             int pow2 = 1 << width;
@@ -114,7 +114,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         public static byte[] GenerateJsf(BigInteger g, BigInteger h)
         {
             int digits = System.Math.Max(g.BitLength, h.BitLength) + 1;
-            byte[] jsf = new byte[digits];
+            var jsf = new byte[digits];
 
             BigInteger k0 = g, k1 = h;
             int j = 0, d0 = 0, d1 = 0;
@@ -181,7 +181,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             BigInteger _3k = k.ShiftLeft(1).Add(k);
 
             int digits = _3k.BitLength - 1;
-            byte[] naf = new byte[digits];
+            var naf = new byte[digits];
 
             BigInteger diff = _3k.Xor(k);
 
@@ -223,7 +223,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             if(k.SignValue == 0)
                 return EMPTY_BYTES;
 
-            byte[] wnaf = new byte[k.BitLength + 1];
+            var wnaf = new byte[k.BitLength + 1];
 
             // 2^width and a mask and sign bit set accordingly
             int pow2 = 1 << width;
@@ -343,7 +343,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
             }
 
             ECPoint[] preCompP = wnafPreCompP.PreComp;
-            ECPoint[] preCompQ = new ECPoint[preCompP.Length];
+            var preCompQ = new ECPoint[preCompP.Length];
             for(int i = 0; i < preCompP.Length; ++i)
             {
                 preCompQ[i] = pointMap.Map(preCompP[i]);
@@ -352,7 +352,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
 
             if(includeNegated)
             {
-                ECPoint[] preCompNegQ = new ECPoint[preCompQ.Length];
+                var preCompNegQ = new ECPoint[preCompQ.Length];
                 for(int i = 0; i < preCompNegQ.Length; ++i)
                 {
                     preCompNegQ[i] = preCompQ[i].Negate();
@@ -502,21 +502,21 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
 
         private static byte[] Trim(byte[] a, int length)
         {
-            byte[] result = new byte[length];
+            var result = new byte[length];
             Array.Copy(a, 0, result, 0, result.Length);
             return result;
         }
 
         private static int[] Trim(int[] a, int length)
         {
-            int[] result = new int[length];
+            var result = new int[length];
             Array.Copy(a, 0, result, 0, result.Length);
             return result;
         }
 
         private static ECPoint[] ResizeTable(ECPoint[] a, int length)
         {
-            ECPoint[] result = new ECPoint[length];
+            var result = new ECPoint[length];
             Array.Copy(a, 0, result, 0, a.Length);
             return result;
         }

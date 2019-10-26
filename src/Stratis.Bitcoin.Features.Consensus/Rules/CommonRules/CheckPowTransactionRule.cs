@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// Validate a PoW transaction.
-    /// </summary>
-    public class CheckPowTransactionRule : ConsensusRule
+    /// <summary>Validate a PoW transaction.</summary>
+    public class CheckPowTransactionRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
@@ -22,8 +22,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
-            var options = context.Consensus.Option<PowConsensusOptions>();
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
+            Block block = context.ValidationContext.BlockToValidate;
+            var options = this.Parent.Network.Consensus.Options;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)
@@ -32,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return Task.CompletedTask;
         }
 
-        public virtual void CheckTransaction(Network network, PowConsensusOptions options, Transaction tx)
+        public virtual void CheckTransaction(Network network, ConsensusOptions options, Transaction tx)
         {
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)
@@ -48,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
-            if (BlockSizeRule.GetSize(network, tx, TransactionOptions.None) > options.MaxBlockBaseSize)
+            if (tx.GetSize(TransactionOptions.None, network.Consensus.ConsensusFactory) > options.MaxBlockBaseSize)
             {
                 this.Logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
@@ -64,14 +67,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionNegativeOutput.Throw();
                 }
 
-                if (txout.Value.Satoshi > options.MaxMoney)
+                if (txout.Value.Satoshi > network.Consensus.MaxMoney)
                 {
                     this.Logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeOutput.Throw();
                 }
 
                 valueOut += txout.Value;
-                if (!this.MoneyRange(options, valueOut))
+                if (!this.MoneyRange(network.Consensus, valueOut))
                 {
                     this.Logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
@@ -79,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check for duplicate inputs.
-            HashSet<OutPoint> inOutPoints = new HashSet<OutPoint>();
+            var inOutPoints = new HashSet<OutPoint>();
             foreach (TxIn txin in tx.Inputs)
             {
                 if (inOutPoints.Contains(txin.PrevOut))
@@ -112,9 +115,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
-        private bool MoneyRange(PowConsensusOptions options, long nValue)
+        private bool MoneyRange(IConsensus consensus, long nValue)
         {
-            return ((nValue >= 0) && (nValue <= options.MaxMoney));
+            return ((nValue >= 0) && (nValue <= consensus.MaxMoney));
         }
     }
 }

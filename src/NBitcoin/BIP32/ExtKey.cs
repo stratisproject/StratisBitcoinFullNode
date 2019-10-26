@@ -23,13 +23,13 @@ namespace NBitcoin
         private const int FingerprintLength = 4;
         private const int ChainCodeLength = 32;
 
-        Key key;
-        byte[] vchChainCode = new byte[ChainCodeLength];
-        uint nChild;
-        byte nDepth;
-        byte[] vchFingerprint = new byte[FingerprintLength];
+        private Key key;
+        private byte[] vchChainCode = new byte[ChainCodeLength];
+        private uint nChild;
+        private byte nDepth;
+        private byte[] vchFingerprint = new byte[FingerprintLength];
 
-        static readonly byte[] hashkey = Encoders.ASCII.DecodeData("Bitcoin seed");
+        private static readonly byte[] hashkey = Encoders.ASCII.DecodeData("Bitcoin seed");
 
         /// <summary>
         /// Gets the depth of this extended key from the root key.
@@ -38,7 +38,7 @@ namespace NBitcoin
         {
             get
             {
-                return nDepth;
+                return this.nDepth;
             }
         }
 
@@ -49,7 +49,7 @@ namespace NBitcoin
         {
             get
             {
-                return nChild;
+                return this.nChild;
             }
         }
 
@@ -57,8 +57,8 @@ namespace NBitcoin
         {
             get
             {
-                byte[] chainCodeCopy = new byte[ChainCodeLength];
-                Buffer.BlockCopy(vchChainCode, 0, chainCodeCopy, 0, ChainCodeLength);
+                var chainCodeCopy = new byte[ChainCodeLength];
+                Buffer.BlockCopy(this.vchChainCode, 0, chainCodeCopy, 0, ChainCodeLength);
 
                 return chainCodeCopy;
             }
@@ -113,8 +113,8 @@ namespace NBitcoin
             this.key = key;
             this.nDepth = depth;
             this.nChild = child;
-            Buffer.BlockCopy(fingerprint, 0, vchFingerprint, 0, FingerprintLength);
-            Buffer.BlockCopy(chainCode, 0, vchChainCode, 0, ChainCodeLength);
+            Buffer.BlockCopy(fingerprint, 0, this.vchFingerprint, 0, FingerprintLength);
+            Buffer.BlockCopy(chainCode, 0, this.vchChainCode, 0, ChainCodeLength);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace NBitcoin
             if(chainCode.Length != ChainCodeLength)
                 throw new ArgumentException(string.Format("The chain code must be {0} bytes.", ChainCodeLength), "chainCode");
             this.key = masterKey;
-            Buffer.BlockCopy(chainCode, 0, vchChainCode, 0, ChainCodeLength);
+            Buffer.BlockCopy(chainCode, 0, this.vchChainCode, 0, ChainCodeLength);
         }
 
         /// <summary>
@@ -160,10 +160,10 @@ namespace NBitcoin
 
         private void SetMaster(byte[] seed)
         {
-            var hashMAC = Hashes.HMACSHA512(hashkey, seed);
-            key = new Key(hashMAC.SafeSubarray(0, 32));
+            byte[] hashMAC = Hashes.HMACSHA512(hashkey, seed);
+            this.key = new Key(hashMAC.SafeSubarray(0, 32));
 
-            Buffer.BlockCopy(hashMAC, 32, vchChainCode, 0, ChainCodeLength);
+            Buffer.BlockCopy(hashMAC, 32, this.vchChainCode, 0, ChainCodeLength);
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace NBitcoin
         {
             get
             {
-                return key;
+                return this.key;
             }
         }
 
@@ -182,22 +182,22 @@ namespace NBitcoin
         /// </summary>
         public ExtPubKey Neuter()
         {
-            ExtPubKey ret = new ExtPubKey
+            var ret = new ExtPubKey
             {
-                nDepth = nDepth,
-                vchFingerprint = vchFingerprint.ToArray(),
-                nChild = nChild,
-                pubkey = key.PubKey,
-                vchChainCode = vchChainCode.ToArray()
+                nDepth = this.nDepth,
+                vchFingerprint = this.vchFingerprint.ToArray(),
+                nChild = this.nChild,
+                pubkey = this.key.PubKey,
+                vchChainCode = this.vchChainCode.ToArray()
             };
             return ret;
         }
 
         public bool IsChildOf(ExtKey parentKey)
         {
-            if(Depth != parentKey.Depth + 1)
+            if(this.Depth != parentKey.Depth + 1)
                 return false;
-            return parentKey.CalculateChildFingerprint().SequenceEqual(Fingerprint);
+            return parentKey.CalculateChildFingerprint().SequenceEqual(this.Fingerprint);
         }
         public bool IsParentOf(ExtKey childKey)
         {
@@ -205,14 +205,14 @@ namespace NBitcoin
         }
         private byte[] CalculateChildFingerprint()
         {
-            return key.PubKey.Hash.ToBytes().SafeSubarray(0, FingerprintLength);
+            return this.key.PubKey.Hash.ToBytes().SafeSubarray(0, FingerprintLength);
         }
 
         public byte[] Fingerprint
         {
             get
             {
-                return vchFingerprint;
+                return this.vchFingerprint;
             }
         }
 
@@ -223,11 +223,11 @@ namespace NBitcoin
         {
             var result = new ExtKey
             {
-                nDepth = (byte)(nDepth + 1),
+                nDepth = (byte)(this.nDepth + 1),
                 vchFingerprint = CalculateChildFingerprint(),
                 nChild = index
             };
-            result.key = key.Derivate(this.vchChainCode, index, out result.vchChainCode);
+            result.key = this.key.Derivate(this.vchChainCode, index, out result.vchChainCode);
             return result;
         }
 
@@ -268,13 +268,13 @@ namespace NBitcoin
         {
             using(stream.BigEndianScope())
             {
-                stream.ReadWrite(ref nDepth);
-                stream.ReadWrite(ref vchFingerprint);
-                stream.ReadWrite(ref nChild);
-                stream.ReadWrite(ref vchChainCode);
+                stream.ReadWrite(ref this.nDepth);
+                stream.ReadWrite(ref this.vchFingerprint);
+                stream.ReadWrite(ref this.nChild);
+                stream.ReadWrite(ref this.vchChainCode);
                 byte b = 0;
                 stream.ReadWrite(ref b);
-                stream.ReadWrite(ref key);
+                stream.ReadWrite(ref this.key);
             }
         }
 
@@ -297,7 +297,7 @@ namespace NBitcoin
         {
             get
             {
-                return PrivateKey.PubKey.Hash.ScriptPubKey;
+                return this.PrivateKey.PubKey.Hash.ScriptPubKey;
             }
         }
 
@@ -310,7 +310,7 @@ namespace NBitcoin
         {
             get
             {
-                return (nChild & 0x80000000u) != 0;
+                return (this.nChild & 0x80000000u) != 0;
             }
         }
 
@@ -323,35 +323,35 @@ namespace NBitcoin
         {
             if(parent == null)
                 throw new ArgumentNullException("parent");
-            if(Depth == 0)
+            if(this.Depth == 0)
                 throw new InvalidOperationException("This ExtKey is the root key of the HD tree");
-            if(IsHardened)
+            if(this.IsHardened)
                 throw new InvalidOperationException("This private key is hardened, so you can't get its parent");
-            var expectedFingerPrint = parent.CalculateChildFingerprint();
-            if(parent.Depth != this.Depth - 1 || !expectedFingerPrint.SequenceEqual(vchFingerprint))
+            byte[] expectedFingerPrint = parent.CalculateChildFingerprint();
+            if(parent.Depth != this.Depth - 1 || !expectedFingerPrint.SequenceEqual(this.vchFingerprint))
                 throw new ArgumentException("The parent ExtPubKey is not the immediate parent of this ExtKey", "parent");
 
             byte[] l = null;
-            byte[] ll = new byte[32];
-            byte[] lr = new byte[32];
+            var ll = new byte[32];
+            var lr = new byte[32];
 
-            var pubKey = parent.PubKey.ToBytes();
-            l = Hashes.BIP32Hash(parent.vchChainCode, nChild, pubKey[0], pubKey.SafeSubarray(1));
+            byte[] pubKey = parent.PubKey.ToBytes();
+            l = Hashes.BIP32Hash(parent.vchChainCode, this.nChild, pubKey[0], pubKey.SafeSubarray(1));
             Array.Copy(l, ll, 32);
             Array.Copy(l, 32, lr, 0, 32);
-            var ccChild = lr;
+            byte[] ccChild = lr;
 
-            BigInteger parse256LL = new BigInteger(1, ll);
+            var parse256LL = new BigInteger(1, ll);
             BigInteger N = ECKey.CURVE.N;
 
-            if(!ccChild.SequenceEqual(vchChainCode))
+            if(!ccChild.SequenceEqual(this.vchChainCode))
                 throw new InvalidOperationException("The derived chain code of the parent is not equal to this child chain code");
 
-            var keyBytes = PrivateKey.ToBytes();
+            byte[] keyBytes = this.PrivateKey.ToBytes();
             var key = new BigInteger(1, keyBytes);
 
             BigInteger kPar = key.Add(parse256LL.Negate()).Mod(N);
-            var keyParentBytes = kPar.ToByteArrayUnsigned();
+            byte[] keyParentBytes = kPar.ToByteArrayUnsigned();
             if(keyParentBytes.Length < 32)
                 keyParentBytes = new byte[32 - keyParentBytes.Length].Concat(keyParentBytes).ToArray();
 

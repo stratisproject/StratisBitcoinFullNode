@@ -66,8 +66,25 @@
         WITNESS_VERSION = 70012,
 
         /// <summary>
+        /// Communication between nodes with proven headers is possible after this version.
+        /// This is for stratis only. Temporary solution, refers to issue #2144
+        /// https://github.com/stratisproject/StratisBitcoinFullNode/issues/2144
+        /// </summary>
+        PROVEN_HEADER_VERSION = 70012,
+
+        /// <summary>
         /// shord-id-based block download starts with this version.
         /// </summary>
-        SHORT_IDS_BLOCKS_VERSION = 70014
+        SHORT_IDS_BLOCKS_VERSION = 70014,
+
+        /// <summary>
+        /// Oldest supported version of the CirrusNode which this node can connect to.
+        /// </summary>
+        CIRRUS_MIN_SUPPORTED_VERSION = 80000,
+
+        /// <summary>
+        /// Current version of the CirrusNode.
+        /// </summary>
+        CIRRUS_VERSION = 80000,
     }
 }

@@ -1,18 +1,22 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
-{    /// <summary>
-     /// Validate a PoS transaction.
-     /// </summary>
-    public class CheckPosTransactionRule : ConsensusRule
+{
+    /// <summary>Validate a PoS transaction.</summary>
+    public class CheckPosTransactionRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErros.BadTransactionEmptyOutput">The transaction output is empty.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.BlockValidationContext.Block;
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
+            Block block = context.ValidationContext.BlockToValidate;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)

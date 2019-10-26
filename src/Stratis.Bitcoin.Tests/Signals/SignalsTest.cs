@@ -1,41 +1,107 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalsTest
     {
-        private Mock<ISignaler<Block>> blockSignaler;
-        private Bitcoin.Signals.Signals signals;
-        private Mock<ISignaler<Transaction>> transactionSignaler;
+        private readonly Bitcoin.Signals.ISignals signals;
 
         public SignalsTest()
         {
-            this.blockSignaler = new Mock<ISignaler<Block>>();
-            this.transactionSignaler = new Mock<ISignaler<Transaction>>();
-            this.signals = new Bitcoin.Signals.Signals(this.blockSignaler.Object, this.transactionSignaler.Object);
+            this.signals = new Bitcoin.Signals.Signals(new LoggerFactory(), null);
         }
 
         [Fact]
         public void SignalBlockBroadcastsToBlockSignaler()
         {
-            var block = new Block();
+            Block block = KnownNetworks.StratisMain.CreateBlock();
+            ChainedHeader header = ChainedHeadersHelper.CreateGenesisChainedHeader();
+            var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
-            this.signals.SignalBlock(block);
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockConnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockConnected(chainedHeaderBlock));
+            }
 
-            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
+            Assert.True(signaled);
+        }
+
+        [Fact]
+        public void SignalBlockDisconnectedToBlockSignaler()
+        {
+            Block block = KnownNetworks.StratisMain.CreateBlock();
+            ChainedHeader header = ChainedHeadersHelper.CreateGenesisChainedHeader();
+            var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
+
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockDisconnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockDisconnected(chainedHeaderBlock));
+            }
+
+            Assert.True(signaled);
         }
 
         [Fact]
         public void SignalTransactionBroadcastsToTransactionSignaler()
         {
-            var transaction = new Transaction();
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
-            this.signals.SignalTransaction(transaction);
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
 
-            this.transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
+            Assert.True(signaled);
+        }
+
+        [Fact]
+        public void SignalUnsubscribingPreventTriggeringPreviouslySubscribedAction()
+        {
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
+
+            Assert.True(signaled);
+
+            signaled = false; // reset the flag
+            this.signals.Publish(new TransactionReceived(transaction));
+            //expect signaled be false
+            Assert.True(!signaled);
+
+        }
+
+        [Fact]
+        public void SignalSubscrerThrowExceptionDefaultSubscriptionErrorHandlerRethrow()
+        {
+            try
+            {
+                using (SubscriptionToken sub = this.signals.Subscribe<TestEvent>(transaction1 => throw new System.Exception("TestingException")))
+                {
+                    this.signals.Publish(new TestEvent());
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Assert.True(ex.Message == "TestingException");
+            }
+        }
+
+        class TestEvent : EventBase
+        {
+            public TestEvent() { }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             if (commandName.Length > 12)
                 throw new ArgumentException("Protocol violation: command name is limited to 12 characters.");
-            
+
             this.Name = commandName;
         }
     }
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             assembly = assembly ?? typeof(PayloadAttribute).GetTypeInfo().Assembly;
 
             IEnumerable<TypeInfo> types = null;
-                
+
             try
             {
                 types = assembly.DefinedTypes;
@@ -75,7 +76,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
 
             foreach (var pair in types
-                .Where(t => t.Namespace == typeof(PayloadAttribute).Namespace)
                 .Where(t => t.IsDefined(typeof(PayloadAttribute), true))
                 .Select(t =>
                     new
@@ -100,14 +100,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             Guard.NotNull(payloadType, nameof(payloadType));
             Guard.Assert(payloadType.IsSubclassOf(typeof(Payload)));
 
-            var payloadAttribute = payloadType.GetCustomAttributes(typeof(PayloadAttribute), true)
+            PayloadAttribute payloadAttribute = payloadType.GetCustomAttributes(typeof(PayloadAttribute), true)
                 .OfType<PayloadAttribute>().First();
             Guard.Assert(payloadAttribute != null);
 
             this.nameToType.Add(payloadAttribute.Name, payloadType);
             this.typeToName.Add(payloadType, payloadAttribute.Name);
         }
-        
+
         /// <summary>
         /// Get the <see cref="Payload"/> type associated with the command name.
         /// </summary>
@@ -126,6 +126,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         /// </summary>
         /// <param name="type">A type that represents a <see cref="Payload"/></param>
         /// <returns>True if the type is registered as a usable payload.</returns>
+        [NoTrace]
         public bool IsPayloadRegistered(Type type)
         {
             return this.typeToName.ContainsKey(type);

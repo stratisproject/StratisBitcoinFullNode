@@ -13,7 +13,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         internal override void Encode(
             DerOutputStream derOut)
         {
-            derOut.WriteEncoded(Asn1Tags.OctetString, str);
+            derOut.WriteEncoded(Asn1Tags.OctetString, this.str);
         }
 
         internal static void Encode(

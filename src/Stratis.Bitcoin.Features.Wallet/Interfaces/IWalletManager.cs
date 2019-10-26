@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using NBitcoin.BuilderExtensions;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
@@ -26,10 +27,33 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         uint256 WalletTipHash { get; set; }
 
         /// <summary>
+        /// The last processed block height.
+        /// </summary>
+        int WalletTipHeight { get; set; }
+
+        /// <summary>
         /// Lists all spendable transactions from all accounts in the wallet.
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
         IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// Lists all spendable transactions from the accounts in the wallet participating in staking.
+        /// </summary>
+        /// <returns>A collection of spendable outputs</returns>
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// Helps identify UTXO's that can participate in staking.
+        /// </summary>
+        /// <returns>A dictionary containing string and template pairs - e.g. { "P2PK", PayToPubkeyTemplate.Instance }</returns>
+        Dictionary<string, ScriptTemplate> GetValidStakingTemplates();
+
+        /// <summary>
+        /// Returns additional transaction builder extensions to use for building staking transactions.
+        /// </summary>
+        /// <returns>Transaction builder extensions to use for building staking transactions.</returns>
+        IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking();
 
         /// <summary>
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
@@ -45,7 +69,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="mnemonic">The user's mnemonic for the wallet.</param>
         /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-        Mnemonic CreateWallet(string password, string name, string passphrase = null, string mnemonic = null);
+        Mnemonic CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null);
+
+        /// <summary>
+        /// Signs a string message.
+        /// </summary>
+        /// <param name="password">The user's password.</param>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="externalAddress">Address to use to sign.</param>
+        /// <param name="message">Message to sign.</param>
+        /// <returns>The generated signature.</returns>
+        string SignMessage(string password, string walletName, string externalAddress, string message);
+
+        /// <summary>
+        /// Verifies the signed message.
+        /// </summary>
+        /// <param name="externalAddress">Address used to sign.</param>
+        /// <param name="message">Message to verify.</param>
+        /// <param name="signature">Message signature.</param>
+        /// <returns>True if the signature is valid, false if it is invalid.</returns>
+        bool VerifySignedMessage(string externalAddress, string message, string signature);
 
         /// <summary>
         /// Loads a wallet from a file.
@@ -56,7 +99,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         Wallet LoadWallet(string password, string name);
 
         /// <summary>
-        /// Recovers a wallet.
+        /// Unlocks a wallet for the specified time.
+        /// </summary>
+        /// <param name="password">The wallet password.</param>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="timeout">The timeout in seconds.</param>
+        void UnlockWallet(string password, string name, int timeout);
+
+        /// <summary>
+        /// Locks the wallet.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        void LockWallet(string name);
+
+        /// <summary>
+        /// Recovers a wallet using mnemonic and password.
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
@@ -65,6 +122,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
         Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
+
+        /// <summary>
+        /// Recovers a wallet using extended public key and account index.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="extPubKey">The extended public key.</param>
+        /// <param name="accountIndex">The account number.</param>
+        /// <param name="creationTime">The date and time this wallet was created.</param>
+        /// <returns></returns>
+        Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime);
 
         /// <summary>
         /// Deletes a wallet.
@@ -240,7 +307,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         ICollection<uint256> GetFirstWalletBlockLocator();
-        
+
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
         /// </summary>
@@ -259,6 +326,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="accountReference">The account.</param>
         /// <returns>The extended public key.</returns>
         string GetExtPubKey(WalletAccountReference accountReference);
+
+        /// <summary>
+        /// Gets the extended private key of an account.
+        /// </summary>
+        /// <param name="accountReference">The account.</param>
+        /// <param name="password">The password used to decrypt the encrypted seed.</param>
+        /// <param name="cache">whether to cache the private key for future use.</param>
+        /// <returns>The private key.</returns>
+        ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false);
 
         /// <summary>
         /// Gets the lowest LastBlockSyncedHeight of all loaded wallet account roots.
@@ -286,5 +362,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
+
+        /// <summary>
+        /// Removes all the transactions that occurred after a certain date.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <param name="fromDate">The date after which the transactions should be removed.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate);
     }
 }

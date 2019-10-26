@@ -8,12 +8,12 @@ namespace NBitcoin.OpenAsset
     /// </summary>
     public class NullColoredTransactionRepository : IColoredTransactionRepository
     {
-        ITransactionRepository _Inner;
+        private ITransactionRepository _Inner;
         public NullColoredTransactionRepository(ITransactionRepository repo)
         {
             if(repo == null)
                 throw new ArgumentNullException("repo");
-            _Inner = repo;
+            this._Inner = repo;
         }
         #region IColoredTransactionRepository Members
 
@@ -21,7 +21,7 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Inner;
+                return this._Inner;
             }
         }
 

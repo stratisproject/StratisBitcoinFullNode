@@ -1,5 +1,4 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Builder;
+﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC;
@@ -10,31 +9,24 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class RPCSettingsTest : TestBase
     {
-        public RPCSettingsTest() : base(Network.Main)
+        public RPCSettingsTest() : base(KnownNetworks.Main)
         {
         }
 
         [Fact]
         public void CanSpecifyRPCSettings()
         {
-            var dir = CreateTestDir(this);
+            string dir = CreateTestDir(this);
 
-            NodeSettings nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={dir}", "-rpcuser=abc", "-rpcpassword=def", "-rpcport=91", "-server=1" });
 
-            var node = new FullNodeBuilder()
+            IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UsePowConsensus()
-                .AddRPC(x =>
-                {
-                    x.RpcUser = "abc";
-                    x.RpcPassword = "def";
-                    x.RPCPort = 91;
-                })
+                .AddRPC()
                 .Build();
 
             var settings = node.NodeService<RpcSettings>();
-
-            settings.Load(nodeSettings);
 
             Assert.Equal("abc", settings.RpcUser);
             Assert.Equal("def", settings.RpcPassword);

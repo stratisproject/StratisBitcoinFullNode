@@ -236,6 +236,8 @@ namespace NBitcoin
                     return "OP_CLTV";
                 case OpcodeType.OP_CHECKSEQUENCEVERIFY:
                     return "OP_CSV";
+                case OpcodeType.OP_CHECKCOLDSTAKEVERIFY:
+                    return "OP_CHECKCOLDSTAKEVERIFY";
 
                 // expanson
                 case OpcodeType.OP_NOP1:
@@ -252,8 +254,6 @@ namespace NBitcoin
                     return "OP_NOP8";
                 case OpcodeType.OP_NOP9:
                     return "OP_NOP9";
-                case OpcodeType.OP_NOP10:
-                    return "OP_NOP10";
 
                 default:
                     return Enum.GetName(typeof(OpcodeType), opcode);
@@ -269,9 +269,9 @@ namespace NBitcoin
         {
             _ValidOpCode = GetValidOpCode();
             _OpcodeByName = new Dictionary<string, OpcodeType>();
-            foreach(var code in Enum.GetValues(typeof(OpcodeType)).Cast<OpcodeType>().Distinct())
+            foreach(OpcodeType code in Enum.GetValues(typeof(OpcodeType)).Cast<OpcodeType>().Distinct())
             {
-                var name = GetOpName(code);
+                string name = GetOpName(code);
                 if(name != "OP_UNKNOWN")
                     _OpcodeByName.AddOrReplace(name, code);
             }
@@ -282,8 +282,10 @@ namespace NBitcoin
             _OpcodeByName.AddOrReplace("OP_NOP2", OpcodeType.OP_CHECKLOCKTIMEVERIFY);
             _OpcodeByName.AddOrReplace("OP_CHECKSEQUENCEVERIFY", OpcodeType.OP_CHECKSEQUENCEVERIFY);
             _OpcodeByName.AddOrReplace("OP_NOP3", OpcodeType.OP_CHECKSEQUENCEVERIFY);
+            _OpcodeByName.AddOrReplace("OP_CHECKCOLDSTAKEVERIFY", OpcodeType.OP_CHECKCOLDSTAKEVERIFY);
+            _OpcodeByName.AddOrReplace("OP_NOP10", OpcodeType.OP_CHECKCOLDSTAKEVERIFY);
 
-            foreach(var op in new[]
+            foreach(object[] op in new[]
             {
                 new object[]{"OP_0", OpcodeType.OP_0},
                 new object[]{"OP_1", OpcodeType.OP_1},
@@ -311,7 +313,7 @@ namespace NBitcoin
         }
         public static Op GetPushOp(byte[] data)
         {
-            Op op = new Op();
+            var op = new Op();
             op.PushData = data;
             if(data.Length == 0)
                 op.Code = OpcodeType.OP_0;
@@ -323,7 +325,7 @@ namespace NBitcoin
                 op.Code = (OpcodeType)(byte)data.Length;
             else if(data.Length <= 0xFF)
                 op.Code = OpcodeType.OP_PUSHDATA1;
-#if !(PORTABLE || NETCORE)
+#if !NETCORE
             else if(data.LongLength <= 0xFFFF)
                 op.Code = OpcodeType.OP_PUSHDATA2;
             else if(data.LongLength <= 0xFFFFFFFF)
@@ -341,24 +343,24 @@ namespace NBitcoin
         {
 
         }
-        string _Name;
+
+        private string _Name;
         public string Name
         {
             get
             {
-                if(_Name == null)
-                    _Name = GetOpName(Code);
-                return _Name;
+                if(this._Name == null) this._Name = GetOpName(this.Code);
+                return this._Name;
             }
         }
 
-        OpcodeType _Code;
-        static readonly bool[] _ValidOpCode;
+        private OpcodeType _Code;
+        private static readonly bool[] _ValidOpCode;
 
         private static bool[] GetValidOpCode()
         {
             var valid = new bool[256];
-            foreach(var val in Enum.GetValues(typeof(OpcodeType)))
+            foreach(object val in Enum.GetValues(typeof(OpcodeType)))
             {
                 valid[(byte)val] = true;
             }
@@ -376,12 +378,12 @@ namespace NBitcoin
         {
             get
             {
-                return _Code;
+                return this._Code;
             }
             set
             {
-                _Code = value;
-                IsInvalid = !_ValidOpCode[(byte)value];
+                this._Code = value;
+                this.IsInvalid = !_ValidOpCode[(byte)value];
             }
         }
         public byte[] PushData
@@ -394,36 +396,36 @@ namespace NBitcoin
         {
             var bitStream = new BitcoinStream(result, true);
 
-            if(Code == OpcodeType.OP_0)
+            if(this.Code == OpcodeType.OP_0)
             {
                 //OP_0 already pushed
                 return;
             }
 
-            if(OpcodeType.OP_1 <= Code && Code <= OpcodeType.OP_16)
+            if(OpcodeType.OP_1 <= this.Code && this.Code <= OpcodeType.OP_16)
             {
                 //OP_1 to OP_16 already pushed
                 return;
             }
-            if(Code == OpcodeType.OP_1NEGATE)
+            if(this.Code == OpcodeType.OP_1NEGATE)
             {
                 //OP_1Negate already pushed
                 return;
             }
 
-            if(0x01 <= (byte)Code && (byte)Code <= 0x4b)
+            if(0x01 <= (byte) this.Code && (byte) this.Code <= 0x4b)
             {
                 //Data length already pushed
             }
-            else if(Code == OpcodeType.OP_PUSHDATA1)
+            else if(this.Code == OpcodeType.OP_PUSHDATA1)
             {
                 bitStream.ReadWrite((byte)data.Length);
             }
-            else if(Code == OpcodeType.OP_PUSHDATA2)
+            else if(this.Code == OpcodeType.OP_PUSHDATA2)
             {
                 bitStream.ReadWrite((ushort)data.Length);
             }
-            else if(Code == OpcodeType.OP_PUSHDATA4)
+            else if(this.Code == OpcodeType.OP_PUSHDATA4)
             {
                 bitStream.ReadWrite((uint)data.Length);
             }
@@ -434,33 +436,33 @@ namespace NBitcoin
         internal byte[] ReadData(Stream stream)
         {
             uint len = 0;
-            BitcoinStream bitStream = new BitcoinStream(stream, false);
-            if(Code == 0)
+            var bitStream = new BitcoinStream(stream, false);
+            if(this.Code == 0)
                 return new byte[0];
 
-            if((byte)OpcodeType.OP_1 <= (byte)Code && (byte)Code <= (byte)OpcodeType.OP_16)
+            if((byte)OpcodeType.OP_1 <= (byte) this.Code && (byte) this.Code <= (byte)OpcodeType.OP_16)
             {
-                return new byte[] { (byte)(Code - OpcodeType.OP_1 + 1) };
+                return new byte[] { (byte)(this.Code - OpcodeType.OP_1 + 1) };
             }
 
-            if(Code == OpcodeType.OP_1NEGATE)
+            if(this.Code == OpcodeType.OP_1NEGATE)
             {
                 return new byte[] { 0x81 };
             }
 
             try
             {
-                if(0x01 <= (byte)Code && (byte)Code <= 0x4b)
-                    len = (uint)Code;
-                else if(Code == OpcodeType.OP_PUSHDATA1)
+                if(0x01 <= (byte) this.Code && (byte) this.Code <= 0x4b)
+                    len = (uint) this.Code;
+                else if(this.Code == OpcodeType.OP_PUSHDATA1)
                     len = bitStream.ReadWrite((byte)0);
-                else if(Code == OpcodeType.OP_PUSHDATA2)
+                else if(this.Code == OpcodeType.OP_PUSHDATA2)
                     len = bitStream.ReadWrite((ushort)0);
-                else if(Code == OpcodeType.OP_PUSHDATA4)
+                else if(this.Code == OpcodeType.OP_PUSHDATA4)
                     len = bitStream.ReadWrite((uint)0);
                 else
                 {
-                    IsInvalid = true;
+                    this.IsInvalid = true;
                     return new byte[0];
                 }
 
@@ -470,22 +472,22 @@ namespace NBitcoin
                 if(len <= MAX_SCRIPT_ELEMENT_SIZE) //Most of the time
                 {
                     data = new byte[len];
-                    var readen = stream.Read(data, 0, data.Length);
+                    int readen = stream.Read(data, 0, data.Length);
                     if(readen != data.Length)
                     {
-                        IsInvalid = true;
+                        this.IsInvalid = true;
                         return new byte[0];
                     }
                 }
                 else //Mitigate against a big array allocation
                 {
-                    List<byte> bytes = new List<byte>();
+                    var bytes = new List<byte>();
                     for(int i = 0; i < len; i++)
                     {
-                        var b = stream.ReadByte();
+                        int b = stream.ReadByte();
                         if(b < 0)
                         {
-                            IsInvalid = true;
+                            this.IsInvalid = true;
                             return new byte[0];
                         }
                         bytes.Add((byte)b);
@@ -497,57 +499,59 @@ namespace NBitcoin
             }
             catch(EndOfStreamException)
             {
-                IsInvalid = true;
+                this.IsInvalid = true;
                 return new byte[0];
             }
         }
 
         public byte[] ToBytes()
         {
-            MemoryStream ms = new MemoryStream();
-            WriteTo(ms);
-            return ms.ToArray();
+            using (var ms = new MemoryStream())
+            {
+                WriteTo(ms);
+                return ms.ToArray();
+            }
         }
 
         public override string ToString()
         {
-            if(PushData != null)
+            if(this.PushData != null)
             {
-                if(PushData.Length == 0)
+                if(this.PushData.Length == 0)
                     return "0";
-                var result = Encoders.Hex.EncodeData(PushData);
+                string result = Encoders.Hex.EncodeData(this.PushData);
                 return result.Length == 2 && result[0] == '0' ? result.Substring(1) : result;
             }
-            else if(Name == "OP_UNKNOWN")
+            else if(this.Name == "OP_UNKNOWN")
             {
-                return Name + "(" + string.Format("0x{0:x2}", (byte)Code) + ")";
+                return this.Name + "(" + string.Format("0x{0:x2}", (byte) this.Code) + ")";
             }
             else
             {
-                return Name;
+                return this.Name;
             }
         }
 
         public void WriteTo(Stream stream)
         {
-            stream.WriteByte((byte)Code);
-            if(PushData != null)
+            stream.WriteByte((byte) this.Code);
+            if(this.PushData != null)
             {
-                PushDataToStream(PushData, stream);
+                PushDataToStream(this.PushData, stream);
             }
         }
 
-        static string unknown = "OP_UNKNOWN(0x";
-        const int MAX_SCRIPT_ELEMENT_SIZE = 520;
+        private static string unknown = "OP_UNKNOWN(0x";
+        private const int MAX_SCRIPT_ELEMENT_SIZE = 520;
         internal static Op Read(TextReader textReader)
         {
-            var opname = ReadWord(textReader);
+            string opname = ReadWord(textReader);
             OpcodeType opcode;
 
-            var isOpCode = GetOpCode(opname, out opcode);
+            bool isOpCode = GetOpCode(opname, out opcode);
 
             if(
-                (!isOpCode || Op.IsPushCode(opcode))
+                (!isOpCode || IsPushCode(opcode))
                 && !opname.StartsWith(unknown))
             {
                 if(isOpCode && opcode == OpcodeType.OP_0)
@@ -583,10 +587,12 @@ namespace NBitcoin
         public static implicit operator Op(OpcodeType codeType)
         {
             if(!IsPushCode(codeType))
+            {
                 return new Op()
                 {
                     Code = codeType,
                 };
+            }
             else
             {
                 if(OpcodeType.OP_1 <= codeType && codeType <= OpcodeType.OP_16)
@@ -622,11 +628,11 @@ namespace NBitcoin
 
         private static string ReadWord(TextReader textReader)
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             int r;
             while((r = textReader.Read()) != -1)
             {
-                var ch = (char)r;
+                char ch = (char)r;
                 bool isSpace = DataEncoder.IsSpace(ch);
                 if(isSpace && builder.Length == 0)
                     continue;
@@ -648,21 +654,21 @@ namespace NBitcoin
         {
             get
             {
-                return Code == OpcodeType.OP_0 ||
-                        OpcodeType.OP_1 <= Code && Code <= OpcodeType.OP_16;
+                return this.Code == OpcodeType.OP_0 ||
+                        OpcodeType.OP_1 <= this.Code && this.Code <= OpcodeType.OP_16;
             }
         }
         public bool IsSmallInt
         {
             get
             {
-                return IsSmallUInt || Code == OpcodeType.OP_1NEGATE;
+                return this.IsSmallUInt || this.Code == OpcodeType.OP_1NEGATE;
             }
         }
 
         public int? GetInt()
         {
-            var l = GetLong();
+            long? l = GetLong();
             if(l == null)
                 return null;
             if(l.Value > int.MaxValue)
@@ -674,9 +680,9 @@ namespace NBitcoin
 
         public long? GetLong()
         {
-            if(PushData == null)
+            if(this.PushData == null)
                 return null;
-            var vch = PushData;
+            byte[] vch = this.PushData;
             if(vch.Length == 0)
                 return 0;
 
@@ -688,7 +694,7 @@ namespace NBitcoin
             // the result's msb and return a negative.
             if((vch[vch.Length - 1] & 0x80) != 0)
             {
-                var temp = ~(0x80UL << (8 * (vch.Length - 1)));
+                ulong temp = ~(0x80UL << (8 * (vch.Length - 1)));
                 return -((long)((ulong)result & temp));
             }
             return result;
@@ -719,7 +725,7 @@ namespace NBitcoin
 
         public Op Read()
         {
-            var b = this.Inner.ReadByte();
+            int b = this.Inner.ReadByte();
             if(b == -1)
                 return null;
 
@@ -727,7 +733,7 @@ namespace NBitcoin
 
             if(Op.IsPushCode(opcode))
             {
-                Op op = new Op();
+                var op = new Op();
                 op.Code = opcode;
                 op.PushData = op.ReadData(this.Inner);
                 return op;

@@ -17,7 +17,7 @@ namespace NBitcoin.BouncyCastle.Asn1
             if(obj == this)
                 return true;
 
-            IAsn1Convertible other = obj as IAsn1Convertible;
+            var other = obj as IAsn1Convertible;
 
             if(other == null)
                 return false;

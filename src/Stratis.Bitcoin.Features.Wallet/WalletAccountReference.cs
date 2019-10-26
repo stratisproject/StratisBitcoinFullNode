@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public override bool Equals(object obj)
         {
-            WalletAccountReference item = obj as WalletAccountReference;
+            var item = obj as WalletAccountReference;
             if (item == null)
                 return false;
             return this.GetId().Equals(item.GetId());

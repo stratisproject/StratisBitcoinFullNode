@@ -28,7 +28,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         */
         internal LongDigest()
         {
-            xBuf = new byte[8];
+            this.xBuf = new byte[8];
 
             Reset();
         }
@@ -41,44 +41,44 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         internal LongDigest(
             LongDigest t)
         {
-            xBuf = new byte[t.xBuf.Length];
+            this.xBuf = new byte[t.xBuf.Length];
 
             CopyIn(t);
         }
 
         protected void CopyIn(LongDigest t)
         {
-            Array.Copy(t.xBuf, 0, xBuf, 0, t.xBuf.Length);
+            Array.Copy(t.xBuf, 0, this.xBuf, 0, t.xBuf.Length);
 
-            xBufOff = t.xBufOff;
-            byteCount1 = t.byteCount1;
-            byteCount2 = t.byteCount2;
+            this.xBufOff = t.xBufOff;
+            this.byteCount1 = t.byteCount1;
+            this.byteCount2 = t.byteCount2;
 
-            H1 = t.H1;
-            H2 = t.H2;
-            H3 = t.H3;
-            H4 = t.H4;
-            H5 = t.H5;
-            H6 = t.H6;
-            H7 = t.H7;
-            H8 = t.H8;
+            this.H1 = t.H1;
+            this.H2 = t.H2;
+            this.H3 = t.H3;
+            this.H4 = t.H4;
+            this.H5 = t.H5;
+            this.H6 = t.H6;
+            this.H7 = t.H7;
+            this.H8 = t.H8;
 
-            Array.Copy(t.W, 0, W, 0, t.W.Length);
-            wOff = t.wOff;
+            Array.Copy(t.W, 0, this.W, 0, t.W.Length);
+            this.wOff = t.wOff;
         }
 
         public void Update(
             byte input)
         {
-            xBuf[xBufOff++] = input;
+            this.xBuf[this.xBufOff++] = input;
 
-            if(xBufOff == xBuf.Length)
+            if(this.xBufOff == this.xBuf.Length)
             {
-                ProcessWord(xBuf, 0);
-                xBufOff = 0;
+                ProcessWord(this.xBuf, 0);
+                this.xBufOff = 0;
             }
 
-            byteCount1++;
+            this.byteCount1++;
         }
 
         public void BlockUpdate(
@@ -89,7 +89,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             // fill the current word
             //
-            while((xBufOff != 0) && (length > 0))
+            while((this.xBufOff != 0) && (length > 0))
             {
                 Update(input[inOff]);
 
@@ -100,13 +100,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             // process whole words.
             //
-            while(length > xBuf.Length)
+            while(length > this.xBuf.Length)
             {
                 ProcessWord(input, inOff);
 
-                inOff += xBuf.Length;
-                length -= xBuf.Length;
-                byteCount1 += xBuf.Length;
+                inOff += this.xBuf.Length;
+                length -= this.xBuf.Length;
+                this.byteCount1 += this.xBuf.Length;
             }
 
             //
@@ -125,15 +125,15 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             AdjustByteCounts();
 
-            long lowBitLength = byteCount1 << 3;
-            long hiBitLength = byteCount2;
+            long lowBitLength = this.byteCount1 << 3;
+            long hiBitLength = this.byteCount2;
 
             //
             // add the pad bytes.
             //
             Update((byte)128);
 
-            while(xBufOff != 0)
+            while(this.xBufOff != 0)
             {
                 Update((byte)0);
             }
@@ -145,26 +145,26 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public virtual void Reset()
         {
-            byteCount1 = 0;
-            byteCount2 = 0;
+            this.byteCount1 = 0;
+            this.byteCount2 = 0;
 
-            xBufOff = 0;
-            for(int i = 0; i < xBuf.Length; i++)
+            this.xBufOff = 0;
+            for(int i = 0; i < this.xBuf.Length; i++)
             {
-                xBuf[i] = 0;
+                this.xBuf[i] = 0;
             }
 
-            wOff = 0;
-            Array.Clear(W, 0, W.Length);
+            this.wOff = 0;
+            Array.Clear(this.W, 0, this.W.Length);
         }
 
         internal void ProcessWord(
             byte[] input,
             int inOff)
         {
-            W[wOff] = Pack.BE_To_UInt64(input, inOff);
+            this.W[this.wOff] = Pack.BE_To_UInt64(input, inOff);
 
-            if(++wOff == 16)
+            if(++this.wOff == 16)
             {
                 ProcessBlock();
             }
@@ -176,10 +176,10 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         */
         private void AdjustByteCounts()
         {
-            if(byteCount1 > 0x1fffffffffffffffL)
+            if(this.byteCount1 > 0x1fffffffffffffffL)
             {
-                byteCount2 += (long)((ulong)byteCount1 >> 61);
-                byteCount1 &= 0x1fffffffffffffffL;
+                this.byteCount2 += (long)((ulong) this.byteCount1 >> 61);
+                this.byteCount1 &= 0x1fffffffffffffffL;
             }
         }
 
@@ -187,13 +187,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             long lowW,
             long hiW)
         {
-            if(wOff > 14)
+            if(this.wOff > 14)
             {
                 ProcessBlock();
             }
 
-            W[14] = (ulong)hiW;
-            W[15] = (ulong)lowW;
+            this.W[14] = (ulong)hiW;
+            this.W[15] = (ulong)lowW;
         }
 
         internal void ProcessBlock()
@@ -205,79 +205,79 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             for(int ti = 16; ti <= 79; ++ti)
             {
-                W[ti] = Sigma1(W[ti - 2]) + W[ti - 7] + Sigma0(W[ti - 15]) + W[ti - 16];
+                this.W[ti] = Sigma1(this.W[ti - 2]) + this.W[ti - 7] + Sigma0(this.W[ti - 15]) + this.W[ti - 16];
             }
 
             //
             // set up working variables.
             //
-            ulong a = H1;
-            ulong b = H2;
-            ulong c = H3;
-            ulong d = H4;
-            ulong e = H5;
-            ulong f = H6;
-            ulong g = H7;
-            ulong h = H8;
+            ulong a = this.H1;
+            ulong b = this.H2;
+            ulong c = this.H3;
+            ulong d = this.H4;
+            ulong e = this.H5;
+            ulong f = this.H6;
+            ulong g = this.H7;
+            ulong h = this.H8;
 
             int t = 0;
             for(int i = 0; i < 10; i++)
             {
                 // t = 8 * i
-                h += Sum1(e) + Ch(e, f, g) + K[t] + W[t++];
+                h += Sum1(e) + Ch(e, f, g) + K[t] + this.W[t++];
                 d += h;
                 h += Sum0(a) + Maj(a, b, c);
 
                 // t = 8 * i + 1
-                g += Sum1(d) + Ch(d, e, f) + K[t] + W[t++];
+                g += Sum1(d) + Ch(d, e, f) + K[t] + this.W[t++];
                 c += g;
                 g += Sum0(h) + Maj(h, a, b);
 
                 // t = 8 * i + 2
-                f += Sum1(c) + Ch(c, d, e) + K[t] + W[t++];
+                f += Sum1(c) + Ch(c, d, e) + K[t] + this.W[t++];
                 b += f;
                 f += Sum0(g) + Maj(g, h, a);
 
                 // t = 8 * i + 3
-                e += Sum1(b) + Ch(b, c, d) + K[t] + W[t++];
+                e += Sum1(b) + Ch(b, c, d) + K[t] + this.W[t++];
                 a += e;
                 e += Sum0(f) + Maj(f, g, h);
 
                 // t = 8 * i + 4
-                d += Sum1(a) + Ch(a, b, c) + K[t] + W[t++];
+                d += Sum1(a) + Ch(a, b, c) + K[t] + this.W[t++];
                 h += d;
                 d += Sum0(e) + Maj(e, f, g);
 
                 // t = 8 * i + 5
-                c += Sum1(h) + Ch(h, a, b) + K[t] + W[t++];
+                c += Sum1(h) + Ch(h, a, b) + K[t] + this.W[t++];
                 g += c;
                 c += Sum0(d) + Maj(d, e, f);
 
                 // t = 8 * i + 6
-                b += Sum1(g) + Ch(g, h, a) + K[t] + W[t++];
+                b += Sum1(g) + Ch(g, h, a) + K[t] + this.W[t++];
                 f += b;
                 b += Sum0(c) + Maj(c, d, e);
 
                 // t = 8 * i + 7
-                a += Sum1(f) + Ch(f, g, h) + K[t] + W[t++];
+                a += Sum1(f) + Ch(f, g, h) + K[t] + this.W[t++];
                 e += a;
                 a += Sum0(b) + Maj(b, c, d);
             }
 
-            H1 += a;
-            H2 += b;
-            H3 += c;
-            H4 += d;
-            H5 += e;
-            H6 += f;
-            H7 += g;
-            H8 += h;
+            this.H1 += a;
+            this.H2 += b;
+            this.H3 += c;
+            this.H4 += d;
+            this.H5 += e;
+            this.H6 += f;
+            this.H7 += g;
+            this.H8 += h;
 
             //
             // reset the offset and clean out the word buffer.
             //
-            wOff = 0;
-            Array.Clear(W, 0, 16);
+            this.wOff = 0;
+            Array.Clear(this.W, 0, 16);
         }
 
         /* SHA-384 and SHA-512 functions (as for SHA-256 but for longs) */
@@ -341,7 +341,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public int GetByteLength()
         {
-            return MyByteLength;
+            return this.MyByteLength;
         }
 
         public abstract string AlgorithmName

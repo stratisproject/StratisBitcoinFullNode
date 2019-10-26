@@ -16,9 +16,10 @@ namespace NBitcoin.Stealth
             }
             throw new ArgumentException("No nonce can satisfy the given bitfield, use another ephemKey");
         }
+
         public static StealthMetadata TryParse(Script metadata)
         {
-            StealthMetadata result = new StealthMetadata();
+            var result = new StealthMetadata();
             try
             {
                 if(!Fill(result, metadata))
@@ -30,9 +31,11 @@ namespace NBitcoin.Stealth
             }
             return result;
         }
+
         private StealthMetadata()
         {
         }
+
         public StealthMetadata(Script metadata)
         {
             if(!Fill(this, metadata))
@@ -43,19 +46,20 @@ namespace NBitcoin.Stealth
         {
             var data = new MemoryStream();
             data.WriteByte(6);
-            var b = Utils.ToBytes(nonce, true);
+            byte[] b = Utils.ToBytes(nonce, true);
             data.Write(b, 0, b.Length);
             data.Write(ephemKey.PubKey.Compress().ToBytes(), 0, 33);
             Fill(this, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(data.ToArray())));
         }
 
-        static TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 4);
+        private static TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 4);
+
         private static bool Fill(StealthMetadata output, Script metadata)
         {
-            var datas = _Template.ExtractScriptPubKeyParameters(Network.Main, metadata);
+            byte[][] datas = _Template.ExtractScriptPubKeyParameters(metadata);
             if(datas == null)
                 return false;
-            foreach(var data in datas)
+            foreach(byte[] data in datas)
             {
                 if(Fill(output, metadata, data))
                     return true;
@@ -67,7 +71,7 @@ namespace NBitcoin.Stealth
         {
             if(data == null || data.Length != 1 + 4 + 33)
                 return false;
-            MemoryStream ms = new MemoryStream(data);
+            var ms = new MemoryStream(data);
             output.Version = ms.ReadByte();
             if(output.Version != 6)
                 return false;

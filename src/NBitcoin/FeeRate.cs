@@ -12,11 +12,11 @@ namespace NBitcoin
         {
             get
             {
-                return _FeePerK;
+                return this._FeePerK;
             }
         }
 
-        readonly static FeeRate _Zero = new FeeRate(Money.Zero);
+        private readonly static FeeRate _Zero = new FeeRate(Money.Zero);
         public static FeeRate Zero
         {
             get
@@ -31,7 +31,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("feePerK");
             if(feePerK.Satoshi < 0)
                 throw new ArgumentOutOfRangeException("feePerK");
-            _FeePerK = feePerK;
+            this._FeePerK = feePerK;
         }
 
         public FeeRate(Money feePaid, int size)
@@ -41,9 +41,9 @@ namespace NBitcoin
             if(feePaid.Satoshi < 0)
                 throw new ArgumentOutOfRangeException("feePaid");
             if(size > 0)
-                _FeePerK = feePaid * 1000 / size;
+                this._FeePerK = (long)(feePaid.Satoshi / (decimal)size * 1000);
             else
-                _FeePerK = 0;
+                this._FeePerK = 0;
         }
 
         /// <summary>
@@ -53,9 +53,9 @@ namespace NBitcoin
         /// <returns></returns>
         public Money GetFee(int virtualSize)
         {
-            Money nFee = _FeePerK.Satoshi * virtualSize / 1000;
-            if(nFee == 0 && _FeePerK.Satoshi > 0)
-                nFee = _FeePerK.Satoshi;
+            Money nFee = this._FeePerK.Satoshi * virtualSize / 1000;
+            if(nFee == 0 && this._FeePerK.Satoshi > 0)
+                nFee = this._FeePerK.Satoshi;
             return nFee;
         }
         public Money GetFee(Transaction tx)
@@ -65,11 +65,11 @@ namespace NBitcoin
 
         public override bool Equals(object obj)
         {
-            if(Object.ReferenceEquals(this, obj))
+            if(ReferenceEquals(this, obj))
                 return true;
             if(((object)this == null) || (obj == null))
                 return false;
-            var left = this;
+            FeeRate left = this;
             var right = obj as FeeRate;
             if(right == null)
                 return false;
@@ -78,21 +78,21 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return String.Format("{0} BTC/kB", _FeePerK.ToString());
+            return String.Format("{0} BTC/kB", this._FeePerK.ToString());
         }
 
         #region IEquatable<FeeRate> Members
 
         public bool Equals(FeeRate other)
         {
-            return other != null && _FeePerK.Equals(other._FeePerK);
+            return other != null && this._FeePerK.Equals(other._FeePerK);
         }
 
         public int CompareTo(FeeRate other)
         {
-            return other == null 
-                ? 1 
-                : _FeePerK.CompareTo(other._FeePerK);
+            return other == null
+                ? 1
+                : this._FeePerK.CompareTo(other._FeePerK);
         }
 
         #endregion
@@ -105,11 +105,11 @@ namespace NBitcoin
                 return 1;
             var m = obj as FeeRate;
             if (m != null)
-                return _FeePerK.CompareTo(m._FeePerK);
-#if !(PORTABLE || NETCORE)
+                return this._FeePerK.CompareTo(m._FeePerK);
+#if !NETCORE
             return _FeePerK.CompareTo(obj);
 #else
-            return _FeePerK.CompareTo((long)obj);
+            return this._FeePerK.CompareTo((long)obj);
 #endif
         }
 
@@ -150,7 +150,7 @@ namespace NBitcoin
 
         public static bool operator ==(FeeRate left, FeeRate right)
         {
-            if (Object.ReferenceEquals(left, right))
+            if (ReferenceEquals(left, right))
                 return true;
             if (((object)left == null) || ((object)right == null))
                 return false;
@@ -164,7 +164,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return _FeePerK.GetHashCode();
+            return this._FeePerK.GetHashCode();
         }
 
         public static FeeRate Min(FeeRate left, FeeRate right)
@@ -173,8 +173,8 @@ namespace NBitcoin
                 throw new ArgumentNullException("left");
             if (right == null)
                 throw new ArgumentNullException("right");
-            return left <= right 
-                ? left 
+            return left <= right
+                ? left
                 : right;
         }
 

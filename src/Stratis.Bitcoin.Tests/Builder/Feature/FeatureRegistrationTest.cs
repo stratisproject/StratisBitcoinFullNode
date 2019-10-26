@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -104,12 +105,16 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
         private class FeatureRegistrationFullNodeFeature : IFullNodeFeature
         {
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();
             }
 
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }

@@ -142,7 +142,7 @@ publish/
 *.[Pp]ublish.xml
 *.azurePubxml
 
-# TODO: Un-comment the next line if you do not want to checkin 
+# TODO: Un-comment the next line if you do not want to checkin
 # your web deploy settings because they may include unencrypted
 # passwords
 #*.pubxml
@@ -183,7 +183,7 @@ BundleArtifacts/
 
 # Others
 ClientBin/
-[Ss]tyle[Cc]op.*
+[Ss]tyle[Cc]op.Cache
 ~$*
 *~
 *.dbmdl
@@ -245,6 +245,7 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/src/TestCase
 /src/Stratis.Bitcoin.IntegrationTests/TestData
 /src/Stratis.Bitcoin.IntegrationTests/ValidSomeBlocks
 /src/Stratis.BitcoinD/Properties/launchSettings.json
@@ -252,3 +253,13 @@ ModelManifest.xml
 /src/Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests/TestData
 /src/Stratis.StratisD/Logs
 /src/Stratis.BitcoinD/Logs
+/src/Stratis.Benchmark/BenchmarkDotNet.Artifacts/results
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/css/*.min.css
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/js/*.min.js
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/lib
+
+src/.idea/.idea.Stratis.Bitcoin.FullNode/.idea/
+
+.DS_Store
+
+*.iml

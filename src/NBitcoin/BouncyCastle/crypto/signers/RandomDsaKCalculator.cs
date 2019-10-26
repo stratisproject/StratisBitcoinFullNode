@@ -31,14 +31,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Signers
 
         public virtual BigInteger NextK()
         {
-            int qBitLength = q.BitLength;
+            int qBitLength = this.q.BitLength;
 
             BigInteger k;
             do
             {
-                k = new BigInteger(qBitLength, random);
+                k = new BigInteger(qBitLength, this.random);
             }
-            while(k.SignValue < 1 || k.CompareTo(q) >= 0);
+            while(k.SignValue < 1 || k.CompareTo(this.q) >= 0);
 
             return k;
         }

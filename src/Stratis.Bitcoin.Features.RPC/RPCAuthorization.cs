@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.RPC
 {
     public interface IRPCAuthorization
     {
-        List<IPAddress> AllowIp { get; }
+        List<IPAddressBlock> AllowIp { get; }
 
         List<string> Authorized { get; }
 
@@ -21,13 +21,13 @@ namespace Stratis.Bitcoin.Features.RPC
     {
         public RPCAuthorization()
         {
-            this.AllowIp = new List<IPAddress>();
+            this.AllowIp = new List<IPAddressBlock>();
             this.Authorized = new List<string>();
         }
 
         public List<string> Authorized { get; }
 
-        public List<IPAddress> AllowIp { get; }
+        public List<IPAddressBlock> AllowIp { get; }
 
         public bool IsAuthorized(string user)
         {
@@ -42,7 +42,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (this.AllowIp.Count == 0)
                 return true;
-            return this.AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
+
+            return this.AllowIp.Any(i => i.Contains(ip));
         }
     }
 }

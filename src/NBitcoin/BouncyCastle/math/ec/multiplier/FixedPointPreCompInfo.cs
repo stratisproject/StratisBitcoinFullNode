@@ -23,7 +23,7 @@
         {
             get
             {
-                return m_preComp;
+                return this.m_preComp;
             }
             set
             {
@@ -35,7 +35,7 @@
         {
             get
             {
-                return m_width;
+                return this.m_width;
             }
             set
             {

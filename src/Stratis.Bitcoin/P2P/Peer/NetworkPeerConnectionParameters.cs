@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -23,7 +26,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public TransactionOptions PreferredTransactionOptions { get; set; }
 
         public string UserAgent { get; set; }
+
         public int ReceiveBufferSize { get; set; }
+
         public int SendBufferSize { get; set; }
 
         public IPEndPoint AddressFrom { get; set; }
@@ -32,24 +37,34 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public CancellationToken ConnectCancellation { get; set; }
 
-        private readonly NetworkPeerBehaviorsCollection templateBehaviors = new NetworkPeerBehaviorsCollection(null);
-        public NetworkPeerBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
+        public List<INetworkPeerBehavior> TemplateBehaviors { get; }
 
         public NetworkPeerConnectionParameters()
         {
-            this.TemplateBehaviors.Add(new PingPongBehavior());
             this.Version = ProtocolVersion.PROTOCOL_VERSION;
             this.IsRelay = true;
             this.Services = NetworkPeerServices.Nothing;
             this.ConnectCancellation = default(CancellationToken);
-            this.ReceiveBufferSize = 1000 * 5000;
-            this.SendBufferSize = 1000 * 1000;
+            this.TemplateBehaviors = new List<INetworkPeerBehavior>();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // Use max supported by MAC OSX Yosemite/Mavericks/Sierra (https://fasterdata.es.net/host-tuning/osx/)
+                this.ReceiveBufferSize = 1048576;
+                this.SendBufferSize = 1048576;
+            }
+            else
+            {
+                this.ReceiveBufferSize = 1000 * 5000;
+                this.SendBufferSize = 1000 * 5000;
+            }
+
             this.UserAgent = VersionPayload.GetNBitcoinUserAgent();
             this.PreferredTransactionOptions = TransactionOptions.All;
             this.Nonce = RandomUtils.GetUInt64();
         }
 
-        public NetworkPeerConnectionParameters(NetworkPeerConnectionParameters other)
+        public NetworkPeerConnectionParameters SetFrom(NetworkPeerConnectionParameters other)
         {
             this.Version = other.Version;
             this.IsRelay = other.IsRelay;
@@ -67,23 +82,26 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.TemplateBehaviors.Add(behavior.Clone());
             }
+
+            return this;
         }
 
+        [NoTrace]
         public NetworkPeerConnectionParameters Clone()
         {
-            return new NetworkPeerConnectionParameters(this);
+            return new NetworkPeerConnectionParameters().SetFrom(this);
         }
 
-        public VersionPayload CreateVersion(IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)
+        public VersionPayload CreateVersion(IPEndPoint externalAddressEndPoint, IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)
         {
-            VersionPayload version = new VersionPayload()
+            var version = new VersionPayload()
             {
                 Nonce = this.Nonce == null ? RandomUtils.GetUInt64() : this.Nonce.Value,
                 UserAgent = this.UserAgent,
                 Version = this.Version,
                 Timestamp = timeStamp,
                 AddressReceiver = peerAddress,
-                AddressFrom = this.AddressFrom ?? new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), network.DefaultPort),
+                AddressFrom = externalAddressEndPoint,
                 Relay = this.IsRelay,
                 Services = this.Services
             };

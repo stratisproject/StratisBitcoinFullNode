@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.Bitcoin.Interfaces;
+﻿using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -8,7 +7,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// </summary>
     public class LightWalletInitialBlockDownloadState : IInitialBlockDownloadState
     {
-        private bool isInInitialBlockDownload;
+        private readonly bool isInInitialBlockDownload;
 
         public LightWalletInitialBlockDownloadState()
         {

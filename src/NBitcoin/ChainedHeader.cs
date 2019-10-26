@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
@@ -15,7 +16,7 @@ namespace NBitcoin
         HeaderOnly,
 
         /// <summary>
-        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>. 
+        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>.
         /// This happens when we don't have block which is represented by this header and the header is a part of a chain that
         /// can potentially replace our consensus tip because its chain work is greater than our consensus tip's chain work.
         /// </summary>
@@ -33,31 +34,19 @@ namespace NBitcoin
     public enum ValidationState
     {
         /// <summary>
-        /// No validation was performed.
-        /// </summary>
-        Unknown,
-
-        /// <summary>
         /// We have a valid block header.
         /// </summary>
         HeaderValidated,
 
         /// <summary>
-        /// Blocks represented by headers with this state are assumed to be valid and only minimal validation is required for them when they are downloaded.
-        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
-        /// Once a block is fully validated this state will change to <see cref="PartiallyValidated"/>.
-        /// </summary>
-        AssumedValid,
-
-        /// <summary>
         /// Validated using all rules that don't require change of state.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         PartiallyValidated,
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>. 
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         FullyValidated
     }
@@ -100,6 +89,20 @@ namespace NBitcoin
         /// <inheritdoc cref="ValidationState" />
         public ValidationState BlockValidationState { get; set; }
 
+        /// <summary>
+        /// An indicator that the current instance of <see cref="ChainedHeader"/> has been disconnected from the previous instance.
+        /// </summary>
+        public bool IsReferenceConnected
+        {
+            get { return this.Previous.Next.Any(c => ReferenceEquals(c, this)); }
+        }
+
+        /// <summary>
+        /// Block represented by this header is assumed to be valid and only subset of validation rules should be applied to it.
+        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
+        /// </summary>
+        public bool IsAssumedValid { get; set; }
+
         /// <summary>A pointer to the block data if available (this can be <c>null</c>), its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
         public Block Block { get; set; }
 
@@ -119,6 +122,12 @@ namespace NBitcoin
             if (previous != null)
                 this.Height = previous.Height + 1;
 
+            if (this.Height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
+
             this.Previous = previous;
 
             if (previous == null)
@@ -129,7 +138,7 @@ namespace NBitcoin
             else
             {
                 if (previous.HashBlock != header.HashPrevBlock)
-                    throw new ArgumentException("The previous block has not the expected hash");
+                    throw new ArgumentException("The previous block does not have the expected hash");
 
                 // Calculates the location of the skip block for this block.
                 this.Skip = this.Previous.GetAncestor(this.GetSkipHeight(this.Height));
@@ -178,7 +187,7 @@ namespace NBitcoin
 
         /// <summary>Calculates the amount of work that this block contributes to the total chain work.</summary>
         /// <returns>Amount of work.</returns>
-        private BigInteger GetBlockProof()
+        public BigInteger GetBlockProof()
         {
             BigInteger target = this.Header.Bits.ToBigInteger();
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(Pow256) >= 0))
@@ -192,7 +201,7 @@ namespace NBitcoin
         public BlockLocator GetLocator()
         {
             int nStep = 1;
-            List<uint256> blockHashes = new List<uint256>();
+            var blockHashes = new List<uint256>();
 
             ChainedHeader pindex = this;
             while (pindex != null)
@@ -204,7 +213,7 @@ namespace NBitcoin
 
                 // Exponentially larger steps back, plus the genesis block.
                 int height = Math.Max(pindex.Height - nStep, 0);
-                pindex = this.GetAncestor(height);
+                pindex = GetAncestor(height);
 
                 if (blockHashes.Count > 10)
                     nStep *= 2;
@@ -218,7 +227,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            ChainedHeader item = obj as ChainedHeader;
+            var item = obj as ChainedHeader;
             if (item == null)
                 return false;
 
@@ -228,7 +237,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public static bool operator ==(ChainedHeader a, ChainedHeader b)
         {
-            if (System.Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
 
             if (((object)a == null) || ((object)b == null))
@@ -266,7 +275,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override string ToString()
         {
-            return this.Height + "-" + this.HashBlock;
+            return this.Height + "-" + this.HashBlock + "-" + this.BlockValidationState + (this.Header is ProvenBlockHeader ? " - PH"  : string.Empty);
         }
 
         /// <summary>
@@ -274,11 +283,11 @@ namespace NBitcoin
         /// </summary>
         /// <param name="chainedHeader">The chained header to search for.</param>
         /// <returns>The chained block header or <c>null</c> if can't be found.</returns>
-        /// <remarks>This method compares the hash of the block header at the same height in the current chain 
+        /// <remarks>This method compares the hash of the block header at the same height in the current chain
         /// to verify the correct chained block header has been found.</remarks>
         public ChainedHeader FindAncestorOrSelf(ChainedHeader chainedHeader)
         {
-            ChainedHeader found = this.GetAncestor(chainedHeader.Height);
+            ChainedHeader found = GetAncestor(chainedHeader.Height);
             if ((found != null) && (found.HashBlock == chainedHeader.HashBlock))
                 return found;
 
@@ -286,19 +295,24 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Finds the ancestor of this entry in the chain that matches the block hash given.
+        /// Finds the ancestor of this entry in the chain that matches the block hash.
+        /// It will not search lower than the optional height parameter.
         /// </summary>
         /// <param name="blockHash">The block hash to search for.</param>
-        /// <returns>The ancestor of this chain that matches the block hash.</returns>
-        public ChainedHeader FindAncestorOrSelf(uint256 blockHash)
+        /// <param name="height">Optional height to restrict the search to.</param>
+        /// <returns>The ancestor of this chain that matches the block hash, or null if it was not found.</returns>
+        public ChainedHeader FindAncestorOrSelf(uint256 blockHash, int height = 0)
         {
             ChainedHeader currentBlock = this;
-            while ((currentBlock != null) && (currentBlock.HashBlock != blockHash))
+            while ((currentBlock != null) && (currentBlock.Height > height))
             {
+                if (currentBlock.HashBlock == blockHash)
+                    break;
+
                 currentBlock = currentBlock.Previous;
             }
 
-            return currentBlock;
+            return (currentBlock?.HashBlock == blockHash) ? currentBlock : null;
         }
 
         /// <summary>
@@ -308,7 +322,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(Network network)
         {
-            return this.GetNextWorkRequired(network.Consensus);
+            return GetNextWorkRequired(network.Consensus);
         }
 
         /// <summary>
@@ -316,12 +330,12 @@ namespace NBitcoin
         /// </summary>
         /// <param name="consensus">Consensus rules to use for this computation.</param>
         /// <returns>The target proof of work.</returns>
-        public Target GetNextWorkRequired(Consensus consensus)
+        public Target GetNextWorkRequired(IConsensus consensus)
         {
             BlockHeader dummy = consensus.ConsensusFactory.CreateBlockHeader();
             dummy.HashPrevBlock = this.HashBlock;
             dummy.BlockTime = DateTimeOffset.UtcNow;
-            return this.GetNextWorkRequired(dummy, consensus);
+            return GetNextWorkRequired(dummy, consensus);
         }
 
         /// <summary>
@@ -332,7 +346,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetNextWorkRequired(BlockHeader block, Network network)
         {
-            return this.GetNextWorkRequired(block, network.Consensus);
+            return GetNextWorkRequired(block, network.Consensus);
         }
 
         /// <summary>
@@ -341,7 +355,7 @@ namespace NBitcoin
         /// <param name="block">The new block to get proof of work for.</param>
         /// <param name="consensus">Consensus rules to use for this computation.</param>
         /// <returns>The target proof of work.</returns>
-        public Target GetNextWorkRequired(BlockHeader block, Consensus consensus)
+        public Target GetNextWorkRequired(BlockHeader block, IConsensus consensus)
         {
             return new ChainedHeader(block, block.GetHash(), this).GetWorkRequired(consensus);
         }
@@ -353,7 +367,7 @@ namespace NBitcoin
         /// <returns>The target proof of work.</returns>
         public Target GetWorkRequired(Network network)
         {
-            return this.GetWorkRequired(network.Consensus);
+            return GetWorkRequired(network.Consensus);
         }
 
         /// <summary>
@@ -361,7 +375,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="consensus">Consensus rules to use for this computation.</param>
         /// <returns>The target proof of work.</returns>
-        public Target GetWorkRequired(Consensus consensus)
+        public Target GetWorkRequired(IConsensus consensus)
         {
             // Genesis block.
             if (this.Height == 0)
@@ -369,13 +383,15 @@ namespace NBitcoin
 
             Target proofOfWorkLimit = consensus.PowLimit;
             ChainedHeader lastBlock = this.Previous;
-            var height = this.Height;
+            int height = this.Height;
 
             if (lastBlock == null)
                 return proofOfWorkLimit;
 
+            long difficultyAdjustmentInterval = this.GetDifficultyAdjustmentInterval(consensus);
+
             // Only change once per interval.
-            if ((height) % consensus.DifficultyAdjustmentInterval != 0)
+            if ((height) % difficultyAdjustmentInterval != 0)
             {
                 if (consensus.PowAllowMinDifficultyBlocks)
                 {
@@ -384,10 +400,10 @@ namespace NBitcoin
                     // then allow mining of a min-difficulty block.
                     if (this.Header.BlockTime > (lastBlock.Header.BlockTime + TimeSpan.FromTicks(consensus.PowTargetSpacing.Ticks * 2)))
                         return proofOfWorkLimit;
-                 
+
                     // Return the last non-special-min-difficulty-rules-block.
                     ChainedHeader chainedHeader = lastBlock;
-                    while ((chainedHeader.Previous != null) && ((chainedHeader.Height % consensus.DifficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))
+                    while ((chainedHeader.Previous != null) && ((chainedHeader.Height % difficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))
                         chainedHeader = chainedHeader.Previous;
 
                     return chainedHeader.Header.Bits;
@@ -397,9 +413,9 @@ namespace NBitcoin
             }
 
             // Go back by what we want to be 14 days worth of blocks.
-            long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
+            long pastHeight = lastBlock.Height - (difficultyAdjustmentInterval - 1);
 
-            ChainedHeader firstChainedHeader = this.GetAncestor((int)pastHeight);
+            ChainedHeader firstChainedHeader = GetAncestor((int)pastHeight);
             if (firstChainedHeader == null)
                 throw new NotSupportedException("Can only calculate work of a full chain");
 
@@ -426,12 +442,21 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Calculate the difficulty adjustment interval in blocks based on settings defined in <see cref="IConsensus"/>.
+        /// </summary>
+        /// <returns>The difficulty adjustment interval in blocks.</returns>
+        private long GetDifficultyAdjustmentInterval(IConsensus consensus)
+        {
+            return (long)consensus.PowTargetTimespan.TotalSeconds / (long)consensus.PowTargetSpacing.TotalSeconds;
+        }
+
+        /// <summary>
         /// Calculate the median block time over <see cref="MedianTimeSpan"/> window from this entry in the chain.
         /// </summary>
         /// <returns>The median block time.</returns>
         public DateTimeOffset GetMedianTimePast()
         {
-            DateTimeOffset[] median = new DateTimeOffset[MedianTimeSpan];
+            var median = new DateTimeOffset[MedianTimeSpan];
             int begin = MedianTimeSpan;
             int end = MedianTimeSpan;
 
@@ -457,7 +482,7 @@ namespace NBitcoin
                 return BlockStake.Validate(network, this);
 
             bool genesisCorrect = (this.Height != 0) || this.HashBlock == network.GetGenesis().GetHash();
-            return genesisCorrect && this.Validate(network.Consensus);
+            return genesisCorrect && Validate(network.Consensus);
         }
 
         /// <summary>
@@ -465,7 +490,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="consensus">The consensus rules being used.</param>
         /// <returns><c>true</c> if the header is a valid block header, <c>false</c> otherwise.</returns>
-        public bool Validate(Consensus consensus)
+        public bool Validate(IConsensus consensus)
         {
             if (consensus == null)
                 throw new ArgumentNullException("consensus");
@@ -476,7 +501,7 @@ namespace NBitcoin
             bool heightCorrect = (this.Height == 0) || (this.Height == this.Previous.Height + 1);
             bool hashPrevCorrect = (this.Height == 0) || (this.Header.HashPrevBlock == this.Previous.HashBlock);
             bool hashCorrect = this.HashBlock == this.Header.GetHash();
-            bool workCorrect = this.CheckProofOfWorkAndTarget(consensus);
+            bool workCorrect = CheckProofOfWorkAndTarget(consensus);
 
             return heightCorrect && hashPrevCorrect && hashCorrect && workCorrect;
         }
@@ -488,7 +513,7 @@ namespace NBitcoin
         /// <returns>Whether proof of work is valid.</returns>
         public bool CheckProofOfWorkAndTarget(Network network)
         {
-            return this.CheckProofOfWorkAndTarget(network.Consensus);
+            return CheckProofOfWorkAndTarget(network.Consensus);
         }
 
         /// <summary>
@@ -496,9 +521,9 @@ namespace NBitcoin
         /// </summary>
         /// <param name="consensus">Consensus rules to use for this validation.</param>
         /// <returns>Whether proof of work is valid.</returns>
-        public bool CheckProofOfWorkAndTarget(Consensus consensus)
+        public bool CheckProofOfWorkAndTarget(IConsensus consensus)
         {
-            return (this.Height == 0) || (this.Header.CheckProofOfWork(consensus) && (this.Header.Bits == this.GetWorkRequired(consensus)));
+            return (this.Height == 0) || (this.Header.CheckProofOfWork() && (this.Header.Bits == GetWorkRequired(consensus)));
         }
 
         /// <summary>
@@ -579,6 +604,29 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Select all headers between current header and <paramref name="chainedHeader"/> and add them to an array
+        /// of consecutive headers, both items are included in the array.
+        /// </summary>
+        /// <returns>Array of consecutive headers.</returns>
+        public ChainedHeader[] ToChainedHeaderArray(ChainedHeader chainedHeader)
+        {
+            var hashes = new ChainedHeader[this.Height - chainedHeader.Height + 1];
+
+            ChainedHeader currentHeader = this;
+
+            for (int i = hashes.Length - 1; i >= 0; i--)
+            {
+                hashes[i] = currentHeader;
+                currentHeader = currentHeader.Previous;
+            }
+
+            if (hashes[0] != chainedHeader)
+                throw new NotSupportedException("Header must be on the same chain.");
+
+            return hashes;
+        }
+
+        /// <summary>
         /// Compute what height to jump back to for the skip block given this height.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/chain.cpp#L72-L81"/>
         /// </summary>
@@ -593,7 +641,7 @@ namespace NBitcoin
             // but the following expression was taken from bitcoin core. There it was tested in simulations
             // and performed well.
             // Skip steps are exponential - Using skip, max 110 steps to go back up to 2^18 blocks.
-            return (height & 1) != 0 ? this.InvertLowestOne(this.InvertLowestOne(height - 1)) + 1 : this.InvertLowestOne(height);
+            return (height & 1) != 0 ? InvertLowestOne(InvertLowestOne(height - 1)) + 1 : InvertLowestOne(height);
         }
 
         /// <summary>
@@ -604,6 +652,16 @@ namespace NBitcoin
         private int InvertLowestOne(int n)
         {
             return n & (n - 1);
+        }
+
+        /// <summary>
+        /// Replace the <see cref="BlockHeader"/> with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        public void SetHeader(BlockHeader newHeader)
+        {
+            this.Header = newHeader;
         }
     }
 }

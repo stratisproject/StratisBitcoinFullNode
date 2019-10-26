@@ -102,8 +102,9 @@ If a shortcut does not exist, you can simply use the full name of a class or a n
 
 ### NLog.config
 
-If you don't want to use the debug option, or you need a more complex set of rules, you can use `NLog.config` file. You need to create `NLog.config` file in the folder where 
-you have your DLL files - e.g. `Stratis.Bitcoin.dll`. The path to this folder is usually something like `StratisBitcoinFullNode/Stratis.BitcoinD/bin/Debug/netcoreapp1.1`.
+If you don't want to use the debug option, or you need a more complex set of rules, you can use an `NLog.config` file. You will need to create the `NLog.config` file and place it one of these locations:
+* in the folder where you have your DLL files - e.g. `Stratis.Bitcoin.dll`. The path to this folder is usually something like `StratisBitcoinFullNode/Stratis.BitcoinD/bin/Debug/netcoreapp1.1`, or
+* in the `$DATADIR` directory
 
 Here is the very basic `NLog.config` configuration file that you can start with:
 
@@ -254,62 +255,6 @@ for logs of some components:
 </nlog>
 ```
 
+This first example can be used as a template, from which we can derive more verbose config files.
 
-This first example can be used as a template, from which we can derive the second example:
-
-```
-<?xml version="1.0" encoding="utf-8" ?>
-<nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" autoReload="true">
-  <targets>
-    <target name="debugAllFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="debug.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugBlockPullerFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="blockpuller.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugBlockStoreFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="blockstore.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugCoinViewsFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="coinview.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugMiningValidationFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="miner.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugTimeSyncFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="timesync.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target name="debugWalletFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
-      <target xsi:type="File" fileName="wallet.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
-    </target>
-    <target xsi:type="null" name="null" formatMessage="false" /> 
-  </targets>
-
-  <rules>
-    <!-- Avoid logging to incorrect folder before the logging initialization is done. If you want to see those logging messages, comment out this line, but your log file will be somewhere else. -->
-    <logger name="*" minlevel="Trace" writeTo="null" final="true" />
-
-    <logger name="Stratis.Bitcoin.BlockPulling.*" minlevel="Debug" writeTo="debugBlockPullerFile" />
-
-    <logger name="Stratis.Bitcoin.Features.BlockStore.*" minlevel="Debug" writeTo="debugBlockStoreFile" />
-
-    <logger name="Stratis.Bitcoin.Features.Consensus.CoinViews.*" minlevel="Debug" writeTo="debugCoinViewsFile" />
-
-    <logger name="Stratis.Bitcoin.Features.Consensus.ConsensusLoop" minlevel="Trace" writeTo="debugMiningValidationFile" />
-    <logger name="Stratis.Bitcoin.Features.Consensus.StakeValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
-    <logger name="Stratis.Bitcoin.Features.Consensus.PosConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
-    <logger name="Stratis.Bitcoin.Features.Consensus.PowConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
-    <logger name="Stratis.Bitcoin.Features.Miner.*" minlevel="Trace" writeTo="debugMiningValidationFile" />
-
-    <logger name="Stratis.Bitcoin.Base.TimeSyncBehaviorState" minlevel="Debug" writeTo="debugTimeSyncFile" />
-    <logger name="Stratis.Bitcoin.Base.TimeSyncBehavior" minlevel="Debug" writeTo="debugTimeSyncFile" />
-
-    <logger name="Stratis.Bitcoin.Features.Wallet.*" minlevel="Debug" writeTo="debugWalletFile" />
-
-    <logger name="*" minlevel="Debug" writeTo="debugAllFile" />
-  </rules>
-</nlog>
-```
-
-Here we have set the minimal logging level of some components to `Debug`. This setup is handy e.g. for developer of POS staking component. 
-This component is logged on TRACE level and thus it will produce extensive logs, while other components will produce few logs. 
+Verbose config file can be found in [here](./NLog.config).

@@ -1,5 +1,4 @@
-﻿#if !NOFILEIO
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -12,12 +11,13 @@ namespace NBitcoin
     }
     public class FileLock : IDisposable
     {
-        FileStream _Fs = null;
+        private FileStream _Fs = null;
         public FileLock(string filePath, FileLockType lockType)
         {
             if(filePath == null)
                 throw new ArgumentNullException("filePath");
             if(!File.Exists(filePath))
+            {
                 try
                 {
                     File.Create(filePath).Dispose();
@@ -25,16 +25,16 @@ namespace NBitcoin
                 catch
                 {
                 }
-            CancellationTokenSource source = new CancellationTokenSource();
+            }
+
+            var source = new CancellationTokenSource();
             source.CancelAfter(20000);
             while(true)
             {
                 try
                 {
-                    if(lockType == FileLockType.Read)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    if(lockType == FileLockType.ReadWrite)
-                        _Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    if(lockType == FileLockType.Read) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    if(lockType == FileLockType.ReadWrite) this._Fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                     break;
                 }
                 catch(IOException)
@@ -48,7 +48,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            _Fs.Dispose();
+            this._Fs.Dispose();
         }
 
 
@@ -68,4 +68,3 @@ namespace NBitcoin
         //}
     }
 }
-#endif

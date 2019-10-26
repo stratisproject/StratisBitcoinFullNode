@@ -1,9 +1,6 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet

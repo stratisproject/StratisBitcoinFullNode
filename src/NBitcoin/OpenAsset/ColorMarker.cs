@@ -7,7 +7,7 @@ namespace NBitcoin.OpenAsset
 {
     public class ColorMarker : IBitcoinSerializable
     {
-        const ushort Tag = 0x414f;
+        private const ushort Tag = 0x414f;
         public static ColorMarker TryParse(string script)
         {
             return TryParse(new Script(script));
@@ -21,12 +21,12 @@ namespace NBitcoin.OpenAsset
         {
             try
             {
-                ColorMarker result = new ColorMarker();
-                if(!result.ReadScript(script))
+                var result = new ColorMarker();
+                if (!result.ReadScript(script))
                     return null;
                 return result;
             }
-            catch(EndOfStreamException)
+            catch (EndOfStreamException)
             {
                 return null;
             }
@@ -34,14 +34,14 @@ namespace NBitcoin.OpenAsset
 
         private bool ReadScript(Script script)
         {
-            var bytes = script.ToBytes(true);
-            if(bytes.Length == 0 || bytes[0] != (byte)OpcodeType.OP_RETURN)
+            byte[] bytes = script.ToBytes(true);
+            if (bytes.Length == 0 || bytes[0] != (byte)OpcodeType.OP_RETURN)
                 return false;
-            foreach(var op in script.ToOps())
+            foreach (Op op in script.ToOps())
             {
-                if(op.PushData != null && !op.IsInvalid)
+                if (op.PushData != null && !op.IsInvalid)
                 {
-                    if(ReadData(op.PushData))
+                    if (ReadData(op.PushData))
                         return true;
                 }
             }
@@ -52,32 +52,35 @@ namespace NBitcoin.OpenAsset
         {
             try
             {
-                BitcoinStream stream = new BitcoinStream(data);
-                ushort marker = 0;
-                stream.ReadWrite(ref marker);
-                if(marker != Tag)
-                    return false;
-                stream.ReadWrite(ref _Version);
-                if(_Version != 1)
-                    return false;
-
-                ulong quantityCount = 0;
-                stream.ReadWriteAsVarInt(ref quantityCount);
-                Quantities = new ulong[quantityCount];
-
-                for(ulong i = 0; i < quantityCount; i++)
+                using (var ms = new MemoryStream(data))
                 {
-                    Quantities[i] = ReadLEB128(stream);
-                    if(Quantities[i] > MAX_QUANTITY)
+                    var stream = new BitcoinStream(ms, false);
+                    ushort marker = 0;
+                    stream.ReadWrite(ref marker);
+                    if (marker != Tag)
                         return false;
-                }
+                    stream.ReadWrite(ref this._Version);
+                    if (this._Version != 1)
+                        return false;
 
-                stream.ReadWriteAsVarString(ref _Metadata);
-                if(stream.Inner.Position != data.Length)
-                    return false;
-                return true;
+                    ulong quantityCount = 0;
+                    stream.ReadWriteAsVarInt(ref quantityCount);
+                    this.Quantities = new ulong[quantityCount];
+
+                    for (ulong i = 0; i < quantityCount; i++)
+                    {
+                        this.Quantities[i] = ReadLEB128(stream);
+                        if (this.Quantities[i] > MAX_QUANTITY)
+                            return false;
+                    }
+
+                    stream.ReadWriteAsVarString(ref this._Metadata);
+                    if (stream.Inner.Position != data.Length)
+                        return false;
+                    return true;
+                }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return false;
             }
@@ -87,62 +90,62 @@ namespace NBitcoin.OpenAsset
         {
             ulong value = 0;
             value = stream.ReadWrite((byte)0);
-            if((value & 128uL) == 0uL)
+            if ((value & 128uL) == 0uL)
             {
                 return value;
             }
             value &= 127uL;
             ulong chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 7;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 14;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 21;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 28;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 35;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 42;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 49;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= (chunk & 127uL) << 56;
-            if((chunk & 128uL) == 0uL)
+            if ((chunk & 128uL) == 0uL)
             {
                 return value;
             }
             chunk = stream.ReadWrite((byte)0);
             value |= chunk << 63;
-            if((chunk & 18446744073709551614uL) != 0uL)
+            if ((chunk & 18446744073709551614uL) != 0uL)
             {
                 throw new FormatException("Invalid LEB128 number");
             }
@@ -150,7 +153,7 @@ namespace NBitcoin.OpenAsset
         }
         private void WriteLEB128(ulong value, BitcoinStream stream)
         {
-            byte[] bytes = new byte[10];
+            var bytes = new byte[10];
             int ioIndex = 0;
             int count = 0;
             do
@@ -158,7 +161,7 @@ namespace NBitcoin.OpenAsset
                 bytes[ioIndex++] = (byte)((value & 127uL) | 128uL);
                 count++;
             }
-            while((value >>= 7) != 0uL);
+            while ((value >>= 7) != 0uL);
             Array.Resize(ref bytes, count);
             bytes[bytes.Length - 1] &= 127;
             stream.ReadWrite(ref bytes);
@@ -166,53 +169,53 @@ namespace NBitcoin.OpenAsset
 
         public ColorMarker()
         {
-            Quantities = new ulong[0];
+            this.Quantities = new ulong[0];
         }
         public ColorMarker(Script script)
         {
-            if(!ReadScript(script))
+            if (!ReadScript(script))
                 throw new FormatException("Not a color marker");
         }
 
         public ColorMarker(ulong[] quantities)
         {
-            if(quantities == null)
+            if (quantities == null)
                 throw new ArgumentNullException("quantities");
-            Quantities = quantities;
+            this.Quantities = quantities;
         }
-        ushort _Version = 1;
+
+        private ushort _Version = 1;
         public ushort Version
         {
             get
             {
-                return _Version;
+                return this._Version;
             }
             set
             {
-                _Version = value;
+                this._Version = value;
             }
         }
 
-        ulong[] _Quantities;
+        private ulong[] _Quantities;
         public ulong[] Quantities
         {
             get
             {
-                return _Quantities;
+                return this._Quantities;
             }
             set
             {
-                _Quantities = value;
+                this._Quantities = value;
             }
         }
 
         public void SetQuantity(uint index, long quantity)
         {
-            if(Quantities == null)
-                Quantities = new ulong[0];
-            if(Quantities.Length <= index)
-                Array.Resize(ref _Quantities, (int)index + 1);
-            Quantities[index] = checked((ulong)quantity);
+            if (this.Quantities == null) this.Quantities = new ulong[0];
+            if (this.Quantities.Length <= index)
+                Array.Resize(ref this._Quantities, (int)index + 1);
+            this.Quantities[index] = checked((ulong)quantity);
         }
 
         public void SetQuantity(int index, long quantity)
@@ -220,44 +223,45 @@ namespace NBitcoin.OpenAsset
             SetQuantity((uint)index, quantity);
         }
 
-        byte[] _Metadata = new byte[0];
+        private byte[] _Metadata = new byte[0];
         public byte[] Metadata
         {
             get
             {
-                return _Metadata;
+                return this._Metadata;
             }
             set
             {
-                _Metadata = value;
+                this._Metadata = value;
             }
         }
         private const ulong MAX_QUANTITY = ((1UL << 63) - 1);
 
         public Script GetScript()
         {
-            var bytes = ToBytes();
+            byte[] bytes = ToBytes();
             return _Template.GenerateScriptPubKey(bytes);
         }
 
         public byte[] ToBytes()
         {
-            MemoryStream ms = new MemoryStream();
-            BitcoinStream stream = new BitcoinStream(ms, true);
+            var ms = new MemoryStream();
+            var stream = new BitcoinStream(ms, true);
             stream.ReadWrite(Tag);
-            stream.ReadWrite(ref _Version);
-            var quantityCount = (uint)this.Quantities.Length;
+            stream.ReadWrite(ref this._Version);
+            uint quantityCount = (uint)this.Quantities.Length;
             stream.ReadWriteAsVarInt(ref quantityCount);
-            for(int i = 0; i < quantityCount; i++)
+            for (int i = 0; i < quantityCount; i++)
             {
-                if(Quantities[i] > MAX_QUANTITY)
-                    throw new ArgumentOutOfRangeException("Quantity should not exceed " + Quantities[i]);
-                WriteLEB128(Quantities[i], stream);
+                if (this.Quantities[i] > MAX_QUANTITY)
+                    throw new ArgumentOutOfRangeException("Quantity should not exceed " + this.Quantities[i]);
+                WriteLEB128(this.Quantities[i], stream);
             }
-            stream.ReadWriteAsVarString(ref _Metadata);
+            stream.ReadWriteAsVarString(ref this._Metadata);
             return ms.ToArray();
         }
-        static readonly TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 5);
+
+        private static readonly TxNullDataTemplate _Template = new TxNullDataTemplate(1024 * 5);
 
         public static ColorMarker Get(Transaction transaction)
         {
@@ -267,17 +271,17 @@ namespace NBitcoin.OpenAsset
 
         public static ColorMarker Get(Transaction transaction, out uint markerPosition)
         {
-            if(transaction == null)
+            if (transaction == null)
                 throw new ArgumentNullException("transaction");
             uint resultIndex = 0;
-            if(transaction.Inputs.Count == 0 || transaction.IsCoinBase)
+            if (transaction.Inputs.Count == 0 || transaction.IsCoinBase)
             {
                 markerPosition = 0;
                 return null;
             }
             else
             {
-                var result = transaction.Outputs.Select(o => TryParse(o.ScriptPubKey)).Where((o, i) =>
+                ColorMarker result = transaction.Outputs.Select(o => TryParse(o.ScriptPubKey)).Where((o, i) =>
                 {
                     resultIndex = (uint)i;
                     return o != null;
@@ -291,16 +295,16 @@ namespace NBitcoin.OpenAsset
 
         public void ReadWrite(BitcoinStream stream)
         {
-            if(stream.Serializing)
+            if (stream.Serializing)
             {
-                var script = GetScript();
+                Script script = GetScript();
                 stream.ReadWrite(ref script);
             }
             else
             {
                 Script script = null;
                 stream.ReadWrite(ref script);
-                if(!ReadScript(script))
+                if (!ReadScript(script))
                 {
                     throw new FormatException("Invalid ColorMarker");
                 }
@@ -311,10 +315,10 @@ namespace NBitcoin.OpenAsset
 
         public static bool HasValidColorMarker(Transaction tx)
         {
-            if(tx.Inputs.Count == 0 || tx.IsCoinBase)
+            if (tx.Inputs.Count == 0 || tx.IsCoinBase)
                 return false;
-            var marker = Get(tx);
-            if(marker == null)
+            ColorMarker marker = Get(tx);
+            if (marker == null)
                 return false;
             //If there are more items in the  asset quantity list  than the number of colorable outputs, the transaction is deemed invalid, and all outputs are uncolored.
             return marker.HasValidQuantitiesCount(tx);
@@ -322,15 +326,15 @@ namespace NBitcoin.OpenAsset
 
         public bool HasValidQuantitiesCount(Transaction tx)
         {
-            return Quantities.Length <= tx.Outputs.Count - 1;
+            return this.Quantities.Length <= tx.Outputs.Count - 1;
         }
 
         public Uri GetMetadataUrl()
         {
-            if(Metadata == null || Metadata.Length == 0)
+            if (this.Metadata == null || this.Metadata.Length == 0)
                 return null;
-            var result = Encoders.ASCII.EncodeData(Metadata);
-            if(!result.StartsWith("u="))
+            string result = Encoders.ASCII.EncodeData(this.Metadata);
+            if (!result.StartsWith("u="))
                 return null;
             Uri uri = null;
             Uri.TryCreate(result.Substring(2), UriKind.Absolute, out uri);
@@ -339,12 +343,13 @@ namespace NBitcoin.OpenAsset
 
         public void SetMetadataUrl(Uri uri)
         {
-            if(uri == null)
+            if (uri == null)
             {
-                Metadata = new byte[0];
+                this.Metadata = new byte[0];
                 return;
             }
-            Metadata = Encoders.ASCII.DecodeData("u=" + uri.AbsoluteUri);
+
+            this.Metadata = Encoders.ASCII.DecodeData("u=" + uri.AbsoluteUri);
             return;
         }
     }

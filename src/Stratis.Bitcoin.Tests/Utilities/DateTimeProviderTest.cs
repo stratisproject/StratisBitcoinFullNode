@@ -7,28 +7,40 @@ namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class DateTimeProviderTest
     {
+        /// <summary>
+        /// Because we can not make multiple calls to DateTime.UtcNow and guarantee that the result is the same,
+        /// we need to check that the returned value falls within a given threshold period. We arbitrarily choose an interval
+        /// and assume that the subsequent calls to DateTime.UtcNow will always take less time than that.
+        /// </summary>
+        public const int TimeIntervalThresholdSeconds = 2;
+
         [Fact]
         public void GetUtcNowReturnsCurrentUtcDateTime()
         {
-            var result = DateTimeProvider.Default.GetUtcNow();
+            DateTime result = DateTimeProvider.Default.GetUtcNow();
 
-            Assert.Equal(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
+            var now = DateTime.UtcNow;
+
+            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThresholdSeconds));
         }
 
         [Fact]
         public void GetTimeOffsetReturnsCurrentUtcTimeOffset()
         {
-            var result = DateTimeProvider.Default.GetTimeOffset();
+            DateTimeOffset result = DateTimeProvider.Default.GetTimeOffset();
 
-            Assert.Equal(DateTimeOffset.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
+            var now = DateTimeOffset.UtcNow;
+
+            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThresholdSeconds));
         }
 
         [Fact]
         public void GetTimeReturnsUnixTimeStamp()
         {
-            var timeStamp = DateTimeProvider.Default.GetTime();
+            long timeStamp = DateTimeProvider.Default.GetTime();
 
-            Assert.Equal(DateTime.UtcNow.ToUnixTimestamp(), timeStamp);
+            var now = DateTime.UtcNow.ToUnixTimestamp();
+            Assert.True(now >= timeStamp && now < timeStamp + TimeIntervalThresholdSeconds);
         }
     }
 }

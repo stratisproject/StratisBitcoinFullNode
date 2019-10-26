@@ -6,16 +6,16 @@ namespace NBitcoin
 {
     public class InMemoryNoSqlRepository : NoSqlRepository
     {
-        Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
+        private readonly Dictionary<string, byte[]> table = new Dictionary<string, byte[]>();
 
-        public InMemoryNoSqlRepository(Network network = null)
-            :base(network ?? Network.Main)
+        public InMemoryNoSqlRepository(Network network)
+            :base(network)
         {
         }
 
         protected override Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
         {
-            foreach(var data in enumerable)
+            foreach(Tuple<string, byte[]> data in enumerable)
             {
                 if(data.Item2 == null)
                 {

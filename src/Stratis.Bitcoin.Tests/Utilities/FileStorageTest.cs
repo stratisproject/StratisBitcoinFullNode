@@ -26,11 +26,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             string dir = this.GetFolderPathForTestExecution();
 
             // Act
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
 
             // Assert
             Assert.True(Directory.Exists(fileStorage.FolderPath));
-            DirectoryInfo directoryInfo = new DirectoryInfo(fileStorage.FolderPath);
+            var directoryInfo = new DirectoryInfo(fileStorage.FolderPath);
             Assert.True(!directoryInfo.EnumerateFiles().Any());
             Assert.True(!directoryInfo.EnumerateDirectories().Any());
         }
@@ -42,11 +42,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             string dir = this.GetFolderPathForTestExecution();
 
             // Act
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
 
             // Assert
             Assert.True(Directory.Exists(fileStorage.FolderPath));
-            DirectoryInfo directoryInfo = new DirectoryInfo(fileStorage.FolderPath);
+            var directoryInfo = new DirectoryInfo(fileStorage.FolderPath);
             Assert.True(!directoryInfo.EnumerateFiles().Any());
             Assert.True(!directoryInfo.EnumerateDirectories().Any());
         }
@@ -55,9 +55,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenExistsIsCalled_WhenTheFileExists_ThenTrueIsreturned()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
 
             // Act
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             // Arrange
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
 
             // Act
             bool result = fileStorage.Exists("savedTestObject.json");
@@ -85,15 +85,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenGetFilesPathsIsCalled_WhenFilesWithTheRightExtensionExist_ThenTheFilesAreReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
 
             // Act
-            var filesPaths = fileStorage.GetFilesPaths("json");
+            IEnumerable<string> filesPaths = fileStorage.GetFilesPaths("json");
 
             // Assert
             Assert.Equal(2, filesPaths.Count());
@@ -105,15 +105,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenGetFilesPathsIsCalled_WhenNoFilesWithTheRightExtensionExist_ThenNoFilesAreReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
 
             // Act
-            var filesPaths = fileStorage.GetFilesPaths("txt");
+            IEnumerable<string> filesPaths = fileStorage.GetFilesPaths("txt");
 
             // Assert
             Assert.Empty(filesPaths);
@@ -125,15 +125,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenGetFilesNamesIsCalled_WhenNoFilesWithTheRightExtensionExist_ThenNoFilesAreReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
 
             // Act
-            var filesPaths = fileStorage.GetFilesNames("txt");
+            IEnumerable<string> filesPaths = fileStorage.GetFilesNames("txt");
 
             // Assert
             Assert.Empty(filesPaths);
@@ -145,15 +145,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenGetFilesNamesIsCalled_WhenFilesWithTheRightExtensionExist_ThenFilesAreReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
 
             // Act
-            var filesPaths = fileStorage.GetFilesNames("json");
+            IEnumerable<string> filesPaths = fileStorage.GetFilesNames("json");
 
             // Assert
             Assert.Equal(2, filesPaths.Count());
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             // Arrange
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
 
             // Act
             Assert.Throws<FileNotFoundException>(() => fileStorage.LoadByFileName("myfile.txt"));
@@ -176,13 +176,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenLoadByFileNameIsCalled_WhenAFileWithTheNameExist_ThenTheObjectIsReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
 
             // Act
-            var loadedObject = fileStorage.LoadByFileName("savedTestObject1.json");
+            TestObject loadedObject = fileStorage.LoadByFileName("savedTestObject1.json");
 
             // Assert
             Assert.Equal(testObject1.Property1, loadedObject.Property1);
@@ -193,10 +193,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenLoadByFileExtensionIsCalled_WhenFilesExist_ThenTheObjectsAreReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.json");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.json");
 
@@ -213,10 +213,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenLoadByFileExtensionIsCalled_WhenFilesDontExist_ThenNoObjectsIsReturned()
         {
             // Arrange
-            TestObject testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
-            TestObject testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
+            var testObject1 = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject2 = new TestObject { Property1 = "prop3", Property2 = "prop4" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject1, "savedTestObject1.txt");
             fileStorage.SaveToFile(testObject2, "savedTestObject2.txt");
 
@@ -231,17 +231,17 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveWithBackupIsCalled_WhenTheFileExistsandWasChanged_ThenABackupIsSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            var fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
             testObject.Property1 = testObject.Property1 + "-changed";
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
 
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");
             bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
-            
+
             // Assert
             Assert.True(isFileExists);
             Assert.True(isBackupFileExists);
@@ -259,11 +259,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveWithBackupIsCalled_WhenTheFileDidntExist_ThenTwoIdenticalFilesAreSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
-            
+            var fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
+
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");
             bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
@@ -285,10 +285,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveFileWithNoBackupIsCalled_WhenTheFileExists_ThenNoBackupIsSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+            var fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = false });
             testObject.Property1 = testObject.Property1 + "-changed";
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
 
@@ -308,10 +308,10 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveFileWithNoBackupIsCalled_WhenTheFileDidntExist_ThenNoBackupIsSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+            var fileStorage = new FileStorage<TestObject>(dir);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = false });
 
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");
@@ -326,9 +326,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveFileIsCalled_WhenTheFileDidntExist_ThenNoBackupIsSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
 
             // Act
@@ -344,9 +344,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void GivenSaveFileIsCalled_WhenTheFileExists_ThenNoBackupIsSaved()
         {
             // Arrange
-            TestObject testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
+            var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
-            FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
+            var fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
             testObject.Property1 = testObject.Property1 + "-changed";
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         public void Dispose()
         {
-            DirectoryInfo directoryInfo = new DirectoryInfo(TestFolder);
+            var directoryInfo = new DirectoryInfo(TestFolder);
 
             foreach (FileInfo file in directoryInfo.GetFiles())
             {

@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using NBitcoin.Networks;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             Guard.NotEmpty(network, nameof(network));
 
-            Network selectNetwork = Network.GetNetwork(network.ToLowerInvariant());
+            Network selectNetwork = NetworkRegistration.GetNetwork(network.ToLowerInvariant());
 
             if (selectNetwork == null)
                 throw new ArgumentException($"Network '{network}' is not a valid network.");

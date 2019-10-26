@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -12,84 +14,98 @@ namespace Stratis.Bitcoin.Base
 {
     public interface IChainRepository : IDisposable
     {
-        Task LoadAsync(ConcurrentChain chain);
+        /// <summary>Loads the chain of headers from the database.</summary>
+        /// <returns>Tip of the loaded chain.</returns>
+        Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader);
 
-        Task SaveAsync(ConcurrentChain chain);
+        /// <summary>Persists chain of headers to the database.</summary>
+        Task SaveAsync(ChainIndexer chainIndexer);
     }
 
     public class ChainRepository : IChainRepository
     {
+        private readonly DBreezeSerializer dBreezeSerializer;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Access to DBreeze database.</summary>
         private readonly DBreezeEngine dbreeze;
 
         private BlockLocator locator;
 
-        public ChainRepository(string folder)
+        public ChainRepository(string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
         {
+            this.dBreezeSerializer = dBreezeSerializer;
             Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            Directory.CreateDirectory(folder);
             this.dbreeze = new DBreezeEngine(folder);
         }
 
-        public ChainRepository(DataFolder dataFolder)
-            : this(dataFolder.ChainPath)
+        public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
+            : this(dataFolder.ChainPath, loggerFactory, dBreezeSerializer)
         {
         }
 
-        public Task LoadAsync(ConcurrentChain chain)
+        /// <inheritdoc />
+        public Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader)
         {
-            Guard.Assert(chain.Tip == chain.Genesis);
-
-            Task task = Task.Run(() =>
+            Task<ChainedHeader> task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedHeader tip = null;
-                    Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
+                    Row<int, byte[]> firstRow = transaction.Select<int, byte[]>("Chain", 0);
 
                     if (!firstRow.Exists)
-                        return;
+                        return genesisHeader;
 
-                    BlockHeader previousHeader = firstRow.Value;
-                    Guard.Assert(previousHeader.GetHash() == chain.Genesis.HashBlock); // can't swap networks
+                    BlockHeader previousHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(firstRow.Value);
+                    Guard.Assert(previousHeader.GetHash() == genesisHeader.HashBlock); // can't swap networks
 
-                    foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
+                    foreach (Row<int, byte[]> row in transaction.SelectForwardSkip<int, byte[]>("Chain", 1))
                     {
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        tip = new ChainedHeader(previousHeader, row.Value.HashPrevBlock, tip);
-                        previousHeader = row.Value;
+                        BlockHeader blockHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(row.Value);
+                        tip = new ChainedHeader(previousHeader, blockHeader.HashPrevBlock, tip);
+                        previousHeader = blockHeader;
                     }
 
                     if (previousHeader != null)
                         tip = new ChainedHeader(previousHeader, previousHeader.GetHash(), tip);
 
                     if (tip == null)
-                        return;
+                        tip = genesisHeader;
 
                     this.locator = tip.GetLocator();
-                    chain.SetTip(tip);
+                    return tip;
                 }
             });
 
             return task;
         }
 
-        public Task SaveAsync(ConcurrentChain chain)
+        /// <inheritdoc />
+        public Task SaveAsync(ChainIndexer chainIndexer)
         {
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
 
             Task task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    ChainedHeader fork = this.locator == null ? null : chain.FindFork(this.locator);
-                    ChainedHeader tip = chain.Tip;
+                    ChainedHeader fork = this.locator == null ? null : chainIndexer.FindFork(this.locator);
+                    ChainedHeader tip = chainIndexer.Tip;
                     ChainedHeader toSave = tip;
 
-                    List<ChainedHeader> headers = new List<ChainedHeader>();
+                    var headers = new List<ChainedHeader>();
                     while (toSave != fork)
                     {
                         headers.Add(toSave);
@@ -100,7 +116,22 @@ namespace Stratis.Bitcoin.Base
                     IOrderedEnumerable<ChainedHeader> orderedChainedHeaders = headers.OrderBy(b => b.Height);
                     foreach (ChainedHeader block in orderedChainedHeaders)
                     {
-                        transaction.Insert("Chain", block.Height, block.Header);
+                        BlockHeader header = block.Header;
+                        if (header is ProvenBlockHeader)
+                        {
+                            // copy the header parameters, untill we dont make PH a normal header we store it in its own repo.
+                            BlockHeader newHeader = chainIndexer.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                            newHeader.Bits = header.Bits;
+                            newHeader.Time = header.Time;
+                            newHeader.Nonce = header.Nonce;
+                            newHeader.Version = header.Version;
+                            newHeader.HashMerkleRoot = header.HashMerkleRoot;
+                            newHeader.HashPrevBlock = header.HashPrevBlock;
+
+                            header = newHeader;
+                        }
+
+                        transaction.Insert("Chain", block.Height, this.dBreezeSerializer.Serialize(header));
                     }
 
                     this.locator = tip.GetLocator();

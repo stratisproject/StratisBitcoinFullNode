@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -13,6 +14,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             using (stream.SerializationTypeScope(SerializationType.Network))
@@ -21,10 +23,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
+        [NoTrace]
         public virtual void ReadWriteCore(BitcoinStream stream)
         {
         }
 
+        [NoTrace]
         public override string ToString()
         {
             return this.GetType().Name;

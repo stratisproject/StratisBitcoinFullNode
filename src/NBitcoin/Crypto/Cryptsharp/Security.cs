@@ -21,7 +21,7 @@ using System;
 
 namespace NBitcoin.Crypto.Internal
 {
-    static class Security
+    internal static class Security
     {
         public static void Clear(Array array)
         {

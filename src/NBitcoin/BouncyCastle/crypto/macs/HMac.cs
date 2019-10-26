@@ -29,103 +29,103 @@ namespace NBitcoin.BouncyCastle.Crypto.Macs
             this.digest = digest;
             this.digestSize = digest.GetDigestSize();
             this.blockLength = digest.GetByteLength();
-            this.inputPad = new byte[blockLength];
-            this.outputBuf = new byte[blockLength + digestSize];
+            this.inputPad = new byte[this.blockLength];
+            this.outputBuf = new byte[this.blockLength + this.digestSize];
         }
 
         public virtual string AlgorithmName
         {
             get
             {
-                return digest.AlgorithmName + "/HMAC";
+                return this.digest.AlgorithmName + "/HMAC";
             }
         }
 
         public virtual IDigest GetUnderlyingDigest()
         {
-            return digest;
+            return this.digest;
         }
 
         public virtual void Init(ICipherParameters parameters)
         {
-            digest.Reset();
+            this.digest.Reset();
 
             byte[] key = ((KeyParameter)parameters).GetKey();
             int keyLength = key.Length;
 
-            if(keyLength > blockLength)
+            if(keyLength > this.blockLength)
             {
-                digest.BlockUpdate(key, 0, keyLength);
-                digest.DoFinal(inputPad, 0);
+                this.digest.BlockUpdate(key, 0, keyLength);
+                this.digest.DoFinal(this.inputPad, 0);
 
-                keyLength = digestSize;
+                keyLength = this.digestSize;
             }
             else
             {
-                Array.Copy(key, 0, inputPad, 0, keyLength);
+                Array.Copy(key, 0, this.inputPad, 0, keyLength);
             }
 
-            Array.Clear(inputPad, keyLength, blockLength - keyLength);
-            Array.Copy(inputPad, 0, outputBuf, 0, blockLength);
+            Array.Clear(this.inputPad, keyLength, this.blockLength - keyLength);
+            Array.Copy(this.inputPad, 0, this.outputBuf, 0, this.blockLength);
 
-            XorPad(inputPad, blockLength, IPAD);
-            XorPad(outputBuf, blockLength, OPAD);
+            XorPad(this.inputPad, this.blockLength, IPAD);
+            XorPad(this.outputBuf, this.blockLength, OPAD);
 
-            if(digest is IMemoable)
+            if(this.digest is IMemoable)
             {
-                opadState = ((IMemoable)digest).Copy();
+                this.opadState = ((IMemoable) this.digest).Copy();
 
-                ((IDigest)opadState).BlockUpdate(outputBuf, 0, blockLength);
+                ((IDigest) this.opadState).BlockUpdate(this.outputBuf, 0, this.blockLength);
             }
 
-            digest.BlockUpdate(inputPad, 0, inputPad.Length);
+            this.digest.BlockUpdate(this.inputPad, 0, this.inputPad.Length);
 
-            if(digest is IMemoable)
+            if(this.digest is IMemoable)
             {
-                ipadState = ((IMemoable)digest).Copy();
+                this.ipadState = ((IMemoable) this.digest).Copy();
             }
         }
 
         public virtual int GetMacSize()
         {
-            return digestSize;
+            return this.digestSize;
         }
 
         public virtual void Update(byte input)
         {
-            digest.Update(input);
+            this.digest.Update(input);
         }
 
         public virtual void BlockUpdate(byte[] input, int inOff, int len)
         {
-            digest.BlockUpdate(input, inOff, len);
+            this.digest.BlockUpdate(input, inOff, len);
         }
 
         public virtual int DoFinal(byte[] output, int outOff)
         {
-            digest.DoFinal(outputBuf, blockLength);
+            this.digest.DoFinal(this.outputBuf, this.blockLength);
 
-            if(opadState != null)
+            if(this.opadState != null)
             {
-                ((IMemoable)digest).Reset(opadState);
-                digest.BlockUpdate(outputBuf, blockLength, digest.GetDigestSize());
+                ((IMemoable) this.digest).Reset(this.opadState);
+                this.digest.BlockUpdate(this.outputBuf, this.blockLength, this.digest.GetDigestSize());
             }
             else
             {
-                digest.BlockUpdate(outputBuf, 0, outputBuf.Length);
+                this.digest.BlockUpdate(this.outputBuf, 0, this.outputBuf.Length);
             }
 
-            int len = digest.DoFinal(output, outOff);
+            int len = this.digest.DoFinal(output, outOff);
 
-            Array.Clear(outputBuf, blockLength, digestSize);
+            Array.Clear(this.outputBuf, this.blockLength, this.digestSize);
 
-            if(ipadState != null)
+            if(this.ipadState != null)
             {
-                ((IMemoable)digest).Reset(ipadState);
+                ((IMemoable) this.digest).Reset(this.ipadState);
             }
             else
             {
-                digest.BlockUpdate(inputPad, 0, inputPad.Length);
+                this.digest.BlockUpdate(this.inputPad, 0, this.inputPad.Length);
             }
 
             return len;
@@ -137,10 +137,10 @@ namespace NBitcoin.BouncyCastle.Crypto.Macs
         public virtual void Reset()
         {
             // Reset underlying digest
-            digest.Reset();
+            this.digest.Reset();
 
             // Initialise the digest
-            digest.BlockUpdate(inputPad, 0, inputPad.Length);
+            this.digest.BlockUpdate(this.inputPad, 0, this.inputPad.Length);
         }
 
         private static void XorPad(byte[] pad, int len, byte n)

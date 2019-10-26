@@ -86,13 +86,13 @@ namespace NBitcoin.Tests
 
             foreach(var test in tests)
             {
-                var input = Encoding.UTF8.GetBytes(test.Input);
-                var encoded = test.Encoder.EncodeData(input);
+                byte[] input = Encoding.UTF8.GetBytes(test.Input);
+                string encoded = test.Encoder.EncodeData(input);
                 Assert.Equal(test.Expected, encoded);
 
                 try
                 {
-                    var decoded = test.Encoder.DecodeData(encoded);
+                    byte[] decoded = test.Encoder.DecodeData(encoded);
                     AssertEx.CollectionEquals(input, decoded);
                 }
                 catch(NotSupportedException)
@@ -100,13 +100,13 @@ namespace NBitcoin.Tests
                 }
             }
 
-            var expectedText = "2189xoVGsHC6VbVPUrKeH3fhT429VDruzdgUJFk37PNskG";
-            var input1 = Encoding.UTF8.GetBytes("---é ^ç hello \"12345\"  wooorld---");
-            var encoded1 = Encoders.Base58Check.EncodeData(input1, 3, input1.Length - 6);
+            string expectedText = "2189xoVGsHC6VbVPUrKeH3fhT429VDruzdgUJFk37PNskG";
+            byte[] input1 = Encoding.UTF8.GetBytes("---é ^ç hello \"12345\"  wooorld---");
+            string encoded1 = Encoders.Base58Check.EncodeData(input1, 3, input1.Length - 6);
             Assert.Equal(expectedText, encoded1);
 
-            var decoded1 = Encoders.Base58Check.DecodeData(encoded1);
-            byte[] arr = new byte[input1.Length - 6];
+            byte[] decoded1 = Encoders.Base58Check.DecodeData(encoded1);
+            var arr = new byte[input1.Length - 6];
             Array.Copy(input1,3, arr, 0, arr.Length);
             AssertEx.CollectionEquals(input1.SafeSubarray(3, input1.Length - 6), decoded1);
         }

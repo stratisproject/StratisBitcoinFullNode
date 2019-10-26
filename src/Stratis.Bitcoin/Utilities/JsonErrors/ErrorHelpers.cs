@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Utilities.JsonErrors
     {
         public static ErrorResult BuildErrorResponse(HttpStatusCode statusCode, string message, string description)
         {
-            ErrorResponse errorResponse = new ErrorResponse
+            var errorResponse = new ErrorResponse
             {
                 Errors = new List<ErrorModel>
                 {

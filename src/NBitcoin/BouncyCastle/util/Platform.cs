@@ -1,10 +1,6 @@
 using System;
 using System.Globalization;
-#if SILVERLIGHT || PORTABLE
-using System.Collections.Generic;
-#else
 using System.Collections;
-#endif
 
 namespace NBitcoin.BouncyCastle.Utilities
 {
@@ -12,39 +8,16 @@ namespace NBitcoin.BouncyCastle.Utilities
     {
         private static readonly CompareInfo InvariantCompareInfo = CultureInfo.InvariantCulture.CompareInfo;
 
-#if NETCF_1_0 || NETCF_2_0
-        private static string GetNewLine()
-        {
-            MemoryStream buf = new MemoryStream();
-            StreamWriter w = new StreamWriter(buf, Encoding.UTF8);
-            w.WriteLine();
-            Dispose(w);
-            byte[] bs = buf.ToArray();
-            return Encoding.UTF8.GetString(bs, 0, bs.Length);
-        }
-#else
         private static string GetNewLine()
         {
             return Environment.NewLine;
         }
-#endif
 
         internal static bool EqualsIgnoreCase(string a, string b)
         {
-#if PORTABLE
-            return String.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-#else
             return ToUpperInvariant(a) == ToUpperInvariant(b);
-#endif
         }
 
-#if NETCF_1_0 || NETCF_2_0 || SILVERLIGHT || PORTABLE
-        internal static string GetEnvironmentVariable(
-            string variable)
-        {
-            return null;
-        }
-#else
         internal static string GetEnvironmentVariable(
             string variable)
         {
@@ -59,112 +32,50 @@ namespace NBitcoin.BouncyCastle.Utilities
                 return null;
             }
         }
-#endif
 
-#if NETCF_1_0
-        internal static Exception CreateNotImplementedException(
-            string message)
-        {
-            return new Exception("Not implemented: " + message);
-        }
-
-        internal static bool Equals(
-            object    a,
-            object    b)
-        {
-            return a == b || (a != null && b != null && a.Equals(b));
-        }
-#else
         internal static Exception CreateNotImplementedException(
             string message)
         {
             return new NotImplementedException(message);
         }
-#endif
 
-#if SILVERLIGHT || PORTABLE
-        internal static System.Collections.IList CreateArrayList()
-        {
-            return new List<object>();
-        }
-        internal static System.Collections.IList CreateArrayList(int capacity)
-        {
-            return new List<object>(capacity);
-        }
-        internal static System.Collections.IList CreateArrayList(System.Collections.ICollection collection)
-        {
-            System.Collections.IList result = new List<object>(collection.Count);
-            foreach(object o in collection)
-            {
-                result.Add(o);
-            }
-            return result;
-        }
-        internal static System.Collections.IList CreateArrayList(System.Collections.IEnumerable collection)
-        {
-            System.Collections.IList result = new List<object>();
-            foreach(object o in collection)
-            {
-                result.Add(o);
-            }
-            return result;
-        }
-        internal static System.Collections.IDictionary CreateHashtable()
-        {
-            return new Dictionary<object, object>();
-        }
-        internal static System.Collections.IDictionary CreateHashtable(int capacity)
-        {
-            return new Dictionary<object, object>(capacity);
-        }
-        internal static System.Collections.IDictionary CreateHashtable(System.Collections.IDictionary dictionary)
-        {
-            System.Collections.IDictionary result = new Dictionary<object, object>(dictionary.Count);
-            foreach(System.Collections.DictionaryEntry entry in dictionary)
-            {
-                result.Add(entry.Key, entry.Value);
-            }
-            return result;
-        }
-#else
-        internal static System.Collections.IList CreateArrayList()
+        internal static IList CreateArrayList()
         {
             return new ArrayList();
         }
-        internal static System.Collections.IList CreateArrayList(int capacity)
+        internal static IList CreateArrayList(int capacity)
         {
             return new ArrayList(capacity);
         }
-        internal static System.Collections.IList CreateArrayList(System.Collections.ICollection collection)
+        internal static IList CreateArrayList(ICollection collection)
         {
             return new ArrayList(collection);
         }
-        internal static System.Collections.IList CreateArrayList(System.Collections.IEnumerable collection)
+        internal static IList CreateArrayList(IEnumerable collection)
         {
-            ArrayList result = new ArrayList();
+            var result = new ArrayList();
             foreach (object o in collection)
             {
                 result.Add(o);
             }
             return result;
         }
-        internal static System.Collections.IDictionary CreateHashtable()
+        internal static IDictionary CreateHashtable()
         {
             return new Hashtable();
         }
-        internal static System.Collections.IDictionary CreateHashtable(int capacity)
+        internal static IDictionary CreateHashtable(int capacity)
         {
             return new Hashtable(capacity);
         }
-        internal static System.Collections.IDictionary CreateHashtable(System.Collections.IDictionary dictionary)
+        internal static IDictionary CreateHashtable(IDictionary dictionary)
         {
             return new Hashtable(dictionary);
         }
-#endif
 
         internal static string ToLowerInvariant(string s)
         {
-#if PORTABLE || NETCORE
+#if NETCORE
             return s.ToLowerInvariant();
 #else
             return s.ToLower(CultureInfo.InvariantCulture);
@@ -173,7 +84,7 @@ namespace NBitcoin.BouncyCastle.Utilities
 
         internal static string ToUpperInvariant(string s)
         {
-#if PORTABLE || NETCORE
+#if NETCORE
             return s.ToUpperInvariant();
 #else
             return s.ToUpper(CultureInfo.InvariantCulture);
@@ -182,7 +93,7 @@ namespace NBitcoin.BouncyCastle.Utilities
 
         internal static readonly string NewLine = GetNewLine();
 
-#if PORTABLE || NETCORE
+#if NETCORE
         internal static void Dispose(IDisposable d)
         {
             d.Dispose();

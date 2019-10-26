@@ -18,7 +18,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return subfield.Characteristic;
+                return this.subfield.Characteristic;
             }
         }
 
@@ -26,7 +26,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return subfield.Dimension * minimalPolynomial.Degree;
+                return this.subfield.Dimension * this.minimalPolynomial.Degree;
             }
         }
 
@@ -34,7 +34,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return subfield;
+                return this.subfield;
             }
         }
 
@@ -42,7 +42,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return minimalPolynomial.Degree;
+                return this.minimalPolynomial.Degree;
             }
         }
 
@@ -50,7 +50,7 @@ namespace NBitcoin.BouncyCastle.Math.Field
         {
             get
             {
-                return minimalPolynomial;
+                return this.minimalPolynomial;
             }
         }
 
@@ -60,12 +60,12 @@ namespace NBitcoin.BouncyCastle.Math.Field
             {
                 return true;
             }
-            GenericPolynomialExtensionField other = obj as GenericPolynomialExtensionField;
+            var other = obj as GenericPolynomialExtensionField;
             if(null == other)
             {
                 return false;
             }
-            return subfield.Equals(other.subfield) && minimalPolynomial.Equals(other.minimalPolynomial);
+            return this.subfield.Equals(other.subfield) && this.minimalPolynomial.Equals(other.minimalPolynomial);
         }
 
         public override int GetHashCode()

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
@@ -19,6 +20,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.previousBlockHash;
             }
+
             set
             {
                 this.previousBlockHash = value;
@@ -35,6 +37,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.transactionsToRemove;
             }
+
             set
             {
                 this.transactionsToRemove = value;
@@ -51,6 +54,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.outputsToRestore;
             }
+
             set
             {
                 this.outputsToRestore = value;
@@ -71,6 +75,24 @@ namespace Stratis.Bitcoin.Utilities
         public RewindData(uint256 previousBlockHash)
         {
             this.previousBlockHash = previousBlockHash;
+        }
+
+        public override string ToString()
+        {
+            var data = new StringBuilder();
+
+            data.AppendLine($"{nameof(this.previousBlockHash)}={this.previousBlockHash}");
+            data.AppendLine($"{nameof(this.transactionsToRemove)}.{nameof(this.transactionsToRemove.Count)}={this.transactionsToRemove.Count}:");
+
+            foreach (uint256 txToRemove in this.transactionsToRemove)
+                data.AppendLine(txToRemove.ToString());
+
+            data.AppendLine($"{nameof(this.outputsToRestore)}.{nameof(this.outputsToRestore.Count)}={this.outputsToRestore.Count}:");
+
+            foreach (UnspentOutputs output in this.outputsToRestore)
+                data.AppendLine(output.ToString());
+
+            return data.ToString();
         }
 
         /// <inheritdoc />

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
@@ -8,14 +9,19 @@ namespace Stratis.Bitcoin.Builder.Feature
     public interface IFullNodeFeature : IDisposable
     {
         /// <summary>
-        /// Called on all the features prior to calling Initialize on all the features.
+        /// Instructs the <see cref="FullNodeFeatureExecutor"/> to start this feature before the <see cref="Base.BaseFeature"/>.
         /// </summary>
-        void LoadConfiguration();
+        bool InitializeBeforeBase { get; set; }
+
+        /// <summary>
+        /// The state in which the feature currently is.
+        /// </summary>
+        string State { get; set; }
 
         /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
-        void Initialize();
+        Task InitializeAsync();
 
         /// <summary>
         /// Validates the feature's required dependencies are all present.
@@ -38,12 +44,13 @@ namespace Stratis.Bitcoin.Builder.Feature
     public abstract class FullNodeFeature : IFullNodeFeature
     {
         /// <inheritdoc />
-        public virtual void LoadConfiguration()
-        {
-        }
+        public bool InitializeBeforeBase { get; set; }
 
         /// <inheritdoc />
-        public abstract void Initialize();
+        public string State { get; set; }
+
+        /// <inheritdoc />
+        public abstract Task InitializeAsync();
 
         /// <inheritdoc />
         public virtual void Dispose()

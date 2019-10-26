@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
 
             var network = (Network)bindingContext.HttpContext.RequestServices.GetService(typeof(Network));
             //TODO: Use var data = Network.Parse(key, network); when NBitcoin is updated to latest version
-            var data = BitcoinAddress.Create(key, network);
+            BitcoinAddress data = BitcoinAddress.Create(key, network);
             if (!bindingContext.ModelType.IsInstanceOfType(data))
             {
                 throw new FormatException("Invalid destination type");

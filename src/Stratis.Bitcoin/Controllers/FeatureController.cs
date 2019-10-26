@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -19,32 +21,36 @@ namespace Stratis.Bitcoin.Controllers
 
     public abstract class FeatureController : Controller
     {
-        protected IFullNode FullNode;
+        protected IFullNode FullNode { get; set; }
 
-        protected NodeSettings Settings;
+        protected NodeSettings Settings { get; set; }
 
-        protected Network Network;
+        protected Network Network { get; set; }
 
-        protected ChainBase Chain;
+        protected ChainIndexer ChainIndexer { get; set; }
 
-        protected IChainState ChainState;
+        protected IChainState ChainState { get; set; }
 
-        protected Connection.IConnectionManager ConnectionManager;
+        protected IConnectionManager ConnectionManager { get; set; }
+
+        protected IConsensusManager ConsensusManager { get; private set; }
 
         public FeatureController(
             IFullNode fullNode = null,
-            NodeSettings nodeSettings = null,
             Network network = null,
-            ConcurrentChain chain = null,
+            NodeSettings nodeSettings = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
-            Connection.IConnectionManager connectionManager = null)
+            IConnectionManager connectionManager = null,
+            IConsensusManager consensusManager = null)
         {
             this.FullNode = fullNode;
             this.Settings = nodeSettings;
             this.Network = network;
-            this.Chain = chain;
+            this.ChainIndexer = chainIndexer;
             this.ChainState = chainState;
             this.ConnectionManager = connectionManager;
+            this.ConsensusManager = consensusManager;
         }
     }
 }

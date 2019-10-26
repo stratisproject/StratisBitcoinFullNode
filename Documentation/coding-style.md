@@ -7,13 +7,13 @@ The general rules:
 
 1. We use [Allman style](http://en.wikipedia.org/wiki/Indent_style#Allman_style) braces, where each brace begins on a new line. A single line statement block can go without braces, one line statements are allowed (without braces) if it makes readability better. 
 2. We use four spaces of indentation (no tabs).
-3. We use `camelCase` for internal and private fields and use `readonly` where possible. When used static fields, `readonly` should come after `static` (i.e. `static readonly` not `readonly static`).
+3. We use `camelCase` for internal and private fields and use `readonly` where possible. When used static fields, `readonly` should come after `static` (i.e. `static readonly` not `readonly static`). Static readonly fields, visible or private, should begin with an upper case letter. Public fields should be used sparingly and should use PascalCasing with no prefix when used.
 4. We always use `this.` to easily distinguish instance members.  
 5. We always specify the visibility, even if it's the default (i.e.
    `private string foo` not `string foo`). Visibility should be the first modifier (i.e. 
    `public abstract` not `abstract public`).
 6. Namespace imports should be specified at the top of the file, *outside* of
-   `namespace` declarations and should be sorted alphabetically.
+   `namespace` declarations and should be sorted alphabetically, with the exception of `System.*` namespaces, which are to be placed on top of all others.
 7. Avoid more than one empty line at any time. For example, do not have two
    blank lines between members of a type.
 8. Avoid spurious free spaces.
@@ -23,7 +23,7 @@ The general rules:
    rather than `member`), change it to the guideline style.
 10. We only use `var` when it's obvious what the variable type is (i.e. `var stream = new FileStream(...)` not `var stream = OpenStandardInput()`).
 11. We use language keywords instead of BCL types (i.e. `int, string, float` instead of `Int32, String, Single`, etc) for both type references as well as method calls (i.e. `int.Parse` instead of `Int32.Parse`).
-12. We use PascalCasing to name all our constant local variables and fields.
+12. We use PascalCasing to name all our constant local variables and fields. The only exception is for interop code where the constant value should exactly match the name and value of the code you are calling via interop.
 13. We use ```nameof(...)``` instead of ```"..."``` whenever possible and relevant.
 14. Fields should be specified at the top within type declarations.
 15. When including non-ASCII characters in the source code use Unicode escape sequences (\uXXXX) instead of literal characters. Literal non-ASCII characters occasionally get garbled by a tool or editor.
@@ -45,7 +45,7 @@ The general rules:
       }
       [EMPTY LINE HERE]
       //more code here...
-   ```   
+   ```
 
    And this is correct:
    ```
@@ -58,7 +58,7 @@ The general rules:
       }
       [EMPTY LINE HERE]
       //more code here...
-   ```   
+   ```
 19. We declare only one type per file.  
     A few exceptions exist, which are permitted, although not enforced:
     - inclusion of small POCO classes if they're closely related in functionality (like API model classes)
@@ -75,6 +75,8 @@ The general rules:
 	if (x.Value > 5 && y) // parentheses needed to avoid confusion
 	bool q = (x.Value > 5); // parentheses unnecessary
 	```
+
+24. We don't expose internal logic of the class (methods, fields, properties) just in order to test them. Find a way to expose them that doesn't requires access modifier changes in production code. If the method\field\property is not used or not expected to be used by any other component it shouldn't be public.
 
 We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 

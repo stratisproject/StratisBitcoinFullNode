@@ -1,8 +1,8 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.Dns
 
         /// <summary>The default value which a peer should have last have been connected before being blacklisted in DNS nodes.</summary>
         public const int DefaultDnsPeerBlacklistThresholdInSeconds = 1800;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         /// <summary>The value which a peer should have last have been connected before being blacklisted from the DNS nodes.</summary>
         public int DnsPeerBlacklistThresholdInSeconds { get; set; }
@@ -35,64 +38,24 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>Defines the e-mail address used as the administrative point of contact for the domain.</summary>
         public string DnsMailBox { get; set; }
 
-        /// <summary>The callback used to override/constrain/extend the settings provided by the Load method.</summary>
-        private Action<DnsSettings> callback = null;
-
         /// <summary>
-        /// Constructs this object.
+        /// Initializes an instance of the object from the node configuration.
         /// </summary>
-        public DnsSettings()
+        /// <param name="nodeSettings">The node configuration.</param>
+        public DnsSettings(NodeSettings nodeSettings)
         {
-        }
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-        /// <summary>
-        /// Constructs this object whilst providing a callback to override/constrain/extend 
-        /// the settings provided by the Load method.
-        /// </summary>
-        /// <param name="callback">The callback used to override/constrain/extend the settings provided by the Load method.</param>
-        public DnsSettings(Action<DnsSettings> callback)
-            : this()
-        {
-            this.callback = callback;
-        }
-
-        /// <summary>
-        /// Loads the DNS related settings from the application configuration.
-        /// </summary>
-        /// <param name="nodeSettings">Application configuration.</param>
-        /// <param name="dnsSettings">Existing DnsSettings object to add loaded values to.</param>
-        public DnsSettings Load(NodeSettings nodeSettings)
-        {
-            ILogger logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);
-
-            logger.LogTrace("()");
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);            
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
-            
-            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort);
-            logger.LogDebug("DNS Seed Service listen port is {0}, if running as DNS Seed.", this.DnsListenPort);
 
-            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false);
-            if (this.DnsFullNode)
-                logger.LogDebug("DNS Seed Service is set to run as a full node, if running as DNS Seed.", this.DnsListenPort);
-
-            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds);
-            logger.LogDebug("DnsPeerBlacklistThresholdInSeconds set to {0}.", this.DnsPeerBlacklistThresholdInSeconds);
-
-            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null);
-            logger.LogDebug("DNS Seed Service host name set to {0}.", this.DnsHostName);
-
-            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null);
-            logger.LogDebug("DNS Seed Service nameserver set to {0}.", this.DnsNameServer);
-
-            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null);
-            logger.LogDebug("DNS Seed Service mailbox set to {0}.", this.DnsMailBox);
-
-            this.callback?.Invoke(this);
-
-            logger.LogTrace("(-)");
-
-            return this;
+            this.DnsListenPort = config.GetOrDefault<int>("dnslistenport", DefaultDnsListenPort, this.logger);
+            this.DnsFullNode = config.GetOrDefault<bool>("dnsfullnode", false, this.logger);
+            this.DnsPeerBlacklistThresholdInSeconds = config.GetOrDefault("dnspeerblacklistthresholdinseconds", DefaultDnsPeerBlacklistThresholdInSeconds, this.logger);
+            this.DnsHostName = config.GetOrDefault<string>("dnshostname", null, this.logger);
+            this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null, this.logger);
+            this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null, this.logger);
         }
 
         /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>
@@ -108,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Dns
             builder.AppendLine($"-dnsnameserver=<string>   The DNS Seed Service nameserver.");
             builder.AppendLine($"-dnsmailbox=<string>      The e-mail address used as the administrative point of contact for the domain.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>

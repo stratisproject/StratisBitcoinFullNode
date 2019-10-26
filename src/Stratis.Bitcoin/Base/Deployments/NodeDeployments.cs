@@ -11,15 +11,15 @@ namespace Stratis.Bitcoin.Base.Deployments
         public ThresholdConditionCache BIP9 { get; }
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
-        public NodeDeployments(Network network, ConcurrentChain chain)
+        public NodeDeployments(Network network, ChainIndexer chainIndexer)
         {
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
 
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.BIP9 = new ThresholdConditionCache(network.Consensus);
         }
 
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             lock (this.BIP9)
             {
                 ThresholdState[] states = this.BIP9.GetStates(block.Previous);
-                var flags = new DeploymentFlags(block, states, this.network.Consensus, this.chain);
+                var flags = new DeploymentFlags(block, states, this.network.Consensus, this.chainIndexer);
                 return flags;
             }
         }

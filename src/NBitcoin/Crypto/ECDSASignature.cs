@@ -12,7 +12,7 @@ namespace NBitcoin.Crypto
         {
             get
             {
-                return _R;
+                return this._R;
             }
         }
         private BigInteger _S;
@@ -20,48 +20,31 @@ namespace NBitcoin.Crypto
         {
             get
             {
-                return _S;
+                return this._S;
             }
         }
         public ECDSASignature(BigInteger r, BigInteger s)
         {
-            _R = r;
-            _S = s;
+            this._R = r;
+            this._S = s;
         }
 
         public ECDSASignature(BigInteger[] rs)
         {
-            _R = rs[0];
-            _S = rs[1];
+            this._R = rs[0];
+            this._S = rs[1];
         }
 
         public ECDSASignature(byte[] derSig)
         {
             try
             {
-                Asn1InputStream decoder = new Asn1InputStream(derSig);
+                var decoder = new Asn1InputStream(derSig);
                 var seq = decoder.ReadObject() as DerSequence;
                 if(seq == null || seq.Count != 2)
                     throw new FormatException(InvalidDERSignature);
-                _R = ((DerInteger)seq[0]).Value;
-                _S = ((DerInteger)seq[1]).Value;
-            }
-            catch(Exception ex)
-            {
-                throw new FormatException(InvalidDERSignature, ex);
-            }
-        }
-
-        public ECDSASignature(Stream derSig)
-        {
-            try
-            {
-                Asn1InputStream decoder = new Asn1InputStream(derSig);
-                var seq = decoder.ReadObject() as DerSequence;
-                if(seq == null || seq.Count != 2)
-                    throw new FormatException(InvalidDERSignature);
-                _R = ((DerInteger)seq[0]).Value;
-                _S = ((DerInteger)seq[1]).Value;
+                this._R = ((DerInteger)seq[0]).Value;
+                this._S = ((DerInteger)seq[1]).Value;
             }
             catch(Exception ex)
             {
@@ -77,15 +60,16 @@ namespace NBitcoin.Crypto
         public byte[] ToDER()
         {
             // Usually 70-72 bytes.
-            MemoryStream bos = new MemoryStream(72);
-            DerSequenceGenerator seq = new DerSequenceGenerator(bos);
-            seq.AddObject(new DerInteger(R));
-            seq.AddObject(new DerInteger(S));
+            var bos = new MemoryStream(72);
+            var seq = new DerSequenceGenerator(bos);
+            seq.AddObject(new DerInteger(this.R));
+            seq.AddObject(new DerInteger(this.S));
             seq.Close();
             return bos.ToArray();
 
         }
-        const string InvalidDERSignature = "Invalid DER signature";
+
+        private const string InvalidDERSignature = "Invalid DER signature";
         public static ECDSASignature FromDER(byte[] sig)
         {
             return new ECDSASignature(sig);
@@ -96,12 +80,26 @@ namespace NBitcoin.Crypto
         /// </summary>
         public ECDSASignature MakeCanonical()
         {
-            if(!IsLowS)
+            if(!this.IsLowS)
             {
                 return new ECDSASignature(this.R, ECKey.CURVE_ORDER.Subtract(this.S));
             }
             else
                 return this;
+        }
+
+        /// <summary>
+        /// Allow creation of signature with non-LowS for test purposes
+        /// </summary>
+        /// <remarks>Not to be used under normal circumstances</remarks>
+        public ECDSASignature MakeNonCanonical()
+        {
+            if (!this.IsLowS)
+            {
+                return this;
+            }
+            else
+                return new ECDSASignature(this.R, ECKey.CURVE_ORDER.Subtract(this.S));
         }
 
         public bool IsLowS
@@ -118,7 +116,7 @@ namespace NBitcoin.Crypto
         {
             try
             {
-                ECDSASignature.FromDER(bytes);
+                FromDER(bytes);
                 return true;
             }
             catch(FormatException)

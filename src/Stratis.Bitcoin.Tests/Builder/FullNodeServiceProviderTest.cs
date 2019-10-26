@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
-            var result = fullnodeServiceProvider.Features.ToList();
+            List<IFullNodeFeature> result = fullnodeServiceProvider.Features.ToList();
 
             Assert.Equal(2, result.Count);
             Assert.Equal(typeof(TestFeatureStub), result[0].GetType());
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             };
 
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
-            var result = fullnodeServiceProvider.Features.ToList();
+            List<IFullNodeFeature> result = fullnodeServiceProvider.Features.ToList();
 
             Assert.Equal(2, result.Count);
             Assert.Equal(typeof(TestFeatureStub2), result[0].GetType());
@@ -56,13 +57,17 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub : IFullNodeFeature
         {
             /// <inheritdoc />
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }
@@ -82,13 +87,17 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub2 : IFullNodeFeature
         {
             /// <inheritdoc />
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();
             }
 
             /// <inheritdoc />
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }

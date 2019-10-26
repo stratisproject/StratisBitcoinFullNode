@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -35,9 +34,6 @@ namespace Stratis.Bitcoin
         /// <summary>Node command line and configuration file settings.</summary>
         public NodeSettings Settings { get; private set; }
 
-        /// <summary>List of disposable resources that the node uses.</summary>
-        public List<IDisposable> Resources { get; private set; }
-
         /// <summary>Information about the best chain.</summary>
         public IChainState ChainBehaviorState { get; private set; }
 
@@ -45,7 +41,7 @@ namespace Stratis.Bitcoin
         public IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
 
         /// <summary>Provider of notification about newly available blocks and transactions.</summary>
-        public Signals.Signals Signals { get; set; }
+        public Signals.ISignals Signals { get; set; }
 
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
@@ -59,14 +55,11 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
 
-        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
-        private BestChainSelector bestChainSelector;
-
         /// <summary>Best chain of block headers from genesis.</summary>
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         /// <summary>Factory for creating and execution of asynchronous loops.</summary>
-        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
+        public IAsyncProvider AsyncProvider { get; set; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; internal set; }
@@ -79,6 +72,15 @@ namespace Stratis.Bitcoin
 
         /// <summary>Application life cycle control - triggers when application shuts down.</summary>
         private NodeLifetime nodeLifetime;
+
+        /// <see cref="INodeStats"/>
+        private INodeStats NodeStats { get; set; }
+
+        private IAsyncLoop periodicLogLoop;
+
+        private IAsyncLoop periodicBenchmarkLoop;
+
+        private NodeRunningLock nodeRunningLock;
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -109,7 +111,7 @@ namespace Stratis.Bitcoin
         {
             if (this.Services != null)
             {
-                var feature = this.Services.Features.OfType<T>().FirstOrDefault();
+                T feature = this.Services.Features.OfType<T>().FirstOrDefault();
                 if (feature != null)
                     return feature;
             }
@@ -160,25 +162,25 @@ namespace Stratis.Bitcoin
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             this.Services = serviceProvider;
-
             this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
-
             this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+
             this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<IChainState>();
-            this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-            this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
+            this.ChainIndexer = this.Services.ServiceProvider.GetService<ChainIndexer>();
+            this.Signals = this.Services.ServiceProvider.GetService<Signals.ISignals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
+            this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
-            this.bestChainSelector = this.Services.ServiceProvider.GetService<BestChainSelector>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
 
-            this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
+            this.AsyncProvider = this.Services.ServiceProvider.GetService<IAsyncProvider>();
 
-            this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
+            this.logger.LogInformation(Properties.Resources.AsciiLogo);
+            this.logger.LogInformation("Full node initialized on {0}.", this.Network.Name);
 
             this.State = FullNodeState.Initialized;
             this.StartTime = this.DateTimeProvider.GetUtcNow();
@@ -193,10 +195,14 @@ namespace Stratis.Bitcoin
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
-            if (this.Resources != null)
-                throw new InvalidOperationException("node has already started.");
+            this.nodeRunningLock = new NodeRunningLock(this.DataFolder);
 
-            this.Resources = new List<IDisposable>();
+            if (!this.nodeRunningLock.TryLockNodeFolder())
+            {
+                this.logger.LogCritical("Node folder is being used by another instance of the application!");
+                throw new Exception("Node folder is being used!");
+            }
+
             this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
             this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
@@ -206,13 +212,14 @@ namespace Stratis.Bitcoin
             if (this.fullNodeFeatureExecutor == null)
                 throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
 
-            this.logger.LogInformation("Starting node...");
+            this.logger.LogInformation("Starting node.");
 
             // Initialize all registered features.
             this.fullNodeFeatureExecutor.Initialize();
 
             // Initialize peer connection.
-            this.ConnectionManager.Initialize();
+            var consensusManager = this.Services.ServiceProvider.GetRequiredService<IConsensusManager>();
+            this.ConnectionManager.Initialize(consensusManager);
 
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();
@@ -230,33 +237,35 @@ namespace Stratis.Bitcoin
         /// </summary>
         private void StartPeriodicLog()
         {
-            IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            this.periodicLogLoop = this.AsyncProvider.CreateAndRunAsyncLoop("PeriodicLog", (cancellation) =>
             {
-                StringBuilder benchLogs = new StringBuilder();
+                string stats = this.NodeStats.GetStats();
 
-                benchLogs.AppendLine("======Node stats====== " + this.DateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture) + " agent " +
-                                     this.ConnectionManager.Parameters.UserAgent);
+                this.logger.LogInformation(stats);
+                this.LastLogOutput = stats;
 
-                // Display node stats grouped together.
-                foreach (var feature in this.Services.Features.OfType<INodeStats>())
-                    feature.AddNodeStats(benchLogs);
-
-                // Now display the other stats.
-                foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
-                    feature.AddFeatureStats(benchLogs);
-
-                benchLogs.AppendLine();
-                benchLogs.AppendLine("======Connection======");
-                benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-                this.logger.LogInformation(benchLogs.ToString());
                 return Task.CompletedTask;
             },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpans.FiveSeconds,
-                startAfter: TimeSpans.FiveSeconds);
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
 
-            this.Resources.Add(periodicLogLoop);
+            this.periodicBenchmarkLoop = this.AsyncProvider.CreateAndRunAsyncLoop("PeriodicBenchmarkLog", (cancellation) =>
+            {
+                if (this.InitialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    string benchmark = this.NodeStats.GetBenchmark();
+                    this.logger.LogInformation(benchmark);
+                }
+
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(17),
+            startAfter: TimeSpan.FromSeconds(17));
         }
+
+        public string LastLogOutput { get; private set; }
 
         /// <inheritdoc />
         public void Dispose()
@@ -266,23 +275,33 @@ namespace Stratis.Bitcoin
 
             this.State = FullNodeState.Disposing;
 
-            this.logger.LogInformation("Closing node pending...");
+            this.logger.LogInformation("Closing node pending.");
 
             // Fire INodeLifetime.Stopping.
             this.nodeLifetime.StopApplication();
 
+            this.logger.LogInformation("Disposing connection manager.");
             this.ConnectionManager.Dispose();
-            this.bestChainSelector.Dispose();
-            this.loggerFactory.Dispose();
 
-            foreach (IDisposable disposable in this.Resources)
-                disposable.Dispose();
+            this.logger.LogInformation("Disposing RPC host.");
+            this.RPCHost?.Dispose();
+
+            this.logger.LogInformation("Disposing periodic logging loops.");
+            this.periodicLogLoop?.Dispose();
+            this.periodicBenchmarkLoop?.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
+            this.logger.LogInformation("Disposing the full node feature executor.");
             this.fullNodeFeatureExecutor.Dispose();
 
+            this.logger.LogInformation("Disposing settings.");
+            this.Settings.Dispose();
+
             // Fire INodeLifetime.Stopped.
+            this.logger.LogInformation("Notify application has stopped.");
             this.nodeLifetime.NotifyStopped();
+
+            this.nodeRunningLock.UnlockNodeFolder();
 
             this.State = FullNodeState.Disposed;
         }

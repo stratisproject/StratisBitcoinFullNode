@@ -2,15 +2,15 @@
   "profiles": {
     "Stratis.CLI Stratis REST API": {
       "commandName": "Project",
-      "commandLineArgs": "stratis Wallet/files"
+      "commandLineArgs": "stratis -testnet Wallet/files"
     },
     "Stratis.CLI Stratis RPC": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -rpcuser=stratistestuser -rpcpassword=stratistestpass -rpcport=26174 getinfo"
+      "commandLineArgs": "stratis -testnet -rpcuser=user -rpcpassword=password getinfo"
     },
     "Stratis.CLI Bitcoin RPC": {
       "commandName": "Project",
-      "commandLineArgs": "bitcoin -rpcuser=btctestuser -rpcpassword=btctestpass getbalance"
+      "commandLineArgs": "bitcoin -testnet -rpcuser=user -rpcpassword=password getbalance"
     }
   }
 }

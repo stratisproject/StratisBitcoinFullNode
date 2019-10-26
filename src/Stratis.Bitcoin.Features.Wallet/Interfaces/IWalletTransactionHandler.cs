@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// This will not modify existing inputs, and will add at most one change output to the outputs.
         /// No existing outputs will be modified unless <see cref="Recipient.SubtractFeeFromAmount"/> is specified.
         /// Note that inputs which were signed may need to be resigned after completion since in/outputs have been added.
-        /// The inputs added may be signed depending on <see cref="TransactionBuildContext.Sign"/>, use signrawtransaction for that.
+        /// The inputs added may be signed depending on whether a <see cref="TransactionBuildContext.WalletPassword"/> is passed.
         /// Note that all existing inputs must have their previous output transaction be in the wallet.
         /// </remarks>
         void FundTransaction(TransactionBuildContext context, Transaction transaction);

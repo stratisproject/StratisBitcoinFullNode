@@ -21,11 +21,11 @@ using System;
 
 namespace NBitcoin.Crypto.Internal
 {
-    static class Check
+    internal static class Check
     {
         public static void Bounds(string valueName, Array value, int offset, int count)
         {
-            Check.Null(valueName, value);
+            Null(valueName, value);
 
             if(offset < 0 || count < 0 || count > value.Length - offset)
             {
@@ -37,7 +37,7 @@ namespace NBitcoin.Crypto.Internal
 
         public static void Length(string valueName, Array value, int minimum, int maximum)
         {
-            Check.Null(valueName, value);
+            Null(valueName, value);
 
             if(value.Length < minimum || value.Length > maximum)
             {

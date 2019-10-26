@@ -201,7 +201,7 @@ namespace NBitcoin.BouncyCastle.Math.Raw
 
         public static uint[] Copy(int len, uint[] x)
         {
-            uint[] z = new uint[len];
+            var z = new uint[len];
             Array.Copy(x, 0, z, 0, len);
             return z;
         }
@@ -1029,7 +1029,7 @@ namespace NBitcoin.BouncyCastle.Math.Raw
 
         public static BigInteger ToBigInteger(int len, uint[] x)
         {
-            byte[] bs = new byte[len << 2];
+            var bs = new byte[len << 2];
             for(int i = 0; i < len; ++i)
             {
                 uint x_i = x[i];

@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var controller = new WatchOnlyWalletController(mockWalletManager.Object);
 
             IActionResult result = controller.Watch(address);
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var controller = new WatchOnlyWalletController(mockWalletManager.Object);
 
             IActionResult result = controller.Watch(address);
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.Conflict, errorResult.StatusCode.Value);
@@ -71,8 +71,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var controller = new WatchOnlyWalletController(mockWalletManager.Object);
 
             IActionResult result = controller.GetWatchOnlyWallet();
-            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
-            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
@@ -91,8 +91,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 
             mockWalletManager.VerifyAll();
             Assert.NotNull(result);
-            JsonResult viewResult = Assert.IsType<JsonResult>(result);
-            WatchOnlyWalletModel resultValue = Assert.IsType<WatchOnlyWalletModel>(viewResult.Value);
+            var viewResult = Assert.IsType<JsonResult>(result);
+            var resultValue = Assert.IsType<WatchOnlyWalletModel>(viewResult.Value);
             Assert.NotNull(resultValue);
         }
     }

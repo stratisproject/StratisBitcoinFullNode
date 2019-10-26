@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -11,6 +12,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <remarks>
     /// Note that we are using <see cref="DateTime.Ticks"/> as a basic unit of measurement,
     /// not <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+    /// Issue that cover this subject is <see href="https://github.com/stratisproject/StratisBitcoinFullNode/issues/2391"/>.
     /// </remarks>
     /// <example>
     /// <code>
@@ -49,6 +51,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Stops the time measurement and calls the action with the measured elapsed ticks.
         /// </summary>
+        [NoTrace]
         public void Dispose()
         {
             this.watch.Stop();

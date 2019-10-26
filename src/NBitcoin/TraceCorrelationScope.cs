@@ -3,12 +3,7 @@ using System.Diagnostics;
 
 namespace NBitcoin
 {
-#if NOTRACESOURCE
-        internal
-#else
-    public
-#endif
- class TraceCorrelationScope : IDisposable
+    public class TraceCorrelationScope : IDisposable
     {
         private Guid old;
 
@@ -16,26 +11,26 @@ namespace NBitcoin
         {
             get
             {
-                return old;
+                return this.old;
             }
             private set
             {
-                old = value;
+                this.old = value;
             }
         }
 
-        bool _Transfered;
+        private bool _Transfered;
 
-        TraceSource _Source;
+        private TraceSource _Source;
         public TraceCorrelationScope(Guid activity, TraceSource source, bool traceTransfer)
         {
             // NETSTDCONV
             // this.old = Trace.CorrelationManager.ActivityId;
 
-            _Transfered = old != activity && traceTransfer;
-            if(_Transfered)
+            this._Transfered = this.old != activity && traceTransfer;
+            if(this._Transfered)
             {
-                _Source = source;
+                this._Source = source;
                 // _Source.TraceTransfer(0, "t", activity);
             }
             // Trace.CorrelationManager.ActivityId = activity;
@@ -46,7 +41,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            if(_Transfered)
+            if(this._Transfered)
             {
                 // NETSTDCONV
                 //_Source.TraceTransfer(0, "transfer", old);
@@ -56,16 +51,10 @@ namespace NBitcoin
 
         #endregion
     }
-#if NOTRACESOURCE
-        internal
-#else
-    public
-#endif
- class TraceCorrelation
+    public class TraceCorrelation
     {
-
-        TraceSource _Source;
-        string _ActivityName;
+        private TraceSource _Source;
+        private string _ActivityName;
         public TraceCorrelation(TraceSource source, string activityName)
             : this(Guid.NewGuid(), source, activityName)
         {
@@ -73,34 +62,34 @@ namespace NBitcoin
         }
         public TraceCorrelation(Guid activity, TraceSource source, string activityName)
         {
-            _Source = source;
-            _ActivityName = activityName;
+            this._Source = source;
+            this._ActivityName = activityName;
             this.activity = activity;
         }
 
-        Guid activity;
+        private Guid activity;
         public Guid Activity
         {
             get
             {
-                return activity;
+                return this.activity;
             }
             private set
             {
-                activity = value;
+                this.activity = value;
             }
         }
 
-        volatile bool _First = true;
+        private volatile bool _First = true;
         public TraceCorrelationScope Open(bool traceTransfer = true)
         {
-            var scope = new TraceCorrelationScope(activity, _Source, traceTransfer);
-            if(_First)
+            var scope = new TraceCorrelationScope(this.activity, this._Source, traceTransfer);
+            if(this._First)
             {
-                _First = false;
+                this._First = false;
                 // NETSTDCONV
                 // _Source.TraceEvent(TraceEventType.Start, 0, _ActivityName);
-                _Source.TraceEvent(TraceEventType.Critical, 0, _ActivityName);
+                this._Source.TraceEvent(TraceEventType.Critical, 0, this._ActivityName);
             }
             return scope;
         }
@@ -122,7 +111,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return _ActivityName;
+            return this._ActivityName;
         }
     }
 }

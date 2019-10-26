@@ -1,6 +1,4 @@
-﻿#if !NOJSONNET
-#if !NOHTTPCLIENT
-using System;
+﻿using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -14,10 +12,12 @@ namespace NBitcoin.OpenAsset
         public CoinprismException()
         {
         }
+
         public CoinprismException(string message)
             : base(message)
         {
         }
+
         public CoinprismException(string message, Exception inner)
             : base(message, inner)
         {
@@ -26,11 +26,11 @@ namespace NBitcoin.OpenAsset
 
     public class CoinprismColoredTransactionRepository : IColoredTransactionRepository
     {
-        private Network _network = Network.Main;
+        private readonly Network network;
 
-        class CoinprismTransactionRepository : ITransactionRepository
+        private class CoinprismTransactionRepository : ITransactionRepository
         {
-#region ITransactionRepository Members
+            #region ITransactionRepository Members
 
             public Task<Transaction> GetAsync(uint256 txId)
             {
@@ -42,19 +42,15 @@ namespace NBitcoin.OpenAsset
                 return Task.FromResult(true);
             }
 
-#endregion
-        }
-
-        public CoinprismColoredTransactionRepository()
-        {
+            #endregion
         }
 
         public CoinprismColoredTransactionRepository(Network network)
         {
-            _network = network;
+            this.network = network;
         }
 
-#region IColoredTransactionRepository Members
+        #region IColoredTransactionRepository Members
 
         public ITransactionRepository Transactions
         {
@@ -63,27 +59,27 @@ namespace NBitcoin.OpenAsset
                 return new CoinprismTransactionRepository();
             }
         }
-        
+       
         public async Task<ColoredTransaction> GetAsync(uint256 txId)
         {
             try
             {
-                ColoredTransaction result = new ColoredTransaction();
+                var result = new ColoredTransaction();
 
-                String url = _network == Network.Main ? String.Format("https://api.coinprism.com/v1/transactions/{0}", txId) : String.Format("https://testnet.api.coinprism.com/v1/transactions/{0}", txId);
+                string url = string.Empty;
+                if (this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest)
+                    url = string.Format("https://testnet.api.coinprism.com/v1/transactions/{0}", txId);
+                else
+                    url = string.Format("https://api.coinprism.com/v1/transactions/{0}", txId);
 
-                HttpWebRequest req = HttpWebRequest.CreateHttp(url);
+                HttpWebRequest req = WebRequest.CreateHttp(url);
                 req.Method = "GET";
 
-//#if !NOCUSTOMSSLVALIDATION
-//                if(_network == Network.TestNet)
-//                    req.ServerCertificateValidationCallback += (a, b, c, d) => true;
-//#endif
-                using(var response = await req.GetResponseAsync().ConfigureAwait(false))
+                using(WebResponse response = await req.GetResponseAsync().ConfigureAwait(false))
                 {
                     var writer = new StreamReader(response.GetResponseStream());
-                    var str = await writer.ReadToEndAsync().ConfigureAwait(false);
-                    var json = JObject.Parse(str);
+                    string str = await writer.ReadToEndAsync().ConfigureAwait(false);
+                    JObject json = JObject.Parse(str);
                     var inputs = json["inputs"] as JArray;
                     if(inputs != null)
                     {
@@ -107,7 +103,7 @@ namespace NBitcoin.OpenAsset
                         bool issuance = true;
                         for(int i = 0; i < outputs.Count; i++)
                         {
-                            var marker = ColorMarker.TryParse(new Script(Encoders.Hex.DecodeData(outputs[i]["script"].ToString())));
+                            ColorMarker marker = ColorMarker.TryParse(new Script(Encoders.Hex.DecodeData(outputs[i]["script"].ToString())));
                             if(marker != null)
                             {
                                 issuance = false;
@@ -116,7 +112,7 @@ namespace NBitcoin.OpenAsset
                             }
                             if(outputs[i]["asset_id"].Value<string>() == null)
                                 continue;
-                            ColoredEntry entry = new ColoredEntry();
+                            var entry = new ColoredEntry();
                             entry.Index = (uint)i;
                             entry.Asset = new AssetMoney(
                                 new BitcoinAssetId(outputs[i]["asset_id"].ToString(), null).AssetId,
@@ -136,7 +132,7 @@ namespace NBitcoin.OpenAsset
             {
                 try
                 {
-                    var error = JObject.Parse(new StreamReader(ex.Response.GetResponseStream()).ReadToEnd());
+                    JObject error = JObject.Parse(new StreamReader(ex.Response.GetResponseStream()).ReadToEnd());
                     if(error["ErrorCode"].ToString() == "InvalidTransactionHash")
                         return null;
                     throw new CoinprismException(error["ErrorCode"].ToString());
@@ -155,17 +151,19 @@ namespace NBitcoin.OpenAsset
         public async Task BroadcastAsync(Transaction transaction)
         {
             if(transaction == null)
-                throw new ArgumentNullException("transaction");
+                throw new ArgumentNullException(nameof(transaction));
 
-            String url = _network == Network.Main ? "https://api.coinprism.com/v1/transactions/v1/sendrawtransaction" : "https://testnet.api.coinprism.com/v1/sendrawtransaction";
-            HttpWebRequest req = HttpWebRequest.CreateHttp(url);
+            string url = string.Empty;
+            if (this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest)
+                url = "https://testnet.api.coinprism.com/v1/sendrawtransaction";
+            else
+                url = "https://api.coinprism.com/v1/transactions/v1/sendrawtransaction";
+
+            HttpWebRequest req = WebRequest.CreateHttp(url);
             req.Method = "POST";
             req.ContentType = "application/json";
-//#if !NOCUSTOMSSLVALIDATION
-//            if(_network == Network.TestNet)
-//                req.ServerCertificateValidationCallback += (a, b, c, d) => true;
-//#endif
-            var stream = await req.GetRequestStreamAsync().ConfigureAwait(false);
+
+            Stream stream = await req.GetRequestStreamAsync().ConfigureAwait(false);
             var writer = new StreamWriter(stream);
             await writer.WriteAsync("\"" + transaction.ToHex() + "\"").ConfigureAwait(false);
             await writer.FlushAsync().ConfigureAwait(false);
@@ -177,8 +175,6 @@ namespace NBitcoin.OpenAsset
             return Task.FromResult(false);
         }
 
-#endregion
+        #endregion
     }
 }
-#endif
-#endif

@@ -18,13 +18,15 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="action">Action that is used for processing each item in the collection.</param>
         public static async Task ForEachAsync<TSource>(this IEnumerable<TSource> collection, int maxDegreeOfParallelism, CancellationToken cancellationToken, Func<TSource, CancellationToken, Task> action)
         {
+            Guard.Assert(maxDegreeOfParallelism > 0);
+
             var unfinished = new List<Task>();
 
             foreach (TSource item in collection)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
-                
+
                 if (unfinished.Count >= maxDegreeOfParallelism)
                 {
                     await Task.WhenAny(unfinished).ConfigureAwait(false);

@@ -1,10 +1,8 @@
-﻿#if !NOJSONNET
-using System.Linq;
-using Newtonsoft.Json.Linq;
-#endif
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace NBitcoin.OpenAsset
 {
@@ -18,65 +16,69 @@ namespace NBitcoin.OpenAsset
         {
             if(asset == null)
                 throw new ArgumentNullException("asset");
-            Index = index;
-            Asset = asset;
+            this.Index = index;
+            this.Asset = asset;
         }
-        uint _Index;
+
+        private uint _Index;
         public uint Index
         {
             get
             {
-                return _Index;
+                return this._Index;
             }
             set
             {
-                _Index = value;
+                this._Index = value;
             }
         }
-        AssetMoney _Asset = new AssetMoney(new AssetId(new uint160(0)));
+
+        private AssetMoney _Asset = new AssetMoney(new AssetId(new uint160(0)));
         public AssetMoney Asset
         {
             get
             {
-                return _Asset;
+                return this._Asset;
             }
             set
             {
-                _Asset = value;
+                this._Asset = value;
             }
         }
-#region IBitcoinSerializable Members
+
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWriteAsVarInt(ref _Index);
+            stream.ReadWriteAsVarInt(ref this._Index);
             if(stream.Serializing)
             {
-                byte[] assetId = Asset.Id.ToBytes();
+                byte[] assetId = this.Asset.Id.ToBytes();
                 stream.ReadWrite(ref assetId);
-                long quantity = Asset.Quantity;
+                long quantity = this.Asset.Quantity;
                 stream.ReadWrite(ref quantity);
             }
             else
             {
-                byte[] assetId = new byte[20];
+                var assetId = new byte[20];
                 stream.ReadWrite(ref assetId);
                 long quantity = 0;
                 stream.ReadWrite(ref quantity);
-                Asset = new AssetMoney(new AssetId(assetId), quantity);
+                this.Asset = new AssetMoney(new AssetId(assetId), quantity);
             }
         }
 
-#endregion
+        #endregion
 
         public override string ToString()
         {
-            if(Asset == null)
-                return "[" + Index + "]";
+            if(this.Asset == null)
+                return "[" + this.Index + "]";
             else
-                return "[" + Index + "] " + Asset;
+                return "[" + this.Index + "] " + this.Asset;
         }
     }
+
     public class ColoredTransaction : IBitcoinSerializable
     {
         public static Task<ColoredTransaction> FetchColorsAsync(Transaction tx, IColoredTransactionRepository repo)
@@ -100,7 +102,7 @@ namespace NBitcoin.OpenAsset
             return FetchColorsAsync(txId, tx, repo).GetAwaiter().GetResult();
         }
 
-        class ColoredFrame
+        private class ColoredFrame
         {
             public uint256 TransactionId
             {
@@ -131,12 +133,12 @@ namespace NBitcoin.OpenAsset
                 txId = tx.GetHash();
             }
             //The following code is to prevent recursion of FetchColors that would fire a StackOverflow if the origin of traded asset were deep in the transaction dependency tree
-            var colored = await repo.GetAsync(txId).ConfigureAwait(false);
+            ColoredTransaction colored = await repo.GetAsync(txId).ConfigureAwait(false);
             if(colored != null)
                 return colored;
 
-            Stack<ColoredFrame> frames = new Stack<ColoredFrame>();
-            Stack<ColoredTransaction> coloreds = new Stack<ColoredTransaction>();
+            var frames = new Stack<ColoredFrame>();
+            var coloreds = new Stack<ColoredTransaction>();
             frames.Push(new ColoredFrame()
             {
                 TransactionId = txId,
@@ -144,7 +146,7 @@ namespace NBitcoin.OpenAsset
             });
             while(frames.Count != 0)
             {
-                var frame = frames.Pop();
+                ColoredFrame frame = frames.Pop();
                 colored = frame.PreviousTransactions != null ? null : await repo.GetAsync(frame.TransactionId).ConfigureAwait(false); //Already known
                 if(colored != null)
                 {
@@ -187,8 +189,8 @@ namespace NBitcoin.OpenAsset
                 Script issuanceScriptPubkey = null;
                 if(HasIssuance(frame.Transaction))
                 {
-                    var txIn = frame.Transaction.Inputs[0];
-                    var previous = await repo.Transactions.GetAsync(txIn.PrevOut.Hash).ConfigureAwait(false);
+                    TxIn txIn = frame.Transaction.Inputs[0];
+                    Transaction previous = await repo.Transactions.GetAsync(txIn.PrevOut.Hash).ConfigureAwait(false);
                     if(previous == null)
                     {
                         throw new TransactionNotFoundException("An open asset transaction is issuing assets, but it needs a parent transaction in the TransactionRepository to know the address of the issued asset (missing : " + txIn.PrevOut.Hash + ")", txIn.PrevOut.Hash);
@@ -197,11 +199,11 @@ namespace NBitcoin.OpenAsset
                         issuanceScriptPubkey = previous.Outputs[txIn.PrevOut.N].ScriptPubKey;
                 }
 
-                List<ColoredCoin> spentCoins = new List<ColoredCoin>();
+                var spentCoins = new List<ColoredCoin>();
                 for(int i = 0; i < frame.Transaction.Inputs.Count; i++)
                 {
-                    var txIn = frame.Transaction.Inputs[i];
-                    var entry = frame.PreviousTransactions[i].GetColoredEntry(txIn.PrevOut.N);
+                    TxIn txIn = frame.Transaction.Inputs[i];
+                    ColoredEntry entry = frame.PreviousTransactions[i].GetColoredEntry(txIn.PrevOut.N);
                     if(entry != null)
                         spentCoins.Add(new ColoredCoin(entry.Asset, new Coin(txIn.PrevOut, new TxOut())));
                 }
@@ -218,14 +220,14 @@ namespace NBitcoin.OpenAsset
         {
             if(!(repo is CachedColoredTransactionRepository))
                 return false;
-            var hasIssuance = HasIssuance(transaction);
+            bool hasIssuance = HasIssuance(transaction);
             repo = new NoDuplicateColoredTransactionRepository(repo); //prevent from having concurrent request to the same transaction id
-            var all = Enumerable
+            Task[] all = Enumerable
                 .Range(0, transaction.Inputs.Count)
                 .Select(async i =>
                 {
-                    var txId = transaction.Inputs[i].PrevOut.Hash;
-                    var result = await repo.GetAsync(txId).ConfigureAwait(false);
+                    uint256 txId = transaction.Inputs[i].PrevOut.Hash;
+                    ColoredTransaction result = await repo.GetAsync(txId).ConfigureAwait(false);
                     if(result == null || (i == 0 && hasIssuance))
                         await repo.Transactions.GetAsync(txId).ConfigureAwait(false);
                 })
@@ -243,8 +245,8 @@ namespace NBitcoin.OpenAsset
 
         public ColoredEntry GetColoredEntry(uint n)
         {
-            return Issuances
-                .Concat(Transfers)
+            return this.Issuances
+                .Concat(this.Transfers)
                 .FirstOrDefault(i => i.Index == n);
         }
 
@@ -253,7 +255,7 @@ namespace NBitcoin.OpenAsset
             if(tx.Inputs.Count == 0)
                 return false;
             uint markerPos = 0;
-            var marker = ColorMarker.Get(tx, out markerPos);
+            ColorMarker marker = ColorMarker.Get(tx, out markerPos);
             if(marker == null)
             {
                 return false;
@@ -274,9 +276,9 @@ namespace NBitcoin.OpenAsset
 
         public ColoredTransaction()
         {
-            Issuances = new List<ColoredEntry>();
-            Transfers = new List<ColoredEntry>();
-            Inputs = new List<ColoredEntry>();
+            this.Issuances = new List<ColoredEntry>();
+            this.Transfers = new List<ColoredEntry>();
+            this.Inputs = new List<ColoredEntry>();
         }
 
         public ColoredTransaction(uint256 txId, Transaction tx, ColoredCoin[] spentCoins, Script issuanceScriptPubkey)
@@ -290,11 +292,11 @@ namespace NBitcoin.OpenAsset
                 return;
             txId = txId ?? tx.GetHash();
 
-            Queue<ColoredEntry> previousAssetQueue = new Queue<ColoredEntry>();
+            var previousAssetQueue = new Queue<ColoredEntry>();
             for(uint i = 0; i < tx.Inputs.Count; i++)
             {
-                var txin = tx.Inputs[i];
-                var prevAsset = spentCoins.FirstOrDefault(s => s.Outpoint == txin.PrevOut);
+                TxIn txin = tx.Inputs[i];
+                ColoredCoin prevAsset = spentCoins.FirstOrDefault(s => s.Outpoint == txin.PrevOut);
                 if(prevAsset != null)
                 {
                     var input = new ColoredEntry()
@@ -303,17 +305,18 @@ namespace NBitcoin.OpenAsset
                         Asset = prevAsset.Amount
                     };
                     previousAssetQueue.Enqueue(input);
-                    Inputs.Add(input);
+                    this.Inputs.Add(input);
                 }
             }
 
             uint markerPos = 0;
-            var marker = ColorMarker.Get(tx, out markerPos);
+            ColorMarker marker = ColorMarker.Get(tx, out markerPos);
             if(marker == null)
             {
                 return;
             }
-            Marker = marker;
+
+            this.Marker = marker;
             if(!marker.HasValidQuantitiesCount(tx))
             {
                 return;
@@ -330,7 +333,7 @@ namespace NBitcoin.OpenAsset
 
                 if(issuedAsset == null)
                 {
-                    var txIn = tx.Inputs.FirstOrDefault();
+                    TxIn txIn = tx.Inputs.FirstOrDefault();
                     if(txIn == null)
                         continue;
                     if(issuanceScriptPubkey == null)
@@ -338,7 +341,7 @@ namespace NBitcoin.OpenAsset
                     issuedAsset = issuanceScriptPubkey.Hash.ToAssetId();
                 }
                 entry.Asset = new AssetMoney(issuedAsset, entry.Asset.Quantity);
-                Issuances.Add(entry);
+                this.Issuances.Add(entry);
             }
 
             long used = 0;
@@ -354,21 +357,21 @@ namespace NBitcoin.OpenAsset
                 //If there are less asset units in the input sequence than in the output sequence, the transaction is considered invalid and all outputs are uncolored. 
                 if(previousAssetQueue.Count == 0)
                 {
-                    Transfers.Clear();
-                    Issuances.Clear();
+                    this.Transfers.Clear();
+                    this.Issuances.Clear();
                     return;
                 }
                 entry.Asset = new AssetMoney(previousAssetQueue.Peek().Asset.Id, entry.Asset.Quantity);
-                var remaining = entry.Asset.Quantity;
+                long remaining = entry.Asset.Quantity;
                 while(remaining != 0)
                 {
                     if(previousAssetQueue.Count == 0 || previousAssetQueue.Peek().Asset.Id != entry.Asset.Id)
                     {
-                        Transfers.Clear();
-                        Issuances.Clear();
+                        this.Transfers.Clear();
+                        this.Issuances.Clear();
                         return;
                     }
-                    var assertPart = Math.Min(previousAssetQueue.Peek().Asset.Quantity - used, remaining);
+                    long assertPart = Math.Min(previousAssetQueue.Peek().Asset.Quantity - used, remaining);
                     remaining = remaining - assertPart;
                     used += assertPart;
                     if(used == previousAssetQueue.Peek().Asset.Quantity)
@@ -377,58 +380,58 @@ namespace NBitcoin.OpenAsset
                         used = 0;
                     }
                 }
-                Transfers.Add(entry);
+
+                this.Transfers.Add(entry);
             }
         }
 
-        ColorMarker _Marker;
+        private ColorMarker _Marker;
         public ColorMarker Marker
         {
             get
             {
-                return _Marker;
+                return this._Marker;
             }
             set
             {
-                _Marker = value;
+                this._Marker = value;
             }
         }
 
-        List<ColoredEntry> _Issuances;
+        private List<ColoredEntry> _Issuances;
         public List<ColoredEntry> Issuances
         {
             get
             {
-                return _Issuances;
+                return this._Issuances;
             }
             set
             {
-                _Issuances = value;
+                this._Issuances = value;
             }
         }
 
-        List<ColoredEntry> _Transfers;
+        private List<ColoredEntry> _Transfers;
         public List<ColoredEntry> Transfers
         {
             get
             {
-                return _Transfers;
+                return this._Transfers;
             }
             set
             {
-                _Transfers = value;
+                this._Transfers = value;
             }
         }
 
         public AssetMoney[] GetDestroyedAssets()
         {
-            var burned = Inputs
+            IEnumerable<AssetMoney> burned = this.Inputs
                 .Select(i => i.Asset)
                 .GroupBy(i => i.Id)
                 .Select(g => g.Sum(g.Key));
 
-            var transfered =
-                Transfers
+            IEnumerable<AssetMoney> transfered = this.Transfers
                 .Select(i => i.Asset)
                 .GroupBy(i => i.Id)
                 .Select(g => -g.Sum(g.Key));
@@ -440,84 +443,79 @@ namespace NBitcoin.OpenAsset
                 .ToArray();
         }
 
-#region IBitcoinSerializable Members
+        #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
         {
             if(stream.Serializing)
             {
-                if(_Marker != null)
-                    stream.ReadWrite(ref _Marker);
+                if(this._Marker != null)
+                    stream.ReadWrite(ref this._Marker);
                 else
                     stream.ReadWrite(new Script());
             }
             else
             {
-                Script script = new Script();
+                var script = new Script();
                 stream.ReadWrite(ref script);
                 if(script.Length != 0)
                 {
-                    _Marker = new ColorMarker(script);
+                    this._Marker = new ColorMarker(script);
                 }
                 else
                 {
                 }
             }
-            stream.ReadWrite(ref _Inputs);
-            stream.ReadWrite(ref _Issuances);
-            stream.ReadWrite(ref _Transfers);
+            stream.ReadWrite(ref this._Inputs);
+            stream.ReadWrite(ref this._Issuances);
+            stream.ReadWrite(ref this._Transfers);
         }
 
-#endregion
+        #endregion
 
-        List<ColoredEntry> _Inputs;
+        private List<ColoredEntry> _Inputs;
         public List<ColoredEntry> Inputs
         {
             get
             {
-                return _Inputs;
+                return this._Inputs;
             }
             set
             {
-                _Inputs = value;
+                this._Inputs = value;
             }
-        }
-#if !NOJSONNET
-        public override string ToString()
-        {
-            return ToString(Network.Main);
         }
 
         public string ToString(Network network)
         {
-            JObject obj = new JObject();
+            var obj = new JObject();
             var inputs = new JArray();
             obj.Add(new JProperty("inputs", inputs));
-            foreach(var input in Inputs)
+            foreach(ColoredEntry input in this.Inputs)
             {
                 WriteEntry(network, inputs, input);
             }
 
             var issuances = new JArray();
             obj.Add(new JProperty("issuances", issuances));
-            foreach(var issuance in Issuances)
+            foreach(ColoredEntry issuance in this.Issuances)
             {
                 WriteEntry(network, issuances, issuance);
             }
 
             var transfers = new JArray();
             obj.Add(new JProperty("transfers", transfers));
-            foreach(var transfer in Transfers)
+            foreach(ColoredEntry transfer in this.Transfers)
             {
                 WriteEntry(network, transfers, transfer);
             }
 
             var destructions = new JArray();
             obj.Add(new JProperty("destructions", destructions));
-            foreach(var destuction in GetDestroyedAssets())
+            foreach(AssetMoney destuction in GetDestroyedAssets())
             {
-                JProperty asset = new JProperty("asset", destuction.Id.GetWif(network).ToString());
-                JProperty quantity = new JProperty("quantity", destuction.Quantity);
+                var asset = new JProperty("asset", destuction.Id.GetWif(network).ToString());
+                var quantity = new JProperty("quantity", destuction.Quantity);
                 inputs.Add(new JObject(asset, quantity));
             }
 
@@ -526,12 +524,12 @@ namespace NBitcoin.OpenAsset
 
         private static void WriteEntry(Network network, JArray inputs, ColoredEntry entry)
         {
-            JProperty index = new JProperty("index", entry.Index);
-            JProperty asset = new JProperty("asset", entry.Asset.Id.GetWif(network).ToString());
-            JProperty quantity = new JProperty("quantity", entry.Asset.Quantity);
+            var index = new JProperty("index", entry.Index);
+            var asset = new JProperty("asset", entry.Asset.Id.GetWif(network).ToString());
+            var quantity = new JProperty("quantity", entry.Asset.Quantity);
             inputs.Add(new JObject(index, asset, quantity));
         }
-#endif
+
         //00000000000000001c7a19e8ef62d815d84a473f543de77f23b8342fc26812a9 at 299220 Monday, May 5, 2014 3:47:37 PM first block
         public static readonly DateTimeOffset FirstColoredDate = new DateTimeOffset(2014, 05, 4, 0, 0, 0, TimeSpan.Zero);
     }

@@ -19,7 +19,7 @@ namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
         {
             get
             {
-                return m_preComp;
+                return this.m_preComp;
             }
             set
             {

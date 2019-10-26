@@ -5,21 +5,15 @@ namespace Stratis.Bitcoin.Mining
 {
     public sealed class BlockTemplate
     {
-        public Block Block;
+        public Block Block { get; set; }
 
-        public List<Money> VTxFees;
+        public Money TotalFee { get; set; }
 
-        public List<long> TxSigOpsCost;
-
-        public string CoinbaseCommitment;
-
-        public Money TotalFee;
+        public Dictionary<uint256, Money> FeeDetails { get; set; }
 
         public BlockTemplate(Network network)
         {
-            this.Block = network.Consensus.ConsensusFactory.CreateBlock();
-            this.VTxFees = new List<Money>();
-            this.TxSigOpsCost = new List<long>();
+            this.Block = network.CreateBlock();
         }
     }
 }

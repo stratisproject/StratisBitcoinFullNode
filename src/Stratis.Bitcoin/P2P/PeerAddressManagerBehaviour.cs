@@ -1,12 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -22,37 +28,45 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>
-        /// See <see cref="PeerAddressManagerBehaviourMode"/> for the different modes and their
-        /// explanations.
-        /// </summary>
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Builds loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>See <see cref="PeerAddressManagerBehaviourMode"/> for the different modes and their explanations.</summary>
         public PeerAddressManagerBehaviourMode Mode { get; set; }
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
-        /// <summary>
-        /// The amount of peers that can be discovered before
-        /// <see cref="PeerDiscovery"/> stops finding new ones.
-        /// </summary>
-        public int PeersToDiscover { get; set; }
+        private readonly IPeerBanning peerBanning;
 
-        /// <summary>
-        /// Flag to make sure <see cref="GetAddrPayload"/> is only sent once.
-        /// </summary>
-        private bool sentAddress;
+        /// <summary>The maximum amount of addresses per addr payload. </summary>
+        /// <remarks><see cref="https://en.bitcoin.it/wiki/Protocol_documentation#addr"/>.</remarks>
+        private const int MaxAddressesPerAddrPayload = 1000;
 
-        public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
+        /// <summary>Flag to make sure <see cref="GetAddrPayload"/> is only sent once.</summary>
+        /// TODO how does it help against peer reconnecting to reset the flag?
+        private bool addrPayloadSent;
+
+        public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            Guard.NotNull(peerAddressManager, nameof(peerBanning));
+            Guard.NotNull(peerAddressManager, nameof(loggerFactory));
 
             this.dateTimeProvider = dateTimeProvider;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.loggerFactory = loggerFactory;
+            this.peerBanning = peerBanning;
             this.Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
             this.peerAddressManager = peerAddressManager;
-            this.PeersToDiscover = 1000;
+            this.addrPayloadSent = false;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -71,15 +85,31 @@ namespace Stratis.Bitcoin.P2P
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    if ((message.Message.Payload is GetAddrPayload) && (!this.sentAddress))
+                    if (message.Message.Payload is GetAddrPayload)
                     {
-                        var endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
+                        if (!peer.Inbound)
+                        {
+                            this.logger.LogDebug("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
+                            return;
+                        }
+
+                        if (this.addrPayloadSent)
+                        {
+                            this.logger.LogDebug("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
+                            return;
+                        }
+
+                        IEnumerable<IPEndPoint> endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(MaxAddressesPerAddrPayload).Select(p => p.Endpoint);
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
+
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
-                        this.sentAddress = true;
+
+                        this.logger.LogDebug("Sent address payload following GetAddr request.");
+
+                        this.addrPayloadSent = true;
                     }
 
-                    if (message.Message.Payload is PingPayload ping || message.Message.Payload is PongPayload pong)
+                    if ((message.Message.Payload is PingPayload) || (message.Message.Payload is PongPayload))
                     {
                         if (peer.State == NetworkPeerState.HandShaked)
                             this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
@@ -89,7 +119,18 @@ namespace Stratis.Bitcoin.P2P
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
                 {
                     if (message.Message.Payload is AddrPayload addr)
-                        this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint).ToArray(), peer.RemoteSocketAddress);
+                    {
+                        if (addr.Addresses.Length > MaxAddressesPerAddrPayload)
+                        {
+                            // Not respecting the protocol.
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Protocol violation: addr payload size is limited by {MaxAddressesPerAddrPayload} entries.");
+
+                            this.logger.LogTrace("(-)[PROTOCOL_VIOLATION]");
+                            return;
+                        }
+
+                        this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint), peer.RemoteSocketAddress);
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -105,22 +146,46 @@ namespace Stratis.Bitcoin.P2P
                     this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
 
+            if ((peer.Inbound) && (peer.State == NetworkPeerState.HandShaked) &&
+                (this.Mode == PeerAddressManagerBehaviourMode.Advertise || this.Mode == PeerAddressManagerBehaviourMode.AdvertiseDiscover))
+            {
+                this.logger.LogDebug("[INBOUND] {0}:{1}, {2}:{3}, {4}:{5}", nameof(peer.RemoteSocketAddress), peer.RemoteSocketAddress, nameof(peer.RemoteSocketEndpoint), peer.RemoteSocketEndpoint, nameof(peer.RemoteSocketPort), peer.RemoteSocketPort);
+                this.logger.LogDebug("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
+                this.logger.LogDebug("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
+
+                IPEndPoint inboundPeerEndPoint = null;
+
+                // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                if (!peer.PeerVersion.AddressFrom.Match(new IPEndPoint(IPAddress.Loopback, this.AttachedPeer.Network.DefaultPort)))
+                {
+                    inboundPeerEndPoint = peer.PeerVersion.AddressFrom;
+                }
+                else
+                {
+                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
+                    // other node's listening port.
+                    inboundPeerEndPoint = new IPEndPoint(peer.PeerEndPoint.Address, peer.PeerVersion.AddressFrom.Port);
+                }
+
+                this.logger.LogDebug("{0}", inboundPeerEndPoint);
+
+                this.peerAddressManager.AddPeer(inboundPeerEndPoint, IPAddress.Loopback);
+            }
+
             return Task.CompletedTask;
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
 
+        [NoTrace]
         public override object Clone()
         {
-            return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager)
-            {
-                PeersToDiscover = this.PeersToDiscover,
-                Mode = this.Mode
-            };
+            return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.peerBanning, this.loggerFactory) { Mode = this.Mode };
         }
     }
 

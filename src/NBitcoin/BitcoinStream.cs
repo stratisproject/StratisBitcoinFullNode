@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using NBitcoin.Protocol;
 
 namespace NBitcoin
@@ -16,7 +17,7 @@ namespace NBitcoin
 
     public class Scope : IDisposable
     {
-        Action close;
+        private Action close;
         public Scope(Action open, Action close)
         {
             this.close = close;
@@ -27,7 +28,7 @@ namespace NBitcoin
 
         public void Dispose()
         {
-            close();
+            this.close();
         }
 
         #endregion
@@ -48,7 +49,7 @@ namespace NBitcoin
     // TODO: Make NetworkOptions required in the constructors of this class.
     public partial class BitcoinStream
     {
-        int maxArraySize = 1024 * 1024;
+        private int maxArraySize = 1024 * 1024;
         public int MaxArraySize
         {
             get
@@ -62,7 +63,7 @@ namespace NBitcoin
         }
 
         //ReadWrite<T>(ref T data)
-        static MethodInfo readWriteTyped;
+        private static MethodInfo readWriteTyped;
         static BitcoinStream()
         {
             readWriteTyped = typeof(BitcoinStream)
@@ -93,15 +94,16 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// Gets the total processed bytes for read or write.
+        /// </summary>
+        public long ProcessedBytes => this.Serializing ? this.Counter.WrittenBytes : this.Counter.ReadBytes;
+
         public BitcoinStream(Stream inner, bool serializing)
         {
+            this.ConsensusFactory = new DefaultConsensusFactory();
             this.serializing = serializing;
             this.inner = inner;
-        }
-
-        public BitcoinStream(byte[] bytes)
-            : this(new MemoryStream(bytes), false)
-        {
         }
 
         public Script ReadWrite(Script data)
@@ -138,12 +140,12 @@ namespace NBitcoin
         {
             if (this.Serializing)
             {
-                VarString str = new VarString(bytes);
+                var str = new VarString(bytes);
                 str.ReadWrite(this);
             }
             else
             {
-                VarString str = new VarString();
+                var str = new VarString();
                 str.ReadWrite(this);
                 bytes = str.GetString(true);
             }
@@ -193,12 +195,14 @@ namespace NBitcoin
 
         public void ReadWrite<T>(ref T data) where T : IBitcoinSerializable
         {
-            var obj = data;
+            T obj = data;
             if (obj == null)
             {
-                if (!this.ConsensusFactory.TryCreateNew<T>(out obj))
+                obj = this.ConsensusFactory.TryCreateNew<T>();
+                if (obj == null)
                     obj = Activator.CreateInstance<T>();
             }
+
             obj.ReadWrite(this);
             if (!this.Serializing)
                 data = obj;
@@ -220,7 +224,7 @@ namespace NBitcoin
             where TList : List<TItem>, new()
             where TItem : IBitcoinSerializable, new()
         {
-            var dataArray = data == null ? null : data.ToArray();
+            TItem[] dataArray = data == null ? null : data.ToArray();
 
             if (this.Serializing && dataArray == null)
             {
@@ -241,7 +245,33 @@ namespace NBitcoin
 
         public void ReadWrite(ref byte[] arr)
         {
-            this.ReadWriteBytes(ref arr);
+            ReadWriteBytes(ref arr);
+        }
+
+        public void ReadWrite(ref string str)
+        {
+            if (this.Serializing)
+            {
+                byte[] bytes = Encoding.ASCII.GetBytes(str);
+
+                this._VarInt.SetValue((ulong)str.Length);
+                ReadWrite(ref this._VarInt);
+
+                this.ReadWriteBytes(ref bytes);
+            }
+            else
+            {
+                this._VarInt.SetValue(0);
+                ReadWrite(ref this._VarInt);
+
+                ulong length = this._VarInt.ToLong();
+
+                byte[] bytes = new byte[length];
+
+                this.ReadWriteBytes(ref bytes, 0 , bytes.Length);
+
+                str = Encoding.ASCII.GetString(bytes);
+            }
         }
 
         public void ReadWrite(ref byte[] arr, int offset, int count)
@@ -265,7 +295,7 @@ namespace NBitcoin
         {
             var bytes = new byte[size];
 
-            for(int i = 0; i < size; i++)
+            for (int i = 0; i < size; i++)
             {
                 bytes[i] = (byte)(value >> i * 8);
             }
@@ -277,7 +307,7 @@ namespace NBitcoin
             ulong valueTemp = 0;
             for (int i = 0; i < bytes.Length; i++)
             {
-                var v = (ulong)bytes[i];
+                ulong v = (ulong)bytes[i];
                 valueTemp += v << (i * 8);
             }
             value = valueTemp;
@@ -300,7 +330,7 @@ namespace NBitcoin
             }
             else
             {
-                var readen = this.Inner.ReadEx(data, offset, count, this.ReadCancellationToken);
+                int readen = this.Inner.ReadEx(data, offset, count, this.ReadCancellationToken);
                 if (readen == 0)
                     throw new EndOfStreamException("No more byte to read");
                 this.Counter.AddRead(readen);
@@ -328,7 +358,7 @@ namespace NBitcoin
             }
             else
             {
-                var readen = this.Inner.ReadByte();
+                int readen = this.Inner.ReadByte();
                 if (readen == -1)
                     throw new EndOfStreamException("No more byte to read");
                 data = (byte)readen;
@@ -344,7 +374,7 @@ namespace NBitcoin
 
         public IDisposable BigEndianScope()
         {
-            var old = this.IsBigEndian;
+            bool old = this.IsBigEndian;
             return new Scope(() =>
             {
                 this.IsBigEndian = true;
@@ -355,7 +385,7 @@ namespace NBitcoin
             });
         }
 
-        ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION;
+        private ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION;
         public ProtocolVersion ProtocolVersion
         {
             get
@@ -368,7 +398,7 @@ namespace NBitcoin
             }
         }
 
-        TransactionOptions transactionSupportedOptions = TransactionOptions.All;
+        private TransactionOptions transactionSupportedOptions = TransactionOptions.All;
         public TransactionOptions TransactionOptions
         {
             get
@@ -388,7 +418,7 @@ namespace NBitcoin
 
         public IDisposable ProtocolVersionScope(ProtocolVersion version)
         {
-            var old = this.ProtocolVersion;
+            ProtocolVersion old = this.ProtocolVersion;
             return new Scope(() =>
             {
                 this.ProtocolVersion = version;
@@ -419,7 +449,7 @@ namespace NBitcoin
 
         public IDisposable SerializationTypeScope(SerializationType value)
         {
-            var old = this.Type;
+            SerializationType old = this.Type;
             return new Scope(() =>
             {
                 this.Type = value;

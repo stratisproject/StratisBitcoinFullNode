@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Common.Logging
 {
@@ -12,12 +15,18 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
         /// This class is not able to work concurrently because logs is a static class.
         /// The logs class needs to be refactored first before tests can run in parallel.
         /// </remarks>
-        public LogsTestBase() : base(Network.Main)
+        public LogsTestBase(Network network = null) : base(network ?? KnownNetworks.Main)
         {
             this.FullNodeLogger = new Mock<ILogger>();
             this.RPCLogger = new Mock<ILogger>();
             this.Logger = new Mock<ILogger>();
             this.LoggerFactory = new Mock<ILoggerFactory>();
+
+            Initialise();
+        }
+
+        private void Initialise()
+        {
             this.LoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(this.Logger.Object);
             this.LoggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
@@ -62,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
             logger.Verify(f => f.Log<Object>(logLevel,
                 It.IsAny<EventId>(),
                 It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                null,
+                It.IsAny<Exception>(),
                 It.IsAny<Func<object, Exception, string>>()));
         }
 
@@ -84,6 +93,16 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
                 It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
+        }
+
+        protected IAsyncProvider CreateAsyncProvider()
+        {
+            var loggerFactory = new ExtendedLoggerFactory();
+            var signals = new Signals.Signals(loggerFactory, null);
+            var nodeLifetime = new NodeLifetime();
+            var asyncProvider = new AsyncProvider(loggerFactory, signals, nodeLifetime);
+
+            return asyncProvider;
         }
     }
 }

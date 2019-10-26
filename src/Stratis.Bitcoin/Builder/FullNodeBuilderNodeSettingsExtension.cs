@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Builder
         /// <returns>Interface to allow fluent code.</returns>
         public static IFullNodeBuilder UseDefaultNodeSettings(this IFullNodeBuilder builder)
         {
-            return builder.UseNodeSettings(NodeSettings.Default());
+            return builder.UseNodeSettings(NodeSettings.Default(builder.Network));
         }
     }
 }

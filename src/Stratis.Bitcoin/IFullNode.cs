@@ -68,16 +68,22 @@ namespace Stratis.Bitcoin
     {
         /// <summary>Assigned when <see cref="IFullNode"/> instance is created.</summary>
         Created,
+
         /// <summary>Assigned when <see cref="IFullNode.Initialize"/> is called.</summary>
         Initializing,
+
         /// <summary>Assigned when <see cref="IFullNode.Initialize"/> finished executing.</summary>
         Initialized,
+
         /// <summary>Assigned when <see cref="IFullNode.Start"/> is called.</summary>
         Starting,
+
         /// <summary>Assigned when <see cref="IFullNode.Start"/> finished executing.</summary>
         Started,
+
         /// <summary>Assigned when <see cref="IFullNode.Dispose"/> is called.</summary>
         Disposing,
+
         /// <summary>Assigned when <see cref="IFullNode.Dispose"/> finished executing.</summary>
         Disposed
     }

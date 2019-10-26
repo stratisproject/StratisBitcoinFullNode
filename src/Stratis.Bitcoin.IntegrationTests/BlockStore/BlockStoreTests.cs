@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -15,75 +15,60 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public class BlockStoreTests
     {
-        /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
+        private readonly Network network;
+        private readonly DBreezeSerializer dBreezeSerializer;
 
-        /// <summary>
-        /// Initializes logger factory for tests in this class.
-        /// </summary>
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
-            DBreezeSerializer serializer = new DBreezeSerializer();
-            serializer.Initialize(Network.Main);
+
+            this.network = new BitcoinRegTest();
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
         }
 
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), this.loggerFactory, this.dBreezeSerializer))
             {
-                blockRepository.SetTxIndexAsync(true).Wait();
+                blockRepository.SetTxIndex(true);
 
                 var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
                 {
-                    var block = new Block();
-                    block.AddTransaction(new Transaction());
-                    block.AddTransaction(new Transaction());
+                    Block block = this.network.CreateBlock();
+                    block.AddTransaction(this.network.CreateTransaction());
+                    block.AddTransaction(this.network.CreateTransaction());
                     block.Transactions[0].AddInput(new TxIn(Script.Empty));
                     block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
                     block.Transactions[1].AddInput(new TxIn(Script.Empty));
                     block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
                     block.UpdateMerkleRoot();
-                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
+                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.network.GenesisHash;
                     blocks.Add(block);
                 }
 
                 // put
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                blockRepository.PutBlocks(new HashHeightPair(blocks.Last().GetHash(), blocks.Count), blocks);
 
                 // check the presence of each block in the repository
-                foreach (var block in blocks)
+                foreach (Block block in blocks)
                 {
-                    var received = blockRepository.GetAsync(block.GetHash()).GetAwaiter().GetResult();
+                    Block received = blockRepository.GetBlock(block.GetHash());
                     Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
 
-                    foreach (var transaction in block.Transactions)
+                    foreach (Transaction transaction in block.Transactions)
                     {
-                        var trx = blockRepository.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        Transaction trx = blockRepository.GetTransactionById(transaction.GetHash());
                         Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
                     }
                 }
 
                 // delete
-                blockRepository.DeleteAsync(blocks.ElementAt(2).GetHash(), new[] { blocks.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
-                var deleted = blockRepository.GetAsync(blocks.ElementAt(2).GetHash()).GetAwaiter().GetResult();
+                blockRepository.Delete(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] { blocks.ElementAt(2).GetHash() }.ToList());
+                Block deleted = blockRepository.GetBlock(blocks.ElementAt(2).GetHash());
                 Assert.Null(deleted);
-            }
-        }
-
-        [Fact]
-        public void BlockRepositoryBlockHash()
-        {
-            using (var blockRepo = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
-            {
-                blockRepo.InitializeAsync().GetAwaiter().GetResult();
-
-                Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
-                var hash = new Block().GetHash();
-                blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
-                Assert.Equal(hash, blockRepo.BlockHash);
             }
         }
 
@@ -92,72 +77,46 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                var stratisNode1 = builder.CreateStratisPowNode();
-                var stratisNode2 = builder.CreateStratisPowNode();
-                builder.StartAll();
-                stratisNodeSync.NotInIBD();
-                stratisNode1.NotInIBD();
-                stratisNode2.NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-1-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-1-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-1-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
-                // generate blocks and wait for the downloader to pickup
-                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(10); // coinbase maturity = 10
-                // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                // Sync both nodes
+                TestHelper.ConnectAndSync(stratisNode1, stratisNodeSync);
+                TestHelper.ConnectAndSync(stratisNode2, stratisNodeSync);
 
-                // sync both nodes
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-
-                // set node2 to use inv (not headers)
+                // Set node2 to use inv (not headers).
                 stratisNode2.FullNode.ConnectionManager.ConnectedPeers.First().Behavior<BlockStoreBehavior>().PreferHeaders = false;
 
-                // generate two new blocks
-                stratisNodeSync.GenerateStratisWithMiner(2);
-                // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
+                // Generate two new blocks.
+                TestHelper.MineBlocks(stratisNodeSync, 2);
 
-                // wait for the other nodes to pick up the newly generated blocks
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                // Wait for the other nodes to pick up the newly generated blocks
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void BlockStoreCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                builder.StartAll();
-                stratisNodeSync.NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-2-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
-                // generate blocks and wait for the downloader to pickup
-                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+                // Set the tip of the best chain to some blocks in the past.
+                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
 
-                stratisNodeSync.GenerateStratisWithMiner(10);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
-
-                // set the tip of best chain some blocks in the apst
-                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
-
-                // stop the node it will persist the chain with the reset tip
+                // Stop the node to persist the chain with the reset tip.
                 stratisNodeSync.FullNode.Dispose();
 
-                var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
+                CoreNode newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
 
-                // load the node, this should hit the block store recover code
+                // Start the node, this should hit the block store recover code.
                 newNodeInstance.Start();
 
-                // check that store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
-                //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+                // Check that the store recovered to be the same as the best chain.
+                Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
             }
         }
 
@@ -166,51 +125,36 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                var stratisNode1 = builder.CreateStratisPowNode();
-                var stratisNode2 = builder.CreateStratisPowNode();
-                builder.StartAll();
-                stratisNodeSync.NotInIBD();
-                stratisNode1.NotInIBD();
-                stratisNode2.NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-3-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-3-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-3-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
 
-                // generate blocks and wait for the downloader to pickup
-                stratisNode1.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNode2.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                // sync both nodes
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode1.Endpoint, true);
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
+                // Sync both nodes.
+                TestHelper.ConnectAndSync(stratisNodeSync, stratisNode1);
+                TestHelper.ConnectAndSync(stratisNodeSync, stratisNode2);
 
-                stratisNode1.GenerateStratisWithMiner(10);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
+                // Remove node 2.
+                TestHelper.Disconnect(stratisNodeSync, stratisNode2);
 
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
-                TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
+                // Mine some more with node 1
+                TestHelper.MineBlocks(stratisNode1, 10);
 
-                // remove node 2
-                stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode2.Endpoint);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisNode2));
+                // Wait for node 1 to sync
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 20);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
 
-                // mine some more with node 1
-                stratisNode1.GenerateStratisWithMiner(10);
+                // Remove node 1.
+                TestHelper.Disconnect(stratisNodeSync, stratisNode1);
 
-                // wait for node 1 to sync
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 20);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
+                // Mine a higher chain with node 2.
+                TestHelper.MineBlocks(stratisNode2, 20);
+                TestBase.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().Height == 30);
 
-                // remove node 1
-                stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode1.Endpoint);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisNode1));
+                // Add node 2.
+                TestHelper.Connect(stratisNodeSync, stratisNode2);
 
-                // mine a higher chain with node2
-                stratisNode2.GenerateStratisWithMiner(20);
-                TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().Height == 30);
-
-                // add node2
-                stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
-
-                // node2 should be synced
-                TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
+                // Node2 should be synced.
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
             }
         }
 
@@ -219,26 +163,20 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNode1 = builder.CreateStratisPowNode();
-                var stratisNode2 = builder.CreateStratisPowNode();
-                builder.StartAll();
-                stratisNode1.NotInIBD();
-                stratisNode2.NotInIBD();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-4-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-4-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
-                // generate blocks and wait for the downloader to pickup
-                stratisNode1.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode1.FullNode.Network));
-                stratisNode2.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode2.FullNode.Network));
-                // sync both nodes
-                stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
-                stratisNode1.GenerateStratisWithMiner(10);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
+                // Sync both nodes.
+                TestHelper.ConnectAndSync(stratisNode1, stratisNode2);
 
-                var bestBlock1 = stratisNode1.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
+
+                Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlock(stratisNode1.FullNode.ChainIndexer.Tip.HashBlock);
                 Assert.NotNull(bestBlock1);
 
-                // get the block coinbase trx
-                var trx = stratisNode2.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
+                // Get the block coinbase trx.
+                Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionById(bestBlock1.Transactions.First().GetHash());
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
             }

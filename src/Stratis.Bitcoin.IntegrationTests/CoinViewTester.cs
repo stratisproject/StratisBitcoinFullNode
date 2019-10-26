@@ -9,14 +9,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTester
     {
-        private CoinView coinView;
+        private ICoinView coinView;
         private List<UnspentOutputs> pendingCoins = new List<UnspentOutputs>();
         private uint256 hash;
+        private int blockHeight;
 
-        public CoinViewTester(CoinView coinView)
+        public CoinViewTester(ICoinView coinView)
         {
             this.coinView = coinView;
-            this.hash = coinView.GetBlockHashAsync().Result;
+            this.hash = coinView.GetTipHash();
         }
 
         public Coin[] CreateCoins(int coinCount)
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public bool Exists(Coin c)
         {
-            var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+            FetchCoinsResponse result = this.coinView.FetchCoins(new[] { c.Outpoint.Hash });
             if (result.BlockHash != this.hash)
                 throw new InvalidOperationException("Unexepected hash");
             if (result.UnspentOutputs[0] == null)
@@ -42,10 +43,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Spend(Coin c)
         {
-            var coin = this.pendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
+            UnspentOutputs coin = this.pendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
             if (coin == null)
             {
-                var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+                FetchCoinsResponse result = this.coinView.FetchCoins(new[] { c.Outpoint.Hash });
                 if (result.BlockHash != this.hash)
                     throw new InvalidOperationException("Unexepected hash");
                 if (result.UnspentOutputs[0] == null)
@@ -64,8 +65,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public uint256 NewBlock()
         {
+            this.blockHeight++;
             var newHash = new uint256(RandomUtils.GetBytes(32));
-            this.coinView.SaveChangesAsync(this.pendingCoins, null, this.hash, newHash).Wait();
+            this.coinView.SaveChanges(this.pendingCoins, null, this.hash, newHash, this.blockHeight);
             this.pendingCoins.Clear();
             this.hash = newHash;
             return newHash;
@@ -73,7 +75,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public uint256 Rewind()
         {
-            this.hash = this.coinView.Rewind().Result;
+            this.hash = this.coinView.Rewind();
+            this.blockHeight--;
             return this.hash;
         }
     }

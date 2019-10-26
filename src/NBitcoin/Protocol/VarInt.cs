@@ -23,7 +23,7 @@
             if (stream.Serializing)
             {
                 ulong n = this.value;
-                byte[] tmp = new byte[(this.size * 8 + 6) / 7];
+                var tmp = new byte[(this.size * 8 + 6) / 7];
                 int len = 0;
                 while (true)
                 {

@@ -1,26 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Threading;
+﻿using System.IO;
 using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Tests
 {
-    class TestUtils
+    internal class TestUtils
     {
-        public static void Eventually(Func<bool> act)
-        {
-            var cancel = new CancellationTokenSource(20000);
-            while(!act())
-            {
-                cancel.Token.ThrowIfCancellationRequested();
-                Thread.Sleep(50);
-            }
-        }
-
         public static byte[] ToBytes(string str)
         {
-            byte[] result = new byte[str.Length];
-            for(int i = 0; i < str.Length; i++)
+            var result = new byte[str.Length];
+            for (int i = 0; i < str.Length; i++)
             {
                 result[i] = (byte)str[i];
             }
@@ -32,17 +20,17 @@ namespace NBitcoin.Tests
             return Encoders.Hex.DecodeData(data);
         }
 
-        public static Block CreateFakeBlock(Transaction tx)
+        public static Block CreateFakeBlock(Network network, Transaction tx)
         {
-            var block = new Block();
+            Block block = network.CreateBlock();
             block.AddTransaction(tx);
             block.UpdateMerkleRoot();
             return block;
         }
 
-        public static Block CreateFakeBlock()
+        public static Block CreateFakeBlock(Network network)
         {
-            var block = TestUtils.CreateFakeBlock(new Transaction());
+            Block block = CreateFakeBlock(network, network.CreateTransaction());
             block.Header.HashPrevBlock = new uint256(RandomUtils.GetBytes(32));
             block.Header.Nonce = RandomUtils.GetUInt32();
             return block;
@@ -50,9 +38,10 @@ namespace NBitcoin.Tests
 
         internal static void EnsureNew(string folderName)
         {
-            if(Directory.Exists(folderName))
+            if (Directory.Exists(folderName))
                 Directory.Delete(folderName, true);
-            while(true)
+
+            while (true)
             {
                 try
                 {
@@ -63,7 +52,6 @@ namespace NBitcoin.Tests
                 {
                 }
             }
-
         }
     }
 }

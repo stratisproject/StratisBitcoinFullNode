@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.0.0-sdk-jessie
+FROM microsoft/dotnet:2.1-sdk
 
 RUN git clone https://github.com/stratisproject/StratisBitcoinFullNode.git \
     && cd /StratisBitcoinFullNode/src/Stratis.BitcoinD \

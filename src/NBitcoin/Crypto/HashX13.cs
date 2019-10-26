@@ -56,11 +56,11 @@ namespace NBitcoin.Crypto
 
         public uint256 Hash(byte[] input)
         {
-            var buffer = input;
+            byte[] buffer = input;
 
             lock (this.hashLock)
             {
-                foreach (var hasher in this.hashers)
+                foreach (IHash hasher in this.hashers)
                 {
                     buffer = hasher.ComputeBytes(buffer).GetBytes();
                 }

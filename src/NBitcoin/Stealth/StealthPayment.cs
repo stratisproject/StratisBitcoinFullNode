@@ -11,7 +11,7 @@ namespace NBitcoin.Stealth
         {
             get
             {
-                return _Payment;
+                return this._Payment;
             }
         }
         private readonly KeyId _ID;
@@ -19,18 +19,18 @@ namespace NBitcoin.Stealth
         {
             get
             {
-                return _ID;
+                return this._ID;
             }
         }
         public StealthSpendKey(KeyId id, StealthPayment payment)
         {
-            _ID = id;
-            _Payment = payment;
+            this._ID = id;
+            this._Payment = payment;
         }
 
         public BitcoinAddress GetAddress(Network network)
         {
-            return new BitcoinPubKeyAddress(ID, network);
+            return new BitcoinPubKeyAddress(this.ID, network);
         }
     }
 
@@ -38,13 +38,13 @@ namespace NBitcoin.Stealth
     {
         public StealthPayment(BitcoinStealthAddress address, Key ephemKey, StealthMetadata metadata)
         {
-            Metadata = metadata;
-            ScriptPubKey = CreatePaymentScript(address.SignatureCount, address.SpendPubKeys, ephemKey, address.ScanPubKey);
+            this.Metadata = metadata;
+            this.ScriptPubKey = CreatePaymentScript(address.SignatureCount, address.SpendPubKeys, ephemKey, address.ScanPubKey);
 
             if(address.SignatureCount > 1)
             {
-                Redeem = ScriptPubKey;
-                ScriptPubKey = ScriptPubKey.Hash.ScriptPubKey;
+                this.Redeem = this.ScriptPubKey;
+                this.ScriptPubKey = this.ScriptPubKey.Hash.ScriptPubKey;
             }
             SetStealthKeys();
         }
@@ -71,17 +71,16 @@ namespace NBitcoin.Stealth
             return CreatePaymentScript(address.SignatureCount, address.SpendPubKeys.Select(p => p.UncoverReceiver(scan, ephemKey)).ToArray());
         }
 
-
         public static KeyId[] ExtractKeyIDs(Script script)
         {
-            var keyId = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script);
+            KeyId keyId = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script);
             if(keyId != null)
             {
                 return new[] { keyId };
             }
             else
             {
-                var para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(Network.Main, script);
+                PayToMultiSigTemplateParameters para = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
                 if(para == null)
                     throw new ArgumentException("Invalid stealth spendable output script", "spendable");
                 return para.PubKeys.Select(k => k.Hash).ToArray();
@@ -93,22 +92,23 @@ namespace NBitcoin.Stealth
             get;
             private set;
         }
+
         public BitcoinAddress[] GetAddresses(Network network)
         {
-            return StealthKeys.Select(k => k.GetAddress(network)).ToArray();
+            return this.StealthKeys.Select(k => k.GetAddress(network)).ToArray();
         }
 
         public StealthPayment(Script scriptPubKey, Script redeem, StealthMetadata metadata)
         {
-            Metadata = metadata;
-            ScriptPubKey = scriptPubKey;
-            Redeem = redeem;
+            this.Metadata = metadata;
+            this.ScriptPubKey = scriptPubKey;
+            this.Redeem = redeem;
             SetStealthKeys();
         }
 
         private void SetStealthKeys()
         {
-            StealthKeys = ExtractKeyIDs(Redeem ?? ScriptPubKey).Select(id => new StealthSpendKey(id, this)).ToArray();
+            this.StealthKeys = ExtractKeyIDs(this.Redeem ?? this.ScriptPubKey).Select(id => new StealthSpendKey(id, this)).ToArray();
         }
 
 
@@ -134,20 +134,20 @@ namespace NBitcoin.Stealth
                 throw new ArgumentNullException("transaction");
             if(value == null)
                 throw new ArgumentNullException("value");
-            transaction.Outputs.Add(new TxOut(0, Metadata.Script));
-            transaction.Outputs.Add(new TxOut(value, ScriptPubKey));
+            transaction.Outputs.Add(new TxOut(0, this.Metadata.Script));
+            transaction.Outputs.Add(new TxOut(value, this.ScriptPubKey));
         }
 
         public static StealthPayment[] GetPayments(Transaction transaction, BitcoinStealthAddress address, Key scan)
         {
-            List<StealthPayment> result = new List<StealthPayment>();
+            var result = new List<StealthPayment>();
             for(int i = 0; i < transaction.Outputs.Count - 1; i++)
             {
-                var metadata = StealthMetadata.TryParse(transaction.Outputs[i].ScriptPubKey);
+                StealthMetadata metadata = StealthMetadata.TryParse(transaction.Outputs[i].ScriptPubKey);
                 if(metadata != null && (address == null || address.Prefix.Match(metadata.BitField)))
                 {
-                    var scriptPubKey = transaction.Outputs[i + 1].ScriptPubKey;
-                    var scriptId = PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
+                    Script scriptPubKey = transaction.Outputs[i + 1].ScriptPubKey;
+                    ScriptId scriptId = PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey);
                     Script expectedScriptPubKey = address == null ? scriptPubKey : null;
                     Script redeem = null;
 

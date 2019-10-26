@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -10,16 +8,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class EnsureCoinbaseRuleTest : TestConsensusRulesUnitTestBase
     {
-        public EnsureCoinbaseRuleTest()
-        {
-        }
-
         [Fact]
         public async Task RunAsync_BlockWithoutTransactions_ThrowsBadCoinbaseMissingConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadCoinbaseMissing, exception.ConsensusError);
         }
@@ -27,13 +21,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_FirstTransactionIsNotCoinbase_ThrowsBadCoinbaseMissingConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
 
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             Assert.False(transaction.IsCoinBase);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadCoinbaseMissing, exception.ConsensusError);
         }
@@ -41,17 +35,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_MultipleCoinsBaseTransactions_ThrowsBadMultipleCoinbaseConsensusErrorExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
 
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), new Script()));
             transaction.Outputs.Add(new TxOut(new Money(3), (IDestination)null));
 
             Assert.True(transaction.IsCoinBase);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            var exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadMultipleCoinbase, exception.ConsensusError);
         }
@@ -59,17 +53,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_SingleCoinBaseTransaction_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.BlockValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
 
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), new Script()));
             transaction.Outputs.Add(new TxOut(new Money(3), (IDestination)null));
 
             Assert.True(transaction.IsCoinBase);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(transaction);
-            this.ruleContext.BlockValidationContext.Block.Transactions.Add(new Transaction());
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(new Transaction());
 
-            await this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(ruleContext);
+            await this.consensusRules.RegisterRule<EnsureCoinbaseRule>().RunAsync(this.ruleContext);
         }
     }
 }

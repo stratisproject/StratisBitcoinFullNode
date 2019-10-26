@@ -1,279 +1,259 @@
 ﻿using System;
-using System.Threading;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Relation of the node's puller to a network peer node.
+    /// Keeps all peer-related values that <see cref="BlockPuller"/> needs to know about a peer.
     /// </summary>
-    public interface IBlockPullerBehavior
+    /// <remarks>The component is not thread safe and it is supposed to be protected by the caller.</remarks>
+    public interface IBlockPullerBehavior : INetworkPeerBehavior
     {
-        /// <summary>
-        /// Evaluation of the past experience with this node.
-        /// The higher the score, the better experience we have had with it.
-        /// </summary>
-        /// <seealso cref="QualityScore.MaxScore"/>
-        /// <seealso cref="QualityScore.MinScore"/>
+        /// <summary>Relative quality score of a peer.</summary>
+        /// <remarks>It's a value from <see cref="BlockPullerBehavior.MinQualityScore"/> to <see cref="BlockPullerBehavior.MaxQualityScore"/>.</remarks>
         double QualityScore { get; }
+
+        /// <summary>Upload speed of a peer in bytes per second.</summary>
+        long SpeedBytesPerSecond { get; }
+
+        /// <summary>Tip claimed by peer.</summary>
+        ChainedHeader Tip { get; set; }
+
+        /// <summary>
+        /// Adds peer performance sample that is used to estimate peer's qualities.
+        /// </summary>
+        /// <param name="blockSizeBytes">Block size in bytes.</param>
+        /// <param name="delaySinceRequestedSeconds">Time in seconds it took peer to deliver a block since it was requested.</param>
+        void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds);
+
+        /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
+        /// <param name="delaySeconds">Time in which peer didn't deliver assigned blocks.</param>
+        /// <param name="notDeliveredBlocksCount">Number of blocks peer failed to deliver.</param>
+        void Penalize(double delaySeconds, int notDeliveredBlocksCount);
+
+        /// <summary>Called when IBD state changed.</summary>
+        void OnIbdStateChanged(bool isIbd);
+
+        /// <summary>Recalculates the quality score for this peer.</summary>
+        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
+        void RecalculateQualityScore(long bestSpeedBytesPerSecond);
+
+        /// <summary>Requests blocks from this peer.</summary>
+        /// <param name="hashes">Hashes of blocks that should be asked to be delivered.</param>
+        /// <exception cref="OperationCanceledException">Thrown in case peer is in the wrong state or TCP connection was closed during sending a message.</exception>
+        Task RequestBlocksAsync(List<uint256> hashes);
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IBlockPullerBehavior"/>
     public class BlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
-        /// <summary>Logger factory to create loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        public const double MinQualityScore = 0.01;
+        public const double MaxQualityScore = 1.0;
 
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        /// <summary>Default quality score used when there are no samples to calculate the quality score.</summary>
+        public const double SamplelessQualityScore = 0.3;
 
-        /// <summary>
-        /// Token that allows cancellation of async tasks.
-        /// It is used during component shutdown.
-        /// </summary>
-        private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+        /// <summary>Maximum number of samples that can be used for quality score calculation when node is in IBD.</summary>
+        internal const int IbdSamplesCount = 200;
 
-        /// <summary>
-        /// Token that allows cancellation of async tasks.
-        /// It is used during component shutdown.
-        /// </summary>
-        public CancellationTokenSource CancellationTokenSource
-        {
-            get { return this.cancellationToken; }
-        }
+        /// <summary>Maximum number of samples that can be used for quality score calculation when node is not in IBD.</summary>
+        internal const int NormalSamplesCount = 10;
 
-        /// <summary>Reference to the parent block puller.</summary>
-        private readonly BlockPuller puller;
+        /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
+        /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
+        internal const double MaxSamplesPercentageToPenalize = 0.1;
 
-        /// <summary>Reference to the parent block puller.</summary>
-        public BlockPuller Puller
-        {
-            get { return this.puller; }
-        }
-
-        /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
-        public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
-
-        /// <summary>Set to <c>true</c> when the puller behavior is disconnected, so that the associated network peer can get no more download tasks.</summary>
-        /// <remarks>All access to this object has to be protected by <see cref="BlockPuller.lockObject"/>.</remarks>
-        internal bool Disconnected { get; set; }
-
-        /// <summary>Number of download tasks assigned to this peer. This is for logging purposes only.</summary>
-        public int PendingDownloadsCount
-        {
-            get
-            {
-                return this.puller.GetPendingDownloadsCount(this);
-            }
-        }
-
-        /// <summary>Lock protecting write access to <see cref="QualityScore"/>.</summary>
-        private readonly object qualityScoreLock = new object();
+        /// <summary>Limitation on the peer speed estimation.</summary>
+        private const int MaxSpeedBytesPerSecond = 1024 * 1024 * 1024;
 
         /// <inheritdoc />
-        /// <remarks>Write access to this object has to be protected by <see cref="qualityScoreLock"/>.</remarks>
         public double QualityScore { get; private set; }
 
-        /// <summary>
-        /// Initializes a new instance of the object with parent block puller.
-        /// </summary>
-        /// <param name="puller">Reference to the parent block puller.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public BlockPullerBehavior(BlockPuller puller, ILoggerFactory loggerFactory)
+        /// <inheritdoc />
+        public long SpeedBytesPerSecond { get; private set; }
+
+        /// <inheritdoc />
+        public ChainedHeader Tip { get; set; }
+
+        /// <summary>The average size in bytes of blocks delivered by that peer.</summary>
+        private readonly AverageCalculator averageSizeBytes;
+
+        /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
+        private readonly AverageCalculator averageDelaySeconds;
+
+        /// <summary>Time when the last block was delivered.</summary>
+        private DateTime? lastDeliveryTime;
+
+        private readonly ILoggerFactory loggerFactory;
+
+        private readonly ILogger logger;
+
+        private readonly IBlockPuller blockPuller;
+
+        private readonly IInitialBlockDownloadState ibdState;
+
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            this.puller = puller;
-            this.QualityScore = BlockPulling.QualityScore.MaxScore / 3;
+            this.ibdState = ibdState;
+            this.dateTimeProvider = dateTimeProvider;
+            this.QualityScore = SamplelessQualityScore;
+
+            int samplesCount = ibdState.IsInitialBlockDownload() ? IbdSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes = new AverageCalculator(samplesCount);
+            this.averageDelaySeconds = new AverageCalculator(samplesCount);
+            this.SpeedBytesPerSecond = 0;
+            this.lastDeliveryTime = null;
+
+            this.blockPuller = blockPuller;
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.loggerFactory = loggerFactory;
         }
 
-        /// <inheritdoc />
-        public override object Clone()
+        /// <inheritdoc/>
+        public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds)
         {
-            return new BlockPullerBehavior(this.puller, this.loggerFactory);
+            double adjustedDelay = delaySinceRequestedSeconds;
+
+            if (this.lastDeliveryTime != null)
+            {
+                double deliveryDiff = (this.dateTimeProvider.GetUtcNow() - this.lastDeliveryTime).Value.TotalSeconds;
+
+                adjustedDelay = Math.Min(delaySinceRequestedSeconds, deliveryDiff);
+            }
+
+            this.averageSizeBytes.AddSample(blockSizeBytes);
+            this.averageDelaySeconds.AddSample(adjustedDelay);
+
+            long speedPerSeconds = 0;
+
+            if (this.averageDelaySeconds.Average > 0)
+                speedPerSeconds = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+
+            if (speedPerSeconds > MaxSpeedBytesPerSecond)
+                speedPerSeconds = MaxSpeedBytesPerSecond;
+
+            this.SpeedBytesPerSecond = speedPerSeconds;
         }
 
-        /// <summary>
-        /// Event handler that is called when a message is received from the attached peer.
-        /// <para>
-        /// This handler modifies internal state when an information about a block is received.
-        /// </para>
-        /// </summary>
-        /// <param name="peer">Peer that sent us the message.</param>
-        /// <param name="message">Received message.</param>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        /// <inheritdoc/>
+        public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+            int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
+            int penalizeTimes = notDeliveredBlocksCount < maxSamplesToPenalize ? notDeliveredBlocksCount : maxSamplesToPenalize;
+            if (penalizeTimes < 1)
+                penalizeTimes = 1;
 
+            this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
+
+            for (int i = 0; i < penalizeTimes; i++)
+                this.AddSample(0, delaySeconds);
+        }
+
+        /// <inheritdoc/>
+        public void OnIbdStateChanged(bool isIbd)
+        {
+            // Recalculates the max samples count that can be used for quality score calculation.
+            int samplesCount = isIbd ? IbdSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes.SetMaxSamples(samplesCount);
+            this.averageDelaySeconds.SetMaxSamples(samplesCount);
+        }
+
+        /// <inheritdoc/>
+        public void RecalculateQualityScore(long bestSpeedBytesPerSecond)
+        {
+            if (bestSpeedBytesPerSecond == 0)
+                this.QualityScore = MaxQualityScore;
+            else
+                this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
+
+            if (this.QualityScore < MinQualityScore)
+                this.QualityScore = MinQualityScore;
+
+            if (this.QualityScore > MaxQualityScore)
+                this.QualityScore = MaxQualityScore;
+
+            this.logger.LogDebug("Quality score was set to {0}.", this.QualityScore);
+        }
+
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        {
             if (message.Message.Payload is BlockPayload block)
             {
-                // There are two pullers for each peer connection and each is having its own puller behavior.
-                // Both these behaviors get notification from the node when it receives a message,
-                // even if the origin of the message was from the other puller behavior.
-                // Therefore we first make a quick check whether this puller behavior was the one
-                // who should deal with this block.
-                uint256 blockHash = block.Obj.Header.GetHash();
-                if (this.puller.CheckBlockTaskAssignment(this, blockHash))
-                {
-                    this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
+                block.Obj.Header.PrecomputeHash(true, true);
+                uint256 blockHash = block.Obj.GetHash();
 
-                    block.Obj.Header.PrecomputeHash();
-                    foreach (Transaction tx in block.Obj.Transactions)
-                        tx.CacheHashes();
+                this.logger.LogDebug("Block '{0}' delivered.", blockHash);
 
-                    DownloadedBlock downloadedBlock = new DownloadedBlock
-                    {
-                        Block = block.Obj,
-                        Length = (int)message.Length,
-                        Peer = peer.RemoteSocketEndpoint
-                    };
-
-                    if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
-                        this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
-
-                    // This peer is now available for more work.
-                    await this.AssignPendingVectorAsync().ConfigureAwait(false);
-                }
+                this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
+                this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
             }
 
-            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// If there are any more blocks the node wants to download, this method assigns and starts
-        /// a new download task for a specific peer that this behavior represents.
-        /// </summary>
-        private async Task AssignPendingVectorAsync()
+        /// <inheritdoc/>
+        public async Task RequestBlocksAsync(List<uint256> hashes)
         {
-            this.logger.LogTrace("()");
+            var getDataPayload = new GetDataPayload();
 
-            INetworkPeer attachedNode = this.AttachedPeer;
-            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            INetworkPeer peer = this.AttachedPeer;
+
+            if (peer == null)
             {
-                this.logger.LogTrace("(-)[ATTACHED_NODE]");
-                return;
+                this.logger.LogTrace("(-)[PEER_DETACHED]");
+                throw new OperationCanceledException("Peer is detached already!");
             }
 
-            uint256 block = null;
-            if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
+            foreach (uint256 uint256 in hashes)
             {
-                try
-                {
-                    var getDataPayload = new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block));
-                    await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
+                var vector = new InventoryVector(InventoryType.MSG_BLOCK, uint256);
+                vector.Type = peer.AddSupportedOptions(vector.Type);
+
+                getDataPayload.Inventory.Add(vector);
             }
 
-            this.logger.LogTrace("(-)");
+            if (peer.State != NetworkPeerState.HandShaked)
+            {
+                this.logger.LogTrace("(-)[ATTACHED_PEER]");
+                throw new OperationCanceledException("Peer is in the wrong state!");
+            }
+
+            await peer.SendMessageAsync(getDataPayload).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Sends a message to the connected peer requesting specific data.
-        /// </summary>
-        /// <param name="getDataPayload">Specification of the data to download - <see cref="GetDataPayload"/>.</param>
-        /// <returns><c>true</c> if the message was successfully sent to the peer, <c>false</c> if the peer got disconnected.</returns>
-        /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
-        internal async Task<bool> StartDownloadAsync(GetDataPayload getDataPayload)
+        /// <inheritdoc />
+        [NoTrace]
+        public override object Clone()
         {
-            this.logger.LogTrace("()");
-
-            INetworkPeer attachedNode = this.AttachedPeer;
-            if ((attachedNode == null) || (attachedNode.State != NetworkPeerState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
-            {
-                this.logger.LogTrace("(-)[ATTACHED_PEER]:false");
-                return false;
-            }
-
-            foreach (InventoryVector inv in getDataPayload.Inventory)
-                inv.Type = attachedNode.AddSupportedOptions(inv.Type);
-
-            try
-            {
-                await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
-
-                // In case job is assigned to a peer with low quality score- 
-                // give it enough score so the job is not reassigned right away.
-                this.UpdateQualityScore(BlockPulling.QualityScore.MaxScore / 10);
-            }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("(-)[CANCELLED]:false");
-                return false;
-            }
-
-            this.logger.LogTrace("(-):true");
-            return true;
+            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.dateTimeProvider, this.loggerFactory);
         }
 
-        /// <summary>
-        /// Connects the puller to the node and the chain so that the puller can start its work.
-        /// </summary>
+        /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.ChainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
-            this.AssignPendingVectorAsync().GetAwaiter().GetResult();
-
-            this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Disconnects the puller from the node and cancels pending operations and download tasks.
-        /// </summary>
+        /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
-            this.cancellationToken.Cancel();
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            this.ReleaseAll(true);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Releases all pending block download tasks from the peer.
-        /// </summary>
-        /// <param name="peerDisconnected">If set to <c>true</c> the peer is considered as disconnected and should be prevented from being assigned additional work.</param>
-        internal void ReleaseAll(bool peerDisconnected)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(peerDisconnected), peerDisconnected);
-
-            this.puller.ReleaseAllPeerDownloadTaskAssignments(this, peerDisconnected);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Adjusts the quality score of the peer.
-        /// </summary>
-        /// <param name="scoreAdjustment">Adjustment to make to the quality score of the peer.</param>
-        internal void UpdateQualityScore(double scoreAdjustment)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(scoreAdjustment), scoreAdjustment);
-
-            lock (this.qualityScoreLock)
-            {
-                this.QualityScore += scoreAdjustment;
-                if (this.QualityScore > BlockPulling.QualityScore.MaxScore) this.QualityScore = BlockPulling.QualityScore.MaxScore;
-                if (this.QualityScore < BlockPulling.QualityScore.MinScore) this.QualityScore = BlockPulling.QualityScore.MinScore;
-            }
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(this.QualityScore), this.QualityScore);
         }
     }
 }

@@ -1,10 +1,8 @@
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -25,37 +23,34 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Instance of the <see cref="ChainHeadersBehavior"/> that belongs to the same peer as this behaviour.</summary>
-        private ChainHeadersBehavior chainHeadersBehavior;
-
-        /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
-        private ConnectionManagerBehavior connectionManagerBehavior;
-
-        /// <summary><c>true</c> if <see cref="OnMessageReceivedAsync"/> was registered; <c>false</c> otherwise.</summary>
-        private bool eventHandlerRegistered;
-
         public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
             this.nodeSettings = nodeSettings;
-            this.eventHandlerRegistered = false;
         }
 
         /// <inheritdoc />
+        [NoTrace]
+        protected override void DetachCore()
+        {
+        }
+
+        /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
-            var peer = this.AttachedPeer;
-            if (peer.State == NetworkPeerState.Connected)
+            INetworkPeer peer = this.AttachedPeer;
+            var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
+            if (peer.State == NetworkPeerState.Connected && !peerBehavior.Whitelisted)
             {
                 if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
                 {
@@ -65,45 +60,6 @@ namespace Stratis.Bitcoin.Connection
                     return;
                 }
             }
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
-            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
-            this.eventHandlerRegistered = true;
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Receive message payloads from the peer.
-        /// </summary>
-        /// <param name="peer">The peers that is sending the message.</param>
-        /// <param name="message">The message payload.</param>
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
-            {
-                var connectionSettings = this.connectionManagerBehavior.ConnectionManager.ConnectionSettings;
-                this.peerBanning.BanPeer(peer.RemoteSocketEndpoint, connectionSettings.BanTimeSeconds, "Invalid block header received");
-                this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
-                peer.Disconnect("Invalid block header received");
-            }
-
-            this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.eventHandlerRegistered)
-                this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

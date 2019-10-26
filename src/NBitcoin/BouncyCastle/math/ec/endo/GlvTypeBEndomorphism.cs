@@ -16,11 +16,11 @@
 
         public virtual BigInteger[] DecomposeScalar(BigInteger k)
         {
-            int bits = m_parameters.Bits;
-            BigInteger b1 = CalculateB(k, m_parameters.G1, bits);
-            BigInteger b2 = CalculateB(k, m_parameters.G2, bits);
+            int bits = this.m_parameters.Bits;
+            BigInteger b1 = CalculateB(k, this.m_parameters.G1, bits);
+            BigInteger b2 = CalculateB(k, this.m_parameters.G2, bits);
 
-            BigInteger[] v1 = m_parameters.V1, v2 = m_parameters.V2;
+            BigInteger[] v1 = this.m_parameters.V1, v2 = this.m_parameters.V2;
             BigInteger a = k.Subtract((b1.Multiply(v1[0])).Add(b2.Multiply(v2[0])));
             BigInteger b = (b1.Multiply(v1[1])).Add(b2.Multiply(v2[1])).Negate();
 
@@ -31,7 +31,7 @@
         {
             get
             {
-                return m_pointMap;
+                return this.m_pointMap;
             }
         }
 

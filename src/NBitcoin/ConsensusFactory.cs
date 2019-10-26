@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
@@ -18,6 +19,7 @@ namespace NBitcoin
         /// The <see cref="BlockHeader"/> type.
         /// </summary>
         private readonly TypeInfo blockHeaderType = typeof(BlockHeader).GetTypeInfo();
+
 
         /// <summary>
         /// A dictionary for types assignable from <see cref="Block"/>.
@@ -39,6 +41,10 @@ namespace NBitcoin
         /// </summary>
         private readonly TypeInfo transactionType = typeof(Transaction).GetTypeInfo();
 
+        public ConsensusFactory()
+        {
+        }
+
         /// <summary>
         /// Check if the generic type is assignable from <see cref="BlockHeader"/>.
         /// </summary>
@@ -48,6 +54,7 @@ namespace NBitcoin
         {
             return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
+
 
         /// <summary>
         /// Check if the generic type is assignable from <see cref="Block"/>.
@@ -70,19 +77,13 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Represents the parent of this class.
-        /// For simplicity (and migration from NBitcoin) I made this a property however this design can be revised later.
-        /// </summary>
-        public Consensus Consensus { get; set; }
-
-        /// <summary>
         /// Check weather a type is assignable within the collection of types in the give dictionary.
         /// </summary>
         /// <typeparam name="T">The generic type to check.</typeparam>
         /// <param name="type">The type to compare against.</param>
         /// <param name="cache">A collection of already checked types.</param>
         /// <returns><c>true</c> if it is assignable.</returns>
-        private bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
+        protected bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
         {
             if (!cache.TryGetValue(typeof(T), out bool isAssignable))
             {
@@ -99,25 +100,20 @@ namespace NBitcoin
         /// <typeparam name="T">The generic type to resolve.</typeparam>
         /// <param name="result">If the type is known it will be initialized.</param>
         /// <returns><c>true</c> if it is known.</returns>
-        public virtual bool TryCreateNew<T>(out T result) where T : IBitcoinSerializable
+        public virtual T TryCreateNew<T>() where T : IBitcoinSerializable
         {
-            result = default(T);
+            object result = null;
+
             if (this.IsBlock<T>())
-            {
                 result = (T)(object)this.CreateBlock();
-                return true;
-            }
-            if (this.IsBlockHeader<T>())
-            {
+
+            else if (this.IsBlockHeader<T>())
                 result = (T)(object)this.CreateBlockHeader();
-                return true;
-            }
-            if (this.IsTransaction<T>())
-            {
+
+            else if (this.IsTransaction<T>())
                 result = (T)(object)this.CreateTransaction();
-                return true;
-            }
-            return false;
+
+            return (T)result;
         }
 
         /// <summary>
@@ -170,6 +166,26 @@ namespace NBitcoin
         public virtual Transaction CreateTransaction()
         {
             return new Transaction();
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a hex string representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(string hex)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex));
+            return transaction;
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a byte array representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(byte[] bytes)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(bytes);
+            return transaction;
         }
     }
 

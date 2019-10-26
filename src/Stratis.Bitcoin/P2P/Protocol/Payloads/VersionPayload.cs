@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using NBitcoin;
@@ -44,19 +43,21 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     {
         private const int MaxSubversionLength = 256;
 
-        private static string userAgent;
+        private static string userAgentNBitcoin;
 
         private uint version;
+
         public ProtocolVersion Version
         {
             get
             {
                 // A version number of 10300 is converted to 300 before being processed.
                 if (this.version == 10300)
-                    return (ProtocolVersion)(300);  //https://en.bitcoin.it/wiki/Version_Handshake
+                    return (ProtocolVersion)(300);  // https://en.bitcoin.it/wiki/Version_Handshake
 
                 return (ProtocolVersion)this.version;
             }
+
             set
             {
                 if (value == (ProtocolVersion)10300)
@@ -67,12 +68,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong services;
+
         public NetworkPeerServices Services
         {
             get
             {
                 return (NetworkPeerServices)this.services;
             }
+
             set
             {
                 this.services = (ulong)value;
@@ -80,108 +83,122 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private long timestamp;
+
         public DateTimeOffset Timestamp
         {
             get
             {
                 return Utils.UnixTimeToDateTime((uint)this.timestamp);
             }
+
             set
             {
                 this.timestamp = Utils.DateTimeToUnixTime(value);
             }
         }
 
-        private NetworkAddress addr_recv = new NetworkAddress();
+        private NetworkAddress addressReceiver = new NetworkAddress();
+
         public IPEndPoint AddressReceiver
         {
             get
             {
-                return this.addr_recv.Endpoint;
+                return this.addressReceiver.Endpoint;
             }
+
             set
             {
-                this.addr_recv.Endpoint = value;
+                this.addressReceiver.Endpoint = value ?? throw new InvalidOperationException("Can't set 'AddressReceiver' to null.");
             }
         }
 
-        private NetworkAddress addr_from = new NetworkAddress();
+        private NetworkAddress addressFrom = new NetworkAddress();
+
         public IPEndPoint AddressFrom
         {
             get
             {
-                return this.addr_from.Endpoint;
+                return this.addressFrom.Endpoint;
             }
+
             set
             {
-                this.addr_from.Endpoint = value;
+                this.addressFrom.Endpoint = value ?? throw new InvalidOperationException("Can't set 'AddressFrom' to null.");
             }
         }
 
         private ulong nonce;
+
         public ulong Nonce
         {
             get
             {
                 return this.nonce;
             }
+
             set
             {
                 this.nonce = value;
             }
         }
 
-        private int start_height;
+        private int startHeight;
+
         public int StartHeight
         {
             get
             {
-                return this.start_height;
+                return this.startHeight;
             }
+
             set
             {
-                this.start_height = value;
+                this.startHeight = value;
             }
         }
 
         private bool relay = true;
+
         public bool Relay
         {
             get
             {
                 return this.relay;
             }
+
             set
             {
                 this.relay = value;
             }
         }
 
-        private VarString user_agent;
+        private VarString userAgent;
+
         public string UserAgent
         {
             get
             {
-                return Encoders.ASCII.EncodeData(this.user_agent.GetString());
+                return Encoders.ASCII.EncodeData(this.userAgent.GetString());
             }
+
             set
             {
                 if (value.Length > MaxSubversionLength)
-                    value = value.Substring(0, MaxSubversionLength); 
+                    value = value.Substring(0, MaxSubversionLength);
 
-                this.user_agent = new VarString(Encoders.ASCII.DecodeData(value));
+                this.userAgent = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }
 
         public static string GetNBitcoinUserAgent()
         {
-            if (userAgent == null)
+            if (userAgentNBitcoin == null)
             {
                 Version version = typeof(VersionPayload).GetTypeInfo().Assembly.GetName().Version;
-                userAgent = "/NBitcoin:" + version.Major + "." + version.MajorRevision + "." + version.Build + "/";
+                userAgentNBitcoin = "/NBitcoin:" + version.Major + "." + version.MajorRevision + "." + version.Build + "/";
             }
 
-            return userAgent;
+            return userAgentNBitcoin;
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
@@ -195,7 +212,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 // No time field in version message.
                 using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                 {
-                    stream.ReadWrite(ref this.addr_recv);
+                    stream.ReadWrite(ref this.addressReceiver);
                 }
 
                 if (this.version >= 106)
@@ -203,17 +220,18 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                     // No time field in version message.
                     using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                     {
-                        stream.ReadWrite(ref this.addr_from);
+                        stream.ReadWrite(ref this.addressFrom);
                     }
+
                     stream.ReadWrite(ref this.nonce);
-                    stream.ReadWrite(ref this.user_agent);
+                    stream.ReadWrite(ref this.userAgent);
                     if (this.version < 60002)
                     {
-                        if (this.user_agent.Length != 0)
+                        if (this.userAgent.Length != 0)
                             throw new FormatException("Should not find user agent for current version " + this.version);
                     }
 
-                    stream.ReadWrite(ref this.start_height);
+                    stream.ReadWrite(ref this.startHeight);
                     if (this.version >= 70001)
                         stream.ReadWrite(ref this.relay);
                 }

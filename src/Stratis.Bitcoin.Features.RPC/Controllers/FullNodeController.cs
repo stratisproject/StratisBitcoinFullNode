@@ -1,26 +1,39 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Features.RPC.ModelBinders;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
+    /// <summary>
+    /// A <see cref="FeatureController"/> that implements several RPC methods for the full node.
+    /// </summary>
+    [ApiVersion("1")]
     public class FullNodeController : FeatureController
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>An interface implementation used to retrieve a transaction.</summary>
         private readonly IPooledTransaction pooledTransaction;
 
         /// <summary>An interface implementation used to retrieve unspent transactions from a pooled source.</summary>
@@ -29,10 +42,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>An interface implementation used to retrieve unspent transactions.</summary>
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
+        /// <summary>An interface implementation used to retrieve the network difficulty target.</summary>
         private readonly INetworkDifficulty networkDifficulty;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        /// <summary>An interface implementation for the blockstore.</summary>
+        private readonly IBlockStore blockStore;
+
+        /// <summary>A interface implementation for the initial block download state.</summary>
+        private readonly IInitialBlockDownloadState ibdState;
+
+        private readonly IStakeChain stakeChain;
 
         public FullNodeController(
             ILoggerFactory loggerFactory,
@@ -40,64 +59,119 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConcurrentChain chain = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
-            Connection.IConnectionManager connectionManager = null)
+            Connection.IConnectionManager connectionManager = null,
+            IConsensusManager consensusManager = null,
+            IBlockStore blockStore = null,
+            IInitialBlockDownloadState ibdState = null,
+            IStakeChain stakeChain = null)
             : base(
                   fullNode: fullNode,
-                  nodeSettings: nodeSettings,
                   network: network,
-                  chain: chain,
+                  nodeSettings: nodeSettings,
+                  chainIndexer: chainIndexer,
                   chainState: chainState,
-                  connectionManager: connectionManager)
+                  connectionManager: connectionManager,
+                  consensusManager: consensusManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.pooledTransaction = pooledTransaction;
             this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
-            this.consensusLoop = consensusLoop;
+            this.blockStore = blockStore;
+            this.ibdState = ibdState;
+            this.stakeChain = stakeChain;
         }
 
+        /// <summary>
+        /// Stops the full node.
+        /// </summary>
         [ActionName("stop")]
         [ActionDescription("Stops the full node.")]
         public Task Stop()
         {
             if (this.FullNode != null)
             {
-                this.FullNode.Dispose();
+                this.FullNode.NodeLifetime.StopApplication();
                 this.FullNode = null;
             }
 
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Retrieves a transaction given a transaction hash in either simple or verbose form.
+        /// </summary>
+        /// <param name="txid">The transaction hash.</param>
+        /// <param name="verbose">True if verbose model wanted.</param>
+        /// <param name="blockHash">The hash of the block in which to look for the transaction.</param>
+        /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
+        /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
+        /// <remarks>When called with a blockhash argument, getrawtransaction will return the transaction if the specified block is available and the transaction is found in that block.
+        /// When called without a blockhash argument, getrawtransaction will return the transaction if it is in the mempool, or if -txindex is enabled and the transaction is in a block in the blockchain.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
-        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, [IntToBool]bool verbose = false, string blockHash = null)
         {
-            uint256 trxid;
-            if (!uint256.TryParse(txid, out trxid))
-                throw new ArgumentException(nameof(txid));
+            Guard.NotEmpty(txid, nameof(txid));
 
-            Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
-
-            if (trx == null)
+            if (!uint256.TryParse(txid, out uint256 trxid))
             {
-                var blockStore = this.FullNode.NodeFeature<IBlockStore>();
-                trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
+                throw new ArgumentException(nameof(trxid));
             }
 
-            if (trx == null)
-                return null;
-
-            if (verbose != 0)
+            uint256 hash = null;
+            if (!string.IsNullOrEmpty(blockHash) && !uint256.TryParse(blockHash, out hash))
             {
-                ChainedHeader block = await this.GetTransactionBlockAsync(trxid);
+                throw new ArgumentException(nameof(blockHash));
+            }
+
+            // Special exception for the genesis block coinbase transaction.
+            if (trxid == this.Network.GetGenesis().GetMerkleRoot().Hash)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "The genesis block coinbase is not considered an ordinary transaction and cannot be retrieved.");
+            }
+
+            Transaction trx = null;
+            ChainedHeaderBlock chainedHeaderBlock = null;
+
+            if (hash == null)
+            {
+                // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
+                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid).ConfigureAwait(false)) ??
+                      this.blockStore.GetTransactionById(trxid);
+
+                if (trx == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such mempool transaction. Use -txindex to enable blockchain transaction queries.");
+                }
+            }
+            else
+            {
+                // Retrieve the block specified by the block hash.
+                chainedHeaderBlock = this.ConsensusManager.GetBlockData(hash);
+
+                if (chainedHeaderBlock == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Block hash not found.");
+                }
+
+                trx = chainedHeaderBlock.Block.Transactions.SingleOrDefault(t => t.GetHash() == trxid);
+
+                if (trx == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such transaction found in the provided block.");
+                }
+            }
+
+            if (verbose)
+            {
+                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : this.GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
@@ -105,12 +179,36 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
+        /// Decodes a transaction from its raw hexadecimal format.
+        /// </summary>
+        /// <param name="hex">The raw transaction hex.</param>
+        /// <returns>A <see cref="TransactionVerboseModel"/> or <c>null</c> if the transaction could not be decoded.</returns>
+        [ActionName("decoderawtransaction")]
+        [ActionDescription("Decodes a serialized transaction hex string into a JSON object describing the transaction.")]
+        public TransactionModel DecodeRawTransaction(string hex)
+        {
+            try
+            {
+                return new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+            }
+            catch (FormatException ex)
+            {
+                throw new ArgumentException(nameof(hex), ex.Message);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Implements gettextout RPC call.
         /// </summary>
-        /// <param name="txid">The transaction id</param>
-        /// <param name="vout">The vout number</param>
-        /// <param name="includeMemPool">Whether to include the mempool</param>
-        /// <returns>The GetTxOut rpc format</returns>
+        /// <param name="txid">The transaction id.</param>
+        /// <param name="vout">The vout number.</param>
+        /// <param name="includeMemPool">Whether to include the mempool.</param>
+        /// <returns>A <see cref="GetTxOutModel"/> containing the unspent outputs of the transaction id and vout. <c>null</c> if unspent outputs not found.</returns>
+        /// <exception cref="ArgumentException">Thrown if txid is invalid.</exception>"
         [ActionName("gettxout")]
         [ActionDescription("Gets the unspent outputs of a transaction id and vout number.")]
         public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
@@ -120,28 +218,34 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 throw new ArgumentException(nameof(txid));
 
             UnspentOutputs unspentOutputs = null;
-            if (includeMemPool)
-            {
-                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
-            }
-            else
-            {
-                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
-            }
 
-            if (unspentOutputs == null)
-                return null;
+            if (includeMemPool && this.pooledGetUnspentTransaction != null)
+                unspentOutputs = await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
 
-            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
+            if (!includeMemPool && this.getUnspentTransaction != null)
+                unspentOutputs = await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
+
+            if (unspentOutputs != null)
+                return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
+
+            return null;
         }
 
+        /// <summary>
+        /// Implements the getblockcount RPC call.
+        /// </summary>
+        /// <returns>The current consensus tip height.</returns>
         [ActionName("getblockcount")]
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            return this.consensusLoop?.Tip.Height ?? -1;
+            return this.ConsensusManager?.Tip.Height ?? -1;
         }
 
+        /// <summary>
+        /// Implements the getinfo RPC call.
+        /// </summary>
+        /// <returns>A <see cref="GetInfoModel"/> with information about the full node.</returns>
         [ActionName("getinfo")]
         [ActionDescription("Gets general information about the full node.")]
         public GetInfoModel GetInfo()
@@ -174,81 +278,260 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Implements getblockheader RPC call.
         /// </summary>
-        /// <param name="hash">Hash of block.</param>
+        /// <param name="hash">Hash of the block.</param>
         /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
         /// <returns>The block header rpc format.</returns>
+        /// <remarks>The binary format is not supported with RPC.</remarks>
         [ActionName("getblockheader")]
         [ActionDescription("Gets the block header of the block identified by the hash.")]
-        public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
+        public object GetBlockHeader(string hash, bool isJsonFormat = true)
         {
             Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
-            if (!isJsonFormat)
-            {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
-                throw new NotImplementedException();
-            }
+            if (this.ChainIndexer == null)
+                return null;
 
-            BlockHeaderModel model = null;
-            if (this.Chain != null)
-            {
-                var blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
-                if (blockHeader != null)
-                    model = new BlockHeaderModel(blockHeader);
-            }
+            BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
 
-            return model;
+            if (blockHeader == null)
+                return null;
+
+            if (isJsonFormat)
+                return new BlockHeaderModel(blockHeader);
+
+            return new HexModel(blockHeader.ToHex(this.Network));
         }
 
         /// <summary>
-        /// Returns information about a bitcoin address
+        /// Returns information about a bitcoin address and it's validity.
         /// </summary>
-        /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
-        /// <returns>ValidatedAddress containing a boolean indicating address validity</returns>
+        /// <param name="address">The bech32 or base58 <see cref="BitcoinAddress"/> to validate.</param>
+        /// <returns><see cref="ValidatedAddress"/> instance containing information about the bitcoin address and it's validity.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if address provided is null or empty.</exception>
         [ActionName("validateaddress")]
         [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
         public ValidatedAddress ValidateAddress(string address)
         {
-            if (string.IsNullOrEmpty(address))
-                throw new ArgumentNullException("address");
+            Guard.NotEmpty(address, nameof(address));
 
-            var res = new ValidatedAddress();
-            res.IsValid = false;
+            var result = new ValidatedAddress
+            {
+                IsValid = false,
+                Address = address,
+            };
 
-            // P2WPKH
-            if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network, out Exception _))
+            try
             {
-                res.IsValid = true;
+                // P2WPKH
+                if (BitcoinWitPubKeyAddress.IsValid(address, this.Network, out Exception _))
+                {
+                    result.IsValid = true;
+                }
+                // P2WSH
+                else if (BitcoinWitScriptAddress.IsValid(address, this.Network, out Exception _))
+                {
+                    result.IsValid = true;
+                }
+                // P2PKH
+                else if (BitcoinPubKeyAddress.IsValid(address, this.Network))
+                {
+                    result.IsValid = true;
+                }
+                // P2SH
+                else if (BitcoinScriptAddress.IsValid(address, this.Network))
+                {
+                    result.IsValid = true;
+                    result.IsScript = true;
+                }
             }
-            // P2WSH
-            else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network, out Exception _))
+            catch (NotImplementedException)
             {
-                res.IsValid = true;
-            }
-            // P2PKH
-            else if (BitcoinPubKeyAddress.IsValid(address, ref this.Network))
-            {
-                res.IsValid = true;
-            }
-            // P2SH
-            else if (BitcoinScriptAddress.IsValid(address, ref this.Network))
-            {
-                res.IsValid = true;
+                result.IsValid = false;
             }
 
-            return res;
+            if (result.IsValid)
+            {
+                var scriptPubKey = BitcoinAddress.Create(address, this.Network).ScriptPubKey;
+                result.ScriptPubKey = scriptPubKey.ToHex();
+                result.IsWitness = scriptPubKey.IsWitness(this.Network);
+            }
+
+            return result;
         }
 
-        private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
+        /// <summary>
+        /// RPC method for returning a block.
+        /// <para>
+        /// Supports Json format by default, and optionally raw (hex) format by supplying <c>0</c> to <see cref="verbosity"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="blockHash">Hash of block to find.</param>
+        /// <param name="verbosity">Defaults to 1. 0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data.</param>
+        /// <returns>The block according to format specified in <see cref="verbosity"/></returns>
+        [ActionName("getblock")]
+        [ActionDescription("Returns the block in hex, given a block hash.")]
+        public object GetBlock(string blockHash, int verbosity = 1)
+        {
+            uint256 blockId = uint256.Parse(blockHash);
+
+            // Does the block exist.
+            ChainedHeader chainedHeader = this.ChainIndexer.GetHeader(blockId);
+
+            if (chainedHeader == null)
+                return null;
+
+            Block block = chainedHeader.Block ?? this.blockStore?.GetBlock(blockId);
+
+            // In rare occasions a block that is found in the
+            // indexer may not have been pushed to the store yet. 
+            if (block == null)
+                return null;
+
+            if (verbosity == 0)
+                return new HexModel(block.ToHex(this.Network));
+
+            var blockModel = new BlockModel(block, chainedHeader, this.ChainIndexer.Tip, this.Network, verbosity);
+
+            if (this.Network.Consensus.IsProofOfStake)
+            {
+                var posBlock = block as PosBlock;
+
+                blockModel.PosBlockSignature = posBlock.BlockSignature.ToHex(this.Network);
+                blockModel.PosBlockTrust = new Target(chainedHeader.GetBlockProof()).ToUInt256().ToString();
+                blockModel.PosChainTrust = chainedHeader.ChainWork.ToString(); // this should be similar to ChainWork
+
+                if (this.stakeChain != null)
+                {
+                    BlockStake blockStake = this.stakeChain.Get(blockId);
+
+                    blockModel.PosModifierv2 = blockStake?.StakeModifierV2.ToString();
+                    blockModel.PosFlags = blockStake?.Flags == BlockFlag.BLOCK_PROOF_OF_STAKE ? "proof-of-stake" : "proof-of-work";
+                    blockModel.PosHashProof = blockStake?.HashProof.ToString();
+                }
+            }
+
+            return blockModel;
+        }
+
+        [ActionName("getnetworkinfo")]
+        [ActionDescription("Returns an object containing various state info regarding P2P networking.")]
+        public NetworkInfoModel GetNetworkInfo()
+        {
+            var networkInfoModel = new NetworkInfoModel
+            {
+                Version = this.FullNode?.Version?.ToUint() ?? 0,
+                SubVersion = this.Settings?.Agent,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                IsNetworkActive = true,
+                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                IncrementalFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0 // set to same as min relay fee
+            };
+
+            var services = this.ConnectionManager?.Parameters?.Services;
+            if (services != null)
+            {
+                networkInfoModel.LocalServices = Encoders.Hex.EncodeData(BitConverter.GetBytes((ulong)services));
+            }
+
+            return networkInfoModel;
+        }
+
+        [ActionName("getblockchaininfo")]
+        [ActionDescription("Returns an object containing various state info regarding blockchain processing.")]
+        public BlockchainInfoModel GetBlockchainInfo()
+        {
+            var blockchainInfo = new BlockchainInfoModel
+            {
+                Chain = this.Network?.Name,
+                Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
+                Headers = (uint)(this.ChainIndexer?.Height ?? 0),
+                BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
+                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
+                VerificationProgress = 0.0,
+                IsInitialBlockDownload = this.ibdState?.IsInitialBlockDownload() ?? true,
+                Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
+                IsPruned = false
+            };
+
+            if (blockchainInfo.Headers > 0)
+            {
+                blockchainInfo.VerificationProgress = (double)blockchainInfo.Blocks / blockchainInfo.Headers;
+            }
+
+            // softfork deployments
+            blockchainInfo.SoftForks = new List<SoftForks>();
+
+            foreach (var consensusBuriedDeployment in Enum.GetValues(typeof(BuriedDeployments)))
+            {
+                bool active = this.ChainIndexer.Height >= this.Network.Consensus.BuriedDeployments[(BuriedDeployments) consensusBuriedDeployment];
+                blockchainInfo.SoftForks.Add(new SoftForks
+                {
+                    Id = consensusBuriedDeployment.ToString().ToLower(),
+                    Version = (int)consensusBuriedDeployment + 2, // hack to get the deployment number similar to bitcoin core without changing the enums
+                    Status = new SoftForksStatus {Status = active}
+                });
+            }
+
+            // softforkbip9 deployments
+            blockchainInfo.SoftForksBip9 = new Dictionary<string, SoftForksBip9>();
+
+            ConsensusRuleEngine ruleEngine = (ConsensusRuleEngine)this.ConsensusManager.ConsensusRules;
+            ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainIndexer.Tip.Previous);
+            List<ThresholdStateModel> metrics = ruleEngine.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainIndexer.Tip.Previous, thresholdStates);
+
+            foreach (ThresholdStateModel metric in metrics.Where(m => !m.DeploymentName.ToLower().Contains("test"))) // to remove the test dummy 
+            {
+                // TODO: Deployment timeout may not be implemented yet
+
+                // Deployments with timeout value of 0 are hidden.
+                // A timeout value of 0 guarantees a softfork will never be activated.
+                // This is used when softfork codes are merged without specifying the deployment schedule.
+                if (metric.TimeTimeOut?.Ticks > 0)
+                    blockchainInfo.SoftForksBip9.Add(metric.DeploymentName, this.CreateSoftForksBip9(metric, thresholdStates[metric.DeploymentIndex]));
+            }
+            
+            // TODO: Implement blockchainInfo.warnings
+            return blockchainInfo;
+        }
+
+        private SoftForksBip9 CreateSoftForksBip9(ThresholdStateModel metric, ThresholdState state)
+        {
+            var softForksBip9 = new SoftForksBip9()
+            {
+                Status = metric.ThresholdState.ToLower(),
+                Bit = this.Network.Consensus.BIP9Deployments[metric.DeploymentIndex].Bit,
+                StartTime = metric.TimeStart?.ToUnixTimestamp() ?? 0,
+                Timeout = metric.TimeTimeOut?.ToUnixTimestamp() ?? 0,
+                Since = metric.SinceHeight
+            };
+
+            if (state == ThresholdState.Started)
+            {
+                softForksBip9.Statistics = new SoftForksBip9Statistics();
+
+                softForksBip9.Statistics.Period = metric.ConfirmationPeriod;
+                softForksBip9.Statistics.Threshold = metric.Threshold;
+                softForksBip9.Statistics.Count = metric.Blocks;
+                softForksBip9.Statistics.Elapsed = metric.Height - metric.PeriodStartHeight;
+                softForksBip9.Statistics.Possible = (softForksBip9.Statistics.Period - softForksBip9.Statistics.Threshold) >= (softForksBip9.Statistics.Elapsed - softForksBip9.Statistics.Count);
+            }
+
+            return softForksBip9;
+        }
+
+        private ChainedHeader GetTransactionBlock(uint256 trxid)
         {
             ChainedHeader block = null;
-            var blockStore = this.FullNode.NodeFeature<IBlockStore>();
 
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
+            uint256 blockid = this.blockStore?.GetBlockIdByTransactionId(trxid);
             if (blockid != null)
-                block = this.Chain?.GetBlock(blockid);
+                block = this.ChainIndexer?.GetHeader(blockid);
 
             return block;
         }

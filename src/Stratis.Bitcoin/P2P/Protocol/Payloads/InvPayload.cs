@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -16,6 +17,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         public const int MaxInventorySize = 50000;
 
         private List<InventoryVector> inventory = new List<InventoryVector>();
+
         public List<InventoryVector> Inventory { get { return this.inventory; } }
 
         public InvPayload()
@@ -39,12 +41,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            var old = stream.MaxArraySize;
+            int old = stream.MaxArraySize;
             stream.MaxArraySize = MaxInventorySize;
             stream.ReadWrite(ref this.inventory);
             stream.MaxArraySize = old;
         }
 
+        [NoTrace]
         public override string ToString()
         {
             return $"Count: {this.Inventory.Count}";

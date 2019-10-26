@@ -277,7 +277,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             }
 
             // Feerates are stored and reported as BTC-per-kb:
-            FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
             this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
             this.shortStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
@@ -314,8 +314,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 }
                 this.trackedTxs++;
 
-                // Feerates are stored and reported as BTC-per-kb:
-                FeeRate feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+            // Feerates are stored and reported as BTC-per-kb:
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
 
                 this.mapMemPoolTxs.Add(hash, new TxStatsInfo());
                 this.mapMemPoolTxs[hash].blockHeight = txHeight;

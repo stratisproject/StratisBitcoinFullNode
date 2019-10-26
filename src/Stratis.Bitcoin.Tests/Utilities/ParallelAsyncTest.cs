@@ -28,13 +28,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_TestDegreeOfParallelism_Async()
+        public async Task ForEachAsync_TestDegreeOfParallelism_Async()
         {
             int sum = 0;
-            
+
             Stopwatch watch = Stopwatch.StartNew();
 
-            await this.testCollection.ForEachAsync(2, CancellationToken.None, async (item, cancellation) =>
+            await this.testCollection.ForEachAsync(10, CancellationToken.None, async (item, cancellation) =>
             {
                 Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_TestDegreeOfParallelism2_Async()
+        public async Task ForEachAsync_TestDegreeOfParallelism2_Async()
         {
             int sum = 0;
 
@@ -57,14 +57,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 Interlocked.Add(ref sum, item);
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
-            
+
             watch.Stop();
             Assert.True(watch.Elapsed.TotalMilliseconds < this.testCollection.Count * this.itemProcessingDelayMs);
             Assert.Equal(this.testCollectionSum, sum);
         }
 
         [Fact]
-        public async void ForEachAsync_DoesNothingWithEmptyCollection_Async()
+        public async Task ForEachAsync_DoesNothingWithEmptyCollection_Async()
         {
             var emptyList = new List<int>();
 
@@ -73,9 +73,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 await Task.Delay(this.itemProcessingDelayMs).ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
-        
+
         [Fact]
-        public async void ForEachAsync_CanBeCancelled_Async()
+        public async Task ForEachAsync_CanBeCancelled_Async()
         {
             var tokenSource = new CancellationTokenSource();
 
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 if (itemsProcessed == 3)
                     tokenSource.Cancel();
             }).ConfigureAwait(false);
-            
+
             Assert.Equal(3, itemsProcessed);
         }
     }

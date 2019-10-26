@@ -8,6 +8,6 @@
     public interface IBackedCoinView
     {
         /// <summary>Coin view at one layer below this implementaiton.</summary>
-        CoinView Inner { get; }
+        ICoinView Inner { get; }
     }
 }

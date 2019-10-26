@@ -10,17 +10,12 @@ namespace Stratis.Bitcoin.Builder
     /// <summary>
     /// Starts and stops all features registered with a full node.
     /// </summary>
-    public interface IFullNodeFeatureExecutor
+    public interface IFullNodeFeatureExecutor : IDisposable
     {
         /// <summary>
         /// Starts all registered features of the associated full node.
         /// </summary>
         void Initialize();
-
-        /// <summary>
-        /// Stops all registered features of the associated full node.
-        /// </summary>
-        void Dispose();
     }
 
     /// <summary>
@@ -54,12 +49,18 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.LoadConfiguration());
-                this.Execute(service => service.Initialize());
+
+                this.Execute(service =>
+                {
+                    service.State = "Initializing";
+                    service.InitializeAsync().GetAwaiter().GetResult();
+                    service.State = "Initialized";
+                });
             }
-            catch (Exception ex)
+            catch
             {
-                this.logger.LogError("An error occurred starting the application: {0}", ex);
+                this.logger.LogError("An error occurred starting the application.");
+                this.logger.LogTrace("(-)[INITIALIZE_EXCEPTION]");
                 throw;
             }
         }
@@ -69,11 +70,17 @@ namespace Stratis.Bitcoin.Builder
         {
             try
             {
-                this.Execute(feature => feature.Dispose(), true);
+                this.Execute(feature =>
+                {
+                    feature.State = "Disposing";
+                    feature.Dispose();
+                    feature.State = "Disposed";
+                }, true);
             }
-            catch (Exception ex)
+            catch
             {
-                this.logger.LogError("An error occurred stopping the application", ex);
+                this.logger.LogError("An error occurred stopping the application.");
+                this.logger.LogTrace("(-)[DISPOSE_EXCEPTION]");
                 throw;
             }
         }
@@ -82,43 +89,69 @@ namespace Stratis.Bitcoin.Builder
         /// Executes start or stop method of all the features registered with the associated full node.
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
-        /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
-        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called
-        /// for all features, it throws AggregateException if there were any exceptions.</remarks>
-        private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
+        /// <param name="disposing">Reverse the order of which the features are executed.</param>
+        /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
+        private void Execute(Action<IFullNodeFeature> callback, bool disposing = false)
         {
+            if (this.node.Services == null)
+            {
+                this.logger.LogTrace("(-)[NO_SERVICES]");
+                return;
+            }
+
             List<Exception> exceptions = null;
 
-            if (this.node.Services != null)
+            if (disposing)
             {
-                var iterator = this.node.Services.Features;
-
-                if (reverseOrder)
-                    iterator = iterator.Reverse();
-
-                foreach (var service in iterator)
+                // When the node is shutting down, we need to dispose all features, so we don't break on exception.
+                foreach (IFullNodeFeature feature in this.node.Services.Features.Reverse())
                 {
                     try
                     {
-                        callback(service);
+                        callback(feature);
                     }
-                    catch (Exception ex)
+                    catch (Exception exception)
                     {
                         if (exceptions == null)
-                        {
                             exceptions = new List<Exception>();
-                        }
 
-                        exceptions.Add(ex);
+                        this.LogAndAddException(exceptions, exception);
                     }
                 }
-
-                // Throw an aggregate exception if there were any exceptions
-                if (exceptions != null)
+            }
+            else
+            {
+                // When the node is starting we don't continue initialization when an exception occurs.
+                try
                 {
-                    throw new AggregateException(exceptions);
+                    // Initialize features that are flagged to start before the base feature.
+                    foreach (IFullNodeFeature feature in this.node.Services.Features.OrderByDescending(f => f.InitializeBeforeBase))
+                    {
+                        callback(feature);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    if (exceptions == null)
+                        exceptions = new List<Exception>();
+
+                    this.LogAndAddException(exceptions, exception);
                 }
             }
+
+            // Throw an aggregate exception if there were any exceptions.
+            if (exceptions != null)
+            {
+                this.logger.LogTrace("(-)[EXECUTION_FAILED]");
+                throw new AggregateException(exceptions);
+            }
+        }
+
+        private void LogAndAddException(List<Exception> exceptions, Exception exception)
+        {
+            exceptions.Add(exception);
+
+            this.logger.LogError("An error occurred: '{0}'", exception.ToString());
         }
     }
 }

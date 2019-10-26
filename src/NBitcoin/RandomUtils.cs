@@ -2,21 +2,18 @@
 using System.Text;
 using NBitcoin.Crypto;
 
-#if !USEBC
-#endif
-
 namespace NBitcoin
 {
     public class UnsecureRandom : IRandom
     {
-        Random _Rand = new Random();
+        private Random _Rand = new Random();
         #region IRandom Members
 
         public void GetBytes(byte[] output)
         {
-            lock (_Rand)
+            lock (this._Rand)
             {
-                _Rand.NextBytes(output);
+                this._Rand.NextBytes(output);
             }
         }
 
@@ -40,7 +37,7 @@ namespace NBitcoin
 
         public static byte[] GetBytes(int length)
         {
-            byte[] data = new byte[length];
+            var data = new byte[length];
             if (Random == null)
                 throw new InvalidOperationException("You must set the RNG (RandomUtils.Random) before generating random numbers");
             Random.GetBytes(data);
@@ -53,7 +50,7 @@ namespace NBitcoin
             if (additionalEntropy == null || data.Length == 0)
                 return;
             int pos = entropyIndex;
-            var entropy = additionalEntropy;
+            byte[] entropy = additionalEntropy;
             for (int i = 0; i < data.Length; i++)
             {
                 data[i] ^= entropy[pos % 32];
@@ -68,8 +65,8 @@ namespace NBitcoin
             entropyIndex = pos % 32;
         }
 
-        static volatile byte[] additionalEntropy = null;
-        static volatile int entropyIndex = 0;
+        private static volatile byte[] additionalEntropy = null;
+        private static volatile int entropyIndex = 0;
 
         public static void AddEntropy(string data)
         {
@@ -82,7 +79,7 @@ namespace NBitcoin
         {
             if (data == null)
                 throw new ArgumentNullException("data");
-            var entropy = Hashes.SHA256(data);
+            byte[] entropy = Hashes.SHA256(data);
             if (additionalEntropy == null)
                 additionalEntropy = entropy;
             else

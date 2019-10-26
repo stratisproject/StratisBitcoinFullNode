@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         private Random random = new Random();
 
         [Fact]
-        public async void AsyncManualResetEvent_WaitAsync()
+        public async Task AsyncManualResetEvent_WaitAsync()
         {
             var manualResetEvent = new AsyncManualResetEvent(false);
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void AsyncManualResetEvent_CanSetAndReset()
         {
-            AsyncManualResetEvent manualResetEvent = new AsyncManualResetEvent(false);
+            var manualResetEvent = new AsyncManualResetEvent(false);
 
             Assert.False(manualResetEvent.IsSet);
 
@@ -90,8 +90,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var mre = new AsyncManualResetEvent(true);
 
-            var task1 = mre.WaitAsync();
-            var task2 = mre.WaitAsync();
+            Task task1 = mre.WaitAsync();
+            Task task2 = mre.WaitAsync();
 
             Assert.True(task1.IsCompleted);
             Assert.True(task2.IsCompleted);
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void AsyncManualResetEvent_CanBeCancelledAsync()
+        public async Task AsyncManualResetEvent_CanBeCancelledAsync()
         {
             var manualResetEvent = new AsyncManualResetEvent(false);
             var tokenSource = new CancellationTokenSource(500);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// This test simulates several tasks that wait for it's own event and set next one.
         /// </summary>
         [Fact]
-        public async void AsyncManualResetEvent_RingTriggeringAsync()
+        public async Task AsyncManualResetEvent_RingTriggeringAsync()
         {
             int tasksCount = 10;
             var cts = new CancellationTokenSource();
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var tasks = new List<Task>();
 
             // List that the tasks will built.
-            List<int> resultList = new List<int>() { 0 };
+            var resultList = new List<int>() { 0 };
 
             // Run all workers.
             for (int i = 0; i < tasksCount; i++)

@@ -91,7 +91,9 @@ namespace Stratis.Bitcoin.Builder
             List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
             : this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
         {
-            this.NodeSettings = nodeSettings ?? NodeSettings.Default();
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
+
+            this.NodeSettings = nodeSettings;
             this.Network = this.NodeSettings.Network;
 
             this.ConfigureServices(service =>
@@ -163,7 +165,9 @@ namespace Stratis.Bitcoin.Builder
             // Print command-line help
             if (this.NodeSettings?.PrintHelpAndExit ?? false)
             {
-                foreach (var featureRegistration in this.Features.FeatureRegistrations)
+                NodeSettings.PrintHelp(this.Network);
+
+                foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
                 {
                     MethodInfo printHelp = featureRegistration.FeatureType.GetMethod("PrintHelp", BindingFlags.Public | BindingFlags.Static);
 
@@ -174,10 +178,10 @@ namespace Stratis.Bitcoin.Builder
                 return null;
             }
 
-            // Load configuration file
-            this.NodeSettings?.LoadConfiguration(this.Features.FeatureRegistrations);
+            // Create configuration file if required
+            this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations);
 
-            var fullNodeServiceProvider = this.Services.BuildServiceProvider();
+            ServiceProvider fullNodeServiceProvider = this.Services.BuildServiceProvider();
             this.ConfigureServices(fullNodeServiceProvider);
 
             // Obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
@@ -210,15 +214,15 @@ namespace Stratis.Bitcoin.Builder
 
             // register services before features
             // as some of the features may depend on independent services
-            foreach (var configureServices in this.configureServicesDelegates)
+            foreach (Action<IServiceCollection> configureServices in this.configureServicesDelegates)
                 configureServices(this.Services);
 
             // configure features
-            foreach (var configureFeature in this.featuresRegistrationDelegates)
+            foreach (Action<IFeatureCollection> configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
 
-            // configure features startup            
-            foreach (var featureRegistration in this.Features.FeatureRegistrations)
+            // configure features startup
+            foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
             {
                 try
                 {
@@ -244,7 +248,7 @@ namespace Stratis.Bitcoin.Builder
         /// <param name="serviceProvider"></param>
         private void ConfigureServices(IServiceProvider serviceProvider)
         {
-            foreach (var configure in this.configureDelegates)
+            foreach (Action<IServiceProvider> configure in this.configureDelegates)
                 configure(serviceProvider);
         }
     }

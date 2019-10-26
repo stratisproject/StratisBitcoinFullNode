@@ -10,14 +10,15 @@ namespace NBitcoin.Policy
         {
 
         }
-        string _Message;
+
+        private string _Message;
         public TransactionPolicyError(string message)
         {
-            _Message = message;
+            this._Message = message;
         }
         public override string ToString()
         {
-            return _Message;
+            return this._Message;
         }
     }
 
@@ -26,15 +27,15 @@ namespace NBitcoin.Policy
         public TransactionSizePolicyError(int actualSize, int maximumSize)
             : base("Transaction's size is too high. Actual value is " + actualSize + ", but the maximum is " + maximumSize)
         {
-            _ActualSize = actualSize;
-            _MaximumSize = maximumSize;
+            this._ActualSize = actualSize;
+            this._MaximumSize = maximumSize;
         }
         private readonly int _ActualSize;
         public int ActualSize
         {
             get
             {
-                return _ActualSize;
+                return this._ActualSize;
             }
         }
         private readonly int _MaximumSize;
@@ -42,7 +43,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _MaximumSize;
+                return this._MaximumSize;
             }
         }
     }
@@ -51,8 +52,8 @@ namespace NBitcoin.Policy
         public FeeTooHighPolicyError(Money fees, Money max)
             : base("Fee too high, actual is " + fees.ToString() + ", policy maximum is " + max.ToString())
         {
-            _ExpectedMaxFee = max;
-            _Fee = fees;
+            this._ExpectedMaxFee = max;
+            this._Fee = fees;
         }
 
         private readonly Money _Fee;
@@ -60,7 +61,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _Fee;
+                return this._Fee;
             }
         }
         private readonly Money _ExpectedMaxFee;
@@ -68,7 +69,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _ExpectedMaxFee;
+                return this._ExpectedMaxFee;
             }
         }
     }
@@ -78,8 +79,8 @@ namespace NBitcoin.Policy
         public DustPolicyError(Money value, Money dust)
             : base("Dust output detected, output value is " + value.ToString() + ", policy minimum is " + dust.ToString())
         {
-            _Value = value;
-            _DustThreshold = dust;
+            this._Value = value;
+            this._DustThreshold = dust;
         }
 
         private readonly Money _Value;
@@ -87,7 +88,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _Value;
+                return this._Value;
             }
         }
 
@@ -96,7 +97,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _DustThreshold;
+                return this._DustThreshold;
             }
         }
     }
@@ -106,8 +107,8 @@ namespace NBitcoin.Policy
         public FeeTooLowPolicyError(Money fees, Money min)
             : base($"Fee of {fees} is too low. The policy minimum is {min}.")
         {
-            _ExpectedMinFee = min;
-            _Fee = fees;
+            this._ExpectedMinFee = min;
+            this._Fee = fees;
         }
 
         private readonly Money _Fee;
@@ -115,7 +116,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _Fee;
+                return this._Fee;
             }
         }
         private readonly Money _ExpectedMinFee;
@@ -123,7 +124,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _ExpectedMinFee;
+                return this._ExpectedMinFee;
             }
         }
     }
@@ -133,8 +134,8 @@ namespace NBitcoin.Policy
         public InputPolicyError(string message, IndexedTxIn txIn)
             : base(message)
         {
-            _OutPoint = txIn.PrevOut;
-            _InputIndex = txIn.Index;
+            this._OutPoint = txIn.PrevOut;
+            this._InputIndex = txIn.Index;
         }
 
         private readonly OutPoint _OutPoint;
@@ -142,7 +143,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _OutPoint;
+                return this._OutPoint;
             }
         }
 
@@ -151,7 +152,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _InputIndex;
+                return this._InputIndex;
             }
         }
     }
@@ -161,8 +162,8 @@ namespace NBitcoin.Policy
         public DuplicateInputPolicyError(IndexedTxIn[] duplicated)
             : base("Duplicate input " + duplicated[0].PrevOut)
         {
-            _OutPoint = duplicated[0].PrevOut;
-            _InputIndices = duplicated.Select(d => d.Index).ToArray();
+            this._OutPoint = duplicated[0].PrevOut;
+            this._InputIndices = duplicated.Select(d => d.Index).ToArray();
         }
 
         private readonly OutPoint _OutPoint;
@@ -170,7 +171,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _OutPoint;
+                return this._OutPoint;
             }
         }
         private readonly uint[] _InputIndices;
@@ -178,7 +179,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _InputIndices;
+                return this._InputIndices;
             }
         }
     }
@@ -188,29 +189,29 @@ namespace NBitcoin.Policy
         public OutputPolicyError(string message, int outputIndex) :
             base(message)
         {
-            _OutputIndex = outputIndex;
+            this._OutputIndex = outputIndex;
         }
         private readonly int _OutputIndex;
         public int OutputIndex
         {
             get
             {
-                return _OutputIndex;
+                return this._OutputIndex;
             }
         }
     }
     public class CoinNotFoundPolicyError : InputPolicyError
     {
-        IndexedTxIn _TxIn;
+        private IndexedTxIn _TxIn;
         public CoinNotFoundPolicyError(IndexedTxIn txIn)
             : base("No coin matching " + txIn.PrevOut + " was found", txIn)
         {
-            _TxIn = txIn;
+            this._TxIn = txIn;
         }
 
         internal Exception AsException()
         {
-            return new CoinNotFoundException(_TxIn);
+            return new CoinNotFoundException(this._TxIn);
         }
     }
 
@@ -219,9 +220,9 @@ namespace NBitcoin.Policy
         public ScriptPolicyError(IndexedTxIn input, ScriptError error, ScriptVerify scriptVerify, Script scriptPubKey)
             : base("Script error on input " + input.Index + " (" + error + ")", input)
         {
-            _ScriptError = error;
-            _ScriptVerify = scriptVerify;
-            _ScriptPubKey = scriptPubKey;
+            this._ScriptError = error;
+            this._ScriptVerify = scriptVerify;
+            this._ScriptPubKey = scriptPubKey;
         }
 
 
@@ -230,7 +231,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _ScriptError;
+                return this._ScriptError;
             }
         }
 
@@ -239,7 +240,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _ScriptVerify;
+                return this._ScriptVerify;
             }
         }
 
@@ -248,7 +249,7 @@ namespace NBitcoin.Policy
         {
             get
             {
-                return _ScriptPubKey;
+                return this._ScriptPubKey;
             }
 
         }

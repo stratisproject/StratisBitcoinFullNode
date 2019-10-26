@@ -1,39 +1,41 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
     /// <remarks>
-    /// Each component that creates instances of <see cref="NetworkPeer"/> should be responsible for disposing it. 
+    /// Each component that creates instances of <see cref="NetworkPeer"/> should be responsible for disposing it.
     /// <para>
     /// Implementing this functionality in such components will lead to having similar code in these components.
     /// Instead, this class could be used in order to provide such functionality.
     /// This means that the responsibility for destroying the peer can delegated to this class, which simplifies the
-    /// code of the owning component.   
+    /// code of the owning component.
     /// </para>
     /// <para>
     /// When a new peer is created (and the <see cref="OnPeerDisconnectedHandler"/> callback is used as an <see cref="NetworkPeer.onDisconnected"/> in the constructor)
-    /// by a component that utilizes this class, <see cref="AddPeer"/> should be used to inform  this class about it. Once the peer is added, the owning component no 
-    /// longer needs to care about this peer's disposal. 
+    /// by a component that utilizes this class, <see cref="AddPeer"/> should be used to inform  this class about it. Once the peer is added, the owning component no
+    /// longer needs to care about this peer's disposal.
     /// When a peer disconnects, this class will invoke peer's disposal in a separated task.
-    /// Also when <see cref="Dispose"/> is called, all connected peers added to this component will be disposed. 
+    /// Also when <see cref="Dispose"/> is called, all connected peers added to this component will be disposed.
     /// </para>
     /// </remarks>
     public class NetworkPeerDisposer : IDisposable
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Callback that is called before the peer is disposed.</summary>
         private readonly Action<INetworkPeer> onPeerDisposed;
 
         /// <summary>Queue of disconnected peers to be disposed.</summary>
-        private readonly AsyncQueue<INetworkPeer> peersToDispose;
+        private readonly IAsyncDelegateDequeuer<INetworkPeer> peersToDispose;
 
         /// <summary>Mapping of connected peers by their connection ID.</summary>
         private readonly ConcurrentDictionary<int, INetworkPeer> connectedPeers;
@@ -43,20 +45,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             get { return this.connectedPeers.Count; }
         }
-        
+
+        /// <summary>Gets the connected inbound peers count.</summary>
+        public int ConnectedInboundPeersCount
+        {
+            get { return this.connectedPeers.Count(p => p.Value.Inbound); }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NetworkPeerDisposer" /> class.
         /// </summary>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="onPeerDisposed">Callback that is called before the peer is disposed.</param>
-        public NetworkPeerDisposer(ILoggerFactory loggerFactory, Action<INetworkPeer> onPeerDisposed = null)
+        public NetworkPeerDisposer(ILoggerFactory loggerFactory, IAsyncProvider asyncProvider, Action<INetworkPeer> onPeerDisposed = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.onPeerDisposed = onPeerDisposed; 
+            this.asyncProvider = asyncProvider;
+            this.onPeerDisposed = onPeerDisposed;
             this.connectedPeers = new ConcurrentDictionary<int, INetworkPeer>();
 
-            this.peersToDispose = new AsyncQueue<INetworkPeer>(this.OnEnqueueAsync);
+            string dequeuerName = $"{nameof(NetworkPeerDisposer)}-{nameof(this.peersToDispose)}";
+            this.peersToDispose = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>(dequeuerName, this.OnEnqueueAsync);
         }
 
         /// <summary>
@@ -66,15 +76,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellationToken">Cancellation token.</param>
         private Task OnEnqueueAsync(INetworkPeer peer, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(peer), peer.RemoteSocketAddress);
-
             this.onPeerDisposed?.Invoke(peer);
-            
+
             peer.Dispose();
 
             this.connectedPeers.TryRemove(peer.Connection.Id, out INetworkPeer unused);
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
@@ -82,11 +89,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Peer which disposal should be safely handled.</param>
         public void OnPeerDisconnectedHandler(INetworkPeer peer)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(peer), peer.RemoteSocketAddress);
-
             this.peersToDispose.Enqueue(peer);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -101,22 +104,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.peersToDispose.Dispose();
 
             foreach (INetworkPeer peer in this.connectedPeers.Values)
             {
                 peer.Disconnect("Node shutdown");
 
-                this.logger.LogTrace("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
+                this.logger.LogDebug("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
 
                 peer.Dispose();
             }
 
             this.connectedPeers.Clear();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

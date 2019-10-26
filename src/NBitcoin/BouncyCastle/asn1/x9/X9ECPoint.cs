@@ -38,19 +38,19 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
 
         public byte[] GetPointEncoding()
         {
-            return Arrays.Clone(encoding.GetOctets());
+            return Arrays.Clone(this.encoding.GetOctets());
         }
 
         public ECPoint Point
         {
             get
             {
-                if(p == null)
+                if(this.p == null)
                 {
-                    p = c.DecodePoint(encoding.GetOctets()).Normalize();
+                    this.p = this.c.DecodePoint(this.encoding.GetOctets()).Normalize();
                 }
 
-                return p;
+                return this.p;
             }
         }
 
@@ -58,7 +58,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
         {
             get
             {
-                byte[] octets = encoding.GetOctets();
+                byte[] octets = this.encoding.GetOctets();
                 return octets != null && octets.Length > 0 && (octets[0] == 2 || octets[0] == 3);
             }
         }
@@ -73,7 +73,7 @@ namespace NBitcoin.BouncyCastle.Asn1.X9
          */
         public override Asn1Object ToAsn1Object()
         {
-            return encoding;
+            return this.encoding;
         }
     }
 }

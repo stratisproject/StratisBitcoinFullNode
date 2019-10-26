@@ -67,8 +67,8 @@ namespace NBitcoin.BouncyCastle.Asn1
             DerOutputStream derOut)
         {
             // TODO Intermediate buffer could be avoided if we could calculate expected length
-            MemoryStream bOut = new MemoryStream();
-            DerOutputStream dOut = new DerOutputStream(bOut);
+            var bOut = new MemoryStream();
+            var dOut = new DerOutputStream(bOut);
 
             foreach(Asn1Encodable obj in this)
             {

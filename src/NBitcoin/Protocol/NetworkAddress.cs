@@ -114,7 +114,7 @@ namespace NBitcoin.Protocol
 
         internal byte[] GetKey()
         {
-            byte[] key = new byte[18];
+            var key = new byte[18];
             Array.Copy(this.ip, key, 16);
             key[16] = (byte)(this.port / 0x100);
             key[17] = (byte)(this.port & 0x0FF);

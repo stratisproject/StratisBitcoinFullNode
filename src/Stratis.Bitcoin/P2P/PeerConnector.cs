@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -46,15 +49,15 @@ namespace Stratis.Bitcoin.P2P
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
-        /// Collection of connected peers that is managed by the <see cref="ConnectionManager"/>.
+        /// Collection of connected peers that is managed by the <see cref="Connection.ConnectionManager"/>.
         /// </summary>
-        private IReadOnlyNetworkPeerCollection connectedPeers;
+        protected IConnectionManager ConnectionManager { get; private set; }
 
         /// <inheritdoc/>
         public NetworkPeerCollection ConnectorPeers { get; private set; }
@@ -63,7 +66,7 @@ namespace Stratis.Bitcoin.P2P
         public NetworkPeerConnectionParameters CurrentParameters { get; private set; }
 
         /// <summary>Logger factory to create loggers.</summary>
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -72,44 +75,35 @@ namespace Stratis.Bitcoin.P2P
         public int MaxOutboundConnections { get; set; }
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
-        protected INodeLifetime nodeLifetime;
-
-        /// <summary>User defined node settings.</summary>
-        public NodeSettings NodeSettings;
+        protected INodeLifetime NodeLifetime { get; private set; }
 
         /// <summary>User defined connection settings.</summary>
-        public ConnectionManagerSettings ConnectionSettings;
+        public ConnectionManagerSettings ConnectionSettings { get; private set; }
 
         /// <summary>The network the node is running on.</summary>
-        private Network network;
+        private readonly Network network;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
-        protected IPeerAddressManager peerAddressManager;
+        protected IPeerAddressManager PeerAddressManager { get; private set; }
 
         /// <summary>Tracker for endpoints known to be self.</summary>
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
         /// <summary>Factory for creating P2P network peers.</summary>
-        private INetworkPeerFactory networkPeerFactory;
+        private readonly INetworkPeerFactory networkPeerFactory;
 
         /// <inheritdoc/>
         public NetworkPeerRequirement Requirements { get; internal set; }
 
-        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
-        public int BurstModeTargetConnections { get; private set; }
-
         /// <summary>Default time interval between making a connection attempt.</summary>
-        private readonly TimeSpan defaultConnectionInterval;
-
-        /// <summary>Burst time interval between making a connection attempt.</summary>
-        private readonly TimeSpan burstConnectionInterval;
+        private readonly TimeSpan connectionInterval;
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
         /// <summary>Constructor for dependency injection.</summary>
         protected PeerConnector(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -120,33 +114,29 @@ namespace Stratis.Bitcoin.P2P
             IPeerAddressManager peerAddressManager,
             ISelfEndpointTracker selfEndpointTracker)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.ConnectorPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.networkPeerFactory = networkPeerFactory;
-            this.nodeLifetime = nodeLifetime;
-            this.NodeSettings = nodeSettings;
+            this.NodeLifetime = nodeLifetime;
             this.ConnectionSettings = connectionSettings;
-            this.peerAddressManager = peerAddressManager;
-            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.OnPeerDisposed);
+            this.PeerAddressManager = peerAddressManager;
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.asyncProvider, this.OnPeerDisposed);
             this.selfEndpointTracker = selfEndpointTracker;
-            this.Requirements = new NetworkPeerRequirement { MinVersion = this.NodeSettings.ProtocolVersion };
+            this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion };
 
-            this.defaultConnectionInterval = TimeSpans.Second;
-            this.burstConnectionInterval = TimeSpan.Zero;
-            this.BurstModeTargetConnections = this.NodeSettings.ConfigReader.GetOrDefault("burstModeTargetConnections", 1);
+            this.connectionInterval = this.CalculateConnectionInterval();
         }
 
         /// <inheritdoc/>
         public void Initialize(IConnectionManager connectionManager)
         {
-            this.connectedPeers = connectionManager.ConnectedPeers;
+            this.ConnectionManager = connectionManager;
 
             this.CurrentParameters = connectionManager.Parameters.Clone();
-            this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, connectionManager, this.loggerFactory));
 
             this.OnInitialize();
         }
@@ -161,11 +151,11 @@ namespace Stratis.Bitcoin.P2P
         private void AddPeer(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
-            
+
             this.ConnectorPeers.Add(peer);
 
-            if (this.asyncLoop != null && this.ConnectorPeers.Count >= this.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
+            if (this.asyncLoop != null)
+                this.asyncLoop.RepeatEvery = this.CalculateConnectionInterval();
         }
 
         /// <summary>
@@ -179,18 +169,18 @@ namespace Stratis.Bitcoin.P2P
         {
             this.ConnectorPeers.Remove(peer);
 
-            if (this.asyncLoop != null && this.ConnectorPeers.Count < this.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
+            if (this.asyncLoop != null)
+                this.asyncLoop.RepeatEvery = this.CalculateConnectionInterval();
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
         public abstract bool CanStartConnect { get; }
 
         /// <summary>Initialization logic specific to each concrete implementation of this class.</summary>
-        public abstract void OnInitialize();
+        protected abstract void OnInitialize();
 
         /// <summary>Start up logic specific to each concrete implementation of this class.</summary>
-        public abstract void OnStartConnect();
+        protected abstract void OnStartConnect();
 
         /// <summary>Connect logic specific to each concrete implementation of this class.</summary>
         public abstract Task OnConnectAsync();
@@ -199,12 +189,13 @@ namespace Stratis.Bitcoin.P2P
         /// <c>true</c> if the peer is already connected.
         /// </summary>
         /// <param name="ipEndpoint">The endpoint to check.</param>
-        internal bool IsPeerConnected(IPEndPoint ipEndpoint)
+        private bool IsPeerConnected(IPEndPoint ipEndpoint)
         {
-            return this.connectedPeers.FindByEndpoint(ipEndpoint) != null;
+            return this.ConnectionManager.ConnectedPeers.FindByEndpoint(ipEndpoint) != null;
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public void StartConnectAsync()
         {
             if (!this.CanStartConnect)
@@ -212,29 +203,35 @@ namespace Stratis.Bitcoin.P2P
 
             this.OnStartConnect();
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
-                if (!this.peerAddressManager.Peers.Any() || (this.ConnectorPeers.Count >= this.MaxOutboundConnections))
-                {
-                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                if (!this.PeerAddressManager.Peers.Any() || (this.ConnectorPeers.Count >= this.MaxOutboundConnections))
                     return;
-                }
 
                 await this.OnConnectAsync().ConfigureAwait(false);
             },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: this.burstConnectionInterval);
+            this.NodeLifetime.ApplicationStopping,
+            repeatEvery: this.connectionInterval);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
-        internal async Task ConnectAsync(PeerAddress peerAddress)
+        public async Task ConnectAsync(PeerAddress peerAddress)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
-
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
-                this.logger.LogTrace("{0} is self. Therefore not connecting.", peerAddress.Endpoint);
-                this.logger.LogTrace("(-)");
+                this.logger.LogDebug("Connect aborted: {0} is self.", peerAddress.Endpoint);
+                return;
+            }
+
+            if (this.IsPeerConnected(peerAddress.Endpoint))
+            {
+                this.logger.LogDebug("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
+                return;
+            }
+
+            if (peerAddress.IsBanned(this.dateTimeProvider.GetUtcNow()))
+            {
+                this.logger.LogDebug("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
                 return;
             }
 
@@ -242,15 +239,15 @@ namespace Stratis.Bitcoin.P2P
 
             try
             {
-                using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                using (CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.NodeLifetime.ApplicationStopping))
                 {
-                    this.peerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
+                    this.PeerAddressManager.PeerAttempted(peerAddress.Endpoint, this.dateTimeProvider.GetUtcNow());
 
-                    var clonedConnectParamaters = this.CurrentParameters.Clone();
+                    NetworkPeerConnectionParameters clonedConnectParameters = this.CurrentParameters.Clone();
                     timeoutTokenSource.CancelAfter(5000);
-                    clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
+                    clonedConnectParameters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParamaters, this.networkPeerDisposer).ConfigureAwait(false);
+                    peer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(peerAddress.Endpoint, clonedConnectParameters, this.networkPeerDisposer).ConfigureAwait(false);
 
                     await peer.VersionHandshakeAsync(this.Requirements, timeoutTokenSource.Token).ConfigureAwait(false);
                     this.AddPeer(peer);
@@ -258,7 +255,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (OperationCanceledException)
             {
-                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
                 {
                     this.logger.LogDebug("Peer {0} connection canceled because application is stopping.", peerAddress.Endpoint);
                     peer?.Disconnect("Application stopping");
@@ -266,16 +263,31 @@ namespace Stratis.Bitcoin.P2P
                 else
                 {
                     this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
+                    peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                     peer?.Disconnect("Connection timeout");
                 }
             }
+            catch (NBitcoin.Protocol.ProtocolException)
+            {
+                this.logger.LogDebug("Handshake rejected by peer '{0}'.", peerAddress.Endpoint);
+                peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
+                peer?.Disconnect("Error while handshaking");
+            }
             catch (Exception exception)
             {
-                this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
+                this.logger.LogDebug("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
+                peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
+        }
 
-            this.logger.LogTrace("(-)");
+        /// <summary>
+        /// Determines how often the connector should try and connect to an address from it's list.
+        /// </summary>
+        [NoTrace]
+        protected virtual TimeSpan CalculateConnectionInterval()
+        {
+            return this.ConnectorPeers.Count < this.ConnectionSettings.InitialConnectionTarget ? TimeSpans.Ms100 : TimeSpans.Second;
         }
 
         /// <summary>

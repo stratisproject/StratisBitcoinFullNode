@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,6 +16,22 @@ namespace Stratis.Bitcoin.Builder
 
         /// <summary>Provider to registered services.</summary>
         IServiceProvider ServiceProvider { get; }
+
+        /// <summary>
+        /// Determines whether the service of the specified type T is registered.
+        /// </summary>
+        /// <typeparam name="T">A type to query against the service provider.</typeparam>
+        /// <returns>
+        ///   <c>true</c> if this instance is registered; otherwise, <c>false</c>.
+        /// </returns>
+        bool IsServiceRegistered<T>();
+
+        /// <summary>
+        /// Guard method that check whether the service of the specified type T is registered.
+        /// If it doesn't exists, thrown an exception.
+        /// </summary>
+        /// <typeparam name="T">A type to query against the service provider.</typeparam>
+        void EnsureServiceIsRegistered<T>();
     }
 
     /// <summary>
@@ -32,7 +49,7 @@ namespace Stratis.Bitcoin.Builder
             {
                 // features are enumerated in the same order
                 // they where registered with the provider
-                foreach (var featureDescriptor in this.featureTypes)
+                foreach (Type featureDescriptor in this.featureTypes)
                     yield return this.ServiceProvider.GetService(featureDescriptor) as IFullNodeFeature;
             }
         }
@@ -52,6 +69,19 @@ namespace Stratis.Bitcoin.Builder
 
             this.ServiceProvider = serviceProvider;
             this.featureTypes = featureTypes;
+        }
+
+        /// <inheritdoc />
+        public bool IsServiceRegistered<T>()
+        {
+            return this.ServiceProvider.GetService<T>() != null;
+        }
+
+        /// <inheritdoc />
+        public void EnsureServiceIsRegistered<T>()
+        {
+            if (!this.IsServiceRegistered<T>())
+                throw new MissingServiceException(typeof(T));
         }
     }
 }

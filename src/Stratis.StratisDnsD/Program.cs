@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -14,6 +12,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisDnsD
@@ -24,34 +23,27 @@ namespace Stratis.StratisDnsD
     public class Program
     {
         /// <summary>
-        /// The entry point for the Stratis Dns process.
-        /// </summary>
-        /// <param name="args">Command line arguments.</param>
-        public static void Main(string[] args)
-        {
-            MainAsync(args).Wait();
-        }
-
-        /// <summary>
         /// The async entry point for the Stratis Dns process.
         /// </summary>
         /// <param name="args">Command line arguments.</param>
         /// <returns>A task used to await the operation.</returns>
-        public static async Task MainAsync(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args, loadConfiguration:true);
-
-                Action<DnsSettings> serviceTest = (s) =>
+                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.PROVEN_HEADER_VERSION, args:args)
                 {
-                    if (string.IsNullOrWhiteSpace(s.DnsHostName) || string.IsNullOrWhiteSpace(s.DnsNameServer) || string.IsNullOrWhiteSpace(s.DnsMailBox))
-                        throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                 };
+
+                var dnsSettings = new DnsSettings(nodeSettings);
+
+                if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
+                    throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
 
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
-                if (nodeSettings.ConfigReader.GetOrDefault<bool>("dnsfullnode", false))
+                if (dnsSettings.DnsFullNode)
                 {
                     // Build the Dns full node.
                     node = new FullNodeBuilder()
@@ -63,7 +55,7 @@ namespace Stratis.StratisDnsD
                         .AddPowPosMining()
                         .UseApi()
                         .AddRPC()
-                        .UseDns(serviceTest)
+                        .UseDns()
                         .Build();
                 }
                 else
@@ -74,7 +66,7 @@ namespace Stratis.StratisDnsD
                         .UsePosConsensus()
                         .UseApi()
                         .AddRPC()
-                        .UseDns(serviceTest)
+                        .UseDns()
                         .Build();
                 }
 
@@ -84,7 +76,7 @@ namespace Stratis.StratisDnsD
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
             }
         }
     }

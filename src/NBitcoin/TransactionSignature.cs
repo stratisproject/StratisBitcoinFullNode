@@ -6,7 +6,7 @@ namespace NBitcoin
 {
     public class TransactionSignature
     {
-        static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0), NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
+        private static readonly TransactionSignature _Empty = new TransactionSignature(new ECDSASignature(BouncyCastle.Math.BigInteger.ValueOf(0), BouncyCastle.Math.BigInteger.ValueOf(0)), SigHash.All);
         public static TransactionSignature Empty
         {
             get
@@ -62,8 +62,8 @@ namespace NBitcoin
         {
             if(sigHash == SigHash.Undefined)
                 throw new ArgumentException("sigHash should not be Undefined");
-            _SigHash = sigHash;
-            _Signature = signature;
+            this._SigHash = sigHash;
+            this._Signature = signature;
         }
         public TransactionSignature(ECDSASignature signature)
             : this(signature, SigHash.All)
@@ -72,13 +72,13 @@ namespace NBitcoin
         }
         public TransactionSignature(byte[] sigSigHash)
         {
-            _Signature = ECDSASignature.FromDER(sigSigHash);
-            _SigHash = (SigHash)sigSigHash[sigSigHash.Length - 1];
+            this._Signature = ECDSASignature.FromDER(sigSigHash);
+            this._SigHash = (SigHash)sigSigHash[sigSigHash.Length - 1];
         }
         public TransactionSignature(byte[] sig, SigHash sigHash)
         {
-            _Signature = ECDSASignature.FromDER(sig);
-            _SigHash = sigHash;
+            this._Signature = ECDSASignature.FromDER(sig);
+            this._SigHash = sigHash;
         }
 
         private readonly ECDSASignature _Signature;
@@ -86,7 +86,7 @@ namespace NBitcoin
         {
             get
             {
-                return _Signature;
+                return this._Signature;
             }
         }
         private readonly SigHash _SigHash;
@@ -94,16 +94,16 @@ namespace NBitcoin
         {
             get
             {
-                return _SigHash;
+                return this._SigHash;
             }
         }
 
         public byte[] ToBytes()
         {
-            var sig = _Signature.ToDER();
+            byte[] sig = this._Signature.ToDER();
             var result = new byte[sig.Length + 1];
             Array.Copy(sig, 0, result, 0, sig.Length);
-            result[result.Length - 1] = (byte)_SigHash;
+            result[result.Length - 1] = (byte) this._SigHash;
             return result;
         }
 
@@ -114,7 +114,7 @@ namespace NBitcoin
 
         public bool Check(Network network, PubKey pubKey, Script scriptPubKey, IndexedTxIn txIn, ScriptVerify verify = ScriptVerify.Standard)
         {
-            return this.Check(network, pubKey, scriptPubKey, txIn.Transaction, txIn.Index, verify);
+            return Check(network, pubKey, scriptPubKey, txIn.Transaction, txIn.Index, verify);
         }
 
         public bool Check(Network network, PubKey pubKey, Script scriptPubKey, Transaction tx, uint nIndex, ScriptVerify verify = ScriptVerify.Standard)
@@ -122,31 +122,30 @@ namespace NBitcoin
             return new ScriptEvaluationContext(network)
             {
                 ScriptVerify = verify,
-                SigHash = SigHash
+                SigHash = this.SigHash
             }.CheckSig(this, pubKey, scriptPubKey, tx, nIndex);
         }
 
-        string _Id;
+        private string _Id;
         private string Id
         {
             get
             {
-                if(_Id == null)
-                    _Id = Encoders.Hex.EncodeData(ToBytes());
-                return _Id;
+                if(this._Id == null) this._Id = Encoders.Hex.EncodeData(ToBytes());
+                return this._Id;
             }
         }
 
         public override bool Equals(object obj)
         {
-            TransactionSignature item = obj as TransactionSignature;
+            var item = obj as TransactionSignature;
             if(item == null)
                 return false;
-            return Id.Equals(item.Id);
+            return this.Id.Equals(item.Id);
         }
         public static bool operator ==(TransactionSignature a, TransactionSignature b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -160,7 +159,7 @@ namespace NBitcoin
 
         public override int GetHashCode()
         {
-            return Id.GetHashCode();
+            return this.Id.GetHashCode();
         }
 
         public override string ToString()
@@ -172,7 +171,7 @@ namespace NBitcoin
         {
             get
             {
-                return Signature.IsLowS;
+                return this.Signature.IsLowS;
             }
         }
 
@@ -182,9 +181,9 @@ namespace NBitcoin
         /// </summary>
         public TransactionSignature MakeCanonical()
         {
-            if(IsLowS)
+            if(this.IsLowS)
                 return this;
-            return new TransactionSignature(Signature.MakeCanonical(), SigHash);
+            return new TransactionSignature(this.Signature.MakeCanonical(), this.SigHash);
         }
     }
 }

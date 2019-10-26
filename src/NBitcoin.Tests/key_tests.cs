@@ -5,27 +5,41 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class key_tests
     {
-        const string strSecret1 = ("5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj");
-        const string strSecret2 = ("5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3");
-        const string strSecret1C = ("Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw");
-        const string strSecret2C = ("L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g");
-        const string strAddressBad = ("1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF");
+        private const string strSecret1 = ("5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj");
+        private const string strSecret2 = ("5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3");
+        private const string strSecret1C = ("Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw");
+        private const string strSecret2C = ("L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g");
+        private const string strAddressBad = ("1HV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF");
 
-        BitcoinPubKeyAddress addr1 = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress("1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ");
-        BitcoinPubKeyAddress addr2 = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress("1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ");
-        BitcoinPubKeyAddress addr1C = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress("1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs");
-        BitcoinPubKeyAddress addr2C = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress("1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs");
+        private BitcoinPubKeyAddress addr1;
+        private BitcoinPubKeyAddress addr2;
+        private BitcoinPubKeyAddress addr1C;
+        private BitcoinPubKeyAddress addr2C;
 
+        private BitcoinAddress addrLocal;
+        private uint256 msgLocal = Hashes.Hash256(TestUtils.ToBytes("Localbitcoins.com will change the world"));
+        private byte[] signatureLocal = Convert.FromBase64String("IJ/17TjGGUqmEppAliYBUesKHoHzfY4gR4DW0Yg7QzrHUB5FwX1uTJ/H21CF8ncY8HHNB5/lh8kPAOeD5QxV8Xc=");
 
-        BitcoinAddress addrLocal = Network.Main.CreateBitcoinAddress("1Q1wVsNNiUo68caU7BfyFFQ8fVBqxC2DSc");
-        uint256 msgLocal = Hashes.Hash256(TestUtils.ToBytes("Localbitcoins.com will change the world"));
-        byte[] signatureLocal = Convert.FromBase64String("IJ/17TjGGUqmEppAliYBUesKHoHzfY4gR4DW0Yg7QzrHUB5FwX1uTJ/H21CF8ncY8HHNB5/lh8kPAOeD5QxV8Xc=");
+        private readonly Network networkMain;
+
+        public key_tests()
+        {
+            this.networkMain = KnownNetworks.Main;
+
+            this.addr1 = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ");
+            this.addr2 = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ");
+            this.addr1C = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs");
+            this.addr2C = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs");
+
+            this.addrLocal = this.networkMain.CreateBitcoinAddress("1Q1wVsNNiUo68caU7BfyFFQ8fVBqxC2DSc");
+        }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
@@ -75,12 +89,12 @@ namespace NBitcoin.Tests
             {
                 if(test.PrivateKey != null)
                 {
-                    var secret = Network.Main.CreateBitcoinSecret(test.PrivateKey);
-                    var signature = secret.PrivateKey.SignMessage(test.Message);
-                    Assert.True(((BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address)).VerifyMessage(test.Message, signature));
+                    BitcoinSecret secret = this.networkMain.CreateBitcoinSecret(test.PrivateKey);
+                    string signature = secret.PrivateKey.SignMessage(test.Message);
+                    Assert.True(((BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress(test.Address)).VerifyMessage(test.Message, signature));
                     Assert.True(secret.PubKey.VerifyMessage(test.Message, signature));
                 }
-                BitcoinPubKeyAddress address = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address);
+                var address = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress(test.Address);
                 Assert.True(address.VerifyMessage(test.Message, test.Signature));
                 Assert.True(!address.VerifyMessage("bad message", test.Signature));
             }
@@ -94,10 +108,10 @@ namespace NBitcoin.Tests
             byte[] random_challenge = Encoders.Hex.DecodeData("cd8552569d6e4509266ef137584d1e62c7579b5b8ed69bbafa4b864c6521e7c2");
             byte[] signature = Encoders.Hex.DecodeData("20f2d1a42d08c3a362be49275c3ffeeaa415fc040971985548b9f910812237bb41770bf2c8d488428799fbb7e52c11f1a3404011375e4080e077e0e42ab7a5ba02");
 
-            var hiddenChallenge_Sha = Hashes.SHA256(random_challenge);
-            var visualChallenge_Sha = Hashes.SHA256(Encoding.ASCII.GetBytes(visual_challenge));
+            byte[] hiddenChallenge_Sha = Hashes.SHA256(random_challenge);
+            byte[] visualChallenge_Sha = Hashes.SHA256(Encoding.ASCII.GetBytes(visual_challenge));
 
-            PubKey pubKey = new PubKey("023a472219ad3327b07c18273717bb3a40b39b743756bf287fbd5fa9d263237f45");
+            var pubKey = new PubKey("023a472219ad3327b07c18273717bb3a40b39b743756bf287fbd5fa9d263237f45");
             bool verified = pubKey.VerifyMessage(hiddenChallenge_Sha.Concat(visualChallenge_Sha).ToArray(), Encoders.Base64.EncodeData(signature));
             Assert.True(verified);
         }
@@ -135,24 +149,24 @@ namespace NBitcoin.Tests
 
             foreach(var test in tests)
             {
-                BitcoinSecret secret = Network.Main.CreateBitcoinSecret(test.PrivateKeyWIF);
+                BitcoinSecret secret = this.networkMain.CreateBitcoinSecret(test.PrivateKeyWIF);
                 Assert.Equal(test.PubKey, secret.PrivateKey.PubKey.ToHex());
 
-                var address = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.Address);
+                var address = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress(test.Address);
                 Assert.Equal(new KeyId(test.Hash160), address.Hash);
                 Assert.Equal(new KeyId(test.Hash160), secret.PrivateKey.PubKey.Hash);
-                Assert.Equal(address.Hash, secret.PrivateKey.PubKey.GetAddress(Network.Main).Hash);
+                Assert.Equal(address.Hash, secret.PrivateKey.PubKey.GetAddress(KnownNetworks.Main).Hash);
 
-                var compressedSec = secret.Copy(true);
+                BitcoinSecret compressedSec = secret.Copy(true);
 
-                var a = secret.PrivateKey.PubKey;
-                var b = compressedSec.PrivateKey.PubKey;
+                PubKey a = secret.PrivateKey.PubKey;
+                PubKey b = compressedSec.PrivateKey.PubKey;
 
                 Assert.Equal(test.CompressedPrivateKeyWIF, compressedSec.ToWif());
                 Assert.Equal(test.CompressedPubKey, compressedSec.PrivateKey.PubKey.ToHex());
                 Assert.True(compressedSec.PrivateKey.PubKey.IsCompressed);
 
-                var compressedAddr = (BitcoinPubKeyAddress)Network.Main.CreateBitcoinAddress(test.CompressedAddress);
+                var compressedAddr = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress(test.CompressedAddress);
                 Assert.Equal(new KeyId(test.CompressedHash160), compressedAddr.Hash);
                 Assert.Equal(new KeyId(test.CompressedHash160), compressedSec.PrivateKey.PubKey.Hash);
 
@@ -164,11 +178,11 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void key_test1()
         {
-            BitcoinSecret bsecret1 = Network.Main.CreateBitcoinSecret(strSecret1);
-            BitcoinSecret bsecret2 = Network.Main.CreateBitcoinSecret(strSecret2);
-            BitcoinSecret bsecret1C = Network.Main.CreateBitcoinSecret(strSecret1C);
-            BitcoinSecret bsecret2C = Network.Main.CreateBitcoinSecret(strSecret2C);
-            Assert.Throws<FormatException>(() => Network.Main.CreateBitcoinSecret(strAddressBad));
+            BitcoinSecret bsecret1 = this.networkMain.CreateBitcoinSecret(strSecret1);
+            BitcoinSecret bsecret2 = this.networkMain.CreateBitcoinSecret(strSecret2);
+            BitcoinSecret bsecret1C = this.networkMain.CreateBitcoinSecret(strSecret1C);
+            BitcoinSecret bsecret2C = this.networkMain.CreateBitcoinSecret(strSecret2C);
+            Assert.Throws<FormatException>(() => this.networkMain.CreateBitcoinSecret(strAddressBad));
 
             Key key1 = bsecret1.PrivateKey;
             Assert.True(key1.IsCompressed == false);
@@ -187,10 +201,10 @@ namespace NBitcoin.Tests
             PubKey pubkey1C = key1C.PubKey;
             PubKey pubkey2C = key2C.PubKey;
 
-            Assert.True(addr1.Hash == pubkey1.Hash);
-            Assert.True(addr2.Hash == pubkey2.Hash);
-            Assert.True(addr1C.Hash == pubkey1C.Hash);
-            Assert.True(addr2C.Hash == pubkey2C.Hash);
+            Assert.True(this.addr1.Hash == pubkey1.Hash);
+            Assert.True(this.addr2.Hash == pubkey2.Hash);
+            Assert.True(this.addr1C.Hash == pubkey1C.Hash);
+            Assert.True(this.addr2C.Hash == pubkey2C.Hash);
 
 
 
@@ -207,7 +221,7 @@ namespace NBitcoin.Tests
                 // normal signatures
 
                 ECDSASignature sign1 = null, sign2 = null, sign1C = null, sign2C = null;
-                List<Task> tasks = new List<Task>();
+                var tasks = new List<Task>();
                 tasks.Add(Task.Run(() => sign1 = key1.Sign(hashMsg)));
                 tasks.Add(Task.Run(() => sign2 = key2.Sign(hashMsg)));
                 tasks.Add(Task.Run(() => sign1C = key1C.Sign(hashMsg)));
@@ -277,10 +291,10 @@ namespace NBitcoin.Tests
         public void key_test_from_bytes()
         {
             //Example private key taken from https://en.bitcoin.it/wiki/Private_key
-            Byte[] privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
-            Key key1 = new Key(privateKey, -1, false);
+            var privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
+            var key1 = new Key(privateKey, -1, false);
 
-            ISecret wifKey = key1.GetWif(NBitcoin.Network.Main);
+            ISecret wifKey = key1.GetWif(KnownNetworks.Main);
 
             //Example wif private key taken from https://en.bitcoin.it/wiki/Private_key
             const String expected = "5Kb8kLf9zgWQnogidDA76MzPL6TsZZY36hWXMssSzNydYXYB9KF";

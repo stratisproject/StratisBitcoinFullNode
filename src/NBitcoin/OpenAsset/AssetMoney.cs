@@ -5,18 +5,18 @@ namespace NBitcoin.OpenAsset
 {
     public class AssetMoney : IComparable, IComparable<AssetMoney>, IEquatable<AssetMoney>, IMoney
     {
-        long _Quantity;
+        private long _Quantity;
         public long Quantity
         {
             get
             {
-                return _Quantity;
+                return this._Quantity;
             }
             // used as a central point where long.MinValue checking can be enforced 
             private set
             {
                 CheckLongMinValue(value);
-                _Quantity = value;
+                this._Quantity = value;
             }
         }
         private static void CheckLongMinValue(long value)
@@ -34,7 +34,7 @@ namespace NBitcoin.OpenAsset
         {
             get
             {
-                return _Id;
+                return this._Id;
             }
         }
 
@@ -44,7 +44,7 @@ namespace NBitcoin.OpenAsset
         /// <returns></returns>
         public AssetMoney Abs()
         {
-            var a = this;
+            AssetMoney a = this;
             if(a.Quantity < 0)
                 a = -a;
             return a;
@@ -55,7 +55,7 @@ namespace NBitcoin.OpenAsset
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
+            this._Id = assetId;
         }
 
         public AssetMoney(IDestination issuer, long quantity)
@@ -66,36 +66,36 @@ namespace NBitcoin.OpenAsset
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
-            Quantity = quantity;
+            this._Id = assetId;
+            this.Quantity = quantity;
         }
 
         public AssetMoney(AssetId assetId, uint quantity)
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
-            Quantity = quantity;
+            this._Id = assetId;
+            this.Quantity = quantity;
         }
         public AssetMoney(AssetId assetId, long quantity)
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
-            Quantity = quantity;
+            this._Id = assetId;
+            this.Quantity = quantity;
         }
 
         public AssetMoney(AssetId assetId, ulong quantity)
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
+            this._Id = assetId;
 
             // overflow check. 
             // ulong.MaxValue is greater than long.MaxValue
             checked
             {
-                Quantity = (long)quantity;
+                this.Quantity = (long)quantity;
             }
         }
 
@@ -103,13 +103,13 @@ namespace NBitcoin.OpenAsset
         {
             if(assetId == null)
                 throw new ArgumentNullException("assetId");
-            _Id = assetId;
+            this._Id = assetId;
             // sanity check. Only valid units are allowed
             checked
             {
                 int dec = Pow10(divisibility);
-                var satoshi = amount * dec;
-                Quantity = (long)satoshi;
+                decimal satoshi = amount * dec;
+                this.Quantity = (long)satoshi;
             }
         }
         
@@ -138,11 +138,11 @@ namespace NBitcoin.OpenAsset
             if(parts <= 0)
                 throw new ArgumentOutOfRangeException("Parts should be more than 0", "parts");
             long remain;
-            long result = DivRem(_Quantity, parts, out remain);
+            long result = DivRem(this._Quantity, parts, out remain);
 
             for(int i = 0; i < parts; i++)
             {
-                yield return new AssetMoney(_Id, result + (remain > 0 ? 1 : 0));
+                yield return new AssetMoney(this._Id, result + (remain > 0 ? 1 : 0));
                 remain--;
             }
         }
@@ -155,10 +155,10 @@ namespace NBitcoin.OpenAsset
 
         public decimal ToDecimal(int divisibility)
         {
-            var dec = Pow10(divisibility);
+            int dec = Pow10(divisibility);
             // overflow safe because (long / int) always fit in decimal 
             // decimal operations are checked by default
-            return (decimal)Quantity / (int)dec;
+            return (decimal) this.Quantity / (int)dec;
         }
 
         #region IEquatable<AssetMoney> Members
@@ -168,12 +168,12 @@ namespace NBitcoin.OpenAsset
             if(other == null)
                 return false;
             CheckAssetId(other, "other");
-            return _Quantity.Equals(other.Quantity);
+            return this._Quantity.Equals(other.Quantity);
         }
 
         internal void CheckAssetId(AssetMoney other, string param)
         {
-            if(other.Id != Id)
+            if(other.Id != this.Id)
                 throw new ArgumentException("AssetMoney instance of different assets can't be computed together", param);
         }
 
@@ -182,7 +182,7 @@ namespace NBitcoin.OpenAsset
             if(other == null)
                 return 1;
             CheckAssetId(other, "other");
-            return _Quantity.CompareTo(other.Quantity);
+            return this._Quantity.CompareTo(other.Quantity);
         }
 
         #endregion
@@ -193,13 +193,13 @@ namespace NBitcoin.OpenAsset
         {
             if(obj == null)
                 return 1;
-            AssetMoney m = obj as AssetMoney;
+            var m = obj as AssetMoney;
             if(m != null)
-                return _Quantity.CompareTo(m.Quantity);
-#if !(PORTABLE || NETCORE)
+                return this._Quantity.CompareTo(m.Quantity);
+#if !NETCORE
             return _Quantity.CompareTo(obj);
 #else
-            return _Quantity.CompareTo((long)obj);
+            return this._Quantity.CompareTo((long)obj);
 #endif
         }
 
@@ -302,17 +302,17 @@ namespace NBitcoin.OpenAsset
 
         public override bool Equals(object obj)
         {
-            AssetMoney item = obj as AssetMoney;
+            var item = obj as AssetMoney;
             if(item == null)
                 return false;
-            if(item.Id != Id)
+            if(item.Id != this.Id)
                 return false;
-            return _Quantity.Equals(item.Quantity);
+            return this._Quantity.Equals(item.Quantity);
         }
 
         public static bool operator ==(AssetMoney a, AssetMoney b)
         {
-            if(Object.ReferenceEquals(a, b))
+            if(ReferenceEquals(a, b))
                 return true;
             if(((object)a == null) || ((object)b == null))
                 return false;
@@ -329,12 +329,12 @@ namespace NBitcoin.OpenAsset
 
         public override int GetHashCode()
         {
-            return Tuple.Create(_Quantity, Id).GetHashCode();
+            return Tuple.Create(this._Quantity, this.Id).GetHashCode();
         }
 
         public override string ToString()
         {
-            return String.Format("{0}-{1}", Quantity, Id);
+            return String.Format("{0}-{1}", this.Quantity, this.Id);
         }
 
         public static AssetMoney Min(AssetMoney a, AssetMoney b)
@@ -371,27 +371,27 @@ namespace NBitcoin.OpenAsset
 
         int IComparable.CompareTo(object obj)
         {
-            return this.CompareTo(obj);
+            return CompareTo(obj);
         }
 
         int IComparable<IMoney>.CompareTo(IMoney other)
         {
-            return this.CompareTo(other);
+            return CompareTo(other);
         }
 
         bool IEquatable<IMoney>.Equals(IMoney other)
         {
-            return this.Equals(other);
+            return Equals(other);
         }
 
         bool IMoney.IsCompatible(IMoney money)
         {
             if(money == null)
                 throw new ArgumentNullException("money");
-            AssetMoney assetMoney = money as AssetMoney;
+            var assetMoney = money as AssetMoney;
             if(assetMoney == null)
                 return false;
-            return assetMoney.Id == Id;
+            return assetMoney.Id == this.Id;
         }
 
         #endregion

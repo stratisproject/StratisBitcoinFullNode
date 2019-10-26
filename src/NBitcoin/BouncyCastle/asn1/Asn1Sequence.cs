@@ -25,13 +25,13 @@ namespace NBitcoin.BouncyCastle.Asn1
             }
             else if(obj is Asn1SequenceParser)
             {
-                return Asn1Sequence.GetInstance(((Asn1SequenceParser)obj).ToAsn1Object());
+                return GetInstance(((Asn1SequenceParser)obj).ToAsn1Object());
             }
             else if(obj is byte[])
             {
                 try
                 {
-                    return Asn1Sequence.GetInstance(FromByteArray((byte[])obj));
+                    return GetInstance(FromByteArray((byte[])obj));
                 }
                 catch(IOException e)
                 {
@@ -54,12 +54,12 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected internal Asn1Sequence(
             int capacity)
         {
-            seq = Platform.CreateArrayList(capacity);
+            this.seq = Platform.CreateArrayList(capacity);
         }
 
         public virtual IEnumerator GetEnumerator()
         {
-            return seq.GetEnumerator();
+            return this.seq.GetEnumerator();
         }
 
         [Obsolete("Use GetEnumerator() instead")]
@@ -84,10 +84,10 @@ namespace NBitcoin.BouncyCastle.Asn1
 
             public IAsn1Convertible ReadObject()
             {
-                if(index == max)
+                if(this.index == this.max)
                     return null;
 
-                Asn1Encodable obj = outer[index++];
+                Asn1Encodable obj = this.outer[this.index++];
 
                 if(obj is Asn1Sequence)
                     return ((Asn1Sequence)obj).Parser;
@@ -101,7 +101,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
             public Asn1Object ToAsn1Object()
             {
-                return outer;
+                return this.outer;
             }
         }
 
@@ -123,7 +123,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return (Asn1Encodable)seq[index];
+                return (Asn1Encodable) this.seq[index];
             }
         }
 
@@ -139,7 +139,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return Count;
+                return this.Count;
             }
         }
 
@@ -147,13 +147,13 @@ namespace NBitcoin.BouncyCastle.Asn1
         {
             get
             {
-                return seq.Count;
+                return this.seq.Count;
             }
         }
 
         protected override int Asn1GetHashCode()
         {
-            int hc = Count;
+            int hc = this.Count;
 
             foreach(object o in this)
             {
@@ -174,12 +174,12 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected override bool Asn1Equals(
             Asn1Object asn1Object)
         {
-            Asn1Sequence other = asn1Object as Asn1Sequence;
+            var other = asn1Object as Asn1Sequence;
 
             if(other == null)
                 return false;
 
-            if(Count != other.Count)
+            if(this.Count != other.Count)
                 return false;
 
             IEnumerator s1 = GetEnumerator();
@@ -199,7 +199,7 @@ namespace NBitcoin.BouncyCastle.Asn1
 
         private Asn1Encodable GetCurrent(IEnumerator e)
         {
-            Asn1Encodable encObj = (Asn1Encodable)e.Current;
+            var encObj = (Asn1Encodable)e.Current;
 
             // unfortunately null was allowed as a substitute for DER null
             if(encObj == null)
@@ -211,7 +211,7 @@ namespace NBitcoin.BouncyCastle.Asn1
         protected internal void AddObject(
             Asn1Encodable obj)
         {
-            seq.Add(obj);
+            this.seq.Add(obj);
         }
     }
 }

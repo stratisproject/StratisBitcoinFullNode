@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Tests that <see cref="AsyncQueue{T}.Dispose"/> triggers cancellation inside the on-enqueue callback.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DisposeCancelsEnqueueAsync()
+        public async Task AsyncQueue_DisposeCancelsEnqueueAsync()
         {
             bool signal = false;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// are finished before returning to the caller.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DisposeCancelsAndWaitsEnqueueAsync()
+        public async Task AsyncQueue_DisposeCancelsAndWaitsEnqueueAsync()
         {
             bool signal = true;
 
@@ -72,13 +72,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// regardless of how many enqueue operations occur.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_OnlyOneInstanceOfCallbackExecutesAsync()
+        public async Task AsyncQueue_OnlyOneInstanceOfCallbackExecutesAsync()
         {
             bool executingCallback = false;
 
             int itemsToProcess = 20;
             int itemsProcessed = 0;
-            ManualResetEventSlim allItemsProcessed = new ManualResetEventSlim();
+            var allItemsProcessed = new ManualResetEventSlim();
 
             var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
             {
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             int itemsToProcess = 30;
             int itemPrevious = -1;
-            ManualResetEventSlim signal = new ManualResetEventSlim();
+            var signal = new ManualResetEventSlim();
 
             var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
             {
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Tests that if the queue is disposed, not all items are necessarily processed.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DisposeCanDiscardItemsAsync()
+        public async Task AsyncQueue_DisposeCanDiscardItemsAsync()
         {
             int itemsToProcess = 100;
             int itemsProcessed = 0;
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// when the passed cancellation token is cancelled.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DequeueCancellationAsync()
+        public async Task AsyncQueue_DequeueCancellationAsync()
         {
             int itemsToProcess = 50;
             int itemsProcessed = 0;
@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// and that it throws cancellation exception when the queue is disposed.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DequeueAndDisposeAsync()
+        public async Task AsyncQueue_DequeueAndDisposeAsync()
         {
             int itemsToProcess = 50;
 
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var asyncQueue = new AsyncQueue<int>();
 
             // List of items collected by the consumer task.
-            List<int> list = new List<int>();
+            var list = new List<int>();
 
             Task consumer = Task.Run(async () =>
             {
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// if it is called after the queue was disposed.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DequeueThrowsAfterDisposeAsync()
+        public async Task AsyncQueue_DequeueThrowsAfterDisposeAsync()
         {
             // Create a queue in blocking dequeue mode.
             var asyncQueue = new AsyncQueue<int>();
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// two different threads safely.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_DequeueParallelAsync()
+        public async Task AsyncQueue_DequeueParallelAsync()
         {
             int itemsToProcess = 50;
 
@@ -323,8 +323,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var asyncQueue = new AsyncQueue<int>();
 
             // List of items collected by the consumer tasks.
-            List<int> list1 = new List<int>();
-            List<int> list2 = new List<int>();
+            var list1 = new List<int>();
+            var list2 = new List<int>();
 
             using (var cts = new CancellationTokenSource())
             {
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// exception when it is called on a queue operating in callback mode.
         /// </summary>
         [Fact]
-        public void AsyncQueue_DequeueThrowsInCallbackMode()
+        public async Task AsyncQueue_DequeueThrowsInCallbackMode()
         {
             var asyncQueue = new AsyncQueue<int>((item, cancellation) =>
             {
@@ -410,14 +410,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
             });
 
             // Enqueue an item, which should trigger the callback.
-            Assert.ThrowsAsync< InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
         }
 
         /// <summary>
         /// Tests that <see cref="AsyncQueue{T}.Dispose"/> can be called from a callback.
         /// </summary>
         [Fact]
-        public async void AsyncQueue_CanDisposeFromCallback_Async()
+        public async Task AsyncQueue_CanDisposeFromCallback_Async()
         {
             bool firstRun = true;
             bool shouldBeFalse = false;

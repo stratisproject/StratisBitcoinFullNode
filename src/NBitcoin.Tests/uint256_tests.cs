@@ -2,12 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class uint256_tests
     {
+        private readonly Network networkMain;
+
+        public uint256_tests()
+        {
+            this.networkMain = KnownNetworks.Main;
+        }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void uintTests()
@@ -56,9 +64,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void uitnSerializationTests()
         {
-            MemoryStream ms = new MemoryStream();
-            BitcoinStream stream = new BitcoinStream(ms, true);
-            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+            var ms = new MemoryStream();
+            var stream = new BitcoinStream(ms, true);
+            stream.ConsensusFactory = this.networkMain.Consensus.ConsensusFactory;
             
             var v = new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
             var vless = new uint256("00000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffe");
@@ -69,7 +77,7 @@ namespace NBitcoin.Tests
 
             ms.Position = 0;
             stream = new BitcoinStream(ms, false);
-            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+            stream.ConsensusFactory = this.networkMain.Consensus.ConsensusFactory;
 
             uint256 v2 = uint256.Zero;
             stream.ReadWrite(ref v2);
@@ -80,21 +88,21 @@ namespace NBitcoin.Tests
             stream.ReadWrite(ref v2);
             Assert.Equal(v, v2);
 
-            List<uint256> vs = new List<uint256>()
+            var vs = new List<uint256>()
             {
                 v,vless,vplus
             };
 
             ms = new MemoryStream();
             stream = new BitcoinStream(ms, true);
-            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
+            stream.ConsensusFactory = this.networkMain.Consensus.ConsensusFactory;
             stream.ReadWrite(ref vs);
             Assert.True(vs.Count == 3);
 
             ms.Position = 0;
             stream = new BitcoinStream(ms, false);
-            stream.ConsensusFactory = Network.Main.Consensus.ConsensusFactory;
-            List<uint256> vs2 = new List<uint256>();
+            stream.ConsensusFactory = this.networkMain.Consensus.ConsensusFactory;
+            var vs2 = new List<uint256>();
             stream.ReadWrite(ref vs2);
             Assert.True(vs2.SequenceEqual(vs));
 

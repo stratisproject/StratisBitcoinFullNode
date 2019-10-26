@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Configuration
@@ -11,7 +12,6 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class ConfigurationException : Exception
     {
-        /// <inheritdoc />
         public ConfigurationException(string message) : base(message)
         {
         }
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Configuration
             this.args = new Dictionary<string, List<string>>();
             int lineNumber = 0;
             // Process all lines, even if empty.
-            foreach (var l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+            foreach (string l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
             {
                 // Track line numbers, also for empty lines.
                 lineNumber++;
@@ -96,11 +96,14 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="value">Argument value.</param>
         private void Add(string key, string value)
         {
-            if (!this.args.TryGetValue(key, out var list))
+            key = key.ToLowerInvariant();
+
+            if (!this.args.TryGetValue(key, out List<string> list))
             {
                 list = new List<string>();
                 this.args.Add(key, list);
             }
+
             list.Add(value);
         }
 
@@ -110,9 +113,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="destination">Target instance to merge current instance into.</param>
         public void MergeInto(TextFileConfiguration destination)
         {
-            foreach (var kv in this.args)
+            foreach (KeyValuePair<string, List<string>> kv in this.args)
             {
-                foreach (var v in kv.Value)
+                foreach (string v in kv.Value)
                     destination.Add(kv.Key, v);
             }
         }
@@ -121,12 +124,18 @@ namespace Stratis.Bitcoin.Configuration
         /// Retrieves all values of a specific argument name (where the name excludes the dash prefix).
         /// </summary>
         /// <param name="key">Name of the argument (excluding the dash prefix).</param>
+        /// <param name="logger">The settings logger used to log the value. Logs on Debug level.</param>
         /// <returns>Values for the specified argument.</returns>
-        public string[] GetAll(string key)
+        public string[] GetAll(string key, ILogger logger = null)
         {
+            key = key.ToLowerInvariant();
+
             // Get the values with the - prefix.
-            if (!this.args.TryGetValue($"-{key}", out var values))
+            if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
+
+            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}",
+                values.Count, key, string.Join(",", values.Select(str => $"'{str}'")));
 
             return values.ToArray();
         }
@@ -137,15 +146,23 @@ namespace Stratis.Bitcoin.Configuration
         /// <typeparam name="T">Type of the argument value.</typeparam>
         /// <param name="key">Name of the argument.</param>
         /// <param name="defaultValue">Default value to return if no argument value is defined.</param>
+        /// <param name="logger">The settings logger to use to log the value. Logs on Debug level.</param>
         /// <returns>Value of the argument or a default value if no value was set.</returns>
-        public T GetOrDefault<T>(string key, T defaultValue)
+        public T GetOrDefault<T>(string key, T defaultValue, ILogger logger = null)
         {
-            if (!this.args.TryGetValue($"-{key}", out var values))
+            key = key.ToLowerInvariant();
+
+            if (!this.args.TryGetValue($"-{key}", out List<string> values))
+            {
+                logger?.LogDebug("Default value '{0}' was selected for the key '{1}'.", defaultValue, key);
                 return defaultValue;
+            }
 
             try
             {
-                return this.ConvertValue<T>(values[0]);
+                var value = this.ConvertValue<T>(values[0]);
+                logger?.LogDebug("Value '{0}' was loaded for the key '{1}'.", value, key);
+                return value;
             }
             catch (FormatException)
             {
@@ -187,6 +204,16 @@ namespace Stratis.Bitcoin.Configuration
                 return (T)(object)int.Parse(str, CultureInfo.InvariantCulture);
             }
 
+            if (typeof(T) == typeof(long))
+            {
+                return (T)(object)long.Parse(str, CultureInfo.InvariantCulture);
+            }
+
+            if (typeof(T) == typeof(ulong))
+            {
+                return (T)(object)ulong.Parse(str, CultureInfo.InvariantCulture);
+            }
+
             if (typeof(T) == typeof(Uri))
             {
                 return (T)(object)new Uri(str);
@@ -194,8 +221,8 @@ namespace Stratis.Bitcoin.Configuration
 
             if (typeof(T) == typeof(uint256))
             {
-                uint256 value;
-                if (!uint256.TryParse(str, out value))
+                uint256 value = null;
+                if (str != "0" && !uint256.TryParse(str, out value))
                     throw new FormatException($"Cannot parse uint256 from {str}.");
                 return (T)(object)value;
             }

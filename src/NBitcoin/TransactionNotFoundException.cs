@@ -19,7 +19,7 @@ namespace NBitcoin
         public TransactionNotFoundException(string message, uint256 txId, Exception inner)
             : base(message ?? "Transaction " + txId + " not found", inner)
         {
-            TxId = txId;
+            this.TxId = txId;
         }
         public uint256 TxId
         {

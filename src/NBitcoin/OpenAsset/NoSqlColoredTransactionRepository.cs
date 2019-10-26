@@ -4,49 +4,29 @@ namespace NBitcoin.OpenAsset
 {
     public class NoSqlColoredTransactionRepository : IColoredTransactionRepository
     {
-        public NoSqlColoredTransactionRepository()
-            : this(null, null)
+        public NoSqlColoredTransactionRepository(Network network)
+            : this(network, null, null)
         {
-
         }
-        public NoSqlColoredTransactionRepository(ITransactionRepository transactionRepository)
-            : this(transactionRepository, null)
-        {
 
-        }
-        public NoSqlColoredTransactionRepository(ITransactionRepository transactionRepository, NoSqlRepository repository)
+        public NoSqlColoredTransactionRepository(Network network, ITransactionRepository transactionRepository, NoSqlRepository noSqlRepository)
         {
             if(transactionRepository == null)
-                transactionRepository = new NoSqlTransactionRepository();
-            if(repository == null)
-                repository = new InMemoryNoSqlRepository();
-            _Transactions = transactionRepository;
-            _Repository = repository;
+                transactionRepository = new NoSqlTransactionRepository(network);
+
+            if(noSqlRepository == null)
+                noSqlRepository = new InMemoryNoSqlRepository(network);
+
+            this.Transactions = transactionRepository;
+            this.Repository = noSqlRepository;
         }
 
-        private readonly NoSqlRepository _Repository;
-        public NoSqlRepository Repository
-        {
-            get
-            {
-                return _Repository;
-            }
-        }
-
-        ITransactionRepository _Transactions;
-        #region IColoredTransactionRepository Members
-
-        public ITransactionRepository Transactions
-        {
-            get
-            {
-                return _Transactions;
-            }
-        }
+        public NoSqlRepository Repository { get; }
+        public ITransactionRepository Transactions { get; }
 
         public Task<ColoredTransaction> GetAsync(uint256 txId)
         {
-            return _Repository.GetAsync<ColoredTransaction>(GetId(txId));
+            return this.Repository.GetAsync<ColoredTransaction>(GetId(txId));
         }
 
         private static string GetId(uint256 txId)
@@ -56,9 +36,7 @@ namespace NBitcoin.OpenAsset
 
         public Task PutAsync(uint256 txId, ColoredTransaction tx)
         {
-            return _Repository.PutAsync(GetId(txId), tx);
+            return this.Repository.PutAsync(GetId(txId), tx);
         }
-
-        #endregion
     }
 }

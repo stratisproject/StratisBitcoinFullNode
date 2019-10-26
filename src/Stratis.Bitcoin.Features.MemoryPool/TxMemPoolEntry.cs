@@ -1,6 +1,5 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -33,9 +32,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     }
 
     /// <summary>
+    /// This interface includes the fields required for fee comparison.
+    /// </summary>
+    public interface ITxMempoolFees
+    {
+        Money ModFeesWithAncestors { get; }
+        long SizeWithAncestors { get; }
+    }
+
+    /// <summary>
     /// A transaction entry in the memory pool.
     /// </summary>
-    public class TxMempoolEntry
+    public class TxMempoolEntry:IComparable, ITxMempoolFees
     {
         /// <summary>Index in memory pools vTxHashes.</summary>
         public volatile uint vTxHashesIdx;
@@ -65,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public TxMempoolEntry(Transaction transaction, Money nFee,
             long nTime, double entryPriority, int entryHeight,
             Money inChainInputValue, bool spendsCoinbase,
-            long nSigOpsCost, LockPoints lp, PowConsensusOptions consensusOptions)
+            long nSigOpsCost, LockPoints lp, ConsensusOptions consensusOptions)
         {
             this.Transaction = transaction;
             this.TransactionHash = transaction.GetHash();
@@ -283,6 +291,35 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public override string ToString()
         {
             return $"{this.TransactionHash} - {base.ToString()}";
+        }
+
+        /// <summary>
+        /// Default comparator for comparing this object to another TxMemPoolEntry object.
+        /// </summary>
+        /// <param name="other">Memory pool entry to compare to.</param>
+        /// <returns>Result of comparison function.</returns>
+        public int CompareTo(object other)
+        {
+            return uint256.Comparison(this.TransactionHash, (other as TxMempoolEntry).TransactionHash);
+        }
+
+        /// <summary>
+        /// Used to compare fees on objects supporting the IComparable and ITxMempoolFees interfaces.
+        /// </summary>
+        /// <typeparam name="T">A type that supports the IComparable and ITxMempoolFees interfaces.</typeparam>
+        /// <param name="a">The first object to compare.</param>
+        /// <param name="b">The second object to compare.</param>
+        /// <returns>Returns -1 if a less than b, 0 if a equals b, and 1 if a greater than b.</returns>
+        public static int CompareFees<T>(T a, T b) where T:IComparable,ITxMempoolFees
+        {
+            // Avoid division by rewriting (a/b > c/d) as (a*d > c*b).
+            Money f1 = a.ModFeesWithAncestors * b.SizeWithAncestors;
+            Money f2 = b.ModFeesWithAncestors * a.SizeWithAncestors;
+
+            if (f1 == f2)
+                return a.CompareTo(b);
+
+            return (f1 < f2) ? 1 : -1;
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,15 +11,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 using Moq;
 using NBitcoin;
-using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class RPCControllerTest : LogsTestBase
     {
-        private readonly Network network;
+        private readonly Network testNetwork;
         private readonly Mock<IFullNode> fullNode;
         private readonly RpcSettings rpcSettings;
         private readonly RPCController controller;
@@ -41,19 +41,20 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public RPCControllerTest()
         {
-            this.network = Network.TestNet;
+            this.testNetwork = KnownNetworks.TestNet;
             this.fullNode = new Mock<IFullNode>();
             this.fullNode.Setup(f => f.Network)
-                .Returns(this.network);
+                .Returns(this.testNetwork);
             this.rpcHost = new Mock<IWebHost>();
-            this.rpcSettings = new RpcSettings();
+            var nodeSettings = new NodeSettings(this.testNetwork, args: new string[] { "-server=1" });
+            this.rpcSettings = new RpcSettings(nodeSettings);
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();
 
             this.rpcClient = new Mock<IRPCClient>();
             this.rpcSettings.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0));
-            this.rpcClientFactory.Setup(r => r.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
+            this.rpcClientFactory.Setup(r => r.Create(It.IsAny<RpcSettings>(), It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
                 .Returns(this.rpcClient.Object);
 
             this.fullNode.Setup(f => f.RPCHost)
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 Parameters = new List<ParameterDescriptor>()
             };
 
-            foreach (var parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
+            foreach (ParameterInfo parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
             {
                 descriptor.Parameters.Add(new ControllerParameterDescriptor()
                 {
@@ -94,12 +95,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             }
             this.descriptors.Add(descriptor);
 
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var jsonResult = Assert.IsType<JsonResult>(controllerResult);
             var model = Assert.IsType<List<RpcCommandModel>>(jsonResult.Value);
             Assert.NotEmpty(model);
-            var commandModel = model[0];
+            RpcCommandModel commandModel = model[0];
             Assert.Equal("getblockheader <hash> [<isjsonformat>]", commandModel.Command);
             Assert.Equal("Gets the block header of the block identified by the hash.", commandModel.Description);
         }
@@ -107,7 +108,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void ListMethods_NoDescriptors_ReturnsEmptyModel()
         {
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var jsonResult = Assert.IsType<JsonResult>(controllerResult);
             var model = Assert.IsType<List<RpcCommandModel>>(jsonResult.Value);
@@ -121,7 +122,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.RPCHost)
                 .Throws(new InvalidOperationException("Could not find RPCHost"));
 
-            var controllerResult = this.controller.ListMethods();
+            IActionResult controllerResult = this.controller.ListMethods();
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 Parameters = new List<ParameterDescriptor>()
             };
 
-            foreach (var parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
+            foreach (ParameterInfo parameter in typeof(FullNodeController).GetMethod("GetBlockHeader").GetParameters())
             {
                 descriptor.Parameters.Add(new ControllerParameterDescriptor()
                 {
@@ -151,18 +152,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 });
             }
             this.descriptors.Add(descriptor);
-            var values = new Dictionary<string, StringValues>();
-            values.Add("hash", new StringValues(new uint256(1000).ToString()));
-            values.Add("isjsonformat", new StringValues("true"));
-
 
             this.controller.ControllerContext = new ControllerContext();
             this.controller.ControllerContext.HttpContext = new DefaultHttpContext();
-            this.controller.ControllerContext.HttpContext.Request.Query = new QueryCollection(values);
 
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new RPCResponseObject()))))
             {
-                var rpcResponse = RPCResponse.Load(stream);
+                RPCResponse rpcResponse = RPCResponse.Load(stream);
                 this.rpcClient.Setup(c => c.SendCommand(It.Is<RPCRequest>(r => r.Method == "getblockheader"
                                                         && ((string)r.Params[0]) == new uint256(1000).ToString()
                                                         && ((string)r.Params[1]) == "true"), true))
@@ -170,13 +166,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                     .Verifiable();
 
                 // call
-                var controllerResult = this.controller.CallByName("getblockheader");
+                var body = JObject.FromObject(new { methodName = "getblockheader", hash = new uint256(1000).ToString(), isjsonformat = "true" });
+                IActionResult controllerResult = this.controller.CallByName(body);
 
                 //verify
                 this.rpcClient.Verify();
                 var jsonResult = Assert.IsType<JsonResult>(controllerResult);
                 var result = jsonResult.Value as JToken;
-                Assert.Equal(Network.TestNet.GenesisHash.ToString(), result["hashPrevBlock"].ToString());
+                Assert.Equal(this.testNetwork.GenesisHash.ToString(), result["hashPrevBlock"].ToString());
             }
         }
 
@@ -190,7 +187,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.controller.ControllerContext.HttpContext = new DefaultHttpContext();
             this.controller.ControllerContext.HttpContext.Request.Query = new QueryCollection(values);
 
-            var controllerResult = this.controller.CallByName("getblockheader");
+            var body = JObject.FromObject(new {methodName = "getblockheader"});
+            IActionResult controllerResult = this.controller.CallByName(body);
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);
@@ -205,7 +203,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.RPCHost)
                .Throws(new InvalidOperationException("Could not find RPCHost"));
 
-            var controllerResult = this.controller.CallByName("getblockheader");
+            var body = JObject.FromObject(new { methodName = "getblockheader" });
+            IActionResult controllerResult = this.controller.CallByName(body);
 
             var errorResult = Assert.IsType<ErrorResult>(controllerResult);
             Assert.Equal(400, errorResult.StatusCode);
@@ -218,7 +217,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             public BlockHeaderObject result = new BlockHeaderObject()
             {
-                hashPrevBlock = Network.TestNet.GenesisHash.ToString()
+                hashPrevBlock = KnownNetworks.TestNet.GenesisHash.ToString()
             };
 
             public RPCErrorObject error = new RPCErrorObject()

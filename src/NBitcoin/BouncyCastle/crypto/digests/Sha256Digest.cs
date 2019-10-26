@@ -43,17 +43,17 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             base.CopyIn(t);
 
-            H1 = t.H1;
-            H2 = t.H2;
-            H3 = t.H3;
-            H4 = t.H4;
-            H5 = t.H5;
-            H6 = t.H6;
-            H7 = t.H7;
-            H8 = t.H8;
+            this.H1 = t.H1;
+            this.H2 = t.H2;
+            this.H3 = t.H3;
+            this.H4 = t.H4;
+            this.H5 = t.H5;
+            this.H6 = t.H6;
+            this.H7 = t.H7;
+            this.H8 = t.H8;
 
-            Array.Copy(t.X, 0, X, 0, t.X.Length);
-            xOff = t.xOff;
+            Array.Copy(t.X, 0, this.X, 0, t.X.Length);
+            this.xOff = t.xOff;
         }
 
         public override string AlgorithmName
@@ -73,9 +73,9 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             byte[] input,
             int inOff)
         {
-            X[xOff] = Pack.BE_To_UInt32(input, inOff);
+            this.X[this.xOff] = Pack.BE_To_UInt32(input, inOff);
 
-            if(++xOff == 16)
+            if(++this.xOff == 16)
             {
                 ProcessBlock();
             }
@@ -84,13 +84,13 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         internal override void ProcessLength(
             long bitLength)
         {
-            if(xOff > 14)
+            if(this.xOff > 14)
             {
                 ProcessBlock();
             }
 
-            X[14] = (uint)((ulong)bitLength >> 32);
-            X[15] = (uint)((ulong)bitLength);
+            this.X[14] = (uint)((ulong)bitLength >> 32);
+            this.X[15] = (uint)((ulong)bitLength);
         }
 
         public override int DoFinal(
@@ -99,14 +99,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
         {
             Finish();
 
-            Pack.UInt32_To_BE((uint)H1, output, outOff);
-            Pack.UInt32_To_BE((uint)H2, output, outOff + 4);
-            Pack.UInt32_To_BE((uint)H3, output, outOff + 8);
-            Pack.UInt32_To_BE((uint)H4, output, outOff + 12);
-            Pack.UInt32_To_BE((uint)H5, output, outOff + 16);
-            Pack.UInt32_To_BE((uint)H6, output, outOff + 20);
-            Pack.UInt32_To_BE((uint)H7, output, outOff + 24);
-            Pack.UInt32_To_BE((uint)H8, output, outOff + 28);
+            Pack.UInt32_To_BE((uint) this.H1, output, outOff);
+            Pack.UInt32_To_BE((uint) this.H2, output, outOff + 4);
+            Pack.UInt32_To_BE((uint) this.H3, output, outOff + 8);
+            Pack.UInt32_To_BE((uint) this.H4, output, outOff + 12);
+            Pack.UInt32_To_BE((uint) this.H5, output, outOff + 16);
+            Pack.UInt32_To_BE((uint) this.H6, output, outOff + 20);
+            Pack.UInt32_To_BE((uint) this.H7, output, outOff + 24);
+            Pack.UInt32_To_BE((uint) this.H8, output, outOff + 28);
 
             Reset();
 
@@ -122,8 +122,8 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
             initHs();
 
-            xOff = 0;
-            Array.Clear(X, 0, X.Length);
+            this.xOff = 0;
+            Array.Clear(this.X, 0, this.X.Length);
         }
 
         private void initHs()
@@ -132,14 +132,14 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             * The first 32 bits of the fractional parts of the square roots
             * of the first eight prime numbers
             */
-            H1 = 0x6a09e667;
-            H2 = 0xbb67ae85;
-            H3 = 0x3c6ef372;
-            H4 = 0xa54ff53a;
-            H5 = 0x510e527f;
-            H6 = 0x9b05688c;
-            H7 = 0x1f83d9ab;
-            H8 = 0x5be0cd19;
+            this.H1 = 0x6a09e667;
+            this.H2 = 0xbb67ae85;
+            this.H3 = 0x3c6ef372;
+            this.H4 = 0xa54ff53a;
+            this.H5 = 0x510e527f;
+            this.H6 = 0x9b05688c;
+            this.H7 = 0x1f83d9ab;
+            this.H8 = 0x5be0cd19;
         }
 
         internal override void ProcessBlock()
@@ -149,87 +149,87 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
             //
             for(int ti = 16; ti <= 63; ti++)
             {
-                X[ti] = Theta1(X[ti - 2]) + X[ti - 7] + Theta0(X[ti - 15]) + X[ti - 16];
+                this.X[ti] = Theta1(this.X[ti - 2]) + this.X[ti - 7] + Theta0(this.X[ti - 15]) + this.X[ti - 16];
             }
 
             //
             // set up working variables.
             //
-            uint a = H1;
-            uint b = H2;
-            uint c = H3;
-            uint d = H4;
-            uint e = H5;
-            uint f = H6;
-            uint g = H7;
-            uint h = H8;
+            uint a = this.H1;
+            uint b = this.H2;
+            uint c = this.H3;
+            uint d = this.H4;
+            uint e = this.H5;
+            uint f = this.H6;
+            uint g = this.H7;
+            uint h = this.H8;
 
             int t = 0;
             for(int i = 0; i < 8; ++i)
             {
                 // t = 8 * i
-                h += Sum1Ch(e, f, g) + K[t] + X[t];
+                h += Sum1Ch(e, f, g) + K[t] + this.X[t];
                 d += h;
                 h += Sum0Maj(a, b, c);
                 ++t;
 
                 // t = 8 * i + 1
-                g += Sum1Ch(d, e, f) + K[t] + X[t];
+                g += Sum1Ch(d, e, f) + K[t] + this.X[t];
                 c += g;
                 g += Sum0Maj(h, a, b);
                 ++t;
 
                 // t = 8 * i + 2
-                f += Sum1Ch(c, d, e) + K[t] + X[t];
+                f += Sum1Ch(c, d, e) + K[t] + this.X[t];
                 b += f;
                 f += Sum0Maj(g, h, a);
                 ++t;
 
                 // t = 8 * i + 3
-                e += Sum1Ch(b, c, d) + K[t] + X[t];
+                e += Sum1Ch(b, c, d) + K[t] + this.X[t];
                 a += e;
                 e += Sum0Maj(f, g, h);
                 ++t;
 
                 // t = 8 * i + 4
-                d += Sum1Ch(a, b, c) + K[t] + X[t];
+                d += Sum1Ch(a, b, c) + K[t] + this.X[t];
                 h += d;
                 d += Sum0Maj(e, f, g);
                 ++t;
 
                 // t = 8 * i + 5
-                c += Sum1Ch(h, a, b) + K[t] + X[t];
+                c += Sum1Ch(h, a, b) + K[t] + this.X[t];
                 g += c;
                 c += Sum0Maj(d, e, f);
                 ++t;
 
                 // t = 8 * i + 6
-                b += Sum1Ch(g, h, a) + K[t] + X[t];
+                b += Sum1Ch(g, h, a) + K[t] + this.X[t];
                 f += b;
                 b += Sum0Maj(c, d, e);
                 ++t;
 
                 // t = 8 * i + 7
-                a += Sum1Ch(f, g, h) + K[t] + X[t];
+                a += Sum1Ch(f, g, h) + K[t] + this.X[t];
                 e += a;
                 a += Sum0Maj(b, c, d);
                 ++t;
             }
 
-            H1 += a;
-            H2 += b;
-            H3 += c;
-            H4 += d;
-            H5 += e;
-            H6 += f;
-            H7 += g;
-            H8 += h;
+            this.H1 += a;
+            this.H2 += b;
+            this.H3 += c;
+            this.H4 += d;
+            this.H5 += e;
+            this.H6 += f;
+            this.H7 += g;
+            this.H8 += h;
 
             //
             // reset the offset and clean out the word buffer.
             //
-            xOff = 0;
-            Array.Clear(X, 0, 16);
+            this.xOff = 0;
+            Array.Clear(this.X, 0, 16);
         }
 
         private static uint Sum1Ch(
@@ -323,7 +323,7 @@ namespace NBitcoin.BouncyCastle.Crypto.Digests
 
         public override void Reset(IMemoable other)
         {
-            Sha256Digest d = (Sha256Digest)other;
+            var d = (Sha256Digest)other;
 
             CopyIn(d);
         }

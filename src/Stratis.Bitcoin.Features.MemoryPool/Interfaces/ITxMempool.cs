@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// <summary>
         /// Calculates descendants of entry that are not already in setDescendants, and adds to setDecendants.
         /// </summary>
-        /// <param name="entryit">Memory pool entry.</param>
+        /// <param name="entry">Memory pool entry.</param>
         /// <param name="setDescendants">Set of entry decendants to add to.</param>
         /// <remarks>
         /// Assumes entryit is already a tx in the mempool and setMemPoolChildren
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// in-mempool descendants of it are already in setDescendants as well, so that we
         /// can save time by not iterating over those entries.
         /// </remarks>
-        void CalculateDescendants(TxMempoolEntry entryit, TxMempool.SetEntries setDescendants);
+        void CalculateDescendants(TxMempoolEntry entry, TxMempool.SetEntries setDescendants);
 
         /// <summary>
         /// Try to calculate all in-mempool ancestors of entry.
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// </summary>
         /// <param name="pcoins">Coin view of the transaction.</param>
         /// <exception cref="NotImplementedException"/>
-        void Check(CoinView pcoins);
+        void Check(ICoinView pcoins);
 
         /// <summary>
         /// Clears the collections that contain the memory pool transactions,

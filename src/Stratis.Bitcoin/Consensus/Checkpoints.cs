@@ -3,6 +3,7 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Network network;
 
         /// <summary>Consensus settings for the full node.</summary>
-        private ConsensusSettings consensusSettings { get; }
+        private readonly ConsensusSettings consensusSettings;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -77,13 +78,35 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public int GetLastCheckpointHeight()
         {
             Dictionary<int, CheckpointInfo> checkpoints = this.GetCheckpoints();
             return checkpoints.Count > 0 ? checkpoints.Keys.Last() : 0;
         }
 
+        /// <summary>
+        /// Gets the last checkpoint.
+        /// </summary>
+        /// <returns>Last <see cref="CheckpointInfo"/> or null.</returns>
+        [NoTrace]
+        public CheckpointInfo GetLastCheckpoint(out int height)
+        {
+            var checkpoints = this.GetCheckpoints();
+            if (checkpoints.Count == 0)
+            {
+                height = 0;
+                return null;
+            }
+            else
+            {
+                height = checkpoints.Keys.Max();
+                return checkpoints[height];
+            }
+        }
+
         /// <inheritdoc />
+        [NoTrace]
         public bool CheckHardened(int height, uint256 hash)
         {
             CheckpointInfo checkpoint;
@@ -93,6 +116,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public CheckpointInfo GetCheckpoint(int height)
         {
             CheckpointInfo checkpoint;
@@ -100,6 +124,7 @@ namespace Stratis.Bitcoin.Consensus
             return checkpoint;
         }
 
+        [NoTrace]
         private Dictionary<int, CheckpointInfo> GetCheckpoints()
         {
             if (this.consensusSettings == null || !this.consensusSettings.UseCheckpoints)

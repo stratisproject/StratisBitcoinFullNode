@@ -10,20 +10,20 @@ namespace NBitcoin
     {
         protected bool Equals(BlockSignature other)
         {
-            return Equals(signature, other.signature);
+            return Equals(this.signature, other.signature);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (obj.GetType() != GetType()) return false;
             return Equals((BlockSignature) obj);
         }
 
         public override int GetHashCode()
         {
-            return (signature?.GetHashCode() ?? 0);
+            return (this.signature?.GetHashCode() ?? 0);
         }
 
         public BlockSignature()
@@ -37,17 +37,17 @@ namespace NBitcoin
         {
             get
             {
-                return signature;
+                return this.signature;
             }
             set
             {
-                signature = value;
+                this.signature = value;
             }
         }
 
         internal void SetNull()
         {
-            signature = new byte[0];
+            this.signature = new byte[0];
         }
 
         public bool IsEmpty()
@@ -57,7 +57,7 @@ namespace NBitcoin
 
         public static bool operator ==(BlockSignature a, BlockSignature b)
         {
-            if (System.Object.ReferenceEquals(a, b))
+            if (ReferenceEquals(a, b))
                 return true;
 
             if (((object)a == null) || ((object)b == null))
@@ -75,7 +75,7 @@ namespace NBitcoin
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWriteAsVarString(ref signature);
+            stream.ReadWriteAsVarString(ref this.signature);
         }
 
         #endregion
@@ -84,7 +84,5 @@ namespace NBitcoin
         {
             return Encoders.Hex.EncodeData(this.signature);
         }
-
-
     }
 }

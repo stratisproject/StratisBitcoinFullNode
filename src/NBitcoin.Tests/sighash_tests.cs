@@ -1,14 +1,22 @@
 ﻿using System;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class sighash_tests
     {
-        static Random rand = new Random();
+        private readonly Network networkMain;
 
-        static Script RandomScript()
+        public sighash_tests()
+        {
+            this.networkMain = KnownNetworks.Main;
+        }
+
+        private static Random rand = new Random();
+
+        private static Script RandomScript()
         {
             OpcodeType[] oplist = { OpcodeType.OP_FALSE, OpcodeType.OP_1, OpcodeType.OP_2, OpcodeType.OP_3, OpcodeType.OP_CHECKSIG, OpcodeType.OP_IF, OpcodeType.OP_VERIF, OpcodeType.OP_RETURN, OpcodeType.OP_CODESEPARATOR };
             var script = new Script();
@@ -47,11 +55,11 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void sighash_from_data()
         {
-            var tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("sighash.json"));
+            TestCase[] tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("sighash.json"));
 
-            foreach(var test in tests)
+            foreach(TestCase test in tests)
             {
-                var strTest = test.ToString();
+                string strTest = test.ToString();
                 if(test.Count < 1) // Allow for extra stuff (useful for comments)
                 {
                     Assert.True(false, "Bad test: " + strTest);
@@ -62,8 +70,8 @@ namespace NBitcoin.Tests
 
                 string raw_tx, raw_script, sigHashHex;
                 int nIn, nHashType;
-                Transaction tx = new Transaction();
-                Script scriptCode = new Script();
+                var tx = new Transaction();
+                var scriptCode = new Script();
 
 
                 // deserialize test data
@@ -74,12 +82,12 @@ namespace NBitcoin.Tests
                 sigHashHex = (string)test[4];
 
 
-                tx.ReadWrite(ParseHex(raw_tx));                
+                tx.ReadWrite(ParseHex(raw_tx), this.networkMain.Consensus.ConsensusFactory);
 
-                var raw = ParseHex(raw_script);
+                byte[] raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);
 
-                var sh = Script.SignatureHash(Network.Main, scriptCode, tx, nIn, (SigHash)nHashType);
+                uint256 sh = Script.SignatureHash(KnownNetworks.Main, scriptCode, tx, nIn, (SigHash)nHashType);
                 Assert.True(sh.ToString() == sigHashHex, strTest);
             }
         }

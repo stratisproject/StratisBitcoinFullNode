@@ -10,25 +10,25 @@ namespace NBitcoin
     public class BitcoinPubKeyAddress : BitcoinAddress, IBase58Data
     {
         public BitcoinPubKeyAddress(string base58, Network expectedNetwork)
-            : base(Validate(base58, ref expectedNetwork), expectedNetwork)
+            : base(Validate(base58, expectedNetwork), expectedNetwork)
         {
-            var decoded = Encoders.Base58Check.DecodeData(base58);
-            _KeyId = new KeyId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
+            byte[] decoded = Encoders.Base58Check.DecodeData(base58);
+            this._KeyId = new KeyId(new uint160(decoded.Skip(expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
         }
 
-        private static string Validate(string base58, ref Network expectedNetwork)
+        private static string Validate(string base58, Network expectedNetwork)
         {
-            if (IsValid(base58, ref expectedNetwork))
+            if (IsValid(base58, expectedNetwork))
                 return base58;
             throw new FormatException("Invalid BitcoinPubKeyAddress");
         }
 
-        public static bool IsValid(string base58, ref Network expectedNetwork)
+        public static bool IsValid(string base58, Network expectedNetwork)
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
-            var data = Encoders.Base58Check.DecodeData(base58);
-            var versionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
+            byte[] data = Encoders.Base58Check.DecodeData(base58);
+            byte[] versionBytes = expectedNetwork.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, false);
             if (versionBytes != null && data.StartWith(versionBytes))
             {
                 if (data.Length == versionBytes.Length + 20)
@@ -42,7 +42,7 @@ namespace NBitcoin
         public BitcoinPubKeyAddress(KeyId keyId, Network network) :
             base(NotNull(keyId) ?? Network.CreateBase58(Base58Type.PUBKEY_ADDRESS, keyId.ToBytes(), network), network)
         {
-            _KeyId = keyId;
+            this._KeyId = keyId;
         }
 
         private static string NotNull(KeyId keyId)
@@ -54,16 +54,16 @@ namespace NBitcoin
 
         public bool VerifyMessage(string message, string signature)
         {
-            var key = PubKey.RecoverFromMessage(message, signature);
-            return key.Hash == Hash;
+            PubKey key = PubKey.RecoverFromMessage(message, signature);
+            return key.Hash == this.Hash;
         }
 
-        KeyId _KeyId;
+        private KeyId _KeyId;
         public KeyId Hash
         {
             get
             {
-                return _KeyId;
+                return this._KeyId;
             }
         }
 

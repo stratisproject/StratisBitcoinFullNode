@@ -8,6 +8,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -34,6 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new BroadcasterBehavior(this.broadcasterManager, this.logger);
@@ -89,9 +91,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         private void ProcessInvPayload(InvPayload invPayload)
         {
             // if node has transaction we broadcast
-            foreach (var inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
+            foreach (InventoryVector inv in invPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
-                var txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
+                TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
                     this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
@@ -117,12 +119,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);

@@ -74,7 +74,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public ECPoint GetDetachedPoint()
         {
-            return this.Normalize().Detach();
+            return Normalize().Detach();
         }
 
         public virtual ECCurve Curve
@@ -107,7 +107,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return this.Normalize().XCoord;
+                return Normalize().XCoord;
             }
         }
 
@@ -122,7 +122,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                return this.Normalize().YCoord;
+                return Normalize().YCoord;
             }
         }
 
@@ -136,7 +136,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                this.CheckNormalized();
+                CheckNormalized();
                 return this.XCoord;
             }
         }
@@ -151,7 +151,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             get
             {
-                this.CheckNormalized();
+                CheckNormalized();
                 return this.YCoord;
             }
         }
@@ -202,7 +202,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             {
                 return this.m_zs;
             }
-            ECFieldElement[] copy = new ECFieldElement[zsLen];
+            var copy = new ECFieldElement[zsLen];
             Array.Copy(this.m_zs, 0, copy, 0, zsLen);
             return copy;
         }
@@ -233,7 +233,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected virtual void CheckNormalized()
         {
-            if(!this.IsNormalized())
+            if(!IsNormalized())
                 throw new InvalidOperationException("point not in normal form");
         }
 
@@ -275,7 +275,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             return this;
                         }
 
-                        return this.Normalize(Z1.Invert());
+                        return Normalize(Z1.Invert());
                     }
             }
         }
@@ -287,14 +287,14 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 case ECCurve.COORD_HOMOGENEOUS:
                 case ECCurve.COORD_LAMBDA_PROJECTIVE:
                     {
-                        return this.CreateScaledPoint(zInv, zInv);
+                        return CreateScaledPoint(zInv, zInv);
                     }
                 case ECCurve.COORD_JACOBIAN:
                 case ECCurve.COORD_JACOBIAN_CHUDNOVSKY:
                 case ECCurve.COORD_JACOBIAN_MODIFIED:
                     {
                         ECFieldElement zInv2 = zInv.Square(), zInv3 = zInv2.Multiply(zInv);
-                        return this.CreateScaledPoint(zInv2, zInv3);
+                        return CreateScaledPoint(zInv2, zInv3);
                     }
                 default:
                     {
@@ -334,10 +334,10 @@ namespace NBitcoin.BouncyCastle.Math.EC
             ECCurve curve = this.Curve;
             if(curve != null)
             {
-                if(!this.SatisfiesCurveEquation())
+                if(!SatisfiesCurveEquation())
                     return false;
 
-                if(!this.SatisfiesCofactor())
+                if(!SatisfiesCofactor())
                     return false;
             }
 
@@ -360,7 +360,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public override bool Equals(object obj)
         {
-            return this.Equals(obj as ECPoint);
+            return Equals(obj as ECPoint);
         }
 
         public virtual bool Equals(ECPoint other)
@@ -400,7 +400,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             {
                 // TODO Consider just requiring already normalized, to avoid silent performance degradation
 
-                ECPoint[] points = new ECPoint[] { this, c1.ImportPoint(p2) };
+                var points = new ECPoint[] { this, c1.ImportPoint(p2) };
 
                 // TODO This is a little strong, really only requires coZNormalizeAll to get Zs equal
                 c1.NormalizeAll(points);
@@ -421,7 +421,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             {
                 // TODO Consider just requiring already normalized, to avoid silent performance degradation
 
-                ECPoint p = this.Normalize();
+                ECPoint p = Normalize();
 
                 hc ^= p.XCoord.GetHashCode() * 17;
                 hc ^= p.YCoord.GetHashCode() * 257;
@@ -437,7 +437,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return "INF";
             }
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append('(');
             sb.Append(this.RawXCoord);
             sb.Append(',');
@@ -453,7 +453,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public virtual byte[] GetEncoded()
         {
-            return this.GetEncoded(this.m_withCompression);
+            return GetEncoded(this.m_withCompression);
         }
 
         public abstract byte[] GetEncoded(bool compressed);
@@ -485,12 +485,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         public virtual ECPoint TwicePlus(ECPoint b)
         {
-            return this.Twice().Add(b);
+            return Twice().Add(b);
         }
 
         public virtual ECPoint ThreeTimes()
         {
-            return this.TwicePlus(this);
+            return TwicePlus(this);
         }
     }
 
@@ -521,13 +521,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return new byte[1];
             }
 
-            ECPoint normed = this.Normalize();
+            ECPoint normed = Normalize();
 
             byte[] X = normed.XCoord.GetEncoded();
 
             if(compressed)
             {
-                byte[] PO = new byte[X.Length + 1];
+                var PO = new byte[X.Length + 1];
                 PO[0] = (byte)(normed.CompressionYTilde ? 0x03 : 0x02);
                 Array.Copy(X, 0, PO, 1, X.Length);
                 return PO;
@@ -536,7 +536,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             byte[] Y = normed.YCoord.GetEncoded();
 
             {
-                byte[] PO = new byte[X.Length + Y.Length + 1];
+                var PO = new byte[X.Length + Y.Length + 1];
                 PO[0] = 0x04;
                 Array.Copy(X, 0, PO, 1, X.Length);
                 Array.Copy(Y, 0, PO, X.Length + 1, Y.Length);
@@ -624,7 +624,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return this;
 
             // Add -b
-            return this.Add(b.Negate());
+            return Add(b.Negate());
         }
     }
 
@@ -675,7 +675,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
         {
             if(index == 1 && ECCurve.COORD_JACOBIAN_MODIFIED == this.CurveCoordinateSystem)
             {
-                return this.GetJacobianModifiedW();
+                return GetJacobianModifiedW();
             }
 
             return base.GetZCoord(index);
@@ -689,7 +689,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(b.IsInfinity)
                 return this;
             if(this == b)
-                return this.Twice();
+                return Twice();
 
             ECCurve curve = this.Curve;
             int coord = curve.CoordinateSystem;
@@ -708,7 +708,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             if(dy.IsZero)
                             {
                                 // this == b, i.e. this must be doubled
-                                return this.Twice();
+                                return Twice();
                             }
 
                             // this == -b, i.e. the result is the point at infinity
@@ -743,7 +743,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             if(u.IsZero)
                             {
                                 // this == b, i.e. this must be doubled
-                                return this.Twice();
+                                return Twice();
                             }
 
                             // this == -b, i.e. the result is the point at infinity
@@ -755,7 +755,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         ECFieldElement vSquared = v.Square();
                         ECFieldElement vCubed = vSquared.Multiply(v);
                         ECFieldElement vSquaredV2 = vSquared.Multiply(v2);
-                        ECFieldElement A = u.Square().Multiply(w).Subtract(vCubed).Subtract(this.Two(vSquaredV2));
+                        ECFieldElement A = u.Square().Multiply(w).Subtract(vCubed).Subtract(Two(vSquaredV2));
 
                         ECFieldElement X3 = v.Multiply(A);
                         ECFieldElement Y3 = vSquaredV2.Subtract(A).MultiplyMinusProduct(u, u2, vCubed);
@@ -783,7 +783,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             {
                                 if(dy.IsZero)
                                 {
-                                    return this.Twice();
+                                    return Twice();
                                 }
                                 return curve.Infinity;
                             }
@@ -847,7 +847,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                                 if(R.IsZero)
                                 {
                                     // this == b, i.e. this must be doubled
-                                    return this.Twice();
+                                    return Twice();
                                 }
 
                                 // this == -b, i.e. the result is the point at infinity
@@ -858,7 +858,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             ECFieldElement G = HSquared.Multiply(H);
                             ECFieldElement V = HSquared.Multiply(U1);
 
-                            X3 = R.Square().Add(G).Subtract(this.Two(V));
+                            X3 = R.Square().Add(G).Subtract(Two(V));
                             Y3 = V.Subtract(X3).MultiplyMinusProduct(R, G, S1);
 
                             Z3 = H;
@@ -886,7 +886,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(coord == ECCurve.COORD_JACOBIAN_MODIFIED)
                         {
                             // TODO If the result will only be used in a subsequent addition, we don't need W3
-                            ECFieldElement W3 = this.CalculateJacobianModifiedW(Z3, Z3Squared);
+                            ECFieldElement W3 = CalculateJacobianModifiedW(Z3, Z3Squared);
 
                             zs = new ECFieldElement[] { Z3, W3 };
                         }
@@ -926,8 +926,8 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 case ECCurve.COORD_AFFINE:
                     {
                         ECFieldElement X1Squared = X1.Square();
-                        ECFieldElement gamma = this.Three(X1Squared).Add(this.Curve.A).Divide(this.Two(Y1));
-                        ECFieldElement X3 = gamma.Square().Subtract(this.Two(X1));
+                        ECFieldElement gamma = Three(X1Squared).Add(this.Curve.A).Divide(Two(Y1));
+                        ECFieldElement X3 = gamma.Square().Subtract(Two(X1));
                         ECFieldElement Y3 = gamma.Multiply(X1.Subtract(X3)).Subtract(Y1);
 
                         return new FpPoint(this.Curve, X3, Y3, this.IsCompressed);
@@ -945,20 +945,20 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         {
                             w = w.Multiply(Z1.Square());
                         }
-                        w = w.Add(this.Three(X1.Square()));
+                        w = w.Add(Three(X1.Square()));
 
                         ECFieldElement s = Z1IsOne ? Y1 : Y1.Multiply(Z1);
                         ECFieldElement t = Z1IsOne ? Y1.Square() : s.Multiply(Y1);
                         ECFieldElement B = X1.Multiply(t);
-                        ECFieldElement _4B = this.Four(B);
-                        ECFieldElement h = w.Square().Subtract(this.Two(_4B));
+                        ECFieldElement _4B = Four(B);
+                        ECFieldElement h = w.Square().Subtract(Two(_4B));
 
-                        ECFieldElement _2s = this.Two(s);
+                        ECFieldElement _2s = Two(s);
                         ECFieldElement X3 = h.Multiply(_2s);
-                        ECFieldElement _2t = this.Two(t);
-                        ECFieldElement Y3 = _4B.Subtract(h).Multiply(w).Subtract(this.Two(_2t.Square()));
-                        ECFieldElement _4sSquared = Z1IsOne ? this.Two(_2t) : _2s.Square();
-                        ECFieldElement Z3 = this.Two(_4sSquared).Multiply(s);
+                        ECFieldElement _2t = Two(t);
+                        ECFieldElement Y3 = _4B.Subtract(h).Multiply(w).Subtract(Two(_2t.Square()));
+                        ECFieldElement _4sSquared = Z1IsOne ? Two(_2t) : _2s.Square();
+                        ECFieldElement Z3 = Two(_4sSquared).Multiply(s);
 
                         return new FpPoint(curve, X3, Y3, new ECFieldElement[] { Z3 }, this.IsCompressed);
                     }
@@ -979,13 +979,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(a4Neg.ToBigInteger().Equals(BigInteger.ValueOf(3)))
                         {
                             ECFieldElement Z1Squared = Z1IsOne ? Z1 : Z1.Square();
-                            M = this.Three(X1.Add(Z1Squared).Multiply(X1.Subtract(Z1Squared)));
-                            S = this.Four(Y1Squared.Multiply(X1));
+                            M = Three(X1.Add(Z1Squared).Multiply(X1.Subtract(Z1Squared)));
+                            S = Four(Y1Squared.Multiply(X1));
                         }
                         else
                         {
                             ECFieldElement X1Squared = X1.Square();
-                            M = this.Three(X1Squared);
+                            M = Three(X1Squared);
                             if(Z1IsOne)
                             {
                                 M = M.Add(a4);
@@ -1004,13 +1004,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
                                 }
                             }
                             //S = two(doubleProductFromSquares(X1, Y1Squared, X1Squared, T));
-                            S = this.Four(X1.Multiply(Y1Squared));
+                            S = Four(X1.Multiply(Y1Squared));
                         }
 
-                        ECFieldElement X3 = M.Square().Subtract(this.Two(S));
-                        ECFieldElement Y3 = S.Subtract(X3).Multiply(M).Subtract(this.Eight(T));
+                        ECFieldElement X3 = M.Square().Subtract(Two(S));
+                        ECFieldElement Y3 = S.Subtract(X3).Multiply(M).Subtract(Eight(T));
 
-                        ECFieldElement Z3 = this.Two(Y1);
+                        ECFieldElement Z3 = Two(Y1);
                         if(!Z1IsOne)
                         {
                             Z3 = Z3.Multiply(Z1);
@@ -1024,7 +1024,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
                 case ECCurve.COORD_JACOBIAN_MODIFIED:
                     {
-                        return this.TwiceJacobianModified(true);
+                        return TwiceJacobianModified(true);
                     }
 
                 default:
@@ -1037,11 +1037,11 @@ namespace NBitcoin.BouncyCastle.Math.EC
         public override ECPoint TwicePlus(ECPoint b)
         {
             if(this == b)
-                return this.ThreeTimes();
+                return ThreeTimes();
             if(this.IsInfinity)
                 return b;
             if(b.IsInfinity)
-                return this.Twice();
+                return Twice();
 
             ECFieldElement Y1 = this.RawYCoord;
             if(Y1.IsZero)
@@ -1064,7 +1064,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                             if(dy.IsZero)
                             {
                                 // this == b i.e. the result is 3P
-                                return this.ThreeTimes();
+                                return ThreeTimes();
                             }
 
                             // this == -b, i.e. the result is P
@@ -1077,7 +1077,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                          */
 
                         ECFieldElement X = dx.Square(), Y = dy.Square();
-                        ECFieldElement d = X.Multiply(this.Two(X1).Add(X2)).Subtract(Y);
+                        ECFieldElement d = X.Multiply(Two(X1).Add(X2)).Subtract(Y);
                         if(d.IsZero)
                         {
                             return this.Curve.Infinity;
@@ -1086,7 +1086,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         ECFieldElement D = d.Multiply(dx);
                         ECFieldElement I = D.Invert();
                         ECFieldElement L1 = d.Multiply(I).Multiply(dy);
-                        ECFieldElement L2 = this.Two(Y1).Multiply(X).Multiply(dx).Multiply(I).Subtract(L1);
+                        ECFieldElement L2 = Two(Y1).Multiply(X).Multiply(dx).Multiply(I).Subtract(L1);
                         ECFieldElement X4 = (L2.Subtract(L1)).Multiply(L1.Add(L2)).Add(X2);
                         ECFieldElement Y4 = (X1.Subtract(X4)).Multiply(L2).Subtract(Y1);
 
@@ -1094,11 +1094,11 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     }
                 case ECCurve.COORD_JACOBIAN_MODIFIED:
                     {
-                        return this.TwiceJacobianModified(false).Add(b);
+                        return TwiceJacobianModified(false).Add(b);
                     }
                 default:
                     {
-                        return this.Twice().Add(b);
+                        return Twice().Add(b);
                     }
             }
         }
@@ -1121,12 +1121,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     {
                         ECFieldElement X1 = this.RawXCoord;
 
-                        ECFieldElement _2Y1 = this.Two(Y1);
+                        ECFieldElement _2Y1 = Two(Y1);
                         ECFieldElement X = _2Y1.Square();
-                        ECFieldElement Z = this.Three(X1.Square()).Add(this.Curve.A);
+                        ECFieldElement Z = Three(X1.Square()).Add(this.Curve.A);
                         ECFieldElement Y = Z.Square();
 
-                        ECFieldElement d = this.Three(X1).Multiply(X).Subtract(Y);
+                        ECFieldElement d = Three(X1).Multiply(X).Subtract(Y);
                         if(d.IsZero)
                         {
                             return this.Curve.Infinity;
@@ -1143,12 +1143,12 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     }
                 case ECCurve.COORD_JACOBIAN_MODIFIED:
                     {
-                        return this.TwiceJacobianModified(false).Add(this);
+                        return TwiceJacobianModified(false).Add(this);
                     }
                 default:
                     {
                         // NOTE: Be careful about recursions between TwicePlus and ThreeTimes
-                        return this.Twice().Add(this);
+                        return Twice().Add(this);
                     }
             }
         }
@@ -1160,7 +1160,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(e == 0 || this.IsInfinity)
                 return this;
             if(e == 1)
-                return this.Twice();
+                return Twice();
 
             ECCurve curve = this.Curve;
 
@@ -1182,13 +1182,13 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         ECFieldElement Z1Sq = Z1.Square();
                         X1 = X1.Multiply(Z1);
                         Y1 = Y1.Multiply(Z1Sq);
-                        W1 = this.CalculateJacobianModifiedW(Z1, Z1Sq);
+                        W1 = CalculateJacobianModifiedW(Z1, Z1Sq);
                         break;
                     case ECCurve.COORD_JACOBIAN:
-                        W1 = this.CalculateJacobianModifiedW(Z1, null);
+                        W1 = CalculateJacobianModifiedW(Z1, null);
                         break;
                     case ECCurve.COORD_JACOBIAN_MODIFIED:
-                        W1 = this.GetJacobianModifiedW();
+                        W1 = GetJacobianModifiedW();
                         break;
                 }
             }
@@ -1199,20 +1199,20 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     return curve.Infinity;
 
                 ECFieldElement X1Squared = X1.Square();
-                ECFieldElement M = this.Three(X1Squared);
-                ECFieldElement _2Y1 = this.Two(Y1);
+                ECFieldElement M = Three(X1Squared);
+                ECFieldElement _2Y1 = Two(Y1);
                 ECFieldElement _2Y1Squared = _2Y1.Multiply(Y1);
-                ECFieldElement S = this.Two(X1.Multiply(_2Y1Squared));
+                ECFieldElement S = Two(X1.Multiply(_2Y1Squared));
                 ECFieldElement _4T = _2Y1Squared.Square();
-                ECFieldElement _8T = this.Two(_4T);
+                ECFieldElement _8T = Two(_4T);
 
                 if(!W1.IsZero)
                 {
                     M = M.Add(W1);
-                    W1 = this.Two(_8T.Multiply(W1));
+                    W1 = Two(_8T.Multiply(W1));
                 }
 
-                X1 = M.Square().Subtract(this.Two(S));
+                X1 = M.Square().Subtract(Two(S));
                 Y1 = M.Multiply(S.Subtract(X1)).Subtract(_8T);
                 Z1 = Z1.IsOne ? _2Y1 : _2Y1.Multiply(Z1);
             }
@@ -1242,17 +1242,17 @@ namespace NBitcoin.BouncyCastle.Math.EC
 
         protected virtual ECFieldElement Three(ECFieldElement x)
         {
-            return this.Two(x).Add(x);
+            return Two(x).Add(x);
         }
 
         protected virtual ECFieldElement Four(ECFieldElement x)
         {
-            return this.Two(this.Two(x));
+            return Two(Two(x));
         }
 
         protected virtual ECFieldElement Eight(ECFieldElement x)
         {
-            return this.Four(this.Two(x));
+            return Four(Two(x));
         }
 
         protected virtual ECFieldElement DoubleProductFromSquares(ECFieldElement a, ECFieldElement b,
@@ -1312,25 +1312,25 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(W == null)
             {
                 // NOTE: Rarely, TwicePlus will result in the need for a lazy W1 calculation here
-                ZZ[1] = W = this.CalculateJacobianModifiedW(ZZ[0], null);
+                ZZ[1] = W = CalculateJacobianModifiedW(ZZ[0], null);
             }
             return W;
         }
 
         protected virtual FpPoint TwiceJacobianModified(bool calculateW)
         {
-            ECFieldElement X1 = this.RawXCoord, Y1 = this.RawYCoord, Z1 = this.RawZCoords[0], W1 = this.GetJacobianModifiedW();
+            ECFieldElement X1 = this.RawXCoord, Y1 = this.RawYCoord, Z1 = this.RawZCoords[0], W1 = GetJacobianModifiedW();
 
             ECFieldElement X1Squared = X1.Square();
-            ECFieldElement M = this.Three(X1Squared).Add(W1);
-            ECFieldElement _2Y1 = this.Two(Y1);
+            ECFieldElement M = Three(X1Squared).Add(W1);
+            ECFieldElement _2Y1 = Two(Y1);
             ECFieldElement _2Y1Squared = _2Y1.Multiply(Y1);
-            ECFieldElement S = this.Two(X1.Multiply(_2Y1Squared));
-            ECFieldElement X3 = M.Square().Subtract(this.Two(S));
+            ECFieldElement S = Two(X1.Multiply(_2Y1Squared));
+            ECFieldElement X3 = M.Square().Subtract(Two(S));
             ECFieldElement _4T = _2Y1Squared.Square();
-            ECFieldElement _8T = this.Two(_4T);
+            ECFieldElement _8T = Two(_4T);
             ECFieldElement Y3 = M.Multiply(S.Subtract(X3)).Subtract(_8T);
-            ECFieldElement W3 = calculateW ? this.Two(_8T.Multiply(W1)) : null;
+            ECFieldElement W3 = calculateW ? Two(_8T.Multiply(W1)) : null;
             ECFieldElement Z3 = Z1.IsOne ? _2Y1 : _2Y1.Multiply(Z1);
 
             return new FpPoint(this.Curve, X3, Y3, new ECFieldElement[] { Z3, W3 }, this.IsCompressed);
@@ -1487,7 +1487,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                 return this;
 
             // Add -b
-            return this.Add(b.Negate());
+            return Add(b.Negate());
         }
 
         public virtual AbstractF2mPoint Tau()
@@ -1714,7 +1714,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         {
                             if(dy.IsZero)
                             {
-                                return this.Twice();
+                                return Twice();
                             }
 
                             return curve.Infinity;
@@ -1755,7 +1755,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         {
                             if(U.IsZero)
                             {
-                                return this.Twice();
+                                return Twice();
                             }
 
                             return curve.Infinity;
@@ -1810,7 +1810,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         {
                             if(A.IsZero)
                             {
-                                return this.Twice();
+                                return Twice();
                             }
 
                             return curve.Infinity;
@@ -1820,7 +1820,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         if(X2.IsZero)
                         {
                             // TODO This can probably be optimized quite a bit
-                            ECPoint p = this.Normalize();
+                            ECPoint p = Normalize();
                             X1 = p.RawXCoord;
                             ECFieldElement Y1 = p.YCoord;
 
@@ -1990,7 +1990,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
             if(this.IsInfinity)
                 return b;
             if(b.IsInfinity)
-                return this.Twice();
+                return Twice();
 
             ECCurve curve = this.Curve;
 
@@ -2011,7 +2011,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                         ECFieldElement X2 = b.RawXCoord, Z2 = b.RawZCoords[0];
                         if(X2.IsZero || !Z2.IsOne)
                         {
-                            return this.Twice().Add(b);
+                            return Twice().Add(b);
                         }
 
                         ECFieldElement L1 = this.RawYCoord, Z1 = this.RawZCoords[0];
@@ -2051,7 +2051,7 @@ namespace NBitcoin.BouncyCastle.Math.EC
                     }
                 default:
                     {
-                        return this.Twice().Add(b);
+                        return Twice().Add(b);
                     }
             }
         }

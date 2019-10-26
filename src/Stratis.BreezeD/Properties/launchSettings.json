@@ -14,7 +14,7 @@
     },
     "Stratis Test": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -testnet -debug=all -loglevel=debug"
+      "commandLineArgs": "stratis -testnet -prune=2880"
     }
   }
 }

@@ -29,16 +29,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
             else if (x == null || y == null)
                 return false;
 
-            var propertiesAreEqual = (x.Id == y.Id &&
+            bool propertiesAreEqual = (x.Id == y.Id &&
                 x.ConfirmedInBlock == y.ConfirmedInBlock &&
-                x.Type == y.Type && x.Amount == y.Amount && x.Payments.Count == y.Payments.Count);
+                x.Type == y.Type && 
+                x.Amount == y.Amount && 
+                x.Payments.Count == y.Payments.Count);
 
             if (!propertiesAreEqual)
             {
                 return false;
             }
 
-            foreach (var payment in x.Payments)
+            foreach (PaymentDetailModel payment in x.Payments)
             {
                 // Make sure all payments in x have their equivalent in y.
                 // Because we check the counts are equal there is no need to check from both sides.
@@ -61,14 +63,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
             if (obj == null)
                 throw new ArgumentNullException(nameof(obj));
 
-            var hashValue = obj.Id.GetHashCode() ^
+            int hashValue = obj.Id.GetHashCode() ^
                 obj.ConfirmedInBlock.GetHashCode() ^
                 obj.Type.GetHashCode() ^
                 obj.Amount.GetHashCode();
 
-            foreach (var payment in obj.Payments)
+            foreach (PaymentDetailModel payment in obj.Payments)
             {
-                hashValue = hashValue ^ payment.GetHashCode();
+                hashValue = hashValue ^ payment.Amount.GetHashCode() ^ (payment.DestinationAddress ?? string.Empty).GetHashCode();
             }
 
             return hashValue;

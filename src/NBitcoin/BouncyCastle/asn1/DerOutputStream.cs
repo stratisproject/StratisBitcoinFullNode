@@ -86,7 +86,7 @@ namespace NBitcoin.BouncyCastle.Asn1
                 }
                 else
                 {
-                    byte[] stack = new byte[5];
+                    var stack = new byte[5];
                     int pos = stack.Length;
 
                     stack[--pos] = (byte)(tagNo & 0x7F);

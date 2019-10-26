@@ -8,10 +8,10 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.Tests.Common.TestFramework
 {
-    [DebuggerStepThrough()]
+    [DebuggerStepThrough]
     public abstract class BddSpecification : IDisposable
     {
-        private readonly ITestOutputHelper output;
+        protected readonly ITestOutputHelper Output;
         private readonly DateTime startOfTestTime;
         
         private ITest currentTest;
@@ -20,13 +20,13 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
         /// This can for instance be used to find the name of the test currently using the
         /// class by calling this.CurrentTest.DisplayName
         /// </summary>
-        protected ITest CurrentTest => this.currentTest ?? (this.currentTest = this.output?.GetType()
+        protected ITest CurrentTest => this.currentTest ?? (this.currentTest = this.Output?.GetType()
                                            .GetField("test", BindingFlags.Instance | BindingFlags.NonPublic)
-                                           .GetValue(this.output) as ITest);
+                                           .GetValue(this.Output) as ITest);
 
         protected BddSpecification(ITestOutputHelper output)
         {
-            this.output = output;
+            this.Output = output;
             this.startOfTestTime = DateTime.UtcNow;
 
             this.BeforeTest();
@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
         {
             this.AfterTest();
 
-            var endOfTestTime = DateTime.UtcNow;
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
+            DateTime endOfTestTime = DateTime.UtcNow;
+            this.Output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
         }
 
         protected abstract void BeforeTest();
@@ -83,6 +83,16 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
             this.RunStep(step, cancellationToken);
         }
 
+        public void But(Action step)
+        {
+            this.RunStep(step);
+        }
+
+        public void But(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            this.RunStep(step, cancellationToken);
+        }
+
         private void RunStep(Action step, [CallerMemberName] string stepType = null)
         {
             OuputStepDetails(step.Method.Name, stepType);
@@ -99,13 +109,13 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
             }
             catch (AggregateException ex)
             {
-                foreach (var innerException in ex.InnerExceptions) { throw innerException; }
+                foreach (Exception innerException in ex.InnerExceptions) { throw innerException; }
             };
         }
 
         private void OuputStepDetails(string stepRawName, string stepType)
         {
-            this.output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
+            this.Output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
         }
     }
 }
