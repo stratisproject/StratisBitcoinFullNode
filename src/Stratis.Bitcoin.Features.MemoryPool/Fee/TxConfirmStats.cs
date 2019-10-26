@@ -221,6 +221,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 {
                     this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
+                }
             }
 
             if(!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
