@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
@@ -24,12 +24,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
+        private readonly IBlockExecutionResultCache executionCache;
         private readonly ILoggerFactory loggerFactory;
-        private readonly List<Transaction> blockTxsProcessed;
-        private Transaction generatedTransaction;
-        private readonly IList<Receipt> receipts;
-        private uint refundCounter;
-        private IStateRepositoryRoot mutableStateRepository;
 
         public SmartContractPoACoinviewRule(
             IStateRepositoryRoot stateRepositoryRoot,
@@ -38,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
             ICoinView coinView,
+            IBlockExecutionResultCache executionCache,
             ILoggerFactory loggerFactory)
         {
             this.stateRepositoryRoot = stateRepositoryRoot;
@@ -46,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+            this.executionCache = executionCache;
             this.loggerFactory = loggerFactory;
         }
 
@@ -54,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         {
             base.Initialize();
 
-            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.loggerFactory);
+            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.executionCache, this.loggerFactory);
         }
 
         /// <inheritdoc />

@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.SmartContracts.Networks
@@ -120,7 +123,47 @@ namespace Stratis.SmartContracts.Networks
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
+            this.RegisterRules(this.Consensus);
             this.RegisterMempoolRules(this.Consensus);
+        }
+
+        private void RegisterRules(IConsensus consensus)
+        {
+            // IHeaderValidationRule
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<CheckDifficultyPowRule>()
+                .Register<BitcoinActivationRule>()
+                .Register<BitcoinHeaderVersionRule>();
+
+            // IIntegrityValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>();
+
+            // IPartialValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+                .Register<TransactionLocktimeActivationRule>()
+                .Register<CoinbaseHeightActivationRule>()
+                .Register<WitnessCommitmentsRule>()
+                .Register<BlockSizeRule>()
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckSigOpsRule>()
+                .Register<AllowedScriptTypeRule>()
+                .Register<ContractTransactionPartialValidationRule>();
+
+            // IFullValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>()
+                .Register<TxOutSmartContractExecRule>()
+                .Register<OpSpendRule>()
+                .Register<CanGetSenderRule>()
+                .Register<P2PKHNotContractRule>()
+                .Register<SmartContractPowCoinviewRule>()
+                .Register<SaveCoinviewRule>();
         }
 
         // TODO: Refactor the network hierarchy so this isn't duplicated everywhere

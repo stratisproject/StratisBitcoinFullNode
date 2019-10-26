@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -28,6 +30,10 @@ namespace Stratis.Bitcoin.Features.RPC
                 .AddJsonFormatters()
                 .AddFormatterMappings();
             services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, RPCJsonMvcOptionsSetup>());
+
+            // We have added API versioning to the URLs of the version2-onwards controllers, so to not break routing we need this line.
+            // Even though RPC will not actually use these endpoints.
+            services.Configure<RouteOptions>(options => options.ConstraintMap.Add("apiVersion", typeof(ApiVersionRouteConstraint)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
