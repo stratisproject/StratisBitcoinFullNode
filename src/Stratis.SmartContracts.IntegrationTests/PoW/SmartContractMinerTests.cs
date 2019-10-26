@@ -72,7 +72,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 testContext.network,
                 new SenderRetriever(),
                 testContext.StateRoot,
-                new NodeDeployments(testContext.network, testContext.ChainIndexer),
                 testContext.executionCache, 
                 testContext.callDataSerializer,
                 new NodeDeployments(testContext.network, testContext.ChainIndexer));
