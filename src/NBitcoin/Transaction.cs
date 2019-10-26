@@ -253,6 +253,14 @@ namespace NBitcoin
             }
         }
 
+        public bool WitScriptEmpty
+        {
+            get
+            {
+                return this.WitScript == WitScript.Empty || this.WitScript == null;
+            }
+        }
+
         #region IBitcoinSerializable Members
 
         public void ReadWrite(BitcoinStream stream)
@@ -1893,7 +1901,7 @@ namespace NBitcoin
         {
             get
             {
-                return this.Inputs.Any(i => i.WitScript != WitScript.Empty && i.WitScript != null);
+                return this.Inputs.Any(i => i.WitScriptEmpty == false);
             }
         }
 

@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             MinerSettings minerSettings,
             NodeDeployments nodeDeployments)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
-                mempoolLock, minerSettings, network, senderRetriever, stateRoot, nodeDeployments, executionCache, callDataSerializer)
+                mempoolLock, minerSettings, network, senderRetriever, stateRoot, executionCache, callDataSerializer, nodeDeployments)
         {
             // TODO: Fix gross MinerSettings injection ^^
         }

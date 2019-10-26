@@ -53,9 +53,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
-            NodeDeployments nodeDeployments,
             IBlockExecutionResultCache executionCache,
-            ICallDataSerializer callDataSerializer)
+            ICallDataSerializer callDataSerializer,
+            NodeDeployments nodeDeployments)
             : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, nodeDeployments)
         {
             this.coinView = coinView;

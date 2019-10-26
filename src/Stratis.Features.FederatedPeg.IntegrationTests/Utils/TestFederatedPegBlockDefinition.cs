@@ -35,10 +35,10 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
-            NodeDeployments nodeDeployments,
             IBlockExecutionResultCache executionCache,
             ICallDataSerializer callDataSerializer,
-            MinerSettings minerSettings)
+            MinerSettings minerSettings,
+            NodeDeployments nodeDeployments)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, executionCache, callDataSerializer, minerSettings, nodeDeployments)
         {
         }
