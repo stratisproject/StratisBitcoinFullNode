@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly MempoolSettings mempoolSettings;
         private readonly NodeSettings nodeSettings;
-        private readonly BlockPolicyEstimator blockPolicyEstimator;
+        private readonly BitcoinBlockPolicyEstimator blockPolicyEstimator;
         private readonly TxMempool txMempool;
         private readonly IMempoolValidator mempoolValidator;
         private readonly IMempoolPersistence mempoolPersistence;
@@ -68,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 MempoolExpiry = MempoolValidator.DefaultMempoolExpiry
             };
 
-            this.blockPolicyEstimator = new BlockPolicyEstimator(this.loggerFactory, this.nodeSettings);
+            this.blockPolicyEstimator = new BitcoinBlockPolicyEstimator(this.loggerFactory, this.nodeSettings);
 
             this.txMempool = new TxMempool(this.dateTimeProvider, this.blockPolicyEstimator, this.loggerFactory, this.nodeSettings);
 

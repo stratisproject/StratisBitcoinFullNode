@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.Bitcoin.Features.MemoryPool.Fee
+﻿namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
     /// <summary>
     /// Enumeration of reason for returned fee estimate
@@ -13,7 +9,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         HalfEstimate,
         FullEstimate,
         DoubleEstimate,
-        Coservative,
+        Conservative,
         MemPoolMin,
         PayTxFee,
         Fallback,

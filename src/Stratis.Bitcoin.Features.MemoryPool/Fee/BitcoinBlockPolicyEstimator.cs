@@ -247,46 +247,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     this.logger.LogInformation("Blockpolicy first recorded height {0}", this.firstRecordedHeight);
                 }
 
-                // TODO: this makes too much noise right now, put it back when logging is can be switched on by categories (and also consider disabling during IBD)
-                // Logging.Logs.EstimateFee.LogInformation(
-                // $"Blockpolicy after updating estimates for {countedTxs} of {entries.Count} txs in block, since last block {trackedTxs} of {trackedTxs + untrackedTxs} tracked, new mempool map size {mapMemPoolTxs.Count}");
+                this.logger.LogDebug($"Blockpolicy after updating estimates for {countedTxs} of {entries.Count} txs in block, since last block {trackedTxs} of {trackedTxs + untrackedTxs} tracked, new mempool map size {mapMemPoolTxs.Count}");
 
                 this.trackedTxs = 0;
                 this.untrackedTxs = 0;
             }
-        }
-
-        /// <summary>
-        /// Process a transaction confirmed in a block.
-        /// </summary>
-        /// <param name="nBlockHeight">Height of the block.</param>
-        /// <param name="entry">The memory pool entry.</param>
-        /// <returns>Whether it was able to successfully process the transaction.</returns>
-        private bool ProcessBlockTx(int nBlockHeight, TxMempoolEntry entry)
-        {
-            if (!this.RemoveTx(entry.TransactionHash, true))
-                return false;
-
-            // How many blocks did it take for miners to include this transaction?
-            // blocksToConfirm is 1-based, so a transaction included in the earliest
-            // possible block has confirmation count of 1
-            int blocksToConfirm = nBlockHeight - entry.EntryHeight;
-
-            if (blocksToConfirm <= 0)
-            {
-                // This can't happen because we don't process transactions from a block with a height lower than our greatest seen height.
-                this.logger.LogInformation($"Blockpolicy error Transaction had negative blocksToConfirm");
-                return false;
-            }
-
-            // Feerates are stored and reported as BTC-per-kb:
-            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
-
-            this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
-            this.shortStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
-            this.longStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
-
-            return true;
         }
 
         /// <inheritdoc />
@@ -352,200 +317,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <inheritdoc />
-        public FeeRate EstimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult result)
-        {
-            TxConfirmStats stats;
-            double sufficientTxs = SufficientFeeTxs;
-            switch (horizon)
-            {
-                case FeeEstimateHorizon.ShortHalfLife:
-                {
-                    stats = this.shortStats;
-                    sufficientTxs = SufficientTxsShort;
-                    break;
-                }
-                case FeeEstimateHorizon.MedHalfLife:
-                {
-                    stats = this.feeStats;
-                    break;
-                }
-                case FeeEstimateHorizon.LongHalfLife:
-                {
-                    stats = this.longStats;
-                    break;
-                }
-                default:
-                {
-                        throw new ArgumentException(nameof(horizon));
-                }
-            }
-
-            lock(this.lockObject)
-            {
-                // Return failure if trying to analyze a target we're not tracking
-                if (confTarget <= 0 || confTarget > stats.GetMaxConfirms())
-                    return new FeeRate(0);
-
-                if (successThreshold > 1)
-                    return new FeeRate(0);      
-
-                double median = stats.EstimateMedianVal(confTarget, sufficientTxs, successThreshold, true, this.nBestSeenHeight, result);
-
-                return median < 0 ? new FeeRate(0) : new FeeRate(Convert.ToInt64(median));
-            }
-        }
-
-        /// <inheritdoc />
         public FeeRate EstimateFee(int confTarget)
         {
             // It's not possible to get reasonable estimates for confTarget of 1
             return confTarget <= 1 ? new FeeRate(0) : EstimateRawFee(confTarget, DoubleSuccessPct, FeeEstimateHorizon.MedHalfLife, null);
-        }
-
-        /// <inheritdoc />
-        public int HighestTargetTracked(FeeEstimateHorizon horizon)
-        {
-            switch (horizon)
-            {
-                case FeeEstimateHorizon.ShortHalfLife:
-                {
-                    return this.shortStats.GetMaxConfirms();
-                }
-                case FeeEstimateHorizon.MedHalfLife:
-                {
-                    return this.feeStats.GetMaxConfirms();
-                }
-                case FeeEstimateHorizon.LongHalfLife:
-                {
-                    return this.longStats.GetMaxConfirms();
-                }
-                default:
-                {
-                    throw new ArgumentException(nameof(horizon));
-                }
-            }
-        }
-
-        private int BlockSpan()
-        {
-            if (this.firstRecordedHeight == 0)
-                return 0;
-
-            Guard.Assert(this.nBestSeenHeight >= this.firstRecordedHeight);
-
-            return this.nBestSeenHeight - this.firstRecordedHeight;
-        }
-
-        private int HistoricalBlockSpan()
-        {
-            if (this.historicalFirst == 0)
-                return 0;
-
-            Guard.Assert(this.historicalBest >= this.historicalFirst);
-
-            if (this.nBestSeenHeight - this.historicalBest > OldestEstimateHistory)
-                return 0;
-
-            return this.historicalBest - this.historicalFirst;
-        }
-
-        private int MaxUsableEstimate()
-        {
-            // Block spans are divided by 2 to make sure there are enough potential failing data points for the estimate
-            return Math.Min(this.longStats.GetMaxConfirms(), Math.Max(BlockSpan(), HistoricalBlockSpan()) / 2);
-        }
-
-        /// <summary>
-        /// Return a fee estimate at the required successThreshold from the shortest
-        /// time horizon which tracks confirmations up to the desired target.If
-        /// checkShorterHorizon is requested, also allow short time horizon estimates
-        /// for a lower target to reduce the given answer
-        /// </summary>
-        private double EstimateCombinedFee(int confTarget, double successThreshold, bool checkShorterHorizon, EstimationResult result)
-        {
-            double estimate = -1;
-
-            if (confTarget >= 1 && confTarget <= this.longStats.GetMaxConfirms())
-            {
-                // Find estimate from shortest time horizon possible
-                if (confTarget <= this.shortStats.GetMaxConfirms())
-                { 
-                    // short horizon
-                    estimate = this.shortStats.EstimateMedianVal(confTarget, SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, result);
-                }
-                else if (confTarget <= this.feeStats.GetMaxConfirms())
-                { 
-                    // medium horizon
-                    estimate = this.feeStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
-                }
-                else
-                {
-                    // long horizon
-                    estimate = this.longStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
-                }
-
-                if (checkShorterHorizon)
-                {
-                    var tempResult = new EstimationResult();
-
-                    // If a lower confTarget from a more recent horizon returns a lower answer use it.
-                    if (confTarget > this.feeStats.GetMaxConfirms())
-                    {
-                        double medMax = this.feeStats.EstimateMedianVal(this.feeStats.GetMaxConfirms(), SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, tempResult);
-
-                        if (medMax > 0 && (estimate == -1 || medMax < estimate))
-                        {
-                            estimate = medMax;
-
-                            if (result != null)
-                                result = tempResult;
-                        }
-                    }
-
-                    if (confTarget > this.shortStats.GetMaxConfirms())
-                    {
-                        double shortMax = this.shortStats.EstimateMedianVal(this.shortStats.GetMaxConfirms(), SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, tempResult);
-
-                        if (shortMax > 0 && (estimate == -1 || shortMax < estimate))
-                        {
-                            estimate = shortMax;
-
-                            if (result != null)
-                                result = tempResult;
-                        }
-                    }
-                }
-            }
-
-            return estimate;
-        }
-
-        /// <summary>
-        /// Ensure that for a conservative estimate, the DOUBLE_SUCCESS_PCT is also met
-        /// at 2 * target for any longer time horizons.
-        /// </summary>
-        private double EstimateConservativeFee(int doubleTarget, EstimationResult result)
-        {
-            double estimate = -1;
-            var tempResult = new EstimationResult();
-
-            if (doubleTarget <= this.shortStats.GetMaxConfirms())
-                estimate = this.feeStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, result);
-
-            if (doubleTarget <= this.feeStats.GetMaxConfirms())
-            {
-                double longEstimate = this.longStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, tempResult);
-
-                if (longEstimate > estimate)
-                {
-                    estimate = longEstimate;
-
-                    if (result != null)
-                        result = tempResult;
-                }
-            }
-
-            return estimate;
         }
 
         /// <inheritdoc />
@@ -638,10 +413,54 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                         if (feeCalc != null)
                         {
                             feeCalc.Estimation = tempResult;
-                            feeCalc.Reason = FeeReason.Coservative;
+                            feeCalc.Reason = FeeReason.Conservative;
                         }
                     }
                 }
+
+                return median < 0 ? new FeeRate(0) : new FeeRate(Convert.ToInt64(median));
+            }
+        }
+
+        /// <inheritdoc />
+        public FeeRate EstimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult result)
+        {
+            TxConfirmStats stats;
+            double sufficientTxs = SufficientFeeTxs;
+            switch (horizon)
+            {
+                case FeeEstimateHorizon.ShortHalfLife:
+                {
+                    stats = this.shortStats;
+                    sufficientTxs = SufficientTxsShort;
+                    break;
+                }
+                case FeeEstimateHorizon.MedHalfLife:
+                {
+                    stats = this.feeStats;
+                    break;
+                }
+                case FeeEstimateHorizon.LongHalfLife:
+                {
+                    stats = this.longStats;
+                    break;
+                }
+                default:
+                {
+                    throw new ArgumentException(nameof(horizon));
+                }
+            }
+
+            lock (this.lockObject)
+            {
+                // Return failure if trying to analyze a target we're not tracking
+                if (confTarget <= 0 || confTarget > stats.GetMaxConfirms())
+                    return new FeeRate(0);
+
+                if (successThreshold > 1)
+                    return new FeeRate(0);
+
+                double median = stats.EstimateMedianVal(confTarget, sufficientTxs, successThreshold, true, this.nBestSeenHeight, result);
 
                 return median < 0 ? new FeeRate(0) : new FeeRate(Convert.ToInt64(median));
             }
@@ -737,6 +556,185 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
                 this.logger.LogInformation($"Recorded {numEntries} unconfirmed txs from mempool");
             }
+        }
+
+        /// <inheritdoc />
+        public int HighestTargetTracked(FeeEstimateHorizon horizon)
+        {
+            switch (horizon)
+            {
+                case FeeEstimateHorizon.ShortHalfLife:
+                {
+                    return this.shortStats.GetMaxConfirms();
+                }
+                case FeeEstimateHorizon.MedHalfLife:
+                {
+                    return this.feeStats.GetMaxConfirms();
+                }
+                case FeeEstimateHorizon.LongHalfLife:
+                {
+                    return this.longStats.GetMaxConfirms();
+                }
+                default:
+                {
+                    throw new ArgumentException(nameof(horizon));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Process a transaction confirmed in a block.
+        /// </summary>
+        /// <param name="nBlockHeight">Height of the block.</param>
+        /// <param name="entry">The memory pool entry.</param>
+        /// <returns>Whether it was able to successfully process the transaction.</returns>
+        private bool ProcessBlockTx(int nBlockHeight, TxMempoolEntry entry)
+        {
+            if (!this.RemoveTx(entry.TransactionHash, true))
+                return false;
+
+            // How many blocks did it take for miners to include this transaction?
+            // blocksToConfirm is 1-based, so a transaction included in the earliest
+            // possible block has confirmation count of 1
+            int blocksToConfirm = nBlockHeight - entry.EntryHeight;
+
+            if (blocksToConfirm <= 0)
+            {
+                // This can't happen because we don't process transactions from a block with a height lower than our greatest seen height.
+                this.logger.LogDebug($"Blockpolicy error Transaction had negative blocksToConfirm");
+                return false;
+            }
+
+            // Feerates are stored and reported as BTC-per-kb:
+            var feeRate = new FeeRate(entry.Fee, (int)entry.GetTxSize());
+
+            this.feeStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
+            this.shortStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
+            this.longStats.Record(blocksToConfirm, feeRate.FeePerK.Satoshi);
+
+            return true;
+        }
+
+        private int BlockSpan()
+        {
+            if (this.firstRecordedHeight == 0)
+                return 0;
+
+            Guard.Assert(this.nBestSeenHeight >= this.firstRecordedHeight);
+
+            return this.nBestSeenHeight - this.firstRecordedHeight;
+        }
+
+        private int HistoricalBlockSpan()
+        {
+            if (this.historicalFirst == 0)
+                return 0;
+
+            Guard.Assert(this.historicalBest >= this.historicalFirst);
+
+            if (this.nBestSeenHeight - this.historicalBest > OldestEstimateHistory)
+                return 0;
+
+            return this.historicalBest - this.historicalFirst;
+        }
+
+        private int MaxUsableEstimate()
+        {
+            // Block spans are divided by 2 to make sure there are enough potential failing data points for the estimate
+            return Math.Min(this.longStats.GetMaxConfirms(), Math.Max(BlockSpan(), HistoricalBlockSpan()) / 2);
+        }
+
+        /// <summary>
+        /// Return a fee estimate at the required successThreshold from the shortest
+        /// time horizon which tracks confirmations up to the desired target.If
+        /// checkShorterHorizon is requested, also allow short time horizon estimates
+        /// for a lower target to reduce the given answer
+        /// </summary>
+        private double EstimateCombinedFee(int confTarget, double successThreshold, bool checkShorterHorizon, EstimationResult result)
+        {
+            double estimate = -1;
+
+            if (confTarget >= 1 && confTarget <= this.longStats.GetMaxConfirms())
+            {
+                // Find estimate from shortest time horizon possible
+                if (confTarget <= this.shortStats.GetMaxConfirms())
+                {
+                    // short horizon
+                    estimate = this.shortStats.EstimateMedianVal(confTarget, SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, result);
+                }
+                else if (confTarget <= this.feeStats.GetMaxConfirms())
+                {
+                    // medium horizon
+                    estimate = this.feeStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
+                }
+                else
+                {
+                    // long horizon
+                    estimate = this.longStats.EstimateMedianVal(confTarget, SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, result);
+                }
+
+                if (checkShorterHorizon)
+                {
+                    var tempResult = new EstimationResult();
+
+                    // If a lower confTarget from a more recent horizon returns a lower answer use it.
+                    if (confTarget > this.feeStats.GetMaxConfirms())
+                    {
+                        double medMax = this.feeStats.EstimateMedianVal(this.feeStats.GetMaxConfirms(), SufficientFeeTxs, successThreshold, true, this.nBestSeenHeight, tempResult);
+
+                        if (medMax > 0 && (estimate == -1 || medMax < estimate))
+                        {
+                            estimate = medMax;
+
+                            if (result != null)
+                                result = tempResult;
+                        }
+                    }
+
+                    if (confTarget > this.shortStats.GetMaxConfirms())
+                    {
+                        double shortMax = this.shortStats.EstimateMedianVal(this.shortStats.GetMaxConfirms(), SufficientTxsShort, successThreshold, true, this.nBestSeenHeight, tempResult);
+
+                        if (shortMax > 0 && (estimate == -1 || shortMax < estimate))
+                        {
+                            estimate = shortMax;
+
+                            if (result != null)
+                                result = tempResult;
+                        }
+                    }
+                }
+            }
+
+            return estimate;
+        }
+
+        /// <summary>
+        /// Ensure that for a conservative estimate, the DOUBLE_SUCCESS_PCT is also met
+        /// at 2 * target for any longer time horizons.
+        /// </summary>
+        private double EstimateConservativeFee(int doubleTarget, EstimationResult result)
+        {
+            double estimate = -1;
+            var tempResult = new EstimationResult();
+
+            if (doubleTarget <= this.shortStats.GetMaxConfirms())
+                estimate = this.feeStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, result);
+
+            if (doubleTarget <= this.feeStats.GetMaxConfirms())
+            {
+                double longEstimate = this.longStats.EstimateMedianVal(doubleTarget, SufficientFeeTxs, DoubleSuccessPct, true, this.nBestSeenHeight, tempResult);
+
+                if (longEstimate > estimate)
+                {
+                    estimate = longEstimate;
+
+                    if (result != null)
+                        result = tempResult;
+                }
+            }
+
+            return estimate;
         }
     }
 }

@@ -6,10 +6,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
     public interface IBlockPolicyEstimator
     {
         /// <summary>
-        /// Return a feerate estimate (deprecated, per Bitcoin Core source).
+        /// Process all the transactions that have been included in a block.
         /// </summary>
-        /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
-        FeeRate EstimateFee(int confTarget);
+        /// <param name="nBlockHeight">The block height for the block.</param>
+        /// <param name="entries">Collection of memory pool entries.</param>
+        void ProcessBlock(int nBlockHeight, List<TxMempoolEntry> entries);
+
+        /// <summary>
+        ///  Process a transaction accepted to the mempool.
+        /// </summary>
+        /// <param name="entry">Memory pool entry.</param>
+        /// <param name="validFeeEstimate">Whether to update fee estimate.</param>
+        void ProcessTransaction(TxMempoolEntry entry, bool validFeeEstimate);
 
         /// <summary>
         /// Remove a transaction from the mempool tracking stats.
@@ -26,11 +34,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         bool RemoveTx(uint256 hash, bool inBlock);
 
         /// <summary>
-        /// Return a specific fee estimate calculation with a given success threshold and time horizon,
-        /// and optionally return detailed data about calculation.
+        /// Return a feerate estimate (deprecated, per Bitcoin Core source).
         /// </summary>
-        /// <param name="confTarget">The desired number of confirmations to be included in a block</param>
-        FeeRate EstimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult result);
+        /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
+        FeeRate EstimateFee(int confTarget);
 
         /// <summary>
         /// Returns the max of the feerates calculated with a 60%
@@ -43,24 +50,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         FeeRate EstimateSmartFee(int confTarget, FeeCalculation feeCalc, bool conservative);
 
         /// <summary>
-        /// Process all the transactions that have been included in a block.
+        /// Return a specific fee estimate calculation with a given success threshold and time horizon,
+        /// and optionally return detailed data about calculation.
         /// </summary>
-        /// <param name="nBlockHeight">The block height for the block.</param>
-        /// <param name="entries">Collection of memory pool entries.</param>
-        void ProcessBlock(int nBlockHeight, List<TxMempoolEntry> entries);
-
-        /// <summary>
-        ///  Process a transaction accepted to the mempool.
-        /// </summary>
-        /// <param name="entry">Memory pool entry.</param>
-        /// <param name="validFeeEstimate">Whether to update fee estimate.</param>
-        void ProcessTransaction(TxMempoolEntry entry, bool validFeeEstimate);
-
-        /// <summary>
-        /// Calculation of highest target that estimates are tracked for.
-        /// </summary>
-        /// <param name="horizon"></param>
-        int HighestTargetTracked(FeeEstimateHorizon horizon);
+        /// <param name="confTarget">The desired number of confirmations to be included in a block</param>
+        FeeRate EstimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult result);
 
         /// <summary>
         /// Write estimation data to a file.
@@ -73,6 +67,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="filein">Stream to read data from.</param>
         /// <param name="nFileVersion">Version number of the file.</param>
         bool Read();
+
+        /// <summary>
+        /// Calculation of highest target that estimates are tracked for.
+        /// </summary>
+        /// <param name="horizon"></param>
+        int HighestTargetTracked(FeeEstimateHorizon horizon);
 
         /// <summary>
         /// Empty mempool transactions on shutdown to record failure to confirm for txs still in mempool.

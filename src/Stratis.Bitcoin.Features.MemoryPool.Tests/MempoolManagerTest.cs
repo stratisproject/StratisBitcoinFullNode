@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 };
                 NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
 
-                var blockPolicyEstimator = new BlockPolicyEstimator(loggerFactory, nodeSettings);
+                var blockPolicyEstimator = new BitcoinBlockPolicyEstimator(loggerFactory, nodeSettings);
                 var mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
 
                 var mockTxMempool = new Mock<TxMempool>();

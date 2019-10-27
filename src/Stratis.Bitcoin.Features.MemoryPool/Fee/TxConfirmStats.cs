@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <remarks>
         /// For each bucket X:
         /// Count the total # of txs in each bucket.
-        /// Track the historical moving average of this total over blocks
+        /// Track the historical moving average of this total over blocks.
         /// </remarks>
         private List<double> txCtAvg;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <remarks>
         /// Count the total # of txs confirmed within Y blocks in each bucket.
-        /// Track the historical moving average of theses totals over blocks.
+        /// Track the historical moving average of these totals over blocks.
         /// </remarks>
         private List<List<double>> confAvg;
 
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <remarks>
         /// Track moving avg of txs which have been evicted from the mempool
-        /// after failing to be confirmed within Y blocks
+        /// after failing to be confirmed within Y blocks.
         /// </remarks>
         private List<List<double>> failAvg;
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <remarks>
         /// For each bucket X, track the number of transactions in the mempool
-        /// that are unconfirmed for each possible confirmation value Y
+        /// that are unconfirmed for each possible confirmation value Y.
         /// unconfTxs[Y][X]
         /// </remarks>
         private List<List<int>> unconfTxs;
@@ -104,8 +104,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <summary>
-        /// Initialize the data structures.  This is called by BlockPolicyEstimator's
-        /// constructor with default values.
+        /// Initialize the data structures. This is called by BlockPolicyEstimator's constructor with default values.
         /// </summary>
         /// <param name="defaultBuckets">Contains the upper limits for the bucket boundaries.</param>
         /// <param name="maxPeriods">Max number of periods to track.</param>
@@ -177,68 +176,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <summary>
-        /// Record a new transaction entering the mempool.
-        /// </summary>
-        /// <param name="nBlockHeight">The block height.</param>
-        /// <param name="val"></param>
-        /// <returns>The feerate of the transaction.</returns>
-        public int NewTx(int nBlockHeight, double val)
-        {
-            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
-            int blockIndex = nBlockHeight % this.unconfTxs.Count;
-            this.unconfTxs[blockIndex][bucketindex]++;
-
-            return bucketindex;
-        }
-
-        /// <summary>
-        /// Remove a transaction from mempool tracking stats.
-        /// </summary>
-        /// <param name="entryHeight">The height of the mempool entry.</param>
-        /// <param name="nBestSeenHeight">The best sceen height.</param>
-        /// <param name="bucketIndex">The bucket index.</param>
-        public void RemoveTx(int entryHeight, int nBestSeenHeight, int bucketIndex, bool inBlock)
-        {
-            //nBestSeenHeight is not updated yet for the new block
-            int blocksAgo = nBestSeenHeight - entryHeight;
-
-            if (nBestSeenHeight == 0) // the BlockPolicyEstimator hasn't seen any blocks yet
-                blocksAgo = 0;
-
-            if (blocksAgo < 0)
-            {
-                this.logger.LogInformation($"Blockpolicy error, blocks ago is negative for mempool tx");
-                return; //This can't happen because we call this with our best seen height, no entries can have higher
-            }
-
-            if (blocksAgo >= this.unconfTxs.Count)
-            {
-                if (this.oldUnconfTxs[bucketIndex] > 0)
-                    this.oldUnconfTxs[bucketIndex]--;
-                else
-                    this.logger.LogInformation($"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
-            }
-            else
-            {
-                int blockIndex = entryHeight % this.unconfTxs.Count;
-
-                if (this.unconfTxs[blockIndex][bucketIndex] > 0)
-                    this.unconfTxs[blockIndex][bucketIndex]--;
-                else
-                    this.logger.LogInformation($"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
-            }
-
-            if(!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
-            {
-                Guard.Assert(this.scale != 0);
-                int periodsAgo = blocksAgo / this.scale;
-
-                for (int i = 0; i < periodsAgo && i < this.failAvg.Count; i++)
-                    this.failAvg[i][bucketIndex]++;
-            }
-        }
-
-        /// <summary>
         /// Update our estimates by decaying our historical moving average and updating
         /// with the data gathered from the current block.
         /// </summary>
@@ -267,7 +204,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <param name="successBreakPoint">The success probability we require.</param>
         /// <param name="requireGreater">Return the lowest feerate such that all higher values pass minSuccess OR return the highest feerate such that all lower values fail minSuccess.</param>
         /// <param name="nBlockHeight">The current block height.</param>
-        /// <returns></returns>
         public double EstimateMedianVal(int confTarget, double sufficientTxVal, double successBreakPoint, bool requireGreater, int nBlockHeight, EstimationResult result)
         {
             // Counters for a bucket (or range of buckets)
@@ -300,8 +236,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             int bins = this.unconfTxs.Count;
             bool newBucketRange = true;
             bool passing = true;
-            EstimatorBucket passBucket = new EstimatorBucket(); ;
-            EstimatorBucket failBucket = new EstimatorBucket();
+            var passBucket = new EstimatorBucket();
+            var failBucket = new EstimatorBucket();
 
             // Start counting from highest(default) or lowest feerate transactions
             for (int bucket = startbucket; bucket >= 0 && bucket <= maxbucketindex; bucket += step)
@@ -381,9 +317,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             int maxBucket = Math.Max(bestNearBucket, bestFarBucket);
 
             for (int j = minBucket; j <= maxBucket; j++)
-            {
                 txSum += this.txCtAvg[j];
-            }
 
             if (foundAnswer && txSum != 0)
             {
@@ -470,24 +404,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         }
 
         /// <summary>
-        /// Read saved state of estimation data from a file and replace all internal data structures and
-        /// variables with this state.
+        /// Read saved state of estimation data from a file and replace all internal data structures and variables with this state.
         /// </summary>
-        /// <param name="filein">Stream to read from.</param>
         public void Read(TxConfirmData data)
         {
+            // Read data file and do some very basic sanity checking.
+            // We presume that Initialize has been called prior to this, so that this.buckets is set.
             try
             {
                 if (data == null)
                     throw new ArgumentNullException(nameof(data));
 
-                if(data.Decay <= 0 || data.Decay >= 1)
+                if (data.Decay <= 0 || data.Decay >= 1)
                     throw new ApplicationException("Corrupt estimates file. Decay must be between 0 and 1 (non-inclusive)");
 
-                if(data.Scale == 0)
+                if (data.Scale == 0)
                     throw new ApplicationException("Corrupt estimates file. Scale must be non-zero");
 
-                if(data.Avg.Count != this.buckets.Count)
+                if (data.Avg.Count != this.buckets.Count)
                     throw new ApplicationException("Corrupt estimates file. Mismatch in feerate average bucket count");
 
                 if (data.TxCtAvg.Count != this.buckets.Count)
@@ -497,7 +431,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 double maxConfirms = data.Scale * maxPeriods;
 
                 if (maxConfirms <= 0 || maxConfirms > 6 * 24 * 7)
-                    throw new ApplicationException("Corrupt estimates file.  Must maintain estimates for between 1 and 1008 (one week) confirms");
+                    throw new ApplicationException("Corrupt estimates file. Must maintain estimates for between 1 and 1008 (one week) confirms");
 
                 for (int i = 0; i < maxPeriods; i++)
                 {
@@ -524,6 +458,68 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             catch (Exception e)
             {
                 this.logger.LogError("Error while reading tx confirm data from file", e);
+            }
+        }
+
+        /// <summary>
+        /// Record a new transaction entering the mempool.
+        /// </summary>
+        /// <param name="nBlockHeight">The block height.</param>
+        /// <param name="val"></param>
+        /// <returns>The feerate of the transaction.</returns>
+        public int NewTx(int nBlockHeight, double val)
+        {
+            int bucketindex = this.bucketMap.FirstOrDefault(k => k.Key >= val).Value;
+            int blockIndex = nBlockHeight % this.unconfTxs.Count;
+            this.unconfTxs[blockIndex][bucketindex]++;
+
+            return bucketindex;
+        }
+
+        /// <summary>
+        /// Remove a transaction from mempool tracking stats.
+        /// </summary>
+        /// <param name="entryHeight">The height of the mempool entry.</param>
+        /// <param name="nBestSeenHeight">The best sceen height.</param>
+        /// <param name="bucketIndex">The bucket index.</param>
+        public void RemoveTx(int entryHeight, int nBestSeenHeight, int bucketIndex, bool inBlock)
+        {
+            //nBestSeenHeight is not updated yet for the new block
+            int blocksAgo = nBestSeenHeight - entryHeight;
+
+            if (nBestSeenHeight == 0) // the BlockPolicyEstimator hasn't seen any blocks yet
+                blocksAgo = 0;
+
+            if (blocksAgo < 0)
+            {
+                this.logger.LogDebug($"Blockpolicy error, blocks ago is negative for mempool tx");
+                return; //This can't happen because we call this with our best seen height, no entries can have higher
+            }
+
+            if (blocksAgo >= this.unconfTxs.Count)
+            {
+                if (this.oldUnconfTxs[bucketIndex] > 0)
+                    this.oldUnconfTxs[bucketIndex]--;
+                else
+                    this.logger.LogDebug($"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
+            }
+            else
+            {
+                int blockIndex = entryHeight % this.unconfTxs.Count;
+
+                if (this.unconfTxs[blockIndex][bucketIndex] > 0)
+                    this.unconfTxs[blockIndex][bucketIndex]--;
+                else
+                    this.logger.LogDebug($"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
+            }
+
+            if (!inBlock && (blocksAgo >= this.scale)) // Only counts as a failure if not confirmed for entire period
+            {
+                Guard.Assert(this.scale != 0);
+                int periodsAgo = blocksAgo / this.scale;
+
+                for (int i = 0; i < periodsAgo && i < this.failAvg.Count; i++)
+                    this.failAvg[i][bucketIndex]++;
             }
         }
     }
