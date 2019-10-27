@@ -70,11 +70,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         {
             string type = "TEXT";
 
-            if (info.PropertyType == typeof(int))
+            if (info.PropertyType == typeof(int) || info.PropertyType == typeof(long))
                 return "INT";
-
-            if (info.PropertyType == typeof(decimal))
-                return "DECIMAL";
 
             return type;
         }

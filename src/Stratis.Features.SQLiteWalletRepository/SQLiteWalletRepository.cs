@@ -144,10 +144,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     HDWallet wallet = conn.GetWalletByName(walletName);
                     var walletContainer = new WalletContainer(conn, wallet, new ProcessBlocksInfo(conn, null, wallet));
-                    this.Wallets[walletName] = walletContainer;
 
                     walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
                     walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
+
+                    this.Wallets[walletName] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
@@ -161,10 +162,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                 foreach (HDWallet wallet in HDWallet.GetAll(conn))
                 {
                     var walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
-                    this.Wallets[wallet.Name] = walletContainer;
 
                     walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
                     walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
+
+                    this.Wallets[wallet.Name] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
@@ -676,7 +678,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
 
             return conn.GetUsedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, int.MaxValue).Select(a =>
-                (this.ToHdAddress(a), new Money(a.ConfirmedAmount, MoneyUnit.BTC), new Money(a.TotalAmount, MoneyUnit.BTC)));
+                (this.ToHdAddress(a), new Money(a.ConfirmedAmount), new Money(a.TotalAmount)));
         }
 
         /// <inheritdoc />
@@ -1202,10 +1204,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                 spendingDetails.TransactionId.ToString(),
                 transactionData.Id.ToString(),
                 transactionData.Index,
-                transactionData.ScriptPubKey.ToHex())
+                transactionData.AddressScriptPubKey.ToHex())
                 .Where(p => p.SpendIsChange == (isChange ? 1 : 0)).Select(p => new PaymentDetails()
                 {
-                    Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
+                    Amount = new Money(p.SpendValue),
                     DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
                     OutputIndex = p.SpendIndex
                 }).ToList();
@@ -1231,9 +1233,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             DBConnection conn = walletContainer.Conn;
             HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
-            (decimal total, decimal confirmed, decimal spendable) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, address, currentChainHeight, coinBaseMaturity ?? (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
+            (long total, long confirmed, long spendable) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, address, currentChainHeight, coinBaseMaturity ?? (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
 
-            return (new Money(total, MoneyUnit.BTC), new Money(confirmed, MoneyUnit.BTC), new Money(spendable, MoneyUnit.BTC));
+            return (new Money(total), new Money(confirmed), new Money(spendable));
         }
 
         /// <inheritdoc />

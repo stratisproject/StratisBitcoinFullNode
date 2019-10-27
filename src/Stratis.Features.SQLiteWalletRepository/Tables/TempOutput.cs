@@ -11,7 +11,7 @@
         public long OutputTxTime { get; set; }
         public string OutputTxId { get; set; }
         public int OutputIndex { get; set; }
-        public decimal Value { get; set; }
+        public long Value { get; set; }
         public int IsChange { get; set; }
 
         public TempOutput() : base() { }

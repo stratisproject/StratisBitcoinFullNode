@@ -10,7 +10,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int OutputIndex { get; set; }
         public int SpendIndex { get; set; }
         public string SpendScriptPubKey { get; set; }
-        public decimal SpendValue { get; set; }
+        public long SpendValue { get; set; }
         public int SpendIsChange { get; set; }
 
         internal static IEnumerable<string> CreateScript()
@@ -24,7 +24,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 ScriptPubKey        TEXT NOT NULL,
                 SpendIndex          INTEGER NOT NULL,
                 SpendScriptPubKey   TEXT,
-                SpendValue          DECIMAL NOT NULL,
+                SpendValue          INTEGER NOT NULL,
                 SpendIsChange       INTEGER NOT NULL,
                 PRIMARY KEY(SpendTxTime, SpendTxId, OutputTxId, OutputIndex, ScriptPubKey, SpendIndex)
             )";

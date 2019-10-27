@@ -33,8 +33,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SpendTxTime = spendTime,
                 SpendTxId = spendTxId.ToString(),
                 SpendIndex = spendIndex,
-                SpendTxTotalOut = totalOut.ToDecimal(MoneyUnit.BTC)
-            };
+                SpendTxTotalOut = totalOut.Satoshi
+            });
 
             this.conn.Repository.logger.LogTrace("Recording spend: {0}", prevOut.ToString());
             this.processBlocksInfo.PrevOuts.Add(prevOut);
@@ -58,7 +58,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 OutputTxTime = creationTime,
                 OutputTxId = outputTxId.ToString(),
                 OutputIndex = outputIndex,
-                Value = txOut.Value.ToDecimal(MoneyUnit.BTC),
+                Value = txOut.Value.Satoshi,
                 IsChange = isChange ? 1 : 0
             };
 

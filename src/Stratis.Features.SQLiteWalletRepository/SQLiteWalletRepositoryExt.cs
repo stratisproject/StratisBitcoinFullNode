@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Wallet;
@@ -62,7 +60,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             var res = new TransactionData()
             {
-                Amount = new Money(transactionData.Value, MoneyUnit.BTC),
+                Amount = new Money(transactionData.Value),
                 BlockHash = (transactionData.OutputBlockHash == null) ? null : uint256.Parse(transactionData.OutputBlockHash),
                 BlockHeight = transactionData.OutputBlockHeight,
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(transactionData.OutputTxTime),
@@ -73,6 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex != 0,
                 // IsPropagated  // Not used currently.
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
+                AddressScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,

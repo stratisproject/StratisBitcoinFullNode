@@ -11,7 +11,7 @@
         public long SpendTxTime { get; set; }
         public string SpendTxId { get; set; }
         public int SpendIndex { get; set; }
-        public decimal SpendTxTotalOut { get; set; }
+        public long SpendTxTotalOut { get; set; }
 
         public TempPrevOut() : base() { }
     }

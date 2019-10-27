@@ -5,8 +5,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
     internal class HDAddressWithBalances : HDAddress
     {
-        public decimal ConfirmedAmount { get; set; }
-        public decimal TotalAmount { get; set; }
+        public long ConfirmedAmount { get; set; }
+        public long TotalAmount { get; set; }
     }
 
     internal class HDAddress
