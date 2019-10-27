@@ -821,6 +821,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                             {
                                 if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                                 {
+                                    this.logger.LogDebug("Batch-commit transactions extracted from blocks {0} to {1} to wallet repository.",
+                                        (round.PrevTip?.Height ?? -1) + 1, round.NewTip.Height);
+
                                     IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
 
                                     // Ensure that any new addresses are present in the database before accessing the HDAddress table.
@@ -832,8 +835,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                                         conn.InsertOrReplace(this.CreateAddress(addressIdentifier));
                                     }
 
-                                    this.logger.LogDebug("Processing block '{0}'.", chainedHeader);
-
                                     conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
 
                                     round.Outputs.Clear();
@@ -842,9 +843,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                                     round.AddressesOfInterest.Confirm();
                                     round.TransactionsOfInterest.Confirm();
 
+                                    this.logger.LogDebug("Batch-commit done.");
                                 }
                                 else
                                 {
+                                    this.logger.LogDebug("No transactions found in blocks {0} to {1}. Just advancing wallet tips.",
+                                        (round.PrevTip?.Height ?? -1) + 1, round.NewTip.Height);
+
                                     HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
                                 }
 
@@ -870,11 +875,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                         }
 
                         this.EndBatch(round);
+
+                        if (chainedHeader == null)
+                            return false;
                     }
                 }
-
-                if (chainedHeader == null)
-                    return false;
 
                 if (round.PrevTip == null)
                 {
@@ -886,6 +891,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 if (block != null)
                 {
+                    this.logger.LogDebug("Scanning block '{0}' for transactions.", chainedHeader);
+
                     // Maintain metrics.
                     long flagFall2 = DateTime.Now.Ticks;
                     this.Metrics.BlockCount++;
@@ -896,6 +903,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         this.Metrics.ProcessCount++;
 
                     this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
+
+                    this.logger.LogDebug("Scanning done.");
                 }
 
                 round.NewTip = chainedHeader;
@@ -974,6 +983,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // Initialize round.
                 round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                 round.NewTip = null;
+                round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
 
                 return true;
             }
@@ -1374,6 +1384,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     continue;
 
                 AddressIdentifier addressIdentifier = addresses.First(a => a.WalletId == tranData.WalletId && a.AccountIndex == tranData.AccountIndex);
+                // TODO:
+                // AddressIdentifier addressIdentifier = addresses.FirstOrDefault(a => a.WalletId == tranData.WalletId && a.AccountIndex == tranData.AccountIndex && a.ScriptPubKey == tranData.ScriptPubKey);
+                // if (addressIdentifier == null)
+                //    continue;
 
                 if (!addressDict.TryGetValue(addressIdentifier, out HdAddress hdAddress))
                 {
@@ -1413,6 +1427,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     continue;
 
                 AddressIdentifier addressIdentifier = addresses.First(a => a.WalletId == tranData.WalletId && a.AccountIndex == tranData.AccountIndex);
+                // TODO:
+                // AddressIdentifier addressIdentifier = addresses.FirstOrDefault(a => a.WalletId == tranData.WalletId && a.AccountIndex == tranData.AccountIndex && a.ScriptPubKey == tranData.ScriptPubKey);
+                // if (addressIdentifier == null)
+                //    continue;
 
                 if (!addressDict.TryGetValue(addressIdentifier, out HdAddress hdAddress))
                 {

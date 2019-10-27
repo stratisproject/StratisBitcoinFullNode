@@ -36,6 +36,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
     internal class TempRow
     {
+        private PropertyInfo[] GetProperties()
+        {
+            return this.GetType().GetProperties().Where(p => p.SetMethod != null).ToArray();
+        }
+
+        public override string ToString()
+        {
+            return string.Join(", ", this.GetProperties().Select(p => $"{p.Name}={DBParameter.Create(p.GetValue(this))}"));
+        }
     }
 
     internal class TempTable : List<TempRow>

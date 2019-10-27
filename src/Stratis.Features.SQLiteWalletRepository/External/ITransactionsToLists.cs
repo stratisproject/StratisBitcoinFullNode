@@ -79,9 +79,6 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             IWalletTransactionLookup transactionsOfInterest = this.transactionsOfInterest;
             IWalletAddressLookup addressesOfInterest = this.addressesOfInterest;
 
-            // Used for tracking address top-up requirements.
-            var trackers = new Dictionary<TopUpTracker, TopUpTracker>();
-
             foreach (Transaction tx in transactions)
             {
                 // Build temp.PrevOuts
@@ -170,9 +167,6 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             // Convert relevant information in the block to information that can be joined to the wallet tables.
             IWalletTransactionLookup transactionsOfInterest = this.transactionsOfInterest;
             IWalletAddressLookup addressesOfInterest = this.addressesOfInterest;
-
-            // Used for tracking address top-up requirements.
-            var trackers = new Dictionary<TopUpTracker, TopUpTracker>();
 
             foreach (TransactionData transactionData in transactions)
             {
