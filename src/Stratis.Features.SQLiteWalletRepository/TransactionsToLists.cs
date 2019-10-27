@@ -34,7 +34,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SpendTxId = spendTxId.ToString(),
                 SpendIndex = spendIndex,
                 SpendTxTotalOut = totalOut.Satoshi
-            });
+            };
 
             this.conn.Repository.logger.LogTrace("Recording spend: {0}", prevOut.ToString());
             this.processBlocksInfo.PrevOuts.Add(prevOut);
