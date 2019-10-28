@@ -663,7 +663,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             decodedTx.Should().BeOfType<TransactionVerboseModel>();
 
             var verboseTx = (TransactionVerboseModel) decodedTx;
-            verboseTx.Weight.Should().Be(verboseTx.VSize * 4);
+            verboseTx.Weight.Should().Be(verboseTx.VSize * 4 - 3);
             verboseTx.Hex.Should().BeNullOrEmpty();
         }
 
