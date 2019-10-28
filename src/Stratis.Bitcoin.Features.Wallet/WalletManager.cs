@@ -1199,7 +1199,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <inheritdoc />
         [NoTrace]
-        public ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false)
+        public ExtKey GetExtKey(WalletAccountReference accountReference, string password = "")
         {
             Wallet wallet = this.GetWallet(accountReference.WalletName);
             string cacheKey = wallet.EncryptedSeed;
@@ -1212,13 +1212,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             else
             {
                 privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
-            }
-
-            if (cache)
-            {
-                // The default duration the secret is cached is 5 minutes.
-                var timeOutDuration = new TimeSpan(0, 5, 0);
-                this.UnlockWallet(password, accountReference.WalletName, (int)timeOutDuration.TotalSeconds);
             }
 
             return new ExtKey(privateKey, wallet.ChainCode);
