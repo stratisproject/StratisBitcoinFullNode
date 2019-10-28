@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -72,6 +73,42 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
                 Assert.Equal(Money.Coins(100), stratisReceiver.FullNode.WalletManager().GetBalances(WalletName, Account).Single().AmountConfirmed);
+            }
+        }
+
+        [Fact]
+        public void WalletValidatesIncorrectPasswordAfterCorrectIsUsed()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+
+                int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 1 + 5);
+
+                // The mining should add coins to the wallet
+                long total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * 6 * 50, total);
+
+                // Sync both nodes
+                TestHelper.ConnectAndSync(stratisSender, stratisReceiver);
+
+                // Build a transaction using the correct password.
+                HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network,
+                    new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+
+                // Build a transaction using an incorrect password. It should throw an exception.
+                SecurityException exception = Assert.Throws<SecurityException>(() =>
+                {
+                    Transaction trx2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(
+                        stratisSender.FullNode.Network,
+                        new WalletAccountReference(WalletName, Account), "Wrong", sendto.ScriptPubKey, Money.COIN * 100,
+                        FeeType.Medium, 101));
+                });
+
+                Assert.StartsWith("Invalid password", exception.Message);
             }
         }
 

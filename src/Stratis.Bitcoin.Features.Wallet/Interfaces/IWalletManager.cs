@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="password">The password used to decrypt the encrypted seed.</param>
         /// <param name="cache">whether to cache the private key for future use.</param>
         /// <returns>The private key.</returns>
-        ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false);
+        ExtKey GetExtKey(WalletAccountReference accountReference, string password = "");
 
         /// <summary>
         /// Removes the specified transactions from the wallet and persist it.

@@ -111,8 +111,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.FullNode.Network)
             {
                 AccountReference = this.GetWalletAccountReference(),
-                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
-                CacheSecret = false
+                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
             };
 
             try
@@ -535,8 +534,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.
-                Recipients = recipients,
-                CacheSecret = false
+                Recipients = recipients
             };
 
             // Set fee type for transaction build context.
