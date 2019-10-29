@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -12,19 +12,17 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         private readonly DBConnection conn;
         private readonly ProcessBlocksInfo processBlocksInfo;
-        private readonly Dictionary<TopUpTracker, TopUpTracker> trackers;
 
         internal TransactionsToLists(Network network, IScriptAddressReader scriptAddressReader, ProcessBlocksInfo processBlocksInfo)
             : base(network, scriptAddressReader, processBlocksInfo.TransactionsOfInterest, processBlocksInfo.AddressesOfInterest)
         {
             this.conn = processBlocksInfo.Conn;
             this.processBlocksInfo = processBlocksInfo;
-            this.trackers = new Dictionary<TopUpTracker, TopUpTracker>();
         }
 
         public override void RecordSpend(HashHeightPair block, TxIn txIn, string pubKeyScript, bool isCoinBase, long spendTime, Money totalOut, uint256 spendTxId, int spendIndex)
         {
-            this.processBlocksInfo.PrevOuts.Add(new TempPrevOut()
+            var prevOut = new TempPrevOut()
             {
                 OutputTxId = txIn.PrevOut.Hash.ToString(),
                 OutputIndex = (int)txIn.PrevOut.N,
@@ -36,13 +34,16 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SpendTxId = spendTxId.ToString(),
                 SpendIndex = spendIndex,
                 SpendTxTotalOut = totalOut.Satoshi
-            });
+            };
+
+            this.conn.Repository.logger.LogTrace("Recording spend: {0}", prevOut.ToString());
+            this.processBlocksInfo.PrevOuts.Add(prevOut);
         }
 
         public override void RecordReceipt(HashHeightPair block, Script pubKeyScript, TxOut txOut, bool isCoinBase, long creationTime, uint256 outputTxId, int outputIndex, bool isChange)
         {
             // Record outputs received by our wallets.
-            this.processBlocksInfo.Outputs.Add(new TempOutput()
+            var output = new TempOutput()
             {
                 // For matching HDAddress.ScriptPubKey.
                 ScriptPubKey = pubKeyScript?.ToHex(),
@@ -59,17 +60,20 @@ namespace Stratis.Features.SQLiteWalletRepository
                 OutputIndex = outputIndex,
                 Value = txOut.Value.Satoshi,
                 IsChange = isChange ? 1 : 0
-            });
+            };
+
+            this.conn.Repository.logger.LogTrace("Recording receipt: {0}", output.ToString());
+            this.processBlocksInfo.Outputs.Add(output);
         }
 
         public override ITopUpTracker GetTopUpTracker(AddressIdentifier address)
         {
             var key = new TopUpTracker(this.processBlocksInfo, address.WalletId, (int)address.AccountIndex, (int)address.AddressType);
-            if (!this.trackers.TryGetValue(key, out TopUpTracker tracker))
+            if (!this.processBlocksInfo.Trackers.TryGetValue(key, out TopUpTracker tracker))
             {
                 tracker = key;
                 tracker.ReadAccount();
-                this.trackers.Add(tracker, tracker);
+                this.processBlocksInfo.Trackers.Add(tracker, tracker);
             }
 
             return tracker;

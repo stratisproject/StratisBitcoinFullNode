@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -22,6 +23,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal HDWallet Wallet;
         internal ConcurrentHashSet<string> ParticipatingWallets;
         internal long NextScheduledCatchup;
+        internal Dictionary<TopUpTracker, TopUpTracker> Trackers;
 
         internal DBLock LockProcessBlocks;
 
@@ -39,6 +41,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new WalletAddressLookup(conn, wallet?.WalletId);
             this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new WalletTransactionLookup(conn, wallet?.WalletId);
+            this.Trackers = processBlocksInfo?.Trackers ?? new Dictionary<TopUpTracker, TopUpTracker>();
         }
     }
 
