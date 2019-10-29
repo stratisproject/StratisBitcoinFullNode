@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.Bitcoin.Features.MemoryPool.Fee
+﻿namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {
     /// <summary>
     /// Identifier for each of the 3 different TxConfirmStats which will track
