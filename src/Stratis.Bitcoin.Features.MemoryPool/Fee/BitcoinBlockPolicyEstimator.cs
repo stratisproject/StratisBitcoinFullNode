@@ -121,7 +121,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         private const string FileName = "fee.json";
 
-        // TODO: How is this used? Should probably use ChainIndexer instead
         /// <summary>Best seen block height.</summary>
         private int nBestSeenHeight;
 
@@ -157,9 +156,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>Map of bucket upper-bound to index into all vectors by bucket.</summary>
         private SortedDictionary<double, int> bucketMap;
 
-        private object lockObject;
+        /// <summary>
+        /// Locks access to <see cref="mapMemPoolTxs"/>
+        /// </summary>
+        private readonly object lockObject;
 
-        private FileStorage<BlockPolicyData> fileStorage;
+        private readonly FileStorage<BlockPolicyData> fileStorage;
 
         /// <summary>
         /// Constructs an instance of the block policy estimator object.
@@ -269,9 +271,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                 }
 
                 if (txHeight != this.nBestSeenHeight)
+                {
+                    // Ignore side chains and re-orgs; assuming they are random they don't
+                    // affect the estimate. We'll potentially double count transactions in 1-block reorgs.
+                    // Ignore txs if BlockPolicyEstimator is not in sync with the chain tip.
+                    // It will be synced next time a block is processed.
                     return;
+                }
 
-                // Only want to be updating estimates when our blockchain is synced, otherwise we'll miscalculate how many blocks its taking to get included.
+                // Only want to be updating estimates when our blockchain is synced, otherwise we'll miscalculate how many blocks it's taking to get included.
                 if (!validFeeEstimate)
                 {
                     this.untrackedTxs++;
@@ -554,7 +562,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
                     RemoveTx(mi.Key, false); // this calls erase() on mapMemPoolTxs
                 }
 
-                this.logger.LogInformation($"Recorded {numEntries} unconfirmed txs from mempool");
+                this.logger.LogDebug($"Recorded {numEntries} unconfirmed txs from mempool");
             }
         }
 
@@ -591,7 +599,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private bool ProcessBlockTx(int nBlockHeight, TxMempoolEntry entry)
         {
             if (!this.RemoveTx(entry.TransactionHash, true))
+            {
+                // This transaction wasn't being tracked for fee estimation
                 return false;
+            }
 
             // How many blocks did it take for miners to include this transaction?
             // blocksToConfirm is 1-based, so a transaction included in the earliest
