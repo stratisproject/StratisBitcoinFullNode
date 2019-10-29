@@ -151,6 +151,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.Wallets[walletName] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
+
+                    this.RemoveAllUnconfirmedTransactions(walletName);
                 }
             }
             else
@@ -169,6 +171,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.Wallets[wallet.Name] = walletContainer;
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
+
+                    this.RemoveAllUnconfirmedTransactions(wallet.Name);
                 }
             }
         }

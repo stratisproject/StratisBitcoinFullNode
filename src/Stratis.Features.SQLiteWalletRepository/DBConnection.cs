@@ -536,11 +536,13 @@ namespace Stratis.Features.SQLiteWalletRepository
             string outputFilter = $@"
             WHERE   OutputBlockHeight IS NULL
             AND     OutputBlockHash IS NULL
+            AND     OutputTxId IS NOT NULL
             AND     WalletId = {strWalletId}";
 
             string spendFilter = $@"
             WHERE   SpendBlockHeight IS NULL
             AND     SpendBlockHash IS NULL
+            AND     SpendTxId IS NOT NULL
             AND     WalletId = {strWalletId}";
 
             var res = this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
