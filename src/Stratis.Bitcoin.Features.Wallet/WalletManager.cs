@@ -242,9 +242,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Ensure that any legacy JSON wallets are loaded to active storage.
             foreach (string walletName in this.fileStorage.GetFilesNames(WalletFileExtension))
             {
-                this.logger.LogInformation("Loading legacy JSON wallet: {0}", walletName);
                 this.LoadWallet(walletName.Substring(0, walletName.Length - WalletFileExtension.Length - 1));
-                this.logger.LogInformation("Loading legacy JSON wallet: {0} done...", walletName);
             }
 
             if (this.walletSettings.IsDefaultWalletEnabled())
@@ -418,13 +416,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = null;
             try
             {
-                // Get the wallet from the repository.
+                // Check if the json wallet isn't already in the repository.
                 wallet = this.GetWallet(walletName);
+
+                this.logger.LogInformation("Legacy JSON wallet '{0}' has already been imported.", walletName);
 
                 check?.Invoke(wallet);
             }
             catch (WalletException)
             {
+                this.logger.LogInformation("Legacy JSON wallet '{0}' not yet been imported.", walletName);
+
                 // If its not found then see if we have a JSON file for it.
                 string fileName = $"{walletName}.{WalletFileExtension}";
 
@@ -434,6 +436,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Wallet jsonWallet = this.fileStorage.LoadByFileName(fileName);
 
                 check?.Invoke(jsonWallet);
+
+                this.logger.LogInformation("Legacy JSON wallet '{0}' found, importing...", walletName);
 
                 if (this.ExcludeTransactionsFromWalletImports)
                 {
@@ -447,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         lock (this.lockProcess)
                         {
-                            this.logger.LogDebug("Creating wallet '{0}'.", jsonWallet.Name);
+                            this.logger.LogDebug("Creating wallet from json file called '{0}'.", jsonWallet.Name);
 
                             wallet = this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced, blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
 
@@ -487,7 +491,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         lock (this.lockProcess)
                         {
-                            this.logger.LogDebug("Creating wallet '{0}'.", jsonWallet.Name);
+                            this.logger.LogDebug("Creating wallet from json file called '{0}'.", jsonWallet.Name);
 
                             wallet = this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced, blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
 
@@ -525,6 +529,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         throw;
                     }
                 }
+
+                this.logger.LogInformation("Legacy JSON wallet '{0}' imported successfully.", walletName);
             }
 
             return wallet;
