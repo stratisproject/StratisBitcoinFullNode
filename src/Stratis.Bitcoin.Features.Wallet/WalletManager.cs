@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (WalletException)
             {
-                this.logger.LogInformation("Legacy JSON wallet '{0}' not yet been imported.", walletName);
+                this.logger.LogInformation("Legacy JSON wallet '{0}' has not yet been imported.", walletName);
 
                 // If its not found then see if we have a JSON file for it.
                 string fileName = $"{walletName}.{WalletFileExtension}";
