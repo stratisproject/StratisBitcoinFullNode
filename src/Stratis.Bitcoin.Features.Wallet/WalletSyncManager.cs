@@ -33,11 +33,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         private SubscriptionToken blockConnectedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
+        private readonly MempoolManager mempoolManager;
 
         public ChainedHeader WalletTip => this.walletManager.WalletCommonTip(this.chainIndexer.Tip);
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime,
+            MempoolManager mempoolManager = null)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -49,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
+            this.mempoolManager = mempoolManager;
             this.walletManager = walletManager;
             this.chainIndexer = chainIndexer;
             this.blockStore = blockStore;
@@ -70,7 +73,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new WalletException("Wallet can not yet run on a pruned node");
             }
 
-            this.logger.LogInformation("WalletSyncManager starting.");
+            this.logger.LogInformation("WalletSyncManager synchronising with mempool.");
+
+            // Ensure that all mempool transactions that apply to wallets have been applied.
+            if (this.mempoolManager != null)
+            {
+                foreach (uint256 trxId in this.mempoolManager.GetMempoolAsync().GetAwaiter().GetResult())
+                {
+                    Transaction transaction = this.mempoolManager.GetTransaction(trxId).GetAwaiter().GetResult();
+                    this.walletManager.ProcessTransaction(transaction);
+                }
+            }
+
+            this.logger.LogInformation("WalletSyncManager starting synchronisation loop.");
 
             // Start sync job for wallets
             this.walletSynchronisationLoop = this.asyncProvider.CreateAndRunAsyncLoop("WalletSyncManager.OrchestrateWalletSync",
