@@ -1,6 +1,6 @@
 ﻿using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common;
@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             {
                 var node = builder.CreateSmartContractPoANode(network, 0);
                 node.Start();
-                TestHelper.WaitLoop(() => node.State == CoreNodeState.Running);
+                TestBase.WaitLoop(() => node.State == CoreNodeState.Running);
                 Assert.False(node.FullNode.NodeService<MempoolSettings>().RequireStandard);
             }
         }

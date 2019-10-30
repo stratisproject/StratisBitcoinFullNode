@@ -4,7 +4,6 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -44,7 +43,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var execResult = new LocalExecutionResult
             {
                 ErrorMessage = new ContractErrorMessage("Error message"),
-                GasConsumed = (Gas) 69,
+                GasConsumed = (RuntimeObserver.Gas) 69,
                 Return = testAddress
             };
 
@@ -52,7 +51,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             {
                 ContractResolver = this.resolver
             });
-            Assert.Contains($"\"Return\":\"{expectedString}\"", jsonOutput);
+            Assert.Contains($"\"return\":\"{expectedString}\"", jsonOutput);
         }
     }
 }

@@ -11,20 +11,26 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         /// <summary>Reverts effect of <see cref="VotingData"/>.</summary>
         void RevertChange(VotingData data);
+
+        /// <summary>Converts <see cref="VotingData"/> to a human readable format.</summary>
+        string ConvertToString(VotingData data);
     }
 
     public class PollResultExecutor : IPollResultExecutor
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
-        private readonly WhitelistedHashesRepository whitelistedHashesRepository;
+        private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
+
+        private readonly PoAConsensusFactory consensusFactory;
 
         private readonly ILogger logger;
 
-        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory, WhitelistedHashesRepository whitelistedHashesRepository)
+        public PollResultExecutor(IFederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
         {
             this.federationManager = federationManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;
+            this.consensusFactory = network.Consensus.ConsensusFactory as PoAConsensusFactory;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -75,20 +81,41 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void AddFederationMember(byte[] pubKeyBytes)
+        /// <inheritdoc />
+        public string ConvertToString(VotingData data)
         {
-            var key = new PubKey(pubKeyBytes);
+            string action = $"Action:'{data.Key}'";
 
-            this.logger.LogInformation("Adding new fed member: '{0}'.", key.ToHex());
-            this.federationManager.AddFederationMember(key);
+            switch (data.Key)
+            {
+                case VoteKey.AddFederationMember:
+                case VoteKey.KickFederationMember:
+                    IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(data.Data);
+                    return $"{action},FederationMember:'{federationMember}'";
+
+                case VoteKey.WhitelistHash:
+                case VoteKey.RemoveHash:
+                    var hash = new uint256(data.Data);
+                    return $"{action},Hash:'{hash}'";
+            }
+
+            return "unknown (not supported voting data key)";
         }
 
-        private void RemoveFederationMember(byte[] pubKeyBytes)
+        public void AddFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(pubKeyBytes);
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
 
-            this.logger.LogInformation("Kicking fed member: '{0}'.", key.ToHex());
-            this.federationManager.RemoveFederationMember(key);
+            this.logger.LogInformation("Adding new fed member: '{0}'.", federationMember);
+            this.federationManager.AddFederationMember(federationMember);
+        }
+
+        public void RemoveFederationMember(byte[] federationMemberBytes)
+        {
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
+
+            this.logger.LogInformation("Kicking fed member: '{0}'.", federationMember);
+            this.federationManager.RemoveFederationMember(federationMember);
         }
 
         private void AddHash(byte[] hashBytes)

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void CheckFinalTransaction_WithElapsedLockTime_ReturnsTrueAsync()
+        public async Task CheckFinalTransaction_WithElapsedLockTime_ReturnsTrueAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -417,7 +417,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsCoinbase_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsCoinbase_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -446,7 +446,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsCoinbaseWithInvalidSize_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsCoinbaseWithInvalidSize_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -478,14 +478,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsCoinstake_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsCoinstake_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
             // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.StratisMain;
             var minerSecret = new BitcoinSecret(new Key(), network);
-            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -511,7 +511,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardVersionUnsupported_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardVersionUnsupported_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -552,7 +552,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardTransactionSizeInvalid_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardTransactionSizeInvalid_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -584,7 +584,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardInputScriptSigsLengthInvalid_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardInputScriptSigsLengthInvalid_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -622,7 +622,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -658,7 +658,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardScriptTemplateIsNull_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardScriptTemplateIsNull_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -683,7 +683,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardOutputIsDust_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardOutputIsDust_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -709,7 +709,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxIsNonStandardOutputNotSingleReturn_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxIsNonStandardOutputNotSingleReturn_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -738,7 +738,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxFinalCannotMine_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxFinalCannotMine_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -775,7 +775,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxAlreadyExists_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxAlreadyExists_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -803,7 +803,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact(Skip = "It does not seem to be possible for this test case to separately test the AlreadyKnown error condition, as the equivalent InPool check precedes it in the validator.")]
-        public async void AcceptToMemoryPool_TxAlreadyHaveCoins_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxAlreadyHaveCoins_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -838,7 +838,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxMissingInputs_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxMissingInputs_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -868,7 +868,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxInputsAreBad_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxInputsAreBad_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -898,7 +898,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_NonBIP68CanMine_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_NonBIP68CanMine_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -948,7 +948,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact(Skip = "This is triggering the wrong error case. Also awaiting fix for issue #2470")]
-        public async void AcceptToMemoryPool_TxExcessiveSigOps_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxExcessiveSigOps_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -985,7 +985,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxFeeInvalidLessThanMin_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxFeeInvalidLessThanMin_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1017,7 +1017,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact(Skip = "Implementation not finished, it is not triggering the correct code path.")]
-        public async void AcceptToMemoryPool_TxFeeInvalidInsufficentPriorityForFree_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxFeeInvalidInsufficentPriorityForFree_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1051,7 +1051,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxFeeInvalidAbsurdlyHighFee_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxFeeInvalidAbsurdlyHighFee_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1080,7 +1080,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxTooManyAncestors_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxTooManyAncestors_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1118,7 +1118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1160,7 +1160,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxReplacementInsufficientFees_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxReplacementInsufficientFees_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1220,7 +1220,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact(Skip = "This may need to be converted to an integration test as it seems to require mining to get it to work properly.")]
-        public async void AcceptToMemoryPool_TxReplacementTooManyReplacements_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxReplacementTooManyReplacements_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1379,7 +1379,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxReplacementAddsUnconfirmed_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxReplacementAddsUnconfirmed_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1448,7 +1448,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxPowConsensusCheckInputBadTransactionInBelowOut_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxPowConsensusCheckInputBadTransactionInBelowOut_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1478,13 +1478,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact(Skip = "Not clear how to test this without triggering In Below Out check instead.")]
-        public async void AcceptToMemoryPool_TxPowConsensusCheckInputNegativeFee_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxPowConsensusCheckInputNegativeFee_ReturnsFalseAsync()
         {
             // TODO: Execute failure case for CheckAllInputs CheckInputs PowCoinViewRule.CheckInputs NegativeFee
         }
 
         [Fact(Skip = "Making transactions with very large inputs/outputs pass validation is difficult, WIP.")]
-        public async void AcceptToMemoryPool_TxPowConsensusCheckInputFeeOutOfRange_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxPowConsensusCheckInputFeeOutOfRange_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1537,7 +1537,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_TxContextVerifyP2SHScriptFailure_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_TxContextVerifyP2SHScriptFailure_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -1566,7 +1566,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async void AcceptToMemoryPool_MemPoolFull_ReturnsFalseAsync()
+        public async Task AcceptToMemoryPool_MemPoolFull_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -36,28 +37,28 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public BlockNotification(
             ILoggerFactory loggerFactory,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
             ISignals signals,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(consensusManager, nameof(consensusManager));
             Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
-            this.Chain = chain;
+            this.ChainIndexer = chainIndexer;
             this.consensusManager = consensusManager;
             this.signals = signals;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public ConcurrentChain Chain { get; }
+        public ChainIndexer ChainIndexer { get; }
 
         public virtual bool ReSync { get; private set; }
 
@@ -66,22 +67,22 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <inheritdoc/>
         public virtual void SyncFrom(uint256 startHash)
         {
-            this.logger.LogTrace("Received request to sync from hash : {0}.", startHash);
+            this.logger.LogDebug("Received request to sync from hash : {0}.", startHash);
 
             // No need to resync the first time this method is called.
             if (this.StartHash != null)
             {
                 this.ReSync = true;
 
-                ChainedHeader startBlock = this.Chain.GetBlock(startHash);
+                ChainedHeader startBlock = this.ChainIndexer.GetHeader(startHash);
                 if (startBlock != null)
                 {
                     // Sets the location of the puller to the block preceding the one we want to receive.
-                    ChainedHeader previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+                    ChainedHeader previousBlock = this.ChainIndexer.GetHeader(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
                    // this.Puller.SetLocation(previousBlock);
                     this.tip = previousBlock;
 
-                    this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
+                    this.logger.LogDebug("Puller location set to block: {0}.", previousBlock);
                 }
             }
 
@@ -91,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <inheritdoc/>
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("Notify", async token =>
             {
                 await this.Notify(this.nodeLifetime.ApplicationStopping);
             },
@@ -112,16 +113,16 @@ namespace Stratis.Bitcoin.Features.Notifications
                 return Task.CompletedTask;
 
             // Not syncing until the chain is downloaded at least up to this block.
-            ChainedHeader startBlock = this.Chain.GetBlock(this.StartHash);
+            ChainedHeader startBlock = this.ChainIndexer.GetHeader(this.StartHash);
             if (startBlock == null)
                 return Task.CompletedTask;
 
             // Sets the location of the puller to the block preceding the one we want to receive.
-            ChainedHeader previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+            ChainedHeader previousBlock = this.ChainIndexer.GetHeader(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
            // this.Puller.SetLocation(previousBlock);
             this.tip = previousBlock;
 
-            this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
+            this.logger.LogDebug("Puller location set to block: {0}.", previousBlock);
 
             // Send notifications for all the following blocks.
             while (!this.ReSync)
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 // In reorg we reset the puller to the fork.
                 // When a reorg happens the puller is pushed back and continues from the current fork.
                 // Find the location of the fork.
-                while (this.Chain.GetBlock(this.tip.HashBlock) == null)
+                while (this.ChainIndexer.GetHeader(this.tip.HashBlock) == null)
                     this.tip = this.tip.Previous;
 
                 // Set the puller to the fork location.

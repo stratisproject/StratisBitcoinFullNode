@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         public TransactionLocktimeActivationRuleTest()
         {
-            this.concurrentChain = GenerateChainWithHeight(5, this.network);
+            this.ChainIndexer = GenerateChainWithHeight(5, this.network);
         }
 
         [Fact]
@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
             transaction.Inputs.Add(new TxIn() { Sequence = 15 });
             block.AddTransaction(transaction);
-            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.ChainIndexer.GetHeader(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             this.ruleContext.ValidationContext.BlockToValidate.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
@@ -49,11 +49,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
             transaction.Inputs.Add(new TxIn() { Sequence = 15 });
             block.AddTransaction(transaction);
-            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.ChainIndexer.GetHeader(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
@@ -69,11 +69,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Block block = this.network.CreateBlock();
             Transaction transaction = this.network.CreateTransaction();
             block.AddTransaction(transaction);
-            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.ChainIndexer.GetHeader(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             this.ruleContext.ValidationContext.BlockToValidate.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
@@ -90,11 +90,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Block block = this.network.CreateBlock();
             Transaction transaction = this.network.CreateTransaction();
             block.AddTransaction(transaction);
-            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.ChainIndexer.GetHeader(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             await this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext);

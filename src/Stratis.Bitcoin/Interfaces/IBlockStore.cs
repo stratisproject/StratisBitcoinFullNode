@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Interfaces
@@ -12,24 +13,29 @@ namespace Stratis.Bitcoin.Interfaces
         /// <summary>
         /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
         /// </summary>
-        Task InitializeAsync();
+        void Initialize();
 
-        /// <summary>
-        /// Retrieve the transaction information asynchronously using transaction id.
-        /// </summary>
+        /// <summary>Retrieve the transaction information asynchronously using transaction id.</summary>
         /// <param name="trxid">The transaction id to find.</param>
-        Task<Transaction> GetTransactionByIdAsync(uint256 trxid);
+        Transaction GetTransactionById(uint256 trxid);
+
+        /// <summary>Retrieve transactions information asynchronously using transaction ids.</summary>
+        /// <param name="trxids">Ids of transactions to find.</param>
+        /// <returns>List of transactions or <c>null</c> if txindexing is disabled.</returns>
+        Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken));
 
         /// <summary>
         /// Get the corresponding block hash by using transaction hash.
         /// </summary>
         /// <param name="trxid">The transaction hash.</param>
-        Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid);
+        uint256 GetBlockIdByTransactionId(uint256 trxid);
 
         /// <summary>
         /// Get the block from the database by using block hash.
         /// </summary>
         /// <param name="blockHash">The block hash.</param>
-        Task<Block> GetBlockAsync(uint256 blockHash);
+        Block GetBlock(uint256 blockHash);
+
+        List<Block> GetBlocks(List<uint256> blockHashes);
     }
 }

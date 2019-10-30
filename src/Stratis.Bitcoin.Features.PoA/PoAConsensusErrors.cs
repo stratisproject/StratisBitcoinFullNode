@@ -17,5 +17,12 @@ namespace Stratis.Bitcoin.Features.PoA
         public static ConsensusError TooManyVotingOutputs => new ConsensusError("too-many-voting-outputs", "there could be only 1 voting output");
 
         public static ConsensusError VotingDataInvalidFormat => new ConsensusError("invalid-voting-data-format", "voting data format is invalid");
+
+        // Collateral related errors.
+        public static ConsensusError InvalidCollateralAmount => new ConsensusError("invalid-collateral-amount", "collateral requirement is not fulfilled");
+
+        public static ConsensusError InvalidCollateralAmountNoCommitment => new ConsensusError("collateral-commitment-not-found", "collateral commitment not found");
+
+        public static ConsensusError InvalidCollateralAmountCommitmentTooNew => new ConsensusError("collateral-commitment-too-new", "collateral commitment too new");
     }
 }

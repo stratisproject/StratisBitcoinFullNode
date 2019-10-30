@@ -6,6 +6,61 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities
 {
+    public class FileStorageOption
+    {
+        internal static FileStorageOption Default { get; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the output file content should be indented. Default value is false.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if output file content is indented; otherwise, <c>false</c>.
+        /// </value>
+        public bool Indent { get; set; }
+
+        /// <summary>
+        /// A value indicating whether to save a backup of the file. Default value is false.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> to save a backup file; otherwise, <c>false</c>.
+        /// </value>
+        public bool SaveBackupFile { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a null value should be serialized in the output file. Default value is true.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if null values are serialized; otherwise, <c>false</c>.
+        /// </value>
+        public bool SerializeNullValues { get; set; }
+
+        public FileStorageOption()
+        {
+            this.SaveBackupFile = false;
+            this.Indent = false;
+            this.SerializeNullValues = true;
+        }
+
+        static FileStorageOption()
+        {
+            Default = new FileStorageOption();
+        }
+
+        /// <summary>
+        /// Gets the serialization settings based on current options.
+        /// </summary>
+        /// <returns></returns>
+        internal JsonSerializerSettings GetSerializationSettings()
+        {
+            // get default Json serializer settings
+            var settings = new JsonSerializerSettings();
+
+            settings.NullValueHandling = this.SerializeNullValues ? NullValueHandling.Include : NullValueHandling.Ignore;
+
+            return settings;
+        }
+    }
+
     /// <summary>
     /// Class providing methods to save objects as files on the file system.
     /// </summary>
@@ -34,25 +89,28 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="toSave">Object to save as a file.</param>
         /// <param name="fileName">Name of the file to be saved.</param>
-        /// <param name="saveBackupFile">A value indicating whether to save a backup of the file.</param>
-        public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false)
+        /// <param name="options">The serialization options.</param>
+        public void SaveToFile(T toSave, string fileName, FileStorageOption options = null)
         {
             Guard.NotEmpty(fileName, nameof(fileName));
             Guard.NotNull(toSave, nameof(toSave));
+
+            if (options == null)
+                options = FileStorageOption.Default;
 
             string filePath = Path.Combine(this.FolderPath, fileName);
             long uniqueId = DateTime.UtcNow.Ticks;
             string newFilePath = $"{filePath}.{uniqueId}.new";
             string tempFilePath = $"{filePath}.{uniqueId}.temp";
 
-            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, options.Indent ? Formatting.Indented : Formatting.None, options.GetSerializationSettings()));
 
             // If the file does not exist yet, create it.
             if (!File.Exists(filePath))
             {
                 File.Move(newFilePath, filePath);
 
-                if (saveBackupFile)
+                if (options.SaveBackupFile)
                 {
                     File.Copy(filePath, $"{filePath}.bak", true);
                 }
@@ -60,7 +118,7 @@ namespace Stratis.Bitcoin.Utilities
                 return;
             }
 
-            if (saveBackupFile)
+            if (options.SaveBackupFile)
             {
                 File.Copy(filePath, $"{filePath}.bak", true);
             }

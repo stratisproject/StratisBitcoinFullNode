@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 this.testContext.coinView.UpdateTipHash(this.testContext.InitialChainTip.Header.GetHash());
                 this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip);
-
+                this.testContext.chainIndexer.Initialize(this.testContext.InitialChainTip);
                 this.testContext.ChainState.Setup(c => c.BlockStoreTip)
                     .Returns(this.testContext.InitialChainTip);
             }

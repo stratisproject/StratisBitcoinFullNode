@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Hashing;
+using TracerAttributes;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -92,6 +93,7 @@ namespace Stratis.SmartContracts.Core
             this.data[byteIndex] |= mask;
         }
 
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             if (stream.Serializing)

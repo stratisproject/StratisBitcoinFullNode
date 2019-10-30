@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -33,10 +33,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments,
+        public PosConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer, NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache, IAsyncProvider asyncProvider, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, asyncProvider, consensusRulesContainer)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
@@ -51,18 +51,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override async Task InitializeAsync(ChainedHeader chainTip)
+        public override void Initialize(ChainedHeader chainTip)
         {
-            await base.InitializeAsync(chainTip).ConfigureAwait(false);
+            base.Initialize(chainTip);
 
-            await this.StakeChain.LoadAsync().ConfigureAwait(false);
+            this.StakeChain.Load();
 
             // A temporary hack until tip manage will be introduced.
             var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
-            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            uint256 hash = breezeCoinView.GetTipHash();
             ChainedHeader tip = chainTip.FindAncestorOrSelf(hash);
 
-            await this.RewindDataIndexCache.InitializeAsync(tip.Height, this.UtxoSet).ConfigureAwait(false);
+            this.RewindDataIndexCache.Initialize(tip.Height, this.UtxoSet);
         }
     }
 }

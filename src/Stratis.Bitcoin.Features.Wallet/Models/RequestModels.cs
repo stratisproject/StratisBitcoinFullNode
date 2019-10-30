@@ -5,14 +5,20 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet resynchronization request
+    /// which takes the hash of the block to resync after. 
+    /// </summary>
     public class HashModel
     {
+        /// <summary>
+        /// The hash of the block to resync after. 
+        /// </summary>
         [Required(AllowEmptyStrings = false)]
         public string Hash { get; set; }
     }
@@ -26,60 +32,87 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Object used to create a new wallet
+    /// A class containing the necessary parameters for a create wallet request.
     /// </summary>
     public class WalletCreationRequest : RequestModel
     {
+        /// <summary>
+        /// The mnemonic used to create the HD wallet.
+        /// </summary>
         public string Mnemonic { get; set; }
 
         /// <summary>
-        /// This password is used to encrypt the wallet for secure storage. The password is required.
+        /// A password used to encrypt the wallet for secure storage.
         /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
-        /// This passphrase is used as an additional seed (word) joined together with the <see cref="Mnemonic"/>.
+        /// An optional additional seed, which is joined together with the <see cref="Mnemonic"/>
+        /// when the wallet is created.
+        /// Although you will be prompted to enter a passphrase, an empty string is still valid.
         /// </summary>
         /// <remarks>
-        /// Empty string is a valid passphrase.
+        /// The passphrase can be an empty string.
         /// </remarks>
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet to create is missing.")]
         public string Name { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a load wallet request.
+    /// </summary>
     public class WalletLoadRequest : RequestModel
     {
+        /// <summary>
+        /// The password that was used to create the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet recovery request.
+    /// </summary>
     public class WalletRecoveryRequest : RequestModel
     {
+
+        /// <summary>
+        /// The mnemonic that was used to create the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A mnemonic is required.")]
         public string Mnemonic { get; set; }
 
         /// <summary>
-        /// Supply the password that was used to create the wallet.
+        /// The password that was used to create the wallet.
         /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
-        /// Supply the passphrase that was used when account was created.
+        /// The passphrase that was used to create the wallet.
         /// </summary>
         /// <remarks>
-        /// If the wallet was created before <see cref="Passphrase"/> was available, set the passphrase to be the same as the password.
+        /// If the wallet was created before <see cref="Passphrase"/> was available as a parameter, set the passphrase to be the same as the password.
         /// </remarks>
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
 
@@ -87,59 +120,148 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public DateTime CreationDate { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet recovery request using its extended public key.
+    /// Note that the recovered wallet will not have a private key and is
+    /// only suitable for returning the wallet history using further API calls. As such,
+    /// only the extended public key is used in the recovery process.
+    /// </summary>
     public class WalletExtPubRecoveryRequest : RequestModel
     {
+        /// <summary>
+        /// The extended public key used by the wallet.
+        /// </summary>
         [Required(ErrorMessage = "An extended public key is required.")]
         public string ExtPubKey { get; set; }
 
+        /// <summary>
+        /// The index of the account to generate for the wallet. For example, specifying a value of 0
+        /// generates "account0".
+        /// </summary>
         [Required(ErrorMessage = "An account number is required. E.g. 0.")]
         public int AccountIndex { get; set; }
 
+        /// <summary>
+        /// The name to give the recovered wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The creation date and time to give the recovered wallet. 
+        /// </summary>
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime CreationDate { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet history request.
+    /// </summary>
     public class WalletHistoryRequest : RequestModel
     {
+        public WalletHistoryRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet to recover the history for.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
+        /// <summary>
+        /// Optional. The name of the account to recover the history for. If no account name is specified,
+        /// the entire history of the wallet is recovered.
+        /// </summary>
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// Optional. If set, will filter the transaction history for all transactions made to or from the given address.
+        /// </summary>
+        [IsBitcoinAddress(Required = false)]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// An optional value allowing (with Take) pagination of the wallet's history. If given,
+        /// the member specifies the numbers of records in the wallet's history to skip before
+        /// beginning record retrieval; otherwise the wallet history records are retrieved starting from 0.
+        /// </summary>      
         public int? Skip { get; set; }
 
+        /// <summary>
+        /// An optional value allowing (with Skip) pagination of the wallet's history. If given,
+        /// the member specifies the number of records in the wallet's history to retrieve in this call; otherwise all
+        /// wallet history records are retrieved.
+        /// </summary>  
         public int? Take { get; set; }
 
+        /// <summary>
+        /// An optional string that can be used to match different data in the transaction records.
+        /// It is possible to match on the following: the transaction ID, the address at which funds where received,
+        /// and the address to which funds where sent.
+        /// </summary>
         [JsonProperty(PropertyName = "q")]
         public string SearchQuery { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet balance request.
+    /// </summary>
     public class WalletBalanceRequest : RequestModel
     {
+        public WalletBalanceRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet to retrieve the balance for.
+        /// </summary> 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
+        /// <summary>
+        /// The name of the account to retrieve the balance for. If no account name is supplied,
+        /// then the balance for the entire wallet (all accounts) is retrieved.
+        /// </summary>         
         public string AccountName { get; set; }
     }
 
     /// <summary>
-    /// Model object to use as input to the Api request for getting the maximum spendable amount on an account.
+    /// A class containing the necessary parameters for a request to get the maximum
+    /// spendable amount for a specific wallet account.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class WalletMaximumBalanceRequest : RequestModel
     {
+        public WalletMaximumBalanceRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet to retrieve the maximum spendable amount for.
+        /// </summary> 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
-        [Required(ErrorMessage = "The name of the account is missing.")]
+        /// <summary>
+        /// The name of the account to retrieve the maximum spendable amount for.
+        /// </summary>   
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// The type of fee to use when working out the fee required to spend the amount.
+        /// Specify "low", "medium", or "high".
+        /// </summary>        
         [Required(ErrorMessage = "A fee type is required. It can be 'low', 'medium' or 'high'.")]
         public string FeeType { get; set; }
 
+        /// <summary>
+        /// A flag that specifies whether to include the unconfirmed amounts held at account addresses
+        /// as spendable.
+        /// </summary> 
         public bool AllowUnconfirmed { get; set; }
     }
 
@@ -149,50 +271,98 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class ReceivedByAddressRequest : RequestModel
     {
+
         [Required(ErrorMessage = "An address is required.")]
         public string Address { get; set; }
     }
 
     public class WalletName : RequestModel
     {
+        
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
 
     /// <summary>
-    /// Model object for <see cref="WalletController.GetTransactionFeeEstimate"/> request.
+    /// A class containing the necessary parameters for a transaction fee estimate request.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class TxFeeEstimateRequest : RequestModel
     {
+        public TxFeeEstimateRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet containing the UTXOs to use in the transaction.
+        /// </summary> 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
-        [Required(ErrorMessage = "The name of the account is missing.")]
+        /// <summary>
+        /// The name of the account containing the UTXOs to use in the transaction.
+        /// </summary> 
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// A list of outpoints to use as inputs for the transaction.
+        /// </summary> 
         public List<OutpointRequest> Outpoints { get; set; }
 
+        /// <summary>
+        /// A list of transaction recipients. For each recipient, specify the Pubkey script and the amount the
+        /// recipient will receive in STRAT (or a sidechain coin). If the transaction was realized,
+        /// both the values would be used to create the UTXOs for the transaction recipients.
+        /// </summary> 
         [Required(ErrorMessage = "A list of recipients is required.")]
         [MinLength(1)]
         public List<RecipientModel> Recipients { get; set; }
 
+        /// <summary>
+        /// A string containing any OP_RETURN output data to store as part of the transaction.
+        /// </summary>       
         public string OpReturnData { get; set; }
 
+        /// <summary>
+        /// The funds in STRAT (or a sidechain coin) to include with the OP_RETURN output. Currently, specifying
+        /// some funds helps OP_RETURN outputs be relayed around the network.
+        /// </summary>   
         [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
         public string OpReturnAmount { get; set; }
 
+        /// <summary>
+        /// The type of fee to use when working out the fee for the transaction. Specify "low", "medium", or "high".
+        /// </summary>  
         public string FeeType { get; set; }
 
+        /// <summary>
+        /// A flag that specifies whether to include the unconfirmed amounts as inputs to the transaction.
+        /// If this flag is not set, at least one confirmation is required for each input.
+        /// </summary> 
         public bool AllowUnconfirmed { get; set; }
 
+        /// <summary>
+        /// A flag that specifies whether to shuffle the transaction outputs for increased privacy. Randomizing the
+        /// the order in which the outputs appear when the transaction is being built stops it being trivial to
+        /// determine whether a transaction output is payment or change. This helps defeat unsophisticated
+        /// chain analysis algorithms. 
+        /// Defaults to true.
+        /// </summary>         
         public bool? ShuffleOutputs { get; set; }
+
+        /// <summary>
+        /// The address to which the change from the transaction should be returned. If this is not set,
+        /// the default behaviour from the <see cref="WalletTransactionHandler"/> will be used to determine the change address.
+        /// </summary>
+        [IsBitcoinAddress(Required = false)]
+        public string ChangeAddress { get; set; }
     }
 
     public class OutpointRequest : RequestModel
     {
         /// <summary>
-        /// The transaction id.
+        /// The transaction ID.
         /// </summary>
         [Required(ErrorMessage = "The transaction id is missing.")]
         public string TransactionId { get; set; }
@@ -220,12 +390,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
         public string Amount { get; set; }
     }
-
+ 
+    /// <summary>
+    /// A class containing the necessary parameters for a build transaction request.
+    /// </summary>
     public class BuildTransactionRequest : TxFeeEstimateRequest, IValidatableObject
     {
+        /// <summary>
+        /// The fee for the transaction in STRAT (or a sidechain coin).
+        /// </summary>
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
-
+                
+        /// <summary>
+        /// The password for the wallet containing the funds for the transaction.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
@@ -250,40 +429,67 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a send transaction request.
+    /// </summary>
     public class SendTransactionRequest : RequestModel
     {
+        
         public SendTransactionRequest()
         {
         }
 
+        
         public SendTransactionRequest(string transactionHex)
         {
             this.Hex = transactionHex;
         }
 
+        /// <summary>
+        /// A string containing the transaction in hexadecimal format.
+        /// </summary>
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
+
+        /// <summary>
+        /// The transaction as a hexadecimal string.
+        /// </summary>
         public string Hex { get; set; }
     }
 
     /// <summary>
-    /// Model object to use as input to the Api request for removing transactions from a wallet.
+    /// A class containing the necessary parameters for a remove transactions request.
     /// </summary>
     /// <seealso cref="RequestModel" />
     public class RemoveTransactionsModel : RequestModel, IValidatableObject
     {
+        /// <summary>
+        /// The name of the wallet to remove the transactions from.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is required.")]
         public string WalletName { get; set; }
 
+        /// <summary>
+        /// The IDs of the transactions to remove.
+        /// </summary>
         [FromQuery(Name = "ids")]
         public IEnumerable<string> TransactionsIds { get; set; }
 
+        /// <summary>
+        /// A date and time after which all transactions should be removed.
+        /// </summary>        
         [JsonConverter(typeof(IsoDateTimeConverter))]
         [FromQuery(Name = "fromDate")]
         public DateTime FromDate { get; set; }
 
+        /// <summary>
+        /// A flag that specifies whether to delete all transactions from a wallet.
+        /// </summary>
         [FromQuery(Name = "all")]
         public bool DeleteAll { get; set; }
 
+        /// <summary>
+        /// A flag that specifies whether to resync the wallet after removing the transactions.
+        /// </summary>        
         [JsonProperty(PropertyName = "reSync")]
         public bool ReSync { get; set; }
 
@@ -318,6 +524,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a list accounts request.  
+    /// </summary>
     public class ListAccountsModel : RequestModel
     {
         /// <summary>
@@ -327,8 +536,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletName { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for an unused address request.  
+    /// </summary>
     public class GetUnusedAddressModel : RequestModel
     {
+        public GetUnusedAddressModel()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
         /// <summary>
         /// The name of the wallet from which to get the address.
         /// </summary>
@@ -338,40 +555,84 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// <summary>
         /// The name of the account for which to get the address.
         /// </summary>
-        [Required]
         public string AccountName { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for an unused addresses request.  
+    /// </summary>
     public class GetUnusedAddressesModel : RequestModel
     {
+        public GetUnusedAddressesModel()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet from which to get the addresses.
+        /// </summary>
         [Required]
         public string WalletName { get; set; }
 
-        [Required]
+        /// <summary>
+        /// The name of the account for which to get the addresses.
+        /// </summary>
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// The number of addresses to retrieve.
+        /// </summary>
         [Required]
         public string Count { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a retrieve all addresses request.  
+    /// </summary>
     public class GetAllAddressesModel : RequestModel
     {
+        public GetAllAddressesModel()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet from which to get the addresses.
+        /// </summary>
         [Required]
         public string WalletName { get; set; }
 
-        [Required]
+        /// <summary>
+        /// The name of the account for which to get the addresses.
+        /// </summary>
         public string AccountName { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for an extended public key request.  
+    /// </summary>
     public class GetExtPubKeyModel : RequestModel
     {
+        public GetExtPubKeyModel()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet from which to get the extended public key.
+        /// </summary>
         [Required]
         public string WalletName { get; set; }
 
-        [Required]
+        /// <summary>
+        /// The name of the account for which to get the extended public key.
+        /// <summary>
         public string AccountName { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a new account request.  
+    /// </summary>
     public class GetUnusedAccountModel : RequestModel
     {
         /// <summary>
@@ -381,61 +642,84 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletName { get; set; }
 
         /// <summary>
-        /// The password for this wallet.
+        /// The password for the wallet.
         /// </summary>
         [Required]
         public string Password { get; set; }
     }
 
     /// <summary>
-    /// Object used to synchronize a wallet
+    /// A class containing the necessary parameters for a wallet resynchronization request.  
     /// </summary>
     public class WalletSyncFromDateRequest : RequestModel
     {
+        /// <summary>
+        /// The date and time from which to resync the wallet.
+        /// </summary>
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime Date { get; set; }
     }
 
     /// <summary>
-    /// Request object for adding an address to the address book.
+    /// A class containing the necessary parameters to perform an add address book entry request.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class AddressBookEntryRequest : RequestModel
     {
+        /// <summary>
+        /// A label to attach to the address book entry.
+        /// </summary>
         [Required(ErrorMessage = "A label is required.")]
         [MaxLength(200)]
         public string Label { get; set; }
 
+        /// <summary>
+        /// The address to enter in the address book.
+        /// </summary>
         [Required(ErrorMessage = "An address is required.")]
         [IsBitcoinAddress()]
         public string Address { get; set; }
     }
 
     /// <summary>
-    /// Model object to use as input to the Api request for getting the spendable transactions in an account.
+    /// A class containing the necessary parameters to perform a spendable transactions request.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class SpendableTransactionsRequest : RequestModel
     {
+        public SpendableTransactionsRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet to retrieve the spendable transactions for.
+        /// </summary> 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
-        [Required(ErrorMessage = "The name of the account is missing.")]
+        /// <summary>
+        /// The name of the account to retrieve the spendable transaction for. If no account name is specified,
+        /// the entire history of the wallet is recovered.
         public string AccountName { get; set; }
 
         /// <summary>
-        /// The min number of confirmations required.
-        /// To allow unconfirmed transactions, set this value to 0.
+        /// The minimum number of confirmations a transaction needs to have to be included.
+        /// To include unconfirmed transactions, set this value to 0.
         /// </summary>
         public int MinConfirmations { get; set; }
     }
 
     public class SplitCoinsRequest : RequestModel
     {
+        public SplitCoinsRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
-        [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
         [Required(ErrorMessage = "A password is required.")]
@@ -448,5 +732,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required]
         public int UtxosCount { get; set; }
+    }
+
+    /// <summary>
+    /// Object to sign a message.
+    /// </summary>
+    public class SignMessageRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// Object to verify a signed message.
+    /// </summary>
+    public class VerifyRequest : RequestModel
+    {
+        [Required(ErrorMessage = "A signature is required.")]
+        public string Signature { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
     }
 }

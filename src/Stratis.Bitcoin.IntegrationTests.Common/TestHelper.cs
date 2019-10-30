@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -11,60 +11,19 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int waitTimeSeconds = 60, int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (cancellationToken == default(CancellationToken))
-            {
-                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
-            }
-
-            while (!act())
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(retryDelayInMiliseconds);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
-                }
-            }
-        }
-
-        public static void WaitLoopMessage(Func<(bool success, string message)> act, int waitTimeSeconds = 60)
-        {
-            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
-
-            var (success, message) = act();
-
-            while (!success)
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(1000);
-
-                    (success, message) = act();
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
-                }
-            }
-        }
-
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
             if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
@@ -73,21 +32,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
 
             // If the nodes are at genesis they are considered synced.
-            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+            if (node1.FullNode.ChainIndexer.Tip.Height == 0 && node2.FullNode.ChainIndexer.Tip.Height == 0)
                 return true;
 
-            if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
+            if (node1.FullNode.ChainIndexer.Tip.HashBlock != node2.FullNode.ChainIndexer.Tip.HashBlock)
                 return false;
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
             // Check that node1 tip exists in node2 store (either in disk or in the pending list)
-            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+            if (node1.FullNode.BlockStore().GetBlock(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) == null)
                 return false;
 
             // Check that node2 tip exists in node1 store (either in disk or in the pending list)
-            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+            if (node2.FullNode.BlockStore().GetBlock(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) == null)
                 return false;
 
             if (!ignoreMempool)
@@ -114,21 +73,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
 
             // If the nodes are at genesis they are considered synced.
-            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+            if (node1.FullNode.ChainIndexer.Tip.Height == 0 && node2.FullNode.ChainIndexer.Tip.Height == 0)
                 return (true, "[TIPS_ARE_AT_GENESIS]");
 
-            if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
-                return (false, $"[CHAIN_TIP_HASH_DOES_NOT_MATCH_{node1.FullNode.Chain.Tip}_{node2.FullNode.Chain.Tip}]");
+            if (node1.FullNode.ChainIndexer.Tip.HashBlock != node2.FullNode.ChainIndexer.Tip.HashBlock)
+                return (false, $"[CHAIN_TIP_HASH_DOES_NOT_MATCH_{node1.FullNode.ChainIndexer.Tip}_{node2.FullNode.ChainIndexer.Tip}]");
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return (false, $"[CONSENSUS_TIP_HASH_DOES_MATCH]_{node1.FullNode.ChainBehaviorState.ConsensusTip}_{node2.FullNode.ChainBehaviorState.ConsensusTip}]");
 
             // Check that node1 tip exists in node2 store (either in disk or in the pending list)
-            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+            if (node1.FullNode.BlockStore().GetBlock(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) == null)
                 return (false, "[NODE2_TIP_NOT_IN_NODE1_STORE]");
 
             // Check that node2 tip exists in node1 store (either in disk or in the pending list)
-            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+            if (node2.FullNode.BlockStore().GetBlock(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) == null)
                 return (false, "[NODE1_TIP_NOT_IN_NODE2_STORE]");
 
             if (!ignoreMempool)
@@ -150,18 +109,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static bool IsNodeSynced(CoreNode node)
         {
             // If the node is at genesis it is considered synced.
-            if (node.FullNode.Chain.Tip.Height == 0)
+            if (node.FullNode.ChainIndexer.Tip.Height == 0)
                 return true;
 
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
+            if (node.FullNode.ChainIndexer.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list)
-            if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+            if (node.FullNode.BlockStore().GetBlock(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) == null)
                 return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&
-                (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))
+                (node.FullNode.ChainIndexer.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))
                 return false;
 
             return true;
@@ -175,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            TestBase.WaitLoopMessage(() => { return (node.FullNode.ConsensusManager().Tip.Height == height, $"Node height: {node.FullNode.ConsensusManager().Tip.Height}; Expected height: {height}"); });
             return true;
         }
 
@@ -197,8 +156,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void WaitForNodeToSync(params CoreNode[] nodes)
         {
-            nodes.ToList().ForEach(n => WaitLoop(() => IsNodeSynced(n)));
-            nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
+            nodes.ToList().ForEach(n => TestBase.WaitLoop(() => IsNodeSynced(n)));
+            nodes.Skip(1).ToList().ForEach(n => TestBase.WaitLoop(() => AreNodesSynced(nodes.First(), n)));
         }
 
         public static void DisableBlockPropagation(CoreNode from, CoreNode to)
@@ -213,8 +172,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)
         {
-            nodes.ToList().ForEach(node => WaitLoop(() => IsNodeSynced(node)));
-            nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
+            nodes.ToList().ForEach(node => TestBase.WaitLoop(() => IsNodeSynced(node)));
+            nodes.Skip(1).ToList().ForEach(node => TestBase.WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
         public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
@@ -230,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
             if (syncNode)
-                WaitLoop(() => IsNodeSynced(node));
+                TestBase.WaitLoop(() => IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }
@@ -267,13 +226,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0, bool callBlockMinedAsync = true)
         {
             var block = coreNode.FullNode.Network.CreateBlock();
-            block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
-            block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
-            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
+            block.Header.HashPrevBlock = coreNode.FullNode.ChainIndexer.Tip.HashBlock;
+            block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.ChainIndexer.Tip);
+            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.ChainIndexer.Tip);
 
             var coinbase = coreNode.FullNode.Network.CreateTransaction();
-            coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
-            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
+            coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.ChainIndexer.Height + 1));
+            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.ChainIndexer.Height + 1), coreNode.MinerSecret.GetAddress()));
             block.AddTransaction(coinbase);
 
             if (transactions.Any())
@@ -288,7 +247,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 block.Header.Nonce = ++nonce;
 
             // This will set the block size.
-            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network);
+            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network.Consensus.ConsensusFactory);
 
             if (callBlockMinedAsync)
             {
@@ -348,7 +307,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return;
 
             thisNode.CreateRPCClient().RemoveNode(nodeToDisconnect.Endpoint);
-            WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
+            TestBase.WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
         /// <summary>
@@ -364,12 +323,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                     node.CreateRPCClient().RemoveNode(peer.PeerEndPoint);
                 }
 
-                WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
+                TestBase.WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
             }
 
             foreach (var node in nodes)
             {
-                WaitLoop(() => !IsNodeConnected(node));
+                TestBase.WaitLoop(() => !IsNodeConnected(node));
             }
         }
 
@@ -414,18 +373,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
-            WaitLoop(() =>
+            var isConnecting = false;
+
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
                     if (IsNodeConnectedTo(thisNode, connectToNode))
                         return true;
 
-                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                    // Don't try the same connection again until it failed or connected.
+                    if (!isConnecting)
+                    {
+                        thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                        isConnecting = true;
+                    }
                 }
                 catch (Exception)
                 {
                     // The connect request failed, probably due to a web exception so try again.
+                    isConnecting = false;
                 }
 
                 return false;
@@ -445,7 +412,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
-            WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
@@ -485,7 +452,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool));
+                TestBase.WaitLoopMessage(() => AreNodesSyncedMessage(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
         }
 
         /// <summary>
@@ -526,5 +493,43 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// A helper that constructs valid and various types of invalid blocks manually.
         /// </summary>
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
+
+        private const string Password = "password";
+        private const string Name = "mywallet";
+        private const string AccountName = "account 0";
+
+        public static void CheckWalletBalance(CoreNode node, Money amount)
+        {
+            var total = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
+            total.Should().Be(amount);
+        }
+
+        public static void SendCoins(CoreNode sender, CoreNode receiver, Money amount)
+        {
+            var receivingAddress = receiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(Name, AccountName));
+
+            var context = CreateContext(sender.FullNode.Network, new WalletAccountReference(Name, AccountName), Password, receivingAddress.ScriptPubKey, amount, FeeType.Medium, (int)sender.FullNode.Network.Consensus.CoinbaseMaturity);
+
+            var transaction = sender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+            sender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+
+            TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
+            TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
+
+            CheckWalletBalance(receiver, amount);
+        }
+
+        private static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        {
+            return new TransactionBuildContext(network)
+            {
+                AccountReference = accountReference,
+                MinConfirmations = minConfirmations,
+                FeeType = feeType,
+                WalletPassword = password,
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList()
+            };
+        }
     }
 }

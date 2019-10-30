@@ -49,7 +49,13 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.InitializeAsync().GetAwaiter().GetResult());
+
+                this.Execute(service =>
+                {
+                    service.State = "Initializing";
+                    service.InitializeAsync().GetAwaiter().GetResult();
+                    service.State = "Initialized";
+                });
             }
             catch
             {
@@ -64,7 +70,12 @@ namespace Stratis.Bitcoin.Builder
         {
             try
             {
-                this.Execute(feature => feature.Dispose(), true);
+                this.Execute(feature =>
+                {
+                    feature.State = "Disposing";
+                    feature.Dispose();
+                    feature.State = "Disposed";
+                }, true);
             }
             catch
             {

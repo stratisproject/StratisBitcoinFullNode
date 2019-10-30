@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -60,7 +61,9 @@ namespace Stratis.Bitcoin.Connection
         private readonly IPeerAddressManager peerAddressManager;
 
         /// <summary>Async loop that discovers new peers to connect to.</summary>
-        private IPeerDiscovery peerDiscovery;
+        private readonly IPeerDiscovery peerDiscovery;
+
+        private readonly List<IPEndPoint> ipRangeFilteringEndpointExclusions;
 
         private readonly NetworkPeerCollection connectedPeers;
 
@@ -72,6 +75,7 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
+        /// <inheritdoc/>
         public List<NetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
@@ -79,9 +83,14 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly IVersionProvider versionProvider;
 
+        private readonly IAsyncProvider asyncProvider;
+
         private IConsensusManager consensusManager;
 
-        private AsyncQueue<INetworkPeer> connectedPeersQueue;
+        private readonly IAsyncDelegateDequeuer<INetworkPeer> connectedPeersQueue;
+
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary>
+        private readonly PerformanceCounter disconnectedPerfCounter;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -96,7 +105,8 @@ namespace Stratis.Bitcoin.Connection
             ISelfEndpointTracker selfEndpointTracker,
             ConnectionManagerSettings connectionSettings,
             IVersionProvider versionProvider,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IAsyncProvider asyncProvider)
         {
             this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
@@ -106,24 +116,27 @@ namespace Stratis.Bitcoin.Connection
             this.NetworkPeerFactory = networkPeerFactory;
             this.NodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
+            this.asyncProvider = asyncProvider;
             this.peerAddressManager = peerAddressManager;
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.asyncProvider);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
-            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
+            this.ipRangeFilteringEndpointExclusions = new List<IPEndPoint>();
+            this.connectedPeersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>($"{nameof(ConnectionManager)}-{nameof(this.connectedPeersQueue)}", this.OnPeerAdded);
+            this.disconnectedPerfCounter = new PerformanceCounter();
 
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1100);
         }
 
         /// <inheritdoc />
@@ -147,7 +160,10 @@ namespace Stratis.Bitcoin.Connection
             // If external IP address supplied this overrides all.
             if (this.ConnectionSettings.ExternalEndpoint != null)
             {
-                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
+                if (this.ConnectionSettings.ExternalEndpoint.Address.Equals(IPAddress.Loopback))
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, false);
+                else
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
             }
             else
             {
@@ -227,19 +243,20 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
-            long totalRead = 0;
-            long totalWritten = 0;
-            var peerBuilder = new StringBuilder();
-            foreach (INetworkPeer peer in this.ConnectedPeers)
+            // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
+            long totalRead = this.disconnectedPerfCounter.ReadBytes;
+            long totalWritten = this.disconnectedPerfCounter.WrittenBytes;
+
+            void AddPeerInfo(StringBuilder peerBuilder, INetworkPeer peer)
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
 
                 string peerHeights = $"(r/s/c):" +
                                      $"{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
                                      $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
                                      $"/{chainHeadersBehavior.GetCachedItemsCount()}";
 
-                // TODO: Need a snapshot cache so that not only currently connected peers are summed
                 string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
                 totalRead += peer.Counter.ReadBytes;
                 totalWritten += peer.Counter.WrittenBytes;
@@ -252,11 +269,84 @@ namespace Stratis.Bitcoin.Connection
                     + " agent:" + agent);
             }
 
+            var oneTryBuilder = new StringBuilder();
+            var whiteListedBuilder = new StringBuilder();
+            var addNodeBuilder = new StringBuilder();
+            var connectBuilder = new StringBuilder();
+            var otherBuilder = new StringBuilder();
+            var addNodeDict = this.ConnectionSettings.AddNode.ToDictionary(ep => ep.MapToIpv6(), ep => ep);
+            var connectDict = this.ConnectionSettings.Connect.ToDictionary(ep => ep.MapToIpv6(), ep => ep);
+
+            foreach (INetworkPeer peer in this.ConnectedPeers)
+            {
+                bool added = false;
+
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                if (connectionManagerBehavior.OneTry)
+                {
+                    AddPeerInfo(oneTryBuilder, peer);
+                    added = true;
+                }
+
+                if (connectionManagerBehavior.Whitelisted)
+                {
+                    AddPeerInfo(whiteListedBuilder, peer);
+                    added = true;
+                }
+
+                if (connectDict.ContainsKey(peer.PeerEndPoint))
+                {
+                    AddPeerInfo(connectBuilder, peer);
+                    added = true;
+                }
+
+                if (addNodeDict.ContainsKey(peer.PeerEndPoint))
+                {
+                    AddPeerInfo(addNodeBuilder, peer);
+                    added = true;
+                }
+
+                if (!added)
+                {
+                    AddPeerInfo(otherBuilder, peer);
+                }
+            }
+
             int inbound = this.ConnectedPeers.Count(x => x.Inbound);
 
             builder.AppendLine();
             builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead.BytesToMegaBytes()} MB sent: {totalWritten.BytesToMegaBytes()} MB]");
-            builder.AppendLine(peerBuilder.ToString());
+
+            if (whiteListedBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> Whitelisted:");
+                builder.Append(whiteListedBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (addNodeBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> AddNode:");
+                builder.Append(addNodeBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (oneTryBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> OneTry:");
+                builder.Append(oneTryBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (connectBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> Connect:");
+                builder.Append(connectBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (otherBuilder.Length > 0)
+                builder.Append(otherBuilder.ToString());
         }
 
         private string ToKBSec(ulong bytesPerSec)
@@ -320,19 +410,16 @@ namespace Stratis.Bitcoin.Connection
             }
 
             // Don't disconnect if this peer is in -addnode or -connect.
-            bool isAddNodeOrConnect = false;
-            foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
-            {
-                if (peer.PeerEndPoint.Address.Equals(addNodeEndPoint.Address))
-                {
-                    isAddNodeOrConnect = true;
-                    break;
-                }
-            }
-
-            if (isAddNodeOrConnect)
+            if (this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect).Any(ep => peer.PeerEndPoint.MatchIpOnly(ep)))
             {
                 this.logger.LogTrace("(-)[ADD_NODE_OR_CONNECT]:false");
+                return false;
+            }
+
+            // Don't disconnect if this peer is in the exclude from IP range filtering group.
+            if (this.ipRangeFilteringEndpointExclusions.Any(ip => ip.MatchIpOnly(peer.PeerEndPoint)))
+            {
+                this.logger.LogTrace("(-)[PEER_IN_IPRANGEFILTER_EXCLUSIONS]:false");
                 return false;
             }
 
@@ -359,6 +446,7 @@ namespace Stratis.Bitcoin.Connection
         public void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.connectedPeers.Remove(peer);
+            this.disconnectedPerfCounter.Add(peer.Counter);
         }
 
         /// <inheritdoc />
@@ -370,16 +458,6 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint)
         {
             return this.connectedPeers.FindByEndpoint(ipEndpoint);
-        }
-
-        public INetworkPeer FindNodeByIp(IPAddress ipAddress)
-        {
-            return this.connectedPeers.FindByIp(ipAddress).FirstOrDefault();
-        }
-
-        public INetworkPeer FindLocalNode()
-        {
-            return this.connectedPeers.FindLocal();
         }
 
         public INetworkPeer FindNodeById(int peerId)
@@ -394,9 +472,15 @@ namespace Stratis.Bitcoin.Connection
         /// </para>
         /// </summary>
         /// <param name="ipEndpoint">The endpoint of the peer to add.</param>
-        public void AddNodeAddress(IPEndPoint ipEndpoint)
+        public void AddNodeAddress(IPEndPoint ipEndpoint, bool excludeFromIpRangeFiltering = false)
         {
             Guard.NotNull(ipEndpoint, nameof(ipEndpoint));
+
+            if (excludeFromIpRangeFiltering && !this.ipRangeFilteringEndpointExclusions.Any(ip => ip.Match(ipEndpoint)))
+            {
+                this.logger.LogDebug("{0} will be excluded from IP range filtering.", ipEndpoint);
+                this.ipRangeFilteringEndpointExclusions.Add(ipEndpoint);
+            }
 
             this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
 
@@ -406,7 +490,7 @@ namespace Stratis.Bitcoin.Connection
                 this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode).MaxOutboundConnections++;
             }
             else
-                this.logger.LogTrace("The endpoint already exists in the add node collection.");
+                this.logger.LogDebug("The endpoint already exists in the add node collection.");
         }
 
         /// <summary>
@@ -427,6 +511,32 @@ namespace Stratis.Bitcoin.Connection
             }
 
             this.peerAddressManager.RemovePeer(ipEndpoint);
+
+            // There appears to be a race condition that causes the endpoint or endpoint's address property to be null when
+            // trying to remove it from the connection manager's add node collection.
+            if (ipEndpoint == null)
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_NULL]");
+                throw new ArgumentNullException(nameof(ipEndpoint));
+            }
+
+            if (ipEndpoint.Address == null)
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]");
+                throw new ArgumentNullException(nameof(ipEndpoint.Address));
+            }
+
+            if (this.ConnectionSettings.AddNode.Any(ip => ip == null))
+            {
+                this.logger.LogTrace("(-)[ADDNODE_CONTAINS_NULLS]");
+                throw new ArgumentNullException("The addnode collection contains null entries.");
+            }
+
+            foreach (var endpoint in this.ConnectionSettings.AddNode.Where(a => a.Address == null))
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]:{0}", endpoint);
+                throw new ArgumentNullException("The addnode collection contains endpoints with null addresses.");
+            }
 
             // Create a copy of the nodes to remove. This avoids errors due to both modifying the collection and iterating it.
             List<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint)).ToList();

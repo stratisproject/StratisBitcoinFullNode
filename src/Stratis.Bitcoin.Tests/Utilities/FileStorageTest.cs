@@ -234,14 +234,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
             var fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
             testObject.Property1 = testObject.Property1 + "-changed";
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
 
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");
             bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
-            
+
             // Assert
             Assert.True(isFileExists);
             Assert.True(isBackupFileExists);
@@ -262,8 +262,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
             var fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", true);
-            
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = true });
+
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");
             bool isBackupFileExists = fileStorage.Exists("savedTestObject.json.bak");
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
             var fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = false });
             testObject.Property1 = testObject.Property1 + "-changed";
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
 
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var testObject = new TestObject { Property1 = "prop1", Property2 = "prop2" };
             string dir = this.GetFolderPathForTestExecution();
             var fileStorage = new FileStorage<TestObject>(dir);
-            fileStorage.SaveToFile(testObject, "savedTestObject.json", false);
+            fileStorage.SaveToFile(testObject, "savedTestObject.json", new FileStorageOption { SaveBackupFile = false });
 
             // Act
             bool isFileExists = fileStorage.Exists("savedTestObject.json");

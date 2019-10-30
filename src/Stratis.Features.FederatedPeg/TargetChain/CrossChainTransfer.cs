@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -79,6 +80,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// (De)serializes this object.
         /// </summary>
         /// <param name="stream">Stream to use for (de)serialization.</param>
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             if (stream.Serializing)
@@ -121,7 +123,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (this.depositTransactionId == null || this.depositTargetAddress == null || this.depositAmount == 0)
                 return false;
 
-            if (this.status == CrossChainTransferStatus.Suspended)
+            if (this.status == CrossChainTransferStatus.Suspended || this.status == CrossChainTransferStatus.Rejected)
                 return true;
 
             if (this.PartialTransaction == null)
@@ -149,67 +151,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.Assert(this.IsValid());
         }
 
-        /// <summary>
-        /// Checks whether two transaction have identical inputs and outputs.
-        /// </summary>
-        /// <param name="partialTransaction1">First transaction.</param>
-        /// <param name="partialTransaction2">Second transaction.</param>
-        /// <returns><c>True</c> if identical and <c>false</c> otherwise.</returns>
-        public static bool TemplatesMatch(Network network, Transaction partialTransaction1, Transaction partialTransaction2)
-        {
-            if (network.Consensus.IsProofOfStake)
-            {
-                if (partialTransaction1.Time != partialTransaction2.Time)
-                {
-                    return false;
-                }
-            }
-
-            if ((partialTransaction1.Inputs.Count != partialTransaction2.Inputs.Count) ||
-                (partialTransaction1.Outputs.Count != partialTransaction2.Outputs.Count))
-            {
-                return false;
-            }
-
-            for (int i = 0; i < partialTransaction1.Inputs.Count; i++)
-            {
-                TxIn input1 = partialTransaction1.Inputs[i];
-                TxIn input2 = partialTransaction2.Inputs[i];
-
-                if ((input1.PrevOut.N != input2.PrevOut.N) || (input1.PrevOut.Hash != input2.PrevOut.Hash))
-                {
-                    return false;
-                }
-            }
-
-            for (int i = 0; i < partialTransaction1.Outputs.Count; i++)
-            {
-                TxOut output1 = partialTransaction1.Outputs[i];
-                TxOut output2 = partialTransaction2.Outputs[i];
-
-                if ((output1.Value != output2.Value) || (output1.ScriptPubKey != output2.ScriptPubKey))
-                    return false;
-            }
-
-            return true;
-        }
-
         /// <inheritdoc />
         public int GetSignatureCount(Network network)
         {
-            Guard.NotNull(this.PartialTransaction, nameof(this.PartialTransaction));
-            Guard.Assert(this.PartialTransaction.Inputs.Any());
-
-            Script scriptSig = this.PartialTransaction.Inputs[0].ScriptSig;
-            if (scriptSig == null)
-                return 0;
-
-            // Remove the script from the end.
-            scriptSig = new Script(scriptSig.ToOps().SkipLast(1));
-
-            TransactionSignature[] result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, scriptSig);
-
-            return result?.Count(s => s != null) ?? 0;
+            return this.partialTransaction.GetSignatureCount(network);
         }
 
         /// <inheritdoc />
@@ -217,15 +162,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             Guard.Assert(this.status == CrossChainTransferStatus.Partial);
 
-            Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(builder.Network, p, this.partialTransaction) && p.GetHash() != this.PartialTransaction.GetHash()).ToArray();
-            if (validPartials.Any())
-            {
-                var allPartials = new Transaction[validPartials.Length + 1];
-                allPartials[0] = this.partialTransaction;
-                validPartials.CopyTo(allPartials, 1);
-
-                this.partialTransaction = builder.CombineSignatures(allPartials);
-            }
+            this.partialTransaction = SigningUtils.CheckTemplateAndCombineSignatures(builder, this.partialTransaction, partialTransactions);
         }
 
         /// <inheritdoc />

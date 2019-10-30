@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly ICoinView coinView;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSchedulerLock mempoolLock,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
@@ -162,8 +162,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLock = mempoolLock;
             this.dateTimeProvider = dateTimeProvider;
             this.mempoolSettings = mempoolSettings;
-            this.chain = chain;
-            this.network = chain.Network;
+            this.chainIndexer = chainIndexer;
+            this.network = chainIndexer.Network;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // TODO: Implement later with CheckRateLimit()
@@ -202,13 +202,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             catch (MempoolErrorException mempoolError)
             {
-                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(MempoolErrorException), mempoolError.Message, mempoolError.ValidationState?.Error?.Code, mempoolError.ValidationState?.ErrorMessage);
+                this.logger.LogDebug("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(MempoolErrorException), mempoolError.Message, mempoolError.ValidationState?.Error?.Code, mempoolError.ValidationState?.ErrorMessage);
                 this.logger.LogTrace("(-)[MEMPOOL_EXCEPTION]:false");
                 return false;
             }
             catch (ConsensusErrorException consensusError)
             {
-                this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
+                this.logger.LogDebug("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
                 state.Error = new MempoolError(consensusError.ConsensusError);
                 this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
@@ -235,13 +235,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// use the block time at the end of the block chain for validation.
         /// Otherwise use the current time for the block time.
         /// </summary>
-        /// <param name="chain">Block chain used for computing time-locking on the transaction.</param>
+        /// <param name="chainIndexer">Block chain used for computing time-locking on the transaction.</param>
         /// <param name="dateTimeProvider">Provides the current date and time.</param>
         /// <param name="tx">The transaction to validate.</param>
         /// <param name="flags">Flags for time-locking the transaction.</param>
         /// <returns>Whether the final transaction was valid.</returns>
         /// <seealso cref="Transaction.IsFinal(DateTimeOffset, int)"/>
-        public static bool CheckFinalTransaction(ConcurrentChain chain, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
+        public static bool CheckFinalTransaction(ChainIndexer chainIndexer, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
         {
             // By convention a negative value for flags indicates that the
             // current network-enforced consensus rules should be used. In
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // evaluated is what is used. Thus if we want to know if a
             // transaction can be part of the *next* block, we need to call
             // IsFinalTx() with one more than chainActive.Height().
-            int blockHeight = chain.Height + 1;
+            int blockHeight = chainIndexer.Height + 1;
 
             // BIP113 will require that time-locked transactions have nLockTime set to
             // less than the median time of the previous block they're contained in.
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // chain tip, so we use that to calculate the median time passed to
             // IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
             DateTimeOffset blockTime = flags.HasFlag(StandardLocktimeVerifyFlags)
-                ? chain.Tip.Header.BlockTime
+                ? chainIndexer.Tip.Header.BlockTime
                 : DateTimeOffset.FromUnixTimeMilliseconds(dateTimeProvider.GetTime());
 
             return tx.IsFinal(blockTime, blockHeight);
@@ -404,6 +404,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (nTxSize > offset)
                     nTxSize -= (int)offset;
             }
+
             return nTxSize;
         }
 
@@ -421,12 +422,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // create the MemPoolCoinView and load relevant utxoset
             context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
-            await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
+                context.View.LoadViewLocked(context.Transaction);
+
                 // If the transaction already exists in the mempool,
                 // we only record the state but do not throw an exception.
                 // This is because the caller will check if the state is invalid
@@ -552,7 +554,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
-            if (this.chain.Network.Consensus.IsProofOfStake)
+            if (this.chainIndexer.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
@@ -587,7 +589,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Only accept nLockTime-using transactions that can be mined in the next
             // block; we don't want our mempool filled up with transactions that can't
             // be mined yet.
-            if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, MempoolValidator.StandardLocktimeVerifyFlags))
+            if (!CheckFinalTransaction(this.chainIndexer, this.dateTimeProvider, context.Transaction, MempoolValidator.StandardLocktimeVerifyFlags))
             {
                 this.logger.LogTrace("(-)[FAIL_NONSTANDARD]");
                 context.State.Fail(MempoolErrors.NonFinal).Throw();
@@ -744,7 +746,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
             else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < this.minRelayTxFee.GetFee(context.EntrySize) &&
-                     !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
+                     !TxMempool.AllowFree(context.Entry.GetPriority(this.chainIndexer.Height + 1)))
             {
                 this.logger.LogTrace("(-)[FAIL_INSUFFICENT_PRIORITY]");
                 // Require that free transactions have sufficient priority to be mined in the next block.
@@ -790,7 +792,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // be mined yet.
             // Must keep pool.cs for this unless we change CheckSequenceLocks to take a
             // CoinsViewCache instead of create its own
-            if (!CheckSequenceLocks(this.network, this.chain.Tip, context, StandardLocktimeVerifyFlags, context.LockPoints))
+            if (!CheckSequenceLocks(this.network, this.chainIndexer.Tip, context, StandardLocktimeVerifyFlags, context.LockPoints))
             {
                 this.logger.LogTrace("(-)[FAIL_BIP68_SEQLOCK]");
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
@@ -823,13 +825,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool.ApplyDeltas(context.TransactionHash, ref priorityDummy, ref nModifiedFees);
             context.ModifiedFees = nModifiedFees;
 
-            (double dPriority, Money inChainInputValue) = context.View.GetPriority(context.Transaction, this.chain.Height);
+            (double dPriority, Money inChainInputValue) = context.View.GetPriority(context.Transaction, this.chainIndexer.Height);
 
             // Keep track of transactions that spend a coinbase, which we re-scan
             // during reorgs to ensure COINBASE_MATURITY is still met.
             bool spendsCoinbase = context.View.SpendsCoinBase(context.Transaction);
 
-            context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chain.Height, inChainInputValue,
+            context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chainIndexer.Height, inChainInputValue,
                 spendsCoinbase, context.SigOpsCost, context.LockPoints, this.ConsensusOptions);
             context.EntrySize = (int)context.Entry.GetTxSize();
         }
@@ -1046,7 +1048,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //if (IsInitialBlockDownload())
             //  return false;
 
-            if (this.chain.Tip.Header.BlockTime.ToUnixTimeMilliseconds() < (this.dateTimeProvider.GetTime() - MaxFeeEstimationTipAge))
+            if (this.chainIndexer.Tip.Header.BlockTime.ToUnixTimeMilliseconds() < (this.dateTimeProvider.GetTime() - MaxFeeEstimationTipAge))
             {
                 return false;
             }
@@ -1124,7 +1126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-                this.consensusRules.GetRule<CoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chain.Height + 1);
+                this.consensusRules.GetRule<CoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chainIndexer.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {
@@ -1261,7 +1263,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 // Check P2WSH standard limits.
-                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.chain.Network, prevScript);
+                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(this.chainIndexer.Network, prevScript);
                 if (wit == null)
                 {
                     this.logger.LogTrace("(-)[BAD_WITNESS_PARAMS]:false");

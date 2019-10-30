@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
+using System.Threading;
 using DBreeze;
 using DBreeze.DataTypes;
+using DBreeze.Exceptions;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -30,48 +32,48 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <remarks>TODO: This will need to be revisited once DBreeze has been fixed or replaced with a solution that works.</remarks>
         /// <param name="hashes">List of block hashes to be deleted.</param>
-        Task DeleteBlocksAsync(List<uint256> hashes);
+        void DeleteBlocks(List<uint256> hashes);
 
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="blocks">Blocks to be inserted.</param>
-        Task PutAsync(HashHeightPair newTip, List<Block> blocks);
+        void PutBlocks(HashHeightPair newTip, List<Block> blocks);
 
         /// <summary>
         /// Get the blocks from the database by using block hashes.
         /// </summary>
         /// <param name="hashes">A list of unique block hashes.</param>
         /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
-        Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
+        List<Block> GetBlocks(List<uint256> hashes);
 
         /// <summary>
         /// Wipe out blocks and their transactions then replace with a new block.
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
-        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
-        Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
+        /// <exception cref="DBreezeException">Thrown if an error occurs during database operations.</exception>
+        void Delete(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
         /// Determine if a block already exists
         /// </summary>
         /// <param name="hash">The hash.</param>
         /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
-        Task<bool> ExistAsync(uint256 hash);
+        bool Exist(uint256 hash);
 
         /// <summary>
         /// Iterate over every block in the database.
         /// If <see cref="TxIndex"/> is true, we store the block hash alongside the transaction hash in the transaction table, otherwise clear the transaction table.
         /// </summary>
-        Task ReIndexAsync();
+        void ReIndex();
 
         /// <summary>
         /// Set whether to index transactions by block hash, as well as storing them inside of the block.
         /// </summary>
         /// <param name="txIndex">Whether to index transactions.</param>
-        Task SetTxIndexAsync(bool txIndex);
+        void SetTxIndex(bool txIndex);
 
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
@@ -126,99 +128,141 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public virtual Task InitializeAsync()
+        public virtual void Initialize()
         {
             Block genesis = this.network.GetGenesis();
 
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                bool doCommit = false;
+
+                if (this.LoadTipHashAndHeight(transaction) == null)
                 {
-                    bool doCommit = false;
-
-                    if (this.LoadTipHashAndHeight(transaction) == null)
-                    {
-                        this.SaveTipHashAndHeight(transaction, new HashHeightPair(genesis.GetHash(), 0));
-                        doCommit = true;
-                    }
-
-                    if (this.LoadTxIndex(transaction) == null)
-                    {
-                        this.SaveTxIndex(transaction, false);
-                        doCommit = true;
-                    }
-
-                    if (doCommit) transaction.Commit();
+                    this.SaveTipHashAndHeight(transaction, new HashHeightPair(genesis.GetHash(), 0));
+                    doCommit = true;
                 }
-            });
 
-            return task;
+                if (this.LoadTxIndex(transaction) == null)
+                {
+                    this.SaveTxIndex(transaction, false);
+                    doCommit = true;
+                }
+
+                if (doCommit) transaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
+        public Transaction GetTransactionById(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
-                return Task.FromResult(default(Transaction));
-
-            Task<Transaction> task = Task.Run(() =>
             {
-                Transaction res = null;
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
+                return default(Transaction);
+            }
 
-                    Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxid.ToBytes());
+            Transaction res = null;
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+            {
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxid.ToBytes());
+                if (!transactionRow.Exists)
+                {
+                    this.logger.LogTrace("(-)[NO_BLOCK]:null");
+                    return null;
+                }
+
+                Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, transactionRow.Value);
+
+                if (blockRow.Exists)
+                {
+                    var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
+                    res = block.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
+                }
+            }
+
+            return res;
+        }
+
+        /// <inheritdoc/>
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
+        {
+            if (!this.TxIndex)
+            {
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
+                return null;
+            }
+
+            Transaction[] txes = new Transaction[trxids.Length];
+
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+            {
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                for (int i = 0; i < trxids.Length; i++)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+
+                    bool alreadyFetched = trxids.Take(i).Any(x => x == trxids[i]);
+
+                    if (alreadyFetched)
+                    {
+                        this.logger.LogDebug("Duplicated transaction encountered. Tx id: '{0}'.", trxids[i]);
+
+                        txes[i] = txes.First(x => x.GetHash() == trxids[i]);
+                        continue;
+                    }
+
+                    Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxids[i].ToBytes());
                     if (!transactionRow.Exists)
                     {
-                        this.logger.LogTrace("(-)[NO_BLOCK]:null");
+                        this.logger.LogTrace("(-)[NO_TX_ROW]:null");
                         return null;
                     }
 
                     Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, transactionRow.Value);
 
-                    if (blockRow.Exists)
+                    if (!blockRow.Exists)
                     {
-                        var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
-                        res = block.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
+                        this.logger.LogTrace("(-)[NO_BLOCK]:null");
+                        return null;
                     }
+
+                    var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
+                    Transaction tx = block.Transactions.FirstOrDefault(t => t.GetHash() == trxids[i]);
+
+                    txes[i] = tx;
                 }
+            }
 
-                return res;
-            });
-
-            return task;
+            return txes;
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
+        public uint256 GetBlockIdByTransactionId(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
             {
                 this.logger.LogTrace("(-)[NO_TXINDEX]:null");
-                return Task.FromResult(default(uint256));
+                return default(uint256);
             }
 
-            Task<uint256> task = Task.Run(() =>
+            uint256 res = null;
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                uint256 res = null;
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                    Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxid.ToBytes());
-                    if (transactionRow.Exists)
-                        res = new uint256(transactionRow.Value);
-                }
+                Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxid.ToBytes());
+                if (transactionRow.Exists)
+                    res = new uint256(transactionRow.Value);
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         protected virtual void OnInsertBlocks(DBreeze.Transactions.Transaction dbreezeTransaction, List<Block> blocks)
@@ -273,64 +317,75 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task ReIndexAsync()
+        public void ReIndex()
         {
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
-                {
-                    dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
+                dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
 
-                    if (this.TxIndex)
+                if (this.TxIndex)
+                {
+                    int rowCount = 0;
+                    // Insert transactions to database.
+
+                    var totalBlocksCount = dbreezeTransaction.Count(BlockTableName);
+
+                    var warningMessage = new StringBuilder();
+                    warningMessage.AppendLine("".PadRight(59, '=') + " W A R N I N G " + "".PadRight(59, '='));
+                    warningMessage.AppendLine();
+                    warningMessage.AppendLine($"Starting ReIndex process on a total of {totalBlocksCount} blocks.");
+                    warningMessage.AppendLine("The operation could take a long time, please don't stop it.");
+                    warningMessage.AppendLine();
+                    warningMessage.AppendLine("".PadRight(133, '='));
+                    warningMessage.AppendLine();
+
+                    this.logger.LogInformation(warningMessage.ToString());
+
+                    IEnumerable<Row<byte[], byte[]>> blockRows = dbreezeTransaction.SelectForward<byte[], byte[]>(BlockTableName);
+                    foreach (Row<byte[], byte[]> blockRow in blockRows)
                     {
-                        // Insert transactions to database.
-                        IEnumerable<Row<byte[], byte[]>> blockRows = dbreezeTransaction.SelectForward<byte[], byte[]>(BlockTableName);
-                        foreach (Row<byte[], byte[]> blockRow in blockRows)
+                        var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
+                        foreach (Transaction transaction in block.Transactions)
                         {
-                            var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
-                            foreach (Transaction transaction in block.Transactions)
-                            {
-                                dbreezeTransaction.Insert<byte[], byte[]>(TransactionTableName, transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
-                            }
+                            dbreezeTransaction.Insert<byte[], byte[]>(TransactionTableName, transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
+                        }
+
+                        // inform the user about the ongoing operation
+                        if (++rowCount % 1000 == 0)
+                        {
+                            this.logger.LogInformation("Reindex in process... {0}/{1} blocks processed.", rowCount, totalBlocksCount);
                         }
                     }
-                    else
-                    {
-                        // Clear tx from database.
-                        dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
-                    }
 
-                    dbreezeTransaction.Commit();
+                    this.logger.LogInformation("Reindex completed successfully.");
+                }
+                else
+                {
+                    // Clear tx from database.
+                    dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
                 }
 
-                return Task.CompletedTask;
-            });
-
-            return task;
+                dbreezeTransaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task PutAsync(HashHeightPair newTip, List<Block> blocks)
+        public void PutBlocks(HashHeightPair newTip, List<Block> blocks)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(blocks, nameof(blocks));
 
-            Task task = Task.Run(() =>
+            // DBreeze is faster if sort ascending by key in memory before insert
+            // however we need to find how byte arrays are sorted in DBreeze.
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                // DBreeze is faster if sort ascending by key in memory before insert
-                // however we need to find how byte arrays are sorted in DBreeze.
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(BlockTableName, TransactionTableName);
-                    this.OnInsertBlocks(transaction, blocks);
+                transaction.SynchronizeTables(BlockTableName, TransactionTableName);
+                this.OnInsertBlocks(transaction, blocks);
 
-                    // Commit additions
-                    this.SaveTipHashAndHeight(transaction, newTip);
-                    transaction.Commit();
-                }
-            });
-
-            return task;
+                // Commit additions
+                this.SaveTipHashAndHeight(transaction, newTip);
+                transaction.Commit();
+            }
         }
 
         private bool? LoadTxIndex(DBreeze.Transactions.Transaction dbreezeTransaction)
@@ -353,18 +408,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task SetTxIndexAsync(bool txIndex)
+        public void SetTxIndex(bool txIndex)
         {
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    this.SaveTxIndex(transaction, txIndex);
-                    transaction.Commit();
-                }
-            });
-
-            return task;
+                this.SaveTxIndex(transaction, txIndex);
+                transaction.Commit();
+            }
         }
 
         private HashHeightPair LoadTipHashAndHeight(DBreeze.Transactions.Transaction dbreezeTransaction)
@@ -390,78 +440,63 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task<Block> GetBlockAsync(uint256 hash)
+        public Block GetBlock(uint256 hash)
         {
             Guard.NotNull(hash, nameof(hash));
 
-            Task<Block> task = Task.Run(() =>
+            Block res = null;
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                Block res = null;
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                    byte[] key = hash.ToBytes();
-                    Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, key);
-                    if (blockRow.Exists)
-                        res = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
-                }
+                byte[] key = hash.ToBytes();
+                Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, key);
+                if (blockRow.Exists)
+                    res = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
+            }
 
-                // If searching for genesis block, return it.
-                if (res == null && hash == this.network.GenesisHash)
-                {
-                    res = this.network.GetGenesis();
-                }
+            // If searching for genesis block, return it.
+            if (res == null && hash == this.network.GenesisHash)
+            {
+                res = this.network.GetGenesis();
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         /// <inheritdoc />
-        public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
+        public List<Block> GetBlocks(List<uint256> hashes)
         {
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task<List<Block>> task = Task.Run(() =>
+            List<Block> blocks;
+
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                List<Block> blocks;
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
+                blocks = this.GetBlocksFromHashes(transaction, hashes);
+            }
 
-                    blocks = this.GetBlocksFromHashes(transaction, hashes);
-                }
-
-                return blocks;
-            });
-
-            return task;
+            return blocks;
         }
 
         /// <inheritdoc />
-        public Task<bool> ExistAsync(uint256 hash)
+        public bool Exist(uint256 hash)
         {
             Guard.NotNull(hash, nameof(hash));
 
-            Task<bool> task = Task.Run(() =>
+            bool res = false;
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                bool res = false;
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    // Lazy loading is on so we don't fetch the whole value, just the row.
-                    byte[] key = hash.ToBytes();
-                    Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>("Block", key);
-                    if (blockRow.Exists)
-                        res = true;
-                }
+                // Lazy loading is on so we don't fetch the whole value, just the row.
+                byte[] key = hash.ToBytes();
+                Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>("Block", key);
+                if (blockRow.Exists)
+                    res = true;
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         protected virtual void OnDeleteTransactions(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions)
@@ -504,13 +539,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     results[key.Item1] = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
 
-                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
+                    this.logger.LogDebug("Block hash '{0}' loaded from the store.", key.Item1);
                 }
                 else
                 {
                     results[key.Item1] = null;
 
-                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
+                    this.logger.LogDebug("Block hash '{0}' not found in the store.", key.Item1);
                 }
             }
 
@@ -519,49 +554,39 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes)
+        public void Delete(HashHeightPair newTip, List<uint256> hashes)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(BlockTableName, CommonTableName, TransactionTableName);
-                    transaction.ValuesLazyLoadingIsOn = false;
+                transaction.SynchronizeTables(BlockTableName, CommonTableName, TransactionTableName);
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                    List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
-                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
-                    this.SaveTipHashAndHeight(transaction, newTip);
-                    transaction.Commit();
-                }
-            });
-
-            return task;
+                List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
+                this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
+                this.SaveTipHashAndHeight(transaction, newTip);
+                transaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task DeleteBlocksAsync(List<uint256> hashes)
+        public void DeleteBlocks(List<uint256> hashes)
         {
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.CommonTableName, BlockRepository.TransactionTableName);
-                    transaction.ValuesLazyLoadingIsOn = false;
+                transaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.CommonTableName, BlockRepository.TransactionTableName);
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                    List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
+                List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
 
-                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
+                this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
 
-                    transaction.Commit();
-                }
-            });
-
-            return task;
+                transaction.Commit();
+            }
         }
 
         /// <inheritdoc />

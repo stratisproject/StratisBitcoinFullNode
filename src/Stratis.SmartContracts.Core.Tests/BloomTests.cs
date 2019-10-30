@@ -59,14 +59,13 @@ namespace Stratis.SmartContracts.Core.Tests
         [Fact]
         public void Test_Many_Bloom_Values()
         {
-            // Hey friend! There's a miniscule chance that this test will fail purely due to chance.
-            // If it happens to you, congratulations! You're one in a million.
-
+            // Use a seed so we get the same values every time and avoid non-deterministic tests.
+            const int seed = 123456;
             const int numberToGen = 25;
             const int byteLength = 32;
 
             var bloom = new Bloom();
-            var random = new Random();
+            var random = new Random(seed);
             List<byte[]> containedInBloom = new List<byte[]>();
             List<byte[]> notContainedInBloom = new List<byte[]>();
 

@@ -1,5 +1,8 @@
 ﻿using System.IO;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -147,6 +150,49 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             string[] result = nodeSettings.ConfigReader.GetAll("addnode");
             // Assert
             Assert.Empty(result);
+        }
+
+        /// <summary>
+        /// Verifies API port value can be passed in on startup.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanOverrideOnlyApiPort()
+        {
+            const int apiport = 12345;
+
+            var nodeSettings = new NodeSettings(new BitcoinRegTest(), args: new[] {  $"-apiport={apiport}" });
+
+            var apiSettings = new ApiSettings(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
+            var configurationManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            Assert.Equal(apiport, apiSettings.ApiPort);
+            Assert.Equal(nodeSettings.Network.DefaultRPCPort, rpcSettings.RPCPort);
+            Assert.Equal(nodeSettings.Network.DefaultPort, configurationManagerSettings.Port);
+        }
+
+        /// <summary>
+        /// Verifies all port values can be passed in on startup.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanOverrideAllPorts()
+        {
+            // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
+            const int port = 1024 + 123;
+            const int rpcPort = 1024 + 456;
+            const int apiPort = 1024 + 567;
+
+            var args = new [] {$"-port={port.ToString()}", $"-rpcport={rpcPort.ToString()}", $"-apiport={apiPort.ToString()}"};
+
+            var nodeSettings = new NodeSettings(new BitcoinRegTest(), args: args);
+
+            var apiSettings = new ApiSettings(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
+            var configurationManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            Assert.Equal(apiPort, apiSettings.ApiPort);
+            Assert.Equal(rpcPort, rpcSettings.RPCPort);
+            Assert.Equal(port, configurationManagerSettings.Port);
         }
     }
 }

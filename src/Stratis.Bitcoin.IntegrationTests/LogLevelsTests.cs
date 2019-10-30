@@ -1,27 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Castle.Components.DictionaryAdapter;
-using DBreeze.Utils;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
-using NSubstitute;
+using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Features.BlockStore.Models;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -54,9 +47,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         private void ConfigLogManager()
         {
             this.rules = LogManager.Configuration.LoggingRules;
-            this.rules.Add(new LoggingRule("logging1", LogLevel.Info, new FileTarget("file1") { FileName = "file1.txt" }));
-            this.rules.Add(new LoggingRule("logging2", LogLevel.Fatal, new FileTarget("file2") { FileName = "file2.txt" }));
-            this.rules.Add(new LoggingRule("logging3", LogLevel.Trace, new FileTarget("file3") { FileName = "file3.txt" }));
+            this.rules.Add(new LoggingRule("logging1", LogLevel.Info, new AsyncTargetWrapper(new FileTarget("file1") { FileName = "file1.txt" })));
+            this.rules.Add(new LoggingRule("logging2", LogLevel.Fatal, new AsyncTargetWrapper(new FileTarget("file2") { FileName = "file2.txt" })));
+            this.rules.Add(new LoggingRule("logging3", LogLevel.Trace, new AsyncTargetWrapper(new FileTarget("file3") { FileName = "file3.txt" })));
         }
 
         [Fact]
@@ -78,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .AppendPathSegment("node/loglevels")
                     .PutJsonAsync(request)
                     .ReceiveJson<string>();
-              
+
                 // Assert.
                 var exception = act.Should().Throw<FlurlHttpException>().Which;
                 var response = exception.Call.Response;
@@ -188,18 +181,25 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).Start();
+
+                TestHelper.Connect(node1, node2);
+
                 this.ConfigLogManager();
 
                 // Act.
-                var request = new LogRulesRequest { LogRules = new List<LogRuleRequest>
+                var request = new LogRulesRequest
+                {
+                    LogRules = new List<LogRuleRequest>
                 {
                     new LogRuleRequest { RuleName = ruleName1, LogLevel = logLevel },
                     new LogRuleRequest { RuleName = ruleName2, LogLevel = logLevel },
                     new LogRuleRequest { RuleName = ruleName3, LogLevel = logLevel }
-                } };
+                }
+                };
 
-                HttpResponseMessage result = await $"http://localhost:{node.ApiPort}/api"
+                HttpResponseMessage result = await $"http://localhost:{node1.ApiPort}/api"
                     .AppendPathSegment("node/loglevels")
                     .PutJsonAsync(request);
 
@@ -209,6 +209,34 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.rules.Single(r => r.LoggerNamePattern == ruleName1).Levels.Should().ContainInOrder(new[] { LogLevel.Error, LogLevel.Fatal });
                 this.rules.Single(r => r.LoggerNamePattern == ruleName2).Levels.Should().ContainInOrder(new[] { LogLevel.Error, LogLevel.Fatal });
                 this.rules.Single(r => r.LoggerNamePattern == ruleName3).Levels.Should().ContainInOrder(new[] { LogLevel.Error, LogLevel.Fatal });
+            }
+        }
+
+        [Fact]
+        public async Task GetLogRulesAsync()
+        {
+            string ruleName1 = "logging1";
+            string ruleName2 = "logging2";
+            string ruleName3 = "logging3";
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
+                this.ConfigLogManager();
+
+                // Act.
+                List<LogRuleModel> rules = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("node/logrules")
+                    .GetJsonAsync<List<LogRuleModel>>();
+
+                // Assert.
+                rules.Should().Contain(r => r.RuleName == ruleName1 && r.LogLevel == "Info" && r.Filename.Contains("file1.txt"));
+                rules.Should().Contain(r => r.RuleName == ruleName2 && r.LogLevel == "Fatal" && r.Filename.Contains("file2.txt"));
+                rules.Should().Contain(r => r.RuleName == ruleName3 && r.LogLevel == "Trace" && r.Filename.Contains("file3.txt"));
+
+                // Addtionally, there is always a node.txt file by default.
+                rules.Should().Contain(r => r.Filename.Contains("node.txt"));
             }
         }
     }

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -15,12 +14,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             Block block = this.network.CreateBlock();
 
-            this.concurrentChain.SetTip(ChainedHeadersHelper.CreateConsecutiveHeaders(10, this.concurrentChain.Tip).Last());
+            this.ChainIndexer.SetTip(ChainedHeadersHelper.CreateConsecutiveHeaders(10, this.ChainIndexer.Tip).Last());
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             var exception = Assert.Throws<ConsensusErrorException>(() =>
@@ -32,12 +31,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorException()
         {
-            Block block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, this.concurrentChain);
+            Block block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, this.ChainIndexer);
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.concurrentChain.GetBlock(block.Header.HashPrevBlock))
+                ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.ChainIndexer.GetHeader(block.Header.HashPrevBlock))
             };
 
             var exception = Assert.Throws<ConsensusErrorException>(() =>

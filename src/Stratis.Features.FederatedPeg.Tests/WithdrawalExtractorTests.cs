@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
@@ -12,17 +13,17 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class WithdrawalExtractorTests
     {
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
         private readonly ILoggerFactory loggerFactory;
 
-        private IWithdrawalReceiver withdrawalReceiver;
-
         private WithdrawalExtractor withdrawalExtractor;
 
         private readonly Network network;
+
+        private readonly Network counterChainNetwork;
 
         private readonly MultisigAddressHelper addressHelper;
 
@@ -30,14 +31,14 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         public WithdrawalExtractorTests()
         {
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = CirrusNetwork.NetworksSelector.Regtest();
+            this.counterChainNetwork = Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.settings = Substitute.For<IFederationGatewaySettings>();
+            this.settings = Substitute.For<IFederatedPegSettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
-            this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
 
-            this.addressHelper = new MultisigAddressHelper(this.network);
+            this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigAddress.Returns(this.addressHelper.TargetChainMultisigAddress);
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);

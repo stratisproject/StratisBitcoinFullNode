@@ -7,12 +7,10 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -38,11 +36,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IStateRepositoryRoot stateRepositoryRoot;
 
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock,
-            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain,
+            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ChainIndexer chainIndexer,
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
-            IStateRepositoryRoot stateRepositoryRoot)
-            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
+            IStateRepositoryRoot stateRepositoryRoot,
+            IEnumerable<IContractTransactionFullValidationRule> txFullValidationRules)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chainIndexer, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
             // TODO: Remove ASAP. Ensure RequireStandard isn't used on SC mainnets, or the StandardScripts check is modular.
@@ -64,21 +63,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 p2pkhRule
             };
 
-            // TODO: Tidy this up. Rules should be injected? Shouldn't be generating here based on Network.
-            var txChecks = new List<IContractTransactionValidationLogic>
+            var txChecks = new List<IContractTransactionPartialValidationRule>()
             {
                 new SmartContractFormatLogic()
             };
-
-            if (network is ISignedCodePubKeyHolder holder)
-            {
-                txChecks.Add(new ContractSignedCodeLogic(new ContractSigner(), holder.SigningContractPubKey));
-            }
-
-
+            
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new ContractTransactionValidationRule(this.callDataSerializer, txChecks)
+                new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks),
+                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationRules)
             };
         }
 

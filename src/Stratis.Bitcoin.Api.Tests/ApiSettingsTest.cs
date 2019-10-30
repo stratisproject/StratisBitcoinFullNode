@@ -33,8 +33,8 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
-            Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultBitcoinApiPort}"), settings.ApiUri);
+            Assert.Equal(network.DefaultAPIPort, settings.ApiPort);
+            Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{network.DefaultAPIPort}"), settings.ApiUri);
         }
 
         /// <summary>
@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
-            Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
+            Assert.Equal(network.DefaultAPIPort, settings.ApiPort);
+            Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{network.DefaultAPIPort}"), settings.ApiUri);
 
             settings.HttpsCertificateFilePath.Should().BeNull();
             settings.UseHttps.Should().BeFalse();
@@ -92,8 +92,8 @@ namespace Stratis.Bitcoin.Api.Tests
 
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
-            Assert.Equal(new Uri($"{customApiUri}:{ApiSettings.DefaultBitcoinApiPort}"), settings.ApiUri);
+            Assert.Equal(network.DefaultAPIPort, settings.ApiPort);
+            Assert.Equal(new Uri($"{customApiUri}:{network.DefaultAPIPort}"), settings.ApiUri);
         }
 
         /// <summary>
@@ -111,8 +111,8 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
-            Assert.Equal(new Uri($"{customApiUri}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
+            Assert.Equal(network.DefaultAPIPort, settings.ApiPort);
+            Assert.Equal(new Uri($"{customApiUri}:{network.DefaultAPIPort}"), settings.ApiUri);
         }
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
+            Assert.Equal(KnownNetworks.Main.DefaultAPIPort, settings.ApiPort);
         }
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.TestBitcoinApiPort, settings.ApiPort);
+            Assert.Equal(KnownNetworks.TestNet.DefaultAPIPort, settings.ApiPort);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
+            Assert.Equal(KnownNetworks.StratisMain.DefaultAPIPort, settings.ApiPort);
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Api.Tests
             ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
-            Assert.Equal(ApiSettings.TestStratisApiPort, settings.ApiPort);
+            Assert.Equal(KnownNetworks.StratisTest.DefaultAPIPort, settings.ApiPort);
         }
 
         [Theory]

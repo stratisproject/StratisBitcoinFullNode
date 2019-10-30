@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
-                this.logger.LogTrace("Transaction does not contain smart contract information.");
+                this.logger.LogDebug("Transaction does not contain smart contract information.");
 
                 base.AddTransactionToBlock(mempoolEntry.Transaction);
                 base.UpdateBlockStatistics(mempoolEntry);
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             }
             else
             {
-                this.logger.LogTrace("Transaction contains smart contract information.");
+                this.logger.LogDebug("Transaction contains smart contract information.");
 
                 if (this.blockGasConsumed >= GasPerBlockLimit) 
                     return;
@@ -100,14 +100,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 if (result.Refund != null)
                 {
                     this.refundOutputs.Add(result.Refund);
-                    this.logger.LogTrace("refund was added with value {0}.", result.Refund.Value);
+                    this.logger.LogDebug("refund was added with value {0}.", result.Refund.Value);
                 }
 
                 // Add internal transactions made during execution.
                 if (result.InternalTransaction != null)
                 {
                     this.AddTransactionToBlock(result.InternalTransaction);
-                    this.logger.LogTrace("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
+                    this.logger.LogDebug("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
                 }
             }
         }
@@ -183,6 +183,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
         private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
+            // This coinview object can be altered by consensus whilst we're mining.
+            // If this occurred, we would be mining on top of the wrong tip anyway, so
+            // it's okay to throw a ConsensusError which is handled by the miner, and continue.
+
             GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));

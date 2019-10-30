@@ -14,12 +14,15 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "TestNet";
             this.AdditionalNames = new List<string> { "test" };
+            this.NetworkType = NetworkType.Testnet;
             this.Magic = 0x0709110B;
             this.DefaultPort = 18333;
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
-            this.RPCPort = 18332;
+            this.DefaultRPCPort = 18332;
+            this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
+            this.DefaultBanTimeSeconds = 60 * 60 * 24; // 24 Hours
 
             var consensusFactory = new ConsensusFactory();
 
@@ -126,6 +129,8 @@ namespace Stratis.Bitcoin.Networks
             this.StandardScriptsRegistry = new BitcoinStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
+
+            this.RegisterRules(this.Consensus);
         }
     }
 }

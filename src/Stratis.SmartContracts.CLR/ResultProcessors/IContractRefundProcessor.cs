@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.ResultProcessors
 {
@@ -14,7 +13,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
         (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, 
             uint160 sender,
-            Gas gasConsumed,
+            RuntimeObserver.Gas gasConsumed,
             bool outOfGas);
     }
 }

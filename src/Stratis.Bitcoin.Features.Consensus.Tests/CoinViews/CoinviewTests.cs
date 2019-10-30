@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         private readonly INodeStats nodeStats;
         private readonly DBreezeCoinView dbreezeCoinview;
 
-        private readonly ConcurrentChain concurrentChain;
+        private readonly ChainIndexer chainIndexer;
         private readonly StakeChainStore stakeChainStore;
         private readonly IRewindDataIndexCache rewindDataIndexCache;
         private readonly CachedCoinView cachedCoinView;
@@ -36,43 +36,43 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.dataFolder = TestBase.CreateDataFolder(this);
             this.dateTimeProvider = new DateTimeProvider();
             this.loggerFactory = new ExtendedLoggerFactory();
-            this.nodeStats = new NodeStats(this.dateTimeProvider);
+            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
 
-            this.dbreezeCoinview = new DBreezeCoinView(this.network, this.dataFolder, this.dateTimeProvider, this.loggerFactory, this.nodeStats, new DBreezeSerializer(this.network));
-            this.dbreezeCoinview.InitializeAsync().GetAwaiter().GetResult();
+            this.dbreezeCoinview = new DBreezeCoinView(this.network, this.dataFolder, this.dateTimeProvider, this.loggerFactory, this.nodeStats, new DBreezeSerializer(this.network.Consensus.ConsensusFactory));
+            this.dbreezeCoinview.Initialize();
 
-            this.concurrentChain = new ConcurrentChain(this.network);
-            this.stakeChainStore = new StakeChainStore(this.network, this.concurrentChain, this.dbreezeCoinview, this.loggerFactory);
-            this.stakeChainStore.LoadAsync().GetAwaiter().GetResult();
+            this.chainIndexer = new ChainIndexer(this.network);
+            this.stakeChainStore = new StakeChainStore(this.network, this.chainIndexer, this.dbreezeCoinview, this.loggerFactory);
+            this.stakeChainStore.Load();
 
             this.rewindDataIndexCache = new RewindDataIndexCache(this.dateTimeProvider, this.network);
 
             this.cachedCoinView = new CachedCoinView(this.dbreezeCoinview, this.dateTimeProvider, this.loggerFactory, this.nodeStats, this.stakeChainStore, this.rewindDataIndexCache);
 
-            this.rewindDataIndexCache.InitializeAsync(this.concurrentChain.Height, this.cachedCoinView);
+            this.rewindDataIndexCache.Initialize(this.chainIndexer.Height, this.cachedCoinView);
 
             this.random = new Random();
 
-            ChainedHeader newTip = ChainedHeadersHelper.CreateConsecutiveHeaders(1000, this.concurrentChain.Tip, true, null, this.network).Last();
-            this.concurrentChain.SetTip(newTip);
+            ChainedHeader newTip = ChainedHeadersHelper.CreateConsecutiveHeaders(1000, this.chainIndexer.Tip, true, null, this.network).Last();
+            this.chainIndexer.SetTip(newTip);
         }
 
         [Fact]
         public async Task TestRewindAsync()
         {
-            uint256 tip = await this.cachedCoinView.GetTipHashAsync();
-            Assert.Equal(this.concurrentChain.Genesis.HashBlock, tip);
+            uint256 tip = this.cachedCoinView.GetTipHash();
+            Assert.Equal(this.chainIndexer.Genesis.HashBlock, tip);
 
             int currentHeight = 0;
 
             // Create a lot of new coins.
             List<UnspentOutputs> outputsList = this.CreateOutputsList(currentHeight + 1, 100);
-            await this.SaveChangesAsync(outputsList, new List<TxOut[]>(), currentHeight + 1);
+            this.SaveChanges(outputsList, new List<TxOut[]>(), currentHeight + 1);
             currentHeight++;
 
-            await this.cachedCoinView.FlushAsync(true);
+            this.cachedCoinView.Flush(true);
 
-            uint256 tipAfterOriginalCoinsCreation = await this.cachedCoinView.GetTipHashAsync();
+            uint256 tipAfterOriginalCoinsCreation = this.cachedCoinView.GetTipHash();
 
             // Collection that will be used as a coinview that we will update in parallel. Needed to verify that actual coinview is ok.
             List<OutPoint> outPoints = this.ConvertToListOfOutputPoints(outputsList);
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 List<OutPoint> txPointsToSpend = txPoints.Take(txPoints.Count / 2).ToList();
 
                 // First spend in cached coinview
-                FetchCoinsResponse response = await this.cachedCoinView.FetchCoinsAsync(new[] {txId});
+                FetchCoinsResponse response = this.cachedCoinView.FetchCoins(new[] { txId });
                 Assert.Single(response.UnspentOutputs);
 
                 UnspentOutputs coins = response.UnspentOutputs[0];
@@ -106,14 +106,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 outPoints.RemoveAll(x => txPointsToSpend.Contains(x));
 
                 // Save coinview
-                await this.SaveChangesAsync(new List<UnspentOutputs>() { coins }, new List<TxOut[]>() { unchangedClone.Outputs }, currentHeight + 1);
+                this.SaveChanges(new List<UnspentOutputs>() { coins }, new List<TxOut[]>() { unchangedClone.Outputs }, currentHeight + 1);
 
                 currentHeight++;
 
                 if (i == addChangesTimes / 2)
                 {
                     copyAfterHalfOfAdditions = new List<OutPoint>(outPoints);
-                    coinviewTipAfterHalf = await this.cachedCoinView.GetTipHashAsync();
+                    coinviewTipAfterHalf = this.cachedCoinView.GetTipHash();
                 }
             }
 
@@ -121,15 +121,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             for (int i = 0; i < addChangesTimes; i++)
             {
-                await this.cachedCoinView.RewindAsync();
+                this.cachedCoinView.Rewind();
 
-                uint256 currentTip = await this.cachedCoinView.GetTipHashAsync();
+                uint256 currentTip = this.cachedCoinView.GetTipHash();
 
                 if (currentTip == coinviewTipAfterHalf)
                     await this.ValidateCoinviewIntegrityAsync(copyAfterHalfOfAdditions);
             }
 
-            Assert.Equal(tipAfterOriginalCoinsCreation, await this.cachedCoinView.GetTipHashAsync());
+            Assert.Equal(tipAfterOriginalCoinsCreation, this.cachedCoinView.GetTipHash());
 
             await this.ValidateCoinviewIntegrityAsync(copyOfOriginalOutPoints);
         }
@@ -182,12 +182,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             return list;
         }
 
-        private async Task SaveChangesAsync(List<UnspentOutputs> unspent, List<TxOut[]> original, int height)
+        private void SaveChanges(List<UnspentOutputs> unspent, List<TxOut[]> original, int height)
         {
-            ChainedHeader current = this.concurrentChain.Tip.GetAncestor(height);
+            ChainedHeader current = this.chainIndexer.Tip.GetAncestor(height);
             ChainedHeader previous = current.Previous;
 
-            await this.cachedCoinView.SaveChangesAsync(unspent, original, previous.HashBlock, current.HashBlock, height);
+            this.cachedCoinView.SaveChanges(unspent, original, previous.HashBlock, current.HashBlock, height);
         }
 
         private async Task ValidateCoinviewIntegrityAsync(List<OutPoint> expectedAvailableOutPoints)
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 uint256 txId = outPointsGroup.Key;
                 List<uint> availableIndexes = outPointsGroup.Select(x => x.N).ToList();
 
-                FetchCoinsResponse result = await this.cachedCoinView.FetchCoinsAsync(new[] {txId});
+                FetchCoinsResponse result = this.cachedCoinView.FetchCoins(new[] { txId });
                 TxOut[] outputsArray = result.UnspentOutputs[0].Outputs;
 
                 // Check expected coins are present.
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             // Verify that snapshot is equal to current state of coinview.
             uint256[] allTxIds = expectedAvailableOutPoints.Select(x => x.Hash).Distinct().ToArray();
-            FetchCoinsResponse result2 = await this.cachedCoinView.FetchCoinsAsync(allTxIds);
+            FetchCoinsResponse result2 = this.cachedCoinView.FetchCoins(allTxIds);
             List<OutPoint> availableOutPoints = this.ConvertToListOfOutputPoints(result2.UnspentOutputs.ToList());
 
             Assert.Equal(expectedAvailableOutPoints.Count, availableOutPoints.Count);

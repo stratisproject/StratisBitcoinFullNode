@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     block.Header.Nonce = ++nonce;
 
                 // This will set the block's BlockSize property.
-                block = Block.Load(block.ToBytes(), this.coreNode.FullNode.Network);
+                block = Block.Load(block.ToBytes(), this.coreNode.FullNode.Network.Consensus.ConsensusFactory);
 
                 // Submit the block to consensus so that the chain's tip can be updated.
                 await this.coreNode.FullNode.NodeService<IConsensusManager>().BlockMinedAsync(block).ConfigureAwait(false);

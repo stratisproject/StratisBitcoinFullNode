@@ -1,11 +1,10 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
     public abstract class BaseMessage
     {
-        protected BaseMessage(uint160 from, ulong amount, Gas gasLimit)
+        protected BaseMessage(uint160 from, ulong amount, RuntimeObserver.Gas gasLimit)
         {
             this.From = from;
             this.Amount = amount;
@@ -25,6 +24,6 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// The maximum amount of gas that can be expended while executing the message.
         /// </summary>
-        public Gas GasLimit { get; }
+        public RuntimeObserver.Gas GasLimit { get; }
     }
 }

@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
@@ -9,15 +10,16 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
     /// Ensures that timestamp of current block is greater than timestamp of previous block,
     /// that timestamp is not more than targetSpacing seconds far in the future and that it is devisible by target spacing.
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
+    /// <seealso cref="HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
         /// <summary>Up to how many seconds headers's timestamp can be in the future to be considered valid.</summary>
-        public const int MaxFutureDriftSeconds = 60;
+        public const int MaxFutureDriftSeconds = 10;
 
-        private SlotsManager slotsManager;
+        private ISlotsManager slotsManager;
 
         /// <inheritdoc />
+        [NoTrace]
         public override void Initialize()
         {
             base.Initialize();

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Consensus

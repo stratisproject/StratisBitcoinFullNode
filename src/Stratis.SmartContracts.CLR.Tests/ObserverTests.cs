@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         private readonly Network network;
         private readonly IContractModuleDefinitionReader moduleReader;
         private readonly ContractAssemblyLoader assemblyLoader;
-        private readonly IGasMeter gasMeter;
+        private readonly RuntimeObserver.IGasMeter gasMeter;
 
         public ObserverTests()
         {
@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.repository = context.State;
             this.moduleReader = new ContractModuleDefinitionReader();
             this.assemblyLoader = new ContractAssemblyLoader();
-            this.gasMeter = new GasMeter((Gas)5000000);
+            this.gasMeter = new GasMeter((RuntimeObserver.Gas)5000000);
 
             var block = new TestBlock
             {
@@ -192,10 +192,10 @@ namespace Stratis.SmartContracts.CLR.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(3, () => contract.Invoke(callData));
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () => contract.Invoke(callData));
 
             Assert.False(result.IsSuccess);
-            Assert.Equal((Gas)0, this.gasMeter.GasAvailable);
+            Assert.Equal((RuntimeObserver.Gas)0, this.gasMeter.GasAvailable);
             Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
             Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
         }
@@ -220,7 +220,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = contract.InvokeConstructor(null);
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)369, this.gasMeter.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas)369, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -243,7 +243,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas)328, this.gasMeter.GasConsumed);
         }
 
         [Fact]

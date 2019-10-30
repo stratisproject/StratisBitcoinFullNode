@@ -6,7 +6,6 @@ using Moq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -19,15 +18,17 @@ namespace Stratis.Bitcoin.Tests.Connection
         private readonly Mock<IConnectionManager> connectionManager;
         private ConnectionManagerController controller;
         private readonly Mock<ILoggerFactory> mockLoggerFactory;
+        private readonly Mock<IPeerBanning> peerBanning;
 
         public ConnectionManagerSettingsTest()
         {
             this.connectionManager = new Mock<IConnectionManager>();
+            this.peerBanning = new Mock<IPeerBanning>();
             this.mockLoggerFactory = new Mock<ILoggerFactory>();
             this.mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.connectionManager.Setup(i => i.Network)
                 .Returns(KnownNetworks.StratisTest);
-            this.controller = new ConnectionManagerController(this.connectionManager.Object, this.LoggerFactory.Object);
+            this.controller = new ConnectionManagerController(this.connectionManager.Object, this.LoggerFactory.Object, this.peerBanning.Object);
         }
 
         [Fact]

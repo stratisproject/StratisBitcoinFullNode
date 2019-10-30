@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.SmartContracts.Core;
+using TracerAttributes;
 using uint256 = NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
@@ -32,6 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.logsBloom = new Bloom();
         }
 
+        [NoTrace]
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
@@ -40,7 +42,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             stream.ReadWrite(ref this.logsBloom);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc />  
+        [NoTrace]
         protected override void ReadWriteHashingStream(BitcoinStream stream)
         {
             base.ReadWriteHashingStream(stream);

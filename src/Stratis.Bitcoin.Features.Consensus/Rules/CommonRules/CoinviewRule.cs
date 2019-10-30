@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -52,14 +51,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 {
                     if (!tx.IsCoinBase && !view.HaveInputs(tx))
                     {
-                        this.Logger.LogTrace("Transaction '{0}' has not inputs", tx.GetHash());
+                        this.Logger.LogDebug("Transaction '{0}' has not inputs", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                         ConsensusErrors.BadTransactionMissingInput.Throw();
                     }
 
                     if (!this.IsTxFinal(tx, context))
                     {
-                        this.Logger.LogTrace("Transaction '{0}' is not final", tx.GetHash());
+                        this.Logger.LogDebug("Transaction '{0}' is not final", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
                         ConsensusErrors.BadTransactionNonFinal.Throw();
                     }
@@ -79,8 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     {
                         this.CheckInputs(tx, view, index.Height);
 
-                        if (!tx.IsCoinStake)
-                            fees += view.GetValueIn(tx) - tx.TotalOut;
+                        fees += this.GetTransactionFee(view, tx);
 
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
@@ -131,8 +129,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
-            else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
+            else this.Logger.LogDebug("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
         }
+
+        protected abstract Money GetTransactionFee(UnspentOutputSet view, Transaction tx);
 
         /// <summary>Checks if transaction if final.</summary>
         protected virtual bool IsTxFinal(Transaction transaction, RuleContext context)
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (verifyScriptResult == false)
             {
-                this.Logger.LogTrace("Verify script for transaction '{0}' failed, ScriptSig = '{1}', ScriptPubKey = '{2}', script evaluation error = '{3}'", tx.GetHash(), input.ScriptSig, txout.ScriptPubKey, ctx.Error);
+                this.Logger.LogDebug("Verify script for transaction '{0}' failed, ScriptSig = '{1}', ScriptPubKey = '{2}', script evaluation error = '{3}'", tx.GetHash(), input.ScriptSig, txout.ScriptPubKey, ctx.Error);
             }
 
             return verifyScriptResult;
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 if ((spendHeight - coins.Height) < this.Consensus.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.Consensus.CoinbaseMaturity);
+                    this.Logger.LogDebug("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.Consensus.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }

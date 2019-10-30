@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -14,11 +16,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void OnNextCore_WhenTransactionsMissingInLongestChain_ReturnsThemToTheMempool()
         {
             var mempoolValidatorMock = new Mock<IMempoolValidator>();
+            var mempoolMock = new Mock<ITxMempool>();
             var loggerFactoryMock = new Mock<ILoggerFactory>();
             loggerFactoryMock.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
-            Signals.Signals signals = new Signals.Signals();
-            var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
+            Signals.Signals signals = new Signals.Signals(loggerFactoryMock.Object, null);
+            var subject = new BlocksDisconnectedSignaled(mempoolMock.Object, mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
             subject.Initialize();
 
             var block = new Block();
@@ -27,7 +30,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var transaction2 = new Transaction();
             block.Transactions = new List<Transaction> { transaction1, transaction2 };
 
-            signals.OnBlockDisconnected.Notify(genesisChainedHeaderBlock);
+            signals.Publish(new BlockDisconnected(genesisChainedHeaderBlock));
 
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction1));
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction2));

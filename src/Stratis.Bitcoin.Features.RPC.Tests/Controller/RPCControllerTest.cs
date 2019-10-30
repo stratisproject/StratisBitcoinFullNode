@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             this.rpcClient = new Mock<IRPCClient>();
             this.rpcSettings.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0));
-            this.rpcClientFactory.Setup(r => r.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
+            this.rpcClientFactory.Setup(r => r.Create(It.IsAny<RpcSettings>(), It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
                 .Returns(this.rpcClient.Object);
 
             this.fullNode.Setup(f => f.RPCHost)
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             this.controller.ControllerContext = new ControllerContext();
             this.controller.ControllerContext.HttpContext = new DefaultHttpContext();
-            
+
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new RPCResponseObject()))))
             {
                 RPCResponse rpcResponse = RPCResponse.Load(stream);

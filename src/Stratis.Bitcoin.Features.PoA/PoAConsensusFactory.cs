@@ -15,5 +15,19 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             return new PoABlockHeader();
         }
+
+        public virtual IFederationMember DeserializeFederationMember(byte[] serializedBytes)
+        {
+            var key = new PubKey(serializedBytes);
+
+            IFederationMember federationMember = new FederationMember(key);
+
+            return federationMember;
+        }
+
+        public virtual byte[] SerializeFederationMember(IFederationMember federationMember)
+        {
+            return federationMember.PubKey.ToBytes();
+        }
     }
 }

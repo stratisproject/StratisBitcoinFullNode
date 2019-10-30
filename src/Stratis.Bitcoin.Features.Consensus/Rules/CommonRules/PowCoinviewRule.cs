@@ -54,6 +54,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return subsidy;
         }
 
+        protected override Money GetTransactionFee(UnspentOutputSet view, Transaction tx)
+        {
+            return view.GetValueIn(tx) - tx.TotalOut;
+        }
+
         /// <inheritdoc />
         protected override bool IsTxFinal(Transaction transaction, RuleContext context)
         {
@@ -75,7 +80,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             return transaction.CheckSequenceLocks(prevheights, index, context.Flags.LockTimeFlags);
         }
-
         /// <inheritdoc/>
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {

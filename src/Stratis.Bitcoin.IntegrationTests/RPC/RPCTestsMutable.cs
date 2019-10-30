@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -321,7 +324,31 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public void TestRpcGetBlockInfo()
+        public void TestRpcGetBlockHeaderForBestBlockHashSuccessfull()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                var hash = rpcClient.GetBestBlockHash();
+
+                // get hex representation of block header
+                RPCResponse resp = rpcClient.SendCommand("getblockheader", hash.ToString(), false);
+
+                // load header from hex representation
+                var header = rpcClient.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                var bytes = Encoders.Hex.DecodeData(resp.Result.Value<string>());
+                header.FromBytes(bytes);
+
+                // validate header has same hash as best block
+                header.GetHash().Should().Be(hash);
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetBlockchainInfo()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -343,6 +370,46 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 RPCClient rpcClient = node.CreateRPCClient();
                 var response = rpcClient.SendCommand(RPCOperations.getnetworkinfo);
                 response.ResultString.Should().NotBeNullOrEmpty();
+            }
+        }
+
+        [Fact]
+        public async Task TestScanRPCCapabilitiesOnStratisNetworkAsync()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new StratisRegTest();
+                var node = builder.CreateStratisPosNode(network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest10Miner).Start();
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                RPCCapabilities capabilities = await rpcClient.ScanRPCCapabilitiesAsync();
+
+                capabilities.SupportEstimateSmartFee.Should().BeFalse();
+                capabilities.SupportGetNetworkInfo.Should().BeTrue();
+                capabilities.SupportScanUTXOSet.Should().BeFalse();
+                capabilities.SupportSignRawTransactionWith.Should().BeFalse();
+                capabilities.SupportSegwit.Should().BeFalse();
+                capabilities.SupportGenerateToAddress.Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public async Task TestScanRPCCapabilitiesOnBitcoinNetworkAsync()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                RPCCapabilities capabilities = await rpcClient.ScanRPCCapabilitiesAsync();
+
+                capabilities.SupportEstimateSmartFee.Should().BeFalse();
+                capabilities.SupportGetNetworkInfo.Should().BeTrue();
+                capabilities.SupportScanUTXOSet.Should().BeFalse();
+                capabilities.SupportSignRawTransactionWith.Should().BeFalse();
+                capabilities.SupportSegwit.Should().BeTrue();
+                capabilities.SupportGenerateToAddress.Should().BeFalse();
             }
         }
     }

@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.P2P
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
-                    this.logger.LogTrace("[RETURN_HANDSHAKED]");
+                    this.logger.LogDebug("[RETURN_HANDSHAKED]");
                     return handshaked;
                 }
             }
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.P2P
                 int chance = this.random.Next(100);
                 if (chance <= 50)
                 {
-                    this.logger.LogTrace("[RETURN_CONNECTED]");
+                    this.logger.LogDebug("[RETURN_CONNECTED]");
                     return connected;
                 }
             }
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 if (this.random.Next(2) == 0)
                 {
-                    this.logger.LogTrace("[RETURN_ATTEMPTED]");
+                    this.logger.LogTrace("(-)[RETURN_ATTEMPTED]");
                     return attempted;
                 }
                 else
@@ -197,14 +197,14 @@ namespace Stratis.Bitcoin.P2P
             // If there are only fresh peers, return them.
             if (fresh.Any() && !attempted.Any())
             {
-                this.logger.LogTrace("[RETURN_FRESH_HC_FAILED]");
+                this.logger.LogTrace("(-)[RETURN_FRESH_HC_FAILED]");
                 return fresh;
             }
 
             // If there are only attempted peers, return them.
             if (!fresh.Any() && attempted.Any())
             {
-                this.logger.LogTrace("[RETURN_ATTEMPTED_HC_FAILED]");
+                this.logger.LogTrace("(-)[RETURN_ATTEMPTED_HC_FAILED]");
                 return attempted;
             }
 
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.P2P
         {
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
 
-            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
+            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts >= PeerAddress.AttemptThreshold);
             bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count();
 
             return areAllPeersReachedThreshold;
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.P2P
         public void ResetConnectionAttemptsOnNotBannedPeers()
         {
             List<PeerAddress> notBanned = this.NotBanned().ToList();
-            this.logger.LogTrace("Resetting attempts for {0} addresses.", notBanned.Count);
+            this.logger.LogDebug("Resetting attempts for {0} addresses.", notBanned.Count);
 
             // Reset attempts for all the peers since we've ran out of options.
             foreach (PeerAddress peer in notBanned)
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p =>
                 p.Attempted &&
-                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
+                p.ConnectionAttempts <= PeerAddress.AttemptThreshold &&
                 p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
                 !this.IsBanned(p));
         }

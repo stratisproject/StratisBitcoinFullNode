@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
         }
 
-        public DeploymentFlags(ChainedHeader nextBlock, ThresholdState[] prevBlockStates, IConsensus chainparams, ConcurrentChain chain)
+        public DeploymentFlags(ChainedHeader nextBlock, ThresholdState[] prevBlockStates, IConsensus chainparams, ChainIndexer chainIndexer)
         {
             this.EnforceBIP30 = EnforceBIP30ForBlock(nextBlock);
 
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             // before the first had been spent.  Since those coinbases are sufficiently buried its no longer possible to create further
             // duplicate transactions descending from the known pairs either.
             // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
-            ChainedHeader bip34HeightChainedHeader = chain.GetBlock(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
+            ChainedHeader bip34HeightChainedHeader = chainIndexer.GetHeader(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
 
             // Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
             this.EnforceBIP30 = this.EnforceBIP30 && ((bip34HeightChainedHeader == null) || !(bip34HeightChainedHeader.HashBlock == chainparams.BIP34Hash));
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             {
                 if (prevBlockStates[deployment] == ThresholdState.Active)
                 {
-                    BIP9DeploymentFlags flags = chain.Network.Consensus.BIP9Deployments.GetFlags(deployment);
+                    BIP9DeploymentFlags flags = chainIndexer.Network.Consensus.BIP9Deployments.GetFlags(deployment);
 
                     this.ScriptFlags |= flags.ScriptFlags;
                     this.LockTimeFlags |= flags.LockTimeFlags;

@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
             };
             var log2 = new Log(new uint160(12345), topics2, data2);
 
-            var receipt = new Receipt(new uint256(1234), 12345, new Log[] { log1, log2 }, new uint256(12345), new uint160(25), new uint160(24), new uint160(23), true, "SomeResult", "SomeExceptionString") { BlockHash = new uint256(1234) };
+            var receipt = new Receipt(new uint256(1234), 12345, new Log[] { log1, log2 }, new uint256(12345), new uint160(25), new uint160(24), new uint160(23), true, "SomeResult", "SomeExceptionString", 54321, 1_000_000, "TestMethodName") { BlockHash = new uint256(1234) };
             this.db.Store(new Receipt[] { receipt });
             Receipt retrievedReceipt = this.db.Retrieve(receipt.TransactionHash);
             ReceiptSerializationTest.TestStorageReceiptEquality(receipt, retrievedReceipt);

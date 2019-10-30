@@ -57,11 +57,15 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         /// <param name="blockHashes">The block hashes to download.</param>
         /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
-        Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
+        void GetOrDownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
 
-        /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
+        /// <summary>Loads the block data from <see cref="ChainedHeaderTree"/> or block store if it's enabled.</summary>
         /// <param name="blockHash">The block hash.</param>
-        Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash);
+        ChainedHeaderBlock GetBlockData(uint256 blockHash);
+
+        /// <summary>Loads the block data from <see cref="ChainedHeaderTree"/> or block store if it's enabled.</summary>
+        /// <param name="blockHashes">The block hashes.</param>
+        ChainedHeaderBlock[] GetBlockData(List<uint256> blockHashes);
 
         /// <summary>
         /// A new block was mined by the node and is attempted to connect to tip.

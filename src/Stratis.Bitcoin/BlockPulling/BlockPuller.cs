@@ -6,12 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <inheritdoc/>
@@ -287,7 +287,14 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             lock (this.peerLock)
             {
-                return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+                try
+                {
+                    return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+                }
+                catch (OverflowException)
+                {
+                    return long.MaxValue;
+                }
             }
         }
 
@@ -313,7 +320,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
                 {
                     behavior.Tip = newTip;
-                    this.logger.LogTrace("Tip for peer with ID {0} was changed to '{1}'.", peerId, newTip);
+                    this.logger.LogDebug("Tip for peer with ID {0} was changed to '{1}'.", peerId, newTip);
                 }
                 else
                 {
@@ -325,10 +332,10 @@ namespace Stratis.Bitcoin.BlockPulling
                         behavior.Tip = newTip;
                         this.pullerBehaviorsByPeerId.Add(peerId, behavior);
 
-                        this.logger.LogTrace("New peer with ID {0} and tip '{1}' was added.", peerId, newTip);
+                        this.logger.LogDebug("New peer with ID {0} and tip '{1}' was added.", peerId, newTip);
                     }
                     else
-                        this.logger.LogTrace("Peer ID {0} was discarded since he doesn't support the requirements, reason: {1}", peerId, reason);
+                        this.logger.LogDebug("Peer ID {0} was discarded since he doesn't support the requirements, reason: {1}", peerId, reason);
                 }
             }
         }
@@ -429,7 +436,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (emptySlots >= slotsThreshold)
                     this.ProcessQueueLocked(this.downloadJobsQueue, newAssignments, failedHashes, emptySlots);
                 else
-                    this.logger.LogTrace("Slots threshold is not met, queue will not be processed. There are {0} empty slots, threshold is {1}.", emptySlots, slotsThreshold);
+                    this.logger.LogDebug("Slots threshold is not met, queue will not be processed. There are {0} empty slots, threshold is {1}.", emptySlots, slotsThreshold);
 
                 this.processQueuesSignal.Reset();
             }
@@ -442,14 +449,14 @@ namespace Stratis.Bitcoin.BlockPulling
 
             // Call callbacks with null since puller failed to deliver requested blocks.
             if (failedHashes.Count != 0)
-                this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
+                this.logger.LogDebug("{0} jobs partially or fully failed.", failedHashes.Count);
 
             foreach (uint256 failedJob in failedHashes)
             {
                 // Avoid calling callbacks on shutdown.
                 if (this.cancellationSource.IsCancellationRequested)
                 {
-                    this.logger.LogTrace("Callbacks won't be called because component is being disposed.");
+                    this.logger.LogDebug("Callbacks won't be called because component is being disposed.");
                     break;
                 }
 
@@ -475,7 +482,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 emptySlots -= assignments.Count;
 
-                this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAssign.Id);
+                this.logger.LogDebug("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAssign.Id);
 
                 lock (this.assignedLock)
                 {
@@ -671,7 +678,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                         lastSucceededIndex = index;
 
-                        this.logger.LogTrace("Block '{0}' was assigned to peer ID {1}.", header.HashBlock, peerId);
+                        this.logger.LogDebug("Block '{0}' was assigned to peer ID {1}.", header.HashBlock, peerId);
                         break;
                     }
                     else
@@ -709,7 +716,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private void CheckStalling()
         {
             int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
-            this.logger.LogTrace("Blocks up to height {0} are considered to be important.", lastImportantHeight);
+            this.logger.LogDebug("Blocks up to height {0} are considered to be important.", lastImportantHeight);
 
             var allReleasedAssignments = new List<Dictionary<int, List<ChainedHeader>>>();
 
@@ -789,7 +796,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     return;
                 }
 
-                this.logger.LogTrace("Assignment '{0}' for peer ID {1} was delivered by peer ID {2}.", blockHash, assignedDownload.PeerId, peerId);
+                this.logger.LogDebug("Assignment '{0}' for peer ID {1} was delivered by peer ID {2}.", blockHash, assignedDownload.PeerId, peerId);
 
                 if (assignedDownload.PeerId != peerId)
                 {
@@ -801,7 +808,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             double deliveredInSeconds = (this.dateTimeProvider.GetUtcNow() - assignedDownload.AssignedTime).TotalSeconds;
-            this.logger.LogTrace("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
+            this.logger.LogDebug("Peer {0} delivered block '{1}' in {2} seconds.", assignedDownload.PeerId, blockHash, deliveredInSeconds);
 
             lock (this.peerLock)
             {
@@ -847,7 +854,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
             else
             {
-                this.logger.LogTrace("Peer ID {0} is the fastest peer. Recalculating quality score of all peers.", peerId);
+                this.logger.LogDebug("Peer ID {0} is the fastest peer. Recalculating quality score of all peers.", peerId);
 
                 // This is the best peer. Recalculate quality score for everyone.
                 foreach (IBlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
@@ -869,7 +876,7 @@ namespace Stratis.Bitcoin.BlockPulling
             if (this.maxBlocksBeingDownloaded < MinimalCountOfBlocksBeingDownloaded)
                 this.maxBlocksBeingDownloaded = MinimalCountOfBlocksBeingDownloaded;
 
-            this.logger.LogTrace("Max number of blocks that can be downloaded at the same time is set to {0}.", this.maxBlocksBeingDownloaded);
+            this.logger.LogDebug("Max number of blocks that can be downloaded at the same time is set to {0}.", this.maxBlocksBeingDownloaded);
         }
 
         /// <summary>
@@ -920,7 +927,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                     assignmentsToRemove.Add(assignment);
 
-                    this.logger.LogTrace("Header '{0}' for job ID {1} was released from peer ID {2}.", header, assignment.JobId, peerId);
+                    this.logger.LogDebug("Header '{0}' for job ID {1} was released from peer ID {2}.", header, assignment.JobId, peerId);
                 }
 
                 foreach (AssignedDownload assignment in assignmentsToRemove)
@@ -947,6 +954,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder statsBuilder)
         {
             statsBuilder.AppendLine();

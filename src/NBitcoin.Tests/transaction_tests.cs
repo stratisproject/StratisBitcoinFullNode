@@ -46,7 +46,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetMedianBlock()
         {
-            var chain = new ConcurrentChain(this.networkMain);
+            var chain = new ChainIndexer(this.networkMain);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             chain.SetTip(CreateBlock(now, 0, chain));
             chain.SetTip(CreateBlock(now, -1, chain));
@@ -70,7 +70,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainIndexer chain = null)
         {
             Block block = this.networkMain.Consensus.ConsensusFactory.CreateBlock();
             block.Header.BlockTime = now + TimeSpan.FromMinutes(offset);
@@ -220,6 +220,47 @@ namespace NBitcoin.Tests
 
             selected = selector.Select(new ICoin[] { CreateCoin("5", alice), CreateCoin("5", bob) }, Money.Parse("2.0")).ToArray();
             Assert.Single(selected);
+        }
+
+        // These 2 next tests cater for the specific situation where the DefaultCoinSelector
+        // performs a random sampling of coins in an attempt to get as close as possible to 
+        // the required total.
+        // Previously this code wasn't functioning correctly and running virtually forever
+        // for large input sizes.
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanSelectCoinsInReasonableTimeDifferentScriptPubKeys()
+        {
+            var selector = new DefaultCoinSelector(0);
+
+            var coins = new ICoin[2000];
+
+            for(int i = 0; i < coins.Length; i++)
+            {
+                coins[i] = this.CreateCoin("1.0", new Key().ScriptPubKey);
+            }
+
+            IEnumerable<ICoin> result = selector.Select(coins, Money.Parse("1.5"));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanSelectCoinsInReasonableTimeNoGroupByScriptPubKey()
+        {
+            var selector = new DefaultCoinSelector(0)
+            {
+                GroupByScriptPubKey = false
+            };
+
+            var testCoins = new ICoin[2000];
+
+            for (int i = 0; i < testCoins.Length; i++)
+            {
+                testCoins[i] = this.CreateCoin("1.0");
+            }
+
+            IEnumerable<ICoin> result = selector.Select(testCoins, Money.Parse("1.5"));
         }
 
         private Coin CreateCoin(Money amount, Script scriptPubKey = null)
@@ -1113,10 +1154,7 @@ namespace NBitcoin.Tests
         {
             Network network = KnownNetworks.Main;
 
-            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.BlockTime = first;
-
-            var chain = new ConcurrentChain(this.networkMain, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+            var chain = new ChainIndexer(this.networkMain);
 
             first = first + TimeSpan.FromMinutes(10);
 

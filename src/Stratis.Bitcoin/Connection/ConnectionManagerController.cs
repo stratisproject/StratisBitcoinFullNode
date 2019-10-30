@@ -20,18 +20,21 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        private readonly IPeerBanning peerBanning;
+
         public ConnectionManagerController(IConnectionManager connectionManager,
-            ILoggerFactory loggerFactory) : base(connectionManager: connectionManager)
+            ILoggerFactory loggerFactory, IPeerBanning peerBanning) : base(connectionManager: connectionManager)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.peerBanning = peerBanning;
         }
 
         /// <summary>
-        /// RPC method for adding a node connection.
+        /// Sends a command to a node.
         /// </summary>
         /// <param name="endpointStr">The endpoint in string format.</param>
-        /// <param name="command">The command to run. {add, remove, onetry}</param>
+        /// <param name="command">The command to run. Three commands are valid: add, remove, and onetry</param>
         /// <returns><c>true</c> if successful.</returns>
         /// <exception cref="ArgumentException">Thrown if unsupported command given.</exception>
         [ActionName("addnode")]
@@ -43,6 +46,9 @@ namespace Stratis.Bitcoin.Connection
             switch (command)
             {
                 case "add":
+                    if (this.peerBanning.IsBanned(endpoint))
+                        throw new InvalidOperationException("Can't perform 'add' for a banned peer.");
+
                     this.ConnectionManager.AddNodeAddress(endpoint);
                     break;
 
@@ -51,6 +57,9 @@ namespace Stratis.Bitcoin.Connection
                     break;
 
                 case "onetry":
+                    if (this.peerBanning.IsBanned(endpoint))
+                        throw new InvalidOperationException("Can't connect to a banned peer.");
+
                     this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
 
@@ -62,12 +71,12 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Adds a node to the connection manager.
-        /// API wrapper for RPC call.
+        /// Sends a command to the connection manager.
         /// </summary>
-        /// <param name="endpoint">The endpoint in string format.</param>
+        /// <param name="endpoint">The endpoint in string format. Specify an IP address. The default port for the network will be added automatically.</param>
         /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted exception if fails.</returns>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
         [Route("api/[controller]/addnode")]
         [HttpGet]
@@ -139,10 +148,10 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// Gets peer information from the connection manager.
-        /// API wrapper for RPC call.
+        /// Gets information about this node.
         /// </summary>
         /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>Json formatted <see cref="List{T}<see cref="PeerNodeModel"/>"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         [Route("api/[controller]/getpeerinfo")]
         [HttpGet]

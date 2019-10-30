@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -12,6 +13,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 {
@@ -25,71 +27,62 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
 
-        public SmartContractPowRuleRegistration(Network network,
-            IStateRepositoryRoot stateRepositoryRoot,
-            IContractExecutorFactory executorFactory,
-            ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever,
-            IReceiptRepository receiptRepository,
-            ICoinView coinView)
+        public SmartContractPowRuleRegistration()
         {
-            this.network = network;
-            this.stateRepositoryRoot = stateRepositoryRoot;
-            this.executorFactory = executorFactory;
-            this.callDataSerializer = callDataSerializer;
-            this.senderRetriever = senderRetriever;
-            this.receiptRepository = receiptRepository;
-            this.coinView = coinView;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules(IServiceCollection services)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new HeaderTimeChecksRule(),
-                new CheckDifficultyPowRule(),
-                new BitcoinActivationRule(),
-                new BitcoinHeaderVersionRule()
-            };
+                typeof(HeaderTimeChecksRule),
+                typeof(CheckDifficultyPowRule),
+                typeof(BitcoinActivationRule),
+                typeof(BitcoinHeaderVersionRule)
+            })
+                services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new BlockMerkleRootRule()
-            };
+                typeof(BlockMerkleRootRule)
+            })
+                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new WitnessCommitmentsRule(), // BIP141, BIP144
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
-                new AllowedScriptTypeRule(this.network),
-                new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>
-                {
-                    new SmartContractFormatLogic()
-                })
-            };
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
+                typeof(AllowedScriptTypeRule),
+                typeof(ContractTransactionPartialValidationRule)
+            })
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
+
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new TxOutSmartContractExecRule(),
-                new OpSpendRule(),
-                new CanGetSenderRule(this.senderRetriever),
-                new P2PKHNotContractRule(this.stateRepositoryRoot),
-                new SmartContractPowCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
-                new SaveCoinviewRule()
-            };
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(TxOutSmartContractExecRule),
+                typeof(OpSpendRule),
+                typeof(CanGetSenderRule),
+                typeof(P2PKHNotContractRule),
+                typeof(SmartContractPowCoinviewRule), // implements BIP68, MaxSigOps and BlockReward 
+                typeof(SaveCoinviewRule)
+            })
+                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -17,10 +18,46 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
+    public class RPCCapabilities
+    {
+        public int Version { get; set; }
+        public bool SupportSignRawTransactionWith { get; set; }
+        public bool SupportSegwit { get; set; }
+        public bool SupportScanUTXOSet { get; set; }
+        public bool SupportGetNetworkInfo { get; set; }
+        public bool SupportEstimateSmartFee { get; set; }
+        public bool SupportGenerateToAddress { get; set; }
+
+        public RPCCapabilities Clone(int newVersion)
+        {
+            return new RPCCapabilities()
+            {
+                Version = newVersion,
+                SupportScanUTXOSet = SupportScanUTXOSet,
+                SupportSegwit = SupportSegwit,
+                SupportSignRawTransactionWith = SupportSignRawTransactionWith,
+                SupportGetNetworkInfo = SupportGetNetworkInfo,
+                SupportEstimateSmartFee = SupportEstimateSmartFee,
+                SupportGenerateToAddress = SupportGenerateToAddress
+            };
+        }
+
+        public override string ToString()
+        {
+            return $"Version: {this.Version}{Environment.NewLine}" +
+                $"SupportScanUTXOSet: {this.SupportScanUTXOSet}{Environment.NewLine}" +
+                $"SupportSegwit: {this.SupportSegwit}{Environment.NewLine}" +
+                $"SupportSignRawTransactionWith: {this.SupportSignRawTransactionWith}{Environment.NewLine}" +
+                $"SupportGetNetworkInfo: {this.SupportGetNetworkInfo}{Environment.NewLine}" +
+                $"SupportEstimateSmartFee: {this.SupportEstimateSmartFee}{Environment.NewLine}" +
+                $"SupportGenerateToAddress: {this.SupportGenerateToAddress}{Environment.NewLine}";
+        }
+    }
+
     /*
-        Category            Name                        Implemented 
+        Category            Name                        Implemented
         ------------------ --------------------------- -----------------------
-        ------------------ Overall control/query calls 
+        ------------------ Overall control/query calls
         control            getinfo
         control            help
         control            stop
@@ -161,46 +198,13 @@ namespace Stratis.Bitcoin.Features.RPC
             }
         }
 
-        /// <summary>
-        /// Use default bitcoin parameters to configure a RPCClient.
-        /// </summary>
-        /// <param name="network">The network used by the node. Must not be null.</param>
-        public RPCClient(Network network) : this(null as string, BuildUri(null, network.RPCPort), network)
+        private RPCClient(RPCCredentialString credentials, Uri address, Network network)
         {
-        }
+            Guard.NotNull(credentials, nameof(credentials));
+            Guard.NotNull(address, nameof(address));
+            Guard.NotNull(network, nameof(network));
 
-        [Obsolete("Use RPCClient(ConnectionString, string, Network)")]
-        public RPCClient(NetworkCredential credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.RPCPort), network)
-        {
-        }
-
-        public RPCClient(RPCCredentialString credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.RPCPort), network)
-        {
-        }
-
-        public RPCClient(RPCCredentialString credentials, Uri address, Network network)
-        {
             this.RPCClientInit(network);
-
-            credentials = credentials ?? new RPCCredentialString();
-
-            if (address != null && network == null)
-            {
-                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
-                if (network == null)
-                    throw new ArgumentNullException("network");
-            }
-
-            if (credentials.UseDefault && network == null)
-                throw new ArgumentException("network parameter is required if you use default credentials");
-
-            if (address == null && network == null)
-                throw new ArgumentException("network parameter is required if you use default uri");
-
-            if (address == null)
-                address = new Uri("http://127.0.0.1:" + network.RPCPort + "/");
 
             if (credentials.UseDefault)
             {
@@ -292,6 +296,114 @@ namespace Stratis.Bitcoin.Features.RPC
             return null;
         }
 
+        /// <summary>
+        /// The RPC Capabilities of this RPCClient instance, this property will be set by a call to ScanRPCCapabilitiesAsync
+        /// </summary>
+        public RPCCapabilities Capabilities { get; set; }
+
+        /// <summary>
+        /// Run several RPC function to scan the RPC capabilities, then set RPCClient.Capabilities
+        /// </summary>
+        /// <returns>The RPCCapabilities</returns>
+        public async Task<RPCCapabilities> ScanRPCCapabilitiesAsync()
+        {
+            var capabilities = new RPCCapabilities();
+            var rpc = this.PrepareBatch();
+            var waiting = Task.WhenAll(
+            SetVersionAsync(capabilities),
+            CheckCapabilities(rpc, "scantxoutset", v => capabilities.SupportScanUTXOSet = v),
+            CheckCapabilities(rpc, "signrawtransactionwithkey", v => capabilities.SupportSignRawTransactionWith = v),
+            CheckCapabilities(rpc, "estimatesmartfee", v => capabilities.SupportEstimateSmartFee = v),
+            CheckCapabilities(rpc, "generatetoaddress", v => capabilities.SupportGenerateToAddress = v),
+            CheckSegwitCapabilitiesAsync(rpc, v => capabilities.SupportSegwit = v));
+            await rpc.SendBatchAsync();
+            await waiting;
+            Thread.MemoryBarrier();
+
+            this.Capabilities = capabilities;
+            return capabilities;
+        }
+
+        private async Task SetVersionAsync(RPCCapabilities capabilities)
+        {
+            try
+            {
+                var getInfo = await SendCommandAsync(RPCOperations.getnetworkinfo);
+                capabilities.Version = ((JObject)getInfo.Result)["version"].Value<int>();
+                capabilities.SupportGetNetworkInfo = true;
+                return;
+            }
+            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND || ex.RPCCode == RPCErrorCode.RPC_METHOD_DEPRECATED)
+            {
+                capabilities.SupportGetNetworkInfo = false;
+            }
+
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                var getInfo = await SendCommandAsync(RPCOperations.getinfo);
+#pragma warning restore CS0618 // Type or member is obsolete
+                capabilities.Version = ((JObject)getInfo.Result)["version"].Value<int>();
+            }
+        }
+
+        /// <summary>
+        /// Run several RPC function to scan the RPC capabilities, then set RPCClient.RPCCapabilities
+        /// </summary>
+        /// <returns>The RPCCapabilities</returns>
+        public RPCCapabilities ScanRPCCapabilities()
+        {
+            return ScanRPCCapabilitiesAsync().GetAwaiter().GetResult();
+        }
+
+        private static async Task CheckSegwitCapabilitiesAsync(RPCClient rpc, Action<bool> setResult)
+        {
+            BitcoinAddress address = null;
+            try
+            {
+                address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpc.Network);
+            }
+            catch (NotImplementedException)
+            {
+            }
+  
+            if (address == null)
+            {
+                setResult(false);
+                return;
+            }
+            try
+            {
+                var result = await rpc.SendCommandAsync("validateaddress", new[] { address.ToString() });
+                result.ThrowIfError();
+                setResult(result.Result["isvalid"].Value<bool>());
+            }
+            catch (RPCException ex)
+            {
+                setResult(ex.RPCCode == RPCErrorCode.RPC_TYPE_ERROR);
+            }
+        }
+
+        private static async Task CheckCapabilitiesAsync(Func<Task> command, Action<bool> setResult)
+        {
+            try
+            {
+                await command();
+                setResult(true);
+            }
+            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND || ex.RPCCode == RPCErrorCode.RPC_METHOD_DEPRECATED)
+            {
+                setResult(false);
+            }
+            catch (RPCException)
+            {
+                setResult(true);
+            }
+        }
+        private static Task CheckCapabilities(RPCClient rpc, string command, Action<bool> setResult)
+        {
+            return CheckCapabilitiesAsync(() => rpc.SendCommandAsync(command, "random"), setResult);
+        }
+
         public static string GetDefaultCookieFilePath(Network network)
         {
             return TryGetDefaultCookieFilePath(network) ?? throw new ArgumentException(
@@ -301,17 +413,6 @@ namespace Stratis.Bitcoin.Features.RPC
         public static string TryGetDefaultCookieFilePath(Network network)
         {
             return defaultPaths.TryGetValue(network, out string path) ? path : null;
-        }
-
-        /// <summary>
-        /// Create a new RPCClient instance
-        /// </summary>
-        /// <param name="authenticationString">username:password, the content of the .cookie file, or cookiefile=pathToCookieFile</param>
-        /// <param name="hostOrUri"></param>
-        /// <param name="network"></param>
-        public RPCClient(string authenticationString, string hostOrUri, Network network)
-            : this(authenticationString, BuildUri(hostOrUri, network.RPCPort), network)
-        {
         }
 
         private static Uri BuildUri(string hostOrUri, int port)
@@ -345,19 +446,25 @@ namespace Stratis.Bitcoin.Features.RPC
             return builder.Uri;
         }
 
-        public RPCClient(NetworkCredential credentials, Uri address, Network network = null)
-            : this(credentials == null ? null : (credentials.UserName + ":" + credentials.Password), address, network)
+        /// <summary>
+        /// Create a new RPCClient instance
+        /// </summary>
+        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
+        /// <param name="address">The address to connect to.</param>
+        /// <param name="network">The network.</param>
+        public RPCClient(string authenticationString, Uri address, Network network = null)
+            : this(RPCCredentialString.Parse(authenticationString), address, network)
         {
         }
 
         /// <summary>
         /// Create a new RPCClient instance
         /// </summary>
-        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
-        /// <param name="address"></param>
-        /// <param name="network"></param>
-        public RPCClient(string authenticationString, Uri address, Network network = null)
-            : this(authenticationString == null ? null as RPCCredentialString : RPCCredentialString.Parse(authenticationString), address, network)
+        /// <param name="rpcSettings">The RPC settings.</param>
+        /// <param name="hostOrUri">The URI to use to connect with.</param>
+        /// <param name="network">The network.</param>
+        public RPCClient(RpcSettings rpcSettings, string hostOrUri, Network network)
+            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", BuildUri(hostOrUri, rpcSettings.RPCPort), network)
         {
         }
 
@@ -967,7 +1074,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public async Task<Block> GetBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), 0).ConfigureAwait(false);
-            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network);
+            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network.Consensus.ConsensusFactory);
         }
 
         /// <summary>

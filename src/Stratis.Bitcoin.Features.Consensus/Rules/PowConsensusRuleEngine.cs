@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -17,6 +18,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// </summary>
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         public ICoinView UtxoSet { get; }
 
@@ -25,13 +29,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain,
+        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, consensusRulesContainer)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
             this.UtxoSet = utxoSet;
-            this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chain, loggerFactory);
+            this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chainIndexer, loggerFactory, asyncProvider);
         }
 
         /// <inheritdoc />
@@ -42,28 +48,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task<uint256> GetBlockHashAsync()
+        public override uint256 GetBlockHash()
         {
-            return this.UtxoSet.GetTipHashAsync();
+            return this.UtxoSet.GetTipHash();
         }
 
         /// <inheritdoc />
-        public override async Task<RewindState> RewindAsync()
+        public override Task<RewindState> RewindAsync()
         {
-            return new RewindState()
+            var state = new RewindState()
             {
-                BlockHash = await this.UtxoSet.RewindAsync().ConfigureAwait(false)
+                BlockHash = this.UtxoSet.Rewind()
             };
+
+            return Task.FromResult(state);
         }
 
         /// <inheritdoc />
-        public override async Task InitializeAsync(ChainedHeader chainTip)
+        public override void Initialize(ChainedHeader chainTip)
         {
+            base.Initialize(chainTip);
+
             var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
 
-            await breezeCoinView.InitializeAsync().ConfigureAwait(false);
+            breezeCoinView.Initialize();
 
-            uint256 consensusTipHash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            uint256 consensusTipHash = breezeCoinView.GetTipHash();
 
             while (true)
             {
@@ -75,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.logger.LogInformation("Rewinding coin db from {0}", consensusTipHash);
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = await breezeCoinView.RewindAsync().ConfigureAwait(false);
+                consensusTipHash = breezeCoinView.Rewind();
             }
         }
 
@@ -101,8 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             if (cache != null)
             {
                 this.logger.LogInformation("Flushing Cache CoinView.");
-                cache.FlushAsync().GetAwaiter().GetResult();
-                cache.Dispose();
+                cache.Flush();
             }
 
             ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).Dispose();

@@ -1,5 +1,4 @@
 ﻿using System;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -35,9 +34,6 @@ namespace Stratis.SmartContracts.CLR
         public IPersistentState PersistentState { get; }
 
         public ISerializer Serializer { get; }
-
-        [Obsolete]
-        public IGasMeter GasMeter { get; }
 
         public IContractLogger ContractLogger { get; }
 

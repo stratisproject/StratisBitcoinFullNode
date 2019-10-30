@@ -87,10 +87,10 @@ namespace Stratis.Bitcoin.BlockPulling
         public ChainedHeader Tip { get; set; }
 
         /// <summary>The average size in bytes of blocks delivered by that peer.</summary>
-        internal readonly AverageCalculator averageSizeBytes;
+        private readonly AverageCalculator averageSizeBytes;
 
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
-        internal readonly AverageCalculator averageDelaySeconds;
+        private readonly AverageCalculator averageDelaySeconds;
 
         /// <summary>Time when the last block was delivered.</summary>
         private DateTime? lastDeliveryTime;
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.BlockPulling
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
 
-            this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
+            this.logger.LogDebug("Quality score was set to {0}.", this.QualityScore);
         }
 
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 block.Obj.Header.PrecomputeHash(true, true);
                 uint256 blockHash = block.Obj.GetHash();
 
-                this.logger.LogTrace("Block '{0}' delivered.", blockHash);
+                this.logger.LogDebug("Block '{0}' delivered.", blockHash);
 
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
                 this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();

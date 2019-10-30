@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {

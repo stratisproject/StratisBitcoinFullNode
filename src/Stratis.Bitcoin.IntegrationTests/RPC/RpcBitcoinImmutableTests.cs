@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <seealso cref="https://github.com/MetacoSA/NBitcoin/blob/master/NBitcoin.Tests/RPCClientTests.cs">NBitcoin test CanGetTxOutAsyncFromRPC</seealso>
         /// </summary>
         [Fact]
-        public async void GetTxOutAsyncWithValidTxThenReturnsCorrectUnspentTxAsync()
+        public async Task GetTxOutAsyncWithValidTxThenReturnsCorrectUnspentTxAsync()
         {
             RPCClient rpc = this.rpcTestFixture.RpcClient;
             UnspentCoin[] unspent = rpc.ListUnspent();

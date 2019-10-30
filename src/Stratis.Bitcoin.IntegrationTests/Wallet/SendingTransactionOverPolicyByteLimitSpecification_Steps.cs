@@ -10,6 +10,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void mempool_of_node2_has_received_transaction()
         {
-            TestHelper.WaitLoop(() => this.firstNode.FullNode.MempoolManager().GetMempoolAsync().Result.Any());
+            TestBase.WaitLoop(() => this.firstNode.FullNode.MempoolManager().GetMempoolAsync().Result.Any());
             this.firstNode.FullNode.MempoolManager().GetMempoolAsync().Result.Should().Contain(this.transaction.GetHash());
         }
 
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void sending_the_transaction()
         {
-            this.firstNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex(this.firstNode.FullNode.Network)));
+            this.firstNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex(this.firstNode.FullNode.Network)));
         }
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)

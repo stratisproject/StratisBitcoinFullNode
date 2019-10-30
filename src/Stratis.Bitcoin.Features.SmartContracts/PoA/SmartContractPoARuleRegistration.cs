@@ -1,83 +1,59 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoARuleRegistration : IRuleRegistration
     {
-        private readonly Network network;
-        private readonly IStateRepositoryRoot stateRepositoryRoot;
-        private readonly IContractExecutorFactory executorFactory;
-        private readonly ICallDataSerializer callDataSerializer;
-        private readonly ISenderRetriever senderRetriever;
-        private readonly IReceiptRepository receiptRepository;
-        private readonly ICoinView coinView;
-        private readonly PoAConsensusRulesRegistration baseRuleRegistration;
-        private readonly IEnumerable<IContractTransactionValidationLogic> validationRules;
+        protected readonly Network network;
 
-        public SmartContractPoARuleRegistration(Network network,
-            IStateRepositoryRoot stateRepositoryRoot,
-            IContractExecutorFactory executorFactory,
-            ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever,
-            IReceiptRepository receiptRepository,
-            ICoinView coinView,
-            IEnumerable<IContractTransactionValidationLogic> validationRules)
+        public SmartContractPoARuleRegistration()
         {
-            this.baseRuleRegistration = new PoAConsensusRulesRegistration();
-            this.network = network;
-            this.stateRepositoryRoot = stateRepositoryRoot;
-            this.executorFactory = executorFactory;
-            this.callDataSerializer = callDataSerializer;
-            this.senderRetriever = senderRetriever;
-            this.receiptRepository = receiptRepository;
-            this.coinView = coinView;
-            this.validationRules = validationRules;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public virtual void RegisterRules(IServiceCollection services)
         {
-            this.baseRuleRegistration.RegisterRules(consensus);
+            // TODO: Do what the rest of the FN code did and move the rule registration to the network class.
+            new PoAConsensusRulesRegistration().RegisterRules(services);
 
-            // Add SC-Specific partial rules
-            var txValidationRules = new List<IContractTransactionValidationLogic>(this.validationRules)
-            {
-                new SmartContractFormatLogic()                
-            };
-            consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
-            consensus.PartialValidationRules.Add(new ContractTransactionValidationRule(this.callDataSerializer, txValidationRules));
+            services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
 
-            int existingCoinViewRule = consensus.FullValidationRules
-                .FindIndex(c => c is CoinViewRule);
+            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(AllowedScriptTypeRule));
 
-            // Replace coinview rule
-            consensus.FullValidationRules[existingCoinViewRule] =
-                new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory,
-                    this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView);
+            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(ContractTransactionPartialValidationRule));
+
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(ContractTransactionFullValidationRule));
 
             // Add SC-specific full rules BEFORE the coinviewrule
-            var scRules = new List<IFullValidationConsensusRule>
+            foreach (Type ruleType in new List<Type>()
             {
-                new TxOutSmartContractExecRule(),
-                new OpSpendRule(),
-                new CanGetSenderRule(this.senderRetriever),
-                new P2PKHNotContractRule(this.stateRepositoryRoot)
-            };
+                typeof(TxOutSmartContractExecRule),
+                typeof(OpSpendRule),
+                typeof(CanGetSenderRule),
+                typeof(P2PKHNotContractRule)
+            })
+                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
 
-            consensus.FullValidationRules.InsertRange(existingCoinViewRule, scRules);
+            // Replace coinview rule
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(PoACoinviewRule)).ToList()) services.Remove(serviceDescriptor);
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SmartContractPoACoinviewRule)).ToList()) services.Remove(serviceDescriptor);
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SmartContractPoACoinviewRule));
+
+            // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
+            // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -254,18 +255,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         if (mempoolTransaction.FeeRate.FeePerK < filterrate)
                         {
-                            this.logger.LogTrace("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
+                            this.logger.LogDebug("Fee too low, transaction ID '{0}' not added to inventory list.", hash);
                             continue;
                         }
                     }
 
                     this.filterInventoryKnown.Add(hash);
                     transactionsToSend.Add(hash);
-                    this.logger.LogTrace("Added transaction ID '{0}' to inventory list.", hash);
+                    this.logger.LogDebug("Added transaction ID '{0}' to inventory list.", hash);
                 }
             }
 
-            this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+            this.logger.LogDebug("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
             await this.SendAsTxInventoryAsync(peer, transactionsToSend);
             this.LastMempoolReq = this.mempoolManager.DateTimeProvider.GetTime();
         }
@@ -316,7 +317,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (this.isBlocksOnlyMode)
                 {
-                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
 
@@ -325,7 +326,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (peer.IsConnected && (send.Inventory.Count > 0))
             {
-                this.logger.LogTrace("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogDebug("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);
             }
         }
@@ -351,7 +352,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // TODO: strip block of witness if peer does not support
                     if (peer.IsConnected)
                     {
-                        this.logger.LogTrace("Sending transaction '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
+                        this.logger.LogDebug("Sending transaction '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
                         await peer.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(peer.SupportedTransactionOptions, this.network.Consensus.ConsensusFactory))).ConfigureAwait(false);
                     }
                 }
@@ -382,7 +383,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.filterInventoryKnown.Add(trxHash);
             }
-            this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
+            this.logger.LogDebug("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
             var state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
@@ -390,7 +391,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
 
-                this.signals.OnTransactionReceived.Notify(trx);
+                this.signals.Publish(new TransactionReceived(trx));
 
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;
@@ -454,7 +455,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
                 if (peer.IsConnected)
                 {
-                    this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
                     await peer.SendMessageAsync(new InvPayload(items)).ConfigureAwait(false);
                 }
             }
@@ -496,20 +497,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (peer == null)
                 {
-                    this.logger.LogTrace("Peer is null, skipped.");
+                    this.logger.LogDebug("Peer is null, skipped.");
                     continue;
                 }
 
-                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, peer.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, peer.RemoteSocketEndpoint);
 
                 if (peer.PeerVersion.Relay)
                 {
                     mempoolBehavior.AddTransactionToSend(hash);
-                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, peer.RemoteSocketEndpoint);
                 }
                 else
                 {
-                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Peer '{0}' does not support 'Relay', skipped.", peer.RemoteSocketEndpoint);
                 }
             }
         }
@@ -536,7 +537,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
 
-                this.logger.LogTrace("Creating list of transaction inventory to send.");
+                this.logger.LogDebug("Creating list of transaction inventory to send.");
 
                 // Determine transactions to relay
                 // Produce a vector with all candidates for sending
@@ -546,12 +547,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     // Remove it from the to-be-sent set
                     this.inventoryTxToSend.Remove(hash);
-                    this.logger.LogTrace("Transaction ID '{0}' removed from pending sends list.", hash);
+                    this.logger.LogDebug("Transaction ID '{0}' removed from pending sends list.", hash);
 
                     // Check if not in the filter already
                     if (this.filterInventoryKnown.Contains(hash))
                     {
-                        this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
+                        this.logger.LogDebug("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
                         continue;
                     }
 
@@ -560,10 +561,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     //  continue;
                     //}
                     transactionsToSend.Add(hash);
-                    this.logger.LogTrace("Transaction ID '{0}' added to inventory list.", hash);
+                    this.logger.LogDebug("Transaction ID '{0}' added to inventory list.", hash);
                 }
 
-                this.logger.LogTrace("Transaction inventory list created.");
+                this.logger.LogDebug("Transaction inventory list created.");
             }
 
             List<uint256> findInMempool = transactionsToSend.ToList();
@@ -573,14 +574,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(hash);
                 if (txInfo == null)
                 {
-                    this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, no longer in mempool.", hash);
+                    this.logger.LogDebug("Transaction ID '{0}' not added to inventory list, no longer in mempool.", hash);
                     transactionsToSend.Remove(hash);
                 }
             }
 
             if (transactionsToSend.Any())
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogDebug("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
                 try
                 {
                     await this.SendAsTxInventoryAsync(peer, transactionsToSend).ConfigureAwait(false);

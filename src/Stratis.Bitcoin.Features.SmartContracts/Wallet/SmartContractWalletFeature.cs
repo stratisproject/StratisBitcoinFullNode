@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     public sealed class SmartContractWalletFeature : FullNodeFeature
     {
         private readonly BroadcasterBehavior broadcasterBehavior;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly IWalletManager walletManager;
@@ -29,14 +29,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
         /// </summary>
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
-        /// <param name="chain">The chain of blocks.</param>
+        /// <param name="chainIndexer">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
-        /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         public SmartContractWalletFeature(
             BroadcasterBehavior broadcasterBehavior,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
@@ -44,14 +43,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             INodeStats nodeStats)
         {
             this.broadcasterBehavior = broadcasterBehavior;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.connectionManager = connectionManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
         }
 
         private void AddComponentStats(StringBuilder log)
@@ -76,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (this.walletManager is WalletManager walletManager)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -121,12 +120,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     services.AddSingleton<IWalletTransactionHandler, SmartContractWalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<SmartContractWalletController>();
                     services.AddSingleton<ISmartContractTransactionService, SmartContractTransactionService>();
-                    services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();
                     services.AddSingleton<WalletSettings>();
+                    services.AddSingleton<IAddressBookManager, AddressBookManager>();
+
+                    services.AddTransient<WalletRPCController>();
                 });
             });
 

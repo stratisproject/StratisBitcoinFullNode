@@ -6,7 +6,6 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -41,7 +40,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);
-            this.gasMeter = new GasMeter((Gas)50_000);
+            this.gasMeter = new GasMeter((RuntimeObserver.Gas)50_000);
         }
 
         [Fact]
@@ -129,7 +128,7 @@ public class Contract : SmartContract
                 s.InternalHashHelper == new InternalHashHelper() &&
                 s.GetBalance == new Func<ulong>(() => 0));
 
-            var emptyGasMeter = new GasMeter((Gas)0);
+            var emptyGasMeter = new GasMeter((RuntimeObserver.Gas)0);
 
             VmExecutionResult result = this.vm.Create(
                 this.state,

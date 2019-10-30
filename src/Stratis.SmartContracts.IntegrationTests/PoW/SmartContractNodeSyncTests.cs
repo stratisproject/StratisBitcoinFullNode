@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Tests.Common;
 using Xunit;
 
@@ -21,8 +22,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 TestHelper.Connect(node1, node2);
 
-                TestHelper.WaitLoop(() => node1.FullNode.ConnectionManager.ConnectedPeers.Any());
-                TestHelper.WaitLoop(() => node2.FullNode.ConnectionManager.ConnectedPeers.Any());
+                TestBase.WaitLoop(() => node1.FullNode.ConnectionManager.ConnectedPeers.Any());
+                TestBase.WaitLoop(() => node2.FullNode.ConnectionManager.ConnectedPeers.Any());
 
                 var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.OfType<IConnectionManagerBehavior>().FirstOrDefault();
                 Assert.False(behavior.AttachedPeer.Inbound);

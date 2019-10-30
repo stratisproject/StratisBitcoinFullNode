@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Tests.Common
 {

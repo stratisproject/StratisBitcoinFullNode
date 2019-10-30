@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -35,7 +36,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     [Route("api/[controller]")]
     public class FederationWalletController : Controller
     {
-        private readonly IFederationWalletManager walletManager;
+        private readonly IFederationWalletManager federationWalletManager;
 
         private readonly IFederationWalletSyncManager walletSyncManager;
 
@@ -43,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
@@ -56,16 +57,16 @@ namespace Stratis.Features.FederatedPeg.Controllers
             IFederationWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IDateTimeProvider dateTimeProvider,
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
-            this.walletManager = walletManager;
+            this.federationWalletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -75,7 +76,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             try
             {
-                FederationWallet wallet = this.walletManager.GetWallet();
+                FederationWallet wallet = this.federationWalletManager.GetWallet();
 
                 if (wallet == null)
                 {
@@ -88,8 +89,8 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
-                    ChainTip = this.chain.Tip.Height,
-                    IsChainSynced = this.chain.IsDownloaded(),
+                    ChainTip = this.chainIndexer.Tip.Height,
+                    IsChainSynced = this.chainIndexer.IsDownloaded(),
                     IsDecrypted = true
                 };
 
@@ -108,13 +109,13 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             try
             {
-                FederationWallet wallet = this.walletManager.GetWallet();
+                FederationWallet wallet = this.federationWalletManager.GetWallet();
                 if (wallet == null)
                 {
                     return this.NotFound("No federation wallet found.");
                 }
 
-                (Money ConfirmedAmount, Money UnConfirmedAmount) result = wallet.GetSpendableAmount();
+                (Money ConfirmedAmount, Money UnConfirmedAmount) result = this.federationWalletManager.GetSpendableAmount();
 
                 var balance = new AccountBalanceModel
                 {
@@ -141,7 +142,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             try
             {
-                FederationWallet wallet = this.walletManager.GetWallet();
+                FederationWallet wallet = this.federationWalletManager.GetWallet();
                 if (wallet == null)
                 {
                     return this.NotFound("No federation wallet found.");
@@ -172,7 +173,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chainIndexer.GetHeader(uint256.Parse(model.Hash));
 
             if (block == null)
             {
@@ -202,9 +203,20 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
 
-                this.walletManager.EnableFederation(request.Password, request.Mnemonic, request.Passphrase);
+                // Enabling the federation wallet requires the federation wallet.
+                for (int timeOutSeconds = request.TimeoutSeconds ?? 0; timeOutSeconds >= 0; timeOutSeconds--)
+                {
+                    if (this.federationWalletManager.GetWallet() != null)
+                    {
+                        this.federationWalletManager.EnableFederationWallet(request.Password, request.Mnemonic, request.Passphrase);
 
-                return this.Ok();
+                        return this.Ok();
+                    }
+
+                    Thread.Sleep(1000);
+                }
+
+                return this.NotFound("No federation wallet found.");
             }
             catch (Exception e)
             {
@@ -232,20 +244,20 @@ namespace Stratis.Features.FederatedPeg.Controllers
             {
                 HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
 
-                result = this.walletManager.RemoveAllTransactions();
+                result = this.federationWalletManager.RemoveAllTransactions();
 
                 // If the user chose to resync the wallet after removing transactions.
                 if (result.Any() && request.ReSync)
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
-                    FederationWallet wallet = this.walletManager.GetWallet();
-                    wallet.LastBlockSyncedHeight = chainedHeader.Height;
-                    wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
-                    this.walletManager.SaveWallet();
+                    FederationWallet federationWallet = this.federationWalletManager.GetWallet();
+                    federationWallet.LastBlockSyncedHeight = chainedHeader.Height;
+                    federationWallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+                    this.federationWalletManager.SaveWallet();
 
                     // Initialize the syncing process from the block before the earliest transaction was seen.
                     this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1);

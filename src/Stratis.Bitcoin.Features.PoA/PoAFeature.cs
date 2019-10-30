@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,11 +13,13 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
+using Stratis.Bitcoin.Features.PoA.Behaviors;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
@@ -32,9 +35,9 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -53,15 +56,22 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly Network network;
 
-        private readonly WhitelistedHashesRepository whitelistedHashesRepository;
+        private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
+        private readonly IdleFederationMembersKicker idleFederationMembersKicker;
+
+        private readonly IChainState chainState;
+
+        private readonly IBlockStoreQueue blockStoreQueue;
+
+        public PoAFeature(IFederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner, VotingManager votingManager, Network network, WhitelistedHashesRepository whitelistedHashesRepository)
+            IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository,
+            IdleFederationMembersKicker idleFederationMembersKicker, IChainState chainState, IBlockStoreQueue blockStoreQueue)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
@@ -70,6 +80,9 @@ namespace Stratis.Bitcoin.Features.PoA
             this.votingManager = votingManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;
             this.network = network;
+            this.idleFederationMembersKicker = idleFederationMembersKicker;
+            this.chainState = chainState;
+            this.blockStoreQueue = blockStoreQueue;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -79,27 +92,54 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
 
-            INetworkPeerBehavior defaultConsensusManagerBehavior = connectionParameters.TemplateBehaviors.FirstOrDefault(behavior => behavior is ConsensusManagerBehavior);
-            if (defaultConsensusManagerBehavior == null)
-            {
-                throw new MissingServiceException(typeof(ConsensusManagerBehavior), "Missing expected ConsensusManagerBehavior.");
-            }
+            this.ReplaceConsensusManagerBehavior(connectionParameters);
 
-            // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
-            connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
-            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            this.ReplaceBlockStoreBehavior(connectionParameters);
 
             this.federationManager.Initialize();
             this.whitelistedHashesRepository.Initialize();
 
-            if (((PoAConsensusOptions)this.network.Consensus.Options).VotingEnabled)
+            var options = (PoAConsensusOptions)this.network.Consensus.Options;
+
+            if (options.VotingEnabled)
             {
                 this.votingManager.Initialize();
+
+                if (options.AutoKickIdleMembers)
+                    this.idleFederationMembersKicker.Initialize();
             }
 
             this.miner.InitializeMining();
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>Replaces default <see cref="ConsensusManagerBehavior"/> with <see cref="PoAConsensusManagerBehavior"/>.</summary>
+        private void ReplaceConsensusManagerBehavior(NetworkPeerConnectionParameters connectionParameters)
+        {
+            INetworkPeerBehavior defaultConsensusManagerBehavior = connectionParameters.TemplateBehaviors.FirstOrDefault(behavior => behavior is ConsensusManagerBehavior);
+
+            if (defaultConsensusManagerBehavior == null)
+            {
+                throw new MissingServiceException(typeof(ConsensusManagerBehavior), "Missing expected ConsensusManagerBehavior.");
+            }
+
+            connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+        }
+
+        /// <summary>Replaces default <see cref="PoABlockStoreBehavior"/> with <see cref="PoABlockStoreBehavior"/>.</summary>
+        private void ReplaceBlockStoreBehavior(NetworkPeerConnectionParameters connectionParameters)
+        {
+            INetworkPeerBehavior defaultBlockStoreBehavior = connectionParameters.TemplateBehaviors.FirstOrDefault(behavior => behavior is BlockStoreBehavior);
+
+            if (defaultBlockStoreBehavior == null)
+            {
+                throw new MissingServiceException(typeof(BlockStoreBehavior), "Missing expected BlockStoreBehavior.");
+            }
+
+            connectionParameters.TemplateBehaviors.Remove(defaultBlockStoreBehavior);
+            connectionParameters.TemplateBehaviors.Add(new PoABlockStoreBehavior(this.chainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
         }
 
         /// <inheritdoc />
@@ -108,54 +148,61 @@ namespace Stratis.Bitcoin.Features.PoA
             this.miner.Dispose();
 
             this.votingManager.Dispose();
+
+            this.idleFederationMembersKicker.Dispose();
         }
     }
 
     public class PoAConsensusRulesRegistration : IRuleRegistration
     {
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules(IServiceCollection services)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new HeaderTimeChecksPoARule(),
-                new StratisHeaderVersionRule(),
-                new PoAHeaderDifficultyRule(),
-                new PoAHeaderSignatureRule()
-            };
+                typeof(HeaderTimeChecksPoARule),
+                typeof(StratisHeaderVersionRule),
+                typeof(PoAHeaderDifficultyRule),
+                typeof(PoAHeaderSignatureRule)
+            })
+                    services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new BlockMerkleRootRule(),
-                new PoAIntegritySignatureRule()
-            };
+                typeof(BlockMerkleRootRule),
+                typeof(PoAIntegritySignatureRule)
+            })
+                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
                 // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
 
-                new PoAVotingCoinbaseOutputFormatRule(),
-            };
+                typeof(PoAVotingCoinbaseOutputFormatRule),
+            })
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
                 // rules that require the store to be loaded (coinview)
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new PoACoinviewRule(),
-                new SaveCoinviewRule()
-            };
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(PoACoinviewRule),
+                typeof(SaveCoinviewRule)
+            })
+                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
         }
     }
 
@@ -174,12 +221,12 @@ namespace Stratis.Bitcoin.Features.PoA
                     .DependOn<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<IFederationManager, FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<MinerSettings>();
                         services.AddSingleton<PoAMinerSettings>();
-                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, PoABlockDefinition>();
                     });
             });
@@ -193,20 +240,19 @@ namespace Stratis.Bitcoin.Features.PoA
                     {
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
 
-                        new PoAConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                        new PoAConsensusRulesRegistration().RegisterRules(services);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<VotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
-                        services.AddSingleton<WhitelistedHashesRepository>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IdleFederationMembersKicker>();
                     });
             });
 

@@ -60,53 +60,5 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "multiSigAddress")]
         public MultiSigAddress MultiSigAddress { get; set; }
-
-        /// <summary>
-        /// Gets a collection of transactions with spendable outputs.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<TransactionData> GetSpendableTransactions()
-        {
-            return this.MultiSigAddress.Transactions.Where(t => t.IsSpendable());
-        }
-
-        /// <summary>
-        /// Lists all spendable transactions in the current wallet.
-        /// </summary>
-        /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
-        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
-        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
-        {
-            // A block that is at the tip has 1 confirmation.
-            // When calculating the confirmations the tip must be advanced by one.
-
-            int countFrom = currentChainHeight + 1;
-            foreach (TransactionData transactionData in this.GetSpendableTransactions())
-            {
-                int? confirmationCount = 0;
-                if (transactionData.BlockHeight != null)
-                    confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
-
-                if (confirmationCount >= confirmations)
-                {
-                    yield return new UnspentOutputReference
-                    {
-                        Transaction = transactionData,
-                    };
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
-        /// </summary>
-        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
-        {
-            long confirmed = this.MultiSigAddress.Transactions.Sum(t => t.SpendableAmount(true));
-            long total = this.MultiSigAddress.Transactions.Sum(t => t.SpendableAmount(false));
-
-            return (confirmed, total - confirmed);
-        }
     }
 }

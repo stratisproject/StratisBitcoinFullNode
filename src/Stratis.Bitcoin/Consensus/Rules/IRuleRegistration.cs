@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
@@ -12,8 +12,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// with the engine, this is important for rules with dependencies on other rules.
     /// Rules are executed in the same order they are registered with the engine.
     /// </remarks>
+    [Obsolete("This class should be removed now that rules get registered in network")]
     public interface IRuleRegistration
     {
-        void RegisterRules(IConsensus consensus);
+        [Obsolete]
+        void RegisterRules(IServiceCollection service);
     }
 }

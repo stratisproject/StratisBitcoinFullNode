@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
@@ -15,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class DepositExtractorTests
     {
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -25,23 +26,32 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly Network network;
 
+        private readonly Network counterChainNetwork;
+
         private readonly MultisigAddressHelper addressHelper;
 
         private readonly TestTransactionBuilder transactionBuilder;
 
-        private readonly ConcurrentChain chain;
-
         public DepositExtractorTests()
         {
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = CirrusNetwork.NetworksSelector.Regtest();
+            this.counterChainNetwork = Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.settings = Substitute.For<IFederationGatewaySettings>();
+            this.settings = Substitute.For<IFederatedPegSettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
 
-            this.addressHelper = new MultisigAddressHelper(this.network);
+            this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
+
+            this.settings.GetWithdrawalTransactionFee(Arg.Any<int>()).ReturnsForAnyArgs((x) =>
+            {
+                int numInputs = x.ArgAt<int>(0);
+
+                return FederatedPegSettings.BaseTransactionFee + FederatedPegSettings.InputTransactionFee * numInputs;
+            });
+
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();
@@ -52,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.opReturnDataReader);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ExtractDepositsFromBlock_Should_Only_Find_Deposits_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -94,7 +104,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             extractedTransaction.BlockHash.Should().Be(block.GetHash());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ExtractDepositsFromBlock_Should_Create_One_Deposit_Per_Transaction_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -148,6 +158,45 @@ namespace Stratis.Features.FederatedPeg.Tests
             extractedTransaction.Amount.Satoshi.Should().Be(thirdDepositAmount);
             extractedTransaction.Id.Should().Be(thirdDepositTransaction.GetHash());
             extractedTransaction.TargetAddress.Should().Be(newTargetAddress);
+        }
+
+        [Fact]
+        public void ExtractDepositsFromBlockShouldOnlyGetAmountsGreaterThanWithdrawalFee()
+        {
+            Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
+
+            BitcoinPubKeyAddress targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
+            byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
+
+            // Set amount to be less than deposit minimum
+            long depositAmount = FederatedPegSettings.CrossChainTransferMinimum - 1;
+            Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
+            block.AddTransaction(depositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string unused1).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
+
+            // Set amount to be exactly deposit minimum
+            long secondDepositAmount = FederatedPegSettings.CrossChainTransferMinimum;
+            Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
+            block.AddTransaction(secondDepositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction, out string unused2).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
+
+            // Set amount to be greater than deposit minimum
+            long thirdDepositAmount = FederatedPegSettings.CrossChainTransferMinimum + 1;
+            Transaction thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, thirdDepositAmount);
+            block.AddTransaction(thirdDepositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(thirdDepositTransaction, out string unused3).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });// Extract deposits
+            int blockHeight = 12345;
+            IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
+
+            // Should only be two, with the value just over the withdrawal fee.
+            extractedDeposits.Count.Should().Be(2);
+            foreach (IDeposit extractedDeposit in extractedDeposits)
+            {
+                Assert.True(extractedDeposit.Amount >= FederatedPegSettings.CrossChainTransferMinimum);
+            }
         }
     }
 }

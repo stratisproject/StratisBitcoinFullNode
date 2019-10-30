@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         private Random random = new Random();
 
         [Fact]
-        public async void AsyncManualResetEvent_WaitAsync()
+        public async Task AsyncManualResetEvent_WaitAsync()
         {
             var manualResetEvent = new AsyncManualResetEvent(false);
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void AsyncManualResetEvent_CanBeCancelledAsync()
+        public async Task AsyncManualResetEvent_CanBeCancelledAsync()
         {
             var manualResetEvent = new AsyncManualResetEvent(false);
             var tokenSource = new CancellationTokenSource(500);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// This test simulates several tasks that wait for it's own event and set next one.
         /// </summary>
         [Fact]
-        public async void AsyncManualResetEvent_RingTriggeringAsync()
+        public async Task AsyncManualResetEvent_RingTriggeringAsync()
         {
             int tasksCount = 10;
             var cts = new CancellationTokenSource();

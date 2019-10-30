@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         public ProvenBlockHeaderStoreTests() : base(new StratisTest())
         {
-            var nodeStats = new NodeStats(DateTimeProvider.Default);
+            var nodeStats = new NodeStats(DateTimeProvider.Default, this.LoggerFactory.Object);
 
-            var dBreezeSerializer = new DBreezeSerializer(this.Network);
+            var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var ibdMock = new Mock<IInitialBlockDownloadState>();
             ibdMock.Setup(s => s.IsInitialBlockDownload()).Returns(false);
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var outHeader = await this.provenBlockHeaderStore.GetAsync(1).ConfigureAwait(false);
             outHeader.GetHash().Should().Be(inHeader.GetHash());
 
-            // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
+            // Check if it has been saved to disk.  It shouldn't as the asyncProvider would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
             outHeaderRepo.Should().BeNull();
         }
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var cacheCount = this.PendingBatch.Count;
             cacheCount.Should().Be(2_000);
 
-            // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
+            // Check if it has been saved to disk.  It shouldn't as the asyncProvider would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
             outHeaderRepo.Should().BeNull();
         }
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var newChainWithHeaders = this.BuildProvenHeaderChain(11, chainedHeaders[10]);
 
             var newChainedHeaders = newChainWithHeaders.EnumerateToGenesis().Reverse().ToList();
-             
+
             // all items 1-20 are on main chain after a fork
             foreach (ChainedHeader chainedHeader in newChainedHeaders.Skip(10).Take(11))
             {
@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             Assert.Equal(15, this.PendingBatch.Count);
             this.CompareCollections(chainedHeaders.Skip(1).Take(15).ToList(), this.PendingBatch);
 
-            // Save items 1-15 
+            // Save items 1-15
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
             var error = this.provenBlockHeaderStore.GetMemberValue("saveAsyncLoopException") as Exception;
             Assert.Null(error);
@@ -445,8 +445,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var ibdMock = new Mock<IInitialBlockDownloadState>();
             ibdMock.Setup(s => s.IsInitialBlockDownload()).Returns(false);
 
-
-            return new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, new NodeStats(DateTimeProvider.Default), ibdMock.Object);
+            return new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, new NodeStats(DateTimeProvider.Default, this.LoggerFactory.Object), ibdMock.Object);
         }
 
         private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))

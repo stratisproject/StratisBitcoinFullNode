@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IStakeChain stakeChain;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Consensus' view of UTXO set.</summary>
         private readonly ICoinView coinView;
@@ -73,14 +73,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
-        /// <param name="chain">Chain of headers.</param>
+        /// <param name="chainIndexer">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ChainIndexer chainIndexer, ICoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.coinView = coinView;
             this.network = network;
         }
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             long divideBy = (interval + 1) * targetSpacing;
             target = target.Divide(BigInteger.ValueOf(divideBy));
 
-            this.logger.LogTrace("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
+            this.logger.LogDebug("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
 
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
                 target = targetLimit;
@@ -256,14 +256,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(prevout, nameof(prevout));
             Guard.NotNull(prevChainedHeader, nameof(prevChainedHeader));
 
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.coinView.FetchCoins(new[] { prevout.Hash });
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
                 this.logger.LogTrace("(-)[READ_PREV_TX_FAILED]");
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
-            ChainedHeader prevBlock = this.chain.GetBlock(coins.BlockHash);
+            ChainedHeader prevBlock = this.chainIndexer.GetHeader(coins.BlockHash);
             if (prevBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (transactionTime < stakingCoins.Time)
             {
-                this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
+                this.logger.LogDebug("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
                 this.logger.LogTrace("(-)[BAD_STAKE_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
             }
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             BigInteger weightedTarget = target.Multiply(weight);
 
             context.TargetProofOfStake = this.ToUInt256(weightedTarget);
-            this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
+            this.logger.LogDebug("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
 
             // Calculate hash.
             using (var ms = new MemoryStream())
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.HashProofOfStake = Hashes.Hash256(ms.ToArray());
             }
 
-            this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", prevStakeModifier, context.HashProofOfStake);
+            this.logger.LogDebug("Stake modifier V2 is '{0}', hash POS is '{1}'.", prevStakeModifier, context.HashProofOfStake);
 
             // Now check if proof-of-stake hash meets target protocol.
             var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
-            var ctx = new ScriptEvaluationContext(this.chain.Network) { ScriptVerify = flagScriptVerify };
+            var ctx = new ScriptEvaluationContext(this.chainIndexer.Network) { ScriptVerify = flagScriptVerify };
 
             bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
             return res;

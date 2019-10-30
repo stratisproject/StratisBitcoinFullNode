@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -20,12 +18,12 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the rules engine.
         /// </summary>
         /// <param name="chainTip">Last common header between chain repository and block store if it's available.
-        Task InitializeAsync(ChainedHeader chainTip);
+        void Initialize(ChainedHeader chainTip);
 
         /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        ConsensusRuleEngine Register();
+        ConsensusRuleEngine SetupRulesEngineParent();
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Retrieves the block hash of the current tip of the chain.
         /// </summary>
         /// <returns>Block hash of the current tip of the chain.</returns>
-        Task<uint256> GetBlockHashAsync();
+        uint256 GetBlockHash();
 
         /// <summary>
         /// Rewinds the chain to the last saved state.

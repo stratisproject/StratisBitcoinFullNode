@@ -8,7 +8,6 @@ using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -1241,6 +1240,96 @@ namespace NBitcoin.Tests
             Assert.Null(sigParams.GetMultisigSignatures(this.network)[0]);
             Script scriptSig2 = PayToScriptHashTemplate.Instance.GenerateScriptSig(sigParams);
             Assert.Equal(scriptSig2.ToString(), scriptSig);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyP2PKHScript()
+        {
+            var script = Script.FromHex("76a914c398efa9c392ba6013c5e04ee729755ef7f58b3288ac");
+
+            Assert.False(script.IsScriptType(ScriptType.Witness));
+            Assert.True(script.IsScriptType(ScriptType.P2PKH));
+            Assert.False(script.IsScriptType(ScriptType.P2SH));
+            Assert.False(script.IsScriptType(ScriptType.P2PK));
+            Assert.False(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.False(script.IsScriptType(ScriptType.P2WSH));
+            Assert.False(script.IsScriptType(ScriptType.MultiSig));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyP2SHScript()
+        {
+            var script = Script.FromHex("a914e9c3dd0c07aac76179ebc76a6c78d4d67c6c160a87");
+
+            Assert.False(script.IsScriptType(ScriptType.Witness));
+            Assert.False(script.IsScriptType(ScriptType.P2PKH));
+            Assert.True(script.IsScriptType(ScriptType.P2SH));
+            Assert.False(script.IsScriptType(ScriptType.P2PK));
+            Assert.False(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.False(script.IsScriptType(ScriptType.P2WSH));
+            Assert.False(script.IsScriptType(ScriptType.MultiSig));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyP2PKScript()
+        {
+            var script = Script.FromHex("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac");
+
+            Assert.False(script.IsScriptType(ScriptType.Witness));
+            Assert.False(script.IsScriptType(ScriptType.P2PKH));
+            Assert.False(script.IsScriptType(ScriptType.P2SH));
+            Assert.True(script.IsScriptType(ScriptType.P2PK));
+            Assert.False(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.False(script.IsScriptType(ScriptType.P2WSH));
+            Assert.False(script.IsScriptType(ScriptType.MultiSig));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyMultiSigScript()
+        {
+            var script = Script.FromHex("514104cc71eb30d653c0c3163990c47b976f3fb3f37cccdcbedb169a1dfef58bbfbfaff7d8a473e7e2e6d317b87bafe8bde97e3cf8f065dec022b51d11fcdd0d348ac4410461cbdcc5409fb4b4d42b51d33381354d80e550078cb532a34bfa2fcfdeb7d76519aecc62770f5b0e4ef8551946d8a540911abe3e7854a26f39f58b25c15342af52ae");
+
+            Assert.False(script.IsScriptType(ScriptType.Witness));
+            Assert.False(script.IsScriptType(ScriptType.P2PKH));
+            Assert.False(script.IsScriptType(ScriptType.P2SH));
+            Assert.False(script.IsScriptType(ScriptType.P2PK));
+            Assert.False(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.False(script.IsScriptType(ScriptType.P2WSH));
+            Assert.True(script.IsScriptType(ScriptType.MultiSig));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyP2WPKHScript()
+        {
+            var script = Script.FromHex("0014c4e2db37553d3e55c23da2ef5f2f41eb79935849");
+
+            Assert.True(script.IsScriptType(ScriptType.Witness));
+            Assert.False(script.IsScriptType(ScriptType.P2PKH));
+            Assert.False(script.IsScriptType(ScriptType.P2SH));
+            Assert.False(script.IsScriptType(ScriptType.P2PK));
+            Assert.True(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.False(script.IsScriptType(ScriptType.P2WSH));
+            Assert.False(script.IsScriptType(ScriptType.MultiSig));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void CanIdentifyP2WSHScript()
+        {
+            var script = Script.FromHex("00201965d4c2e7e7b1973b00931ed042d0bacd03c12b7dc5e06b550c31d15fec7cc1");
+
+            Assert.True(script.IsScriptType(ScriptType.Witness));
+            Assert.False(script.IsScriptType(ScriptType.P2PKH));
+            Assert.False(script.IsScriptType(ScriptType.P2SH));
+            Assert.False(script.IsScriptType(ScriptType.P2PK));
+            Assert.False(script.IsScriptType(ScriptType.P2WPKH));
+            Assert.True(script.IsScriptType(ScriptType.P2WSH));
+            Assert.False(script.IsScriptType(ScriptType.MultiSig));
         }
     }
 }

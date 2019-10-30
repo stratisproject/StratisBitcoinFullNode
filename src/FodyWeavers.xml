@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Weavers>
+<Weavers GenerateXsd="false">
   <Tracer adapterAssembly="FodyNlogAdapter"
       logManager="FodyNlogAdapter.Adapters.LogManagerAdapter"      
       logger="FodyNlogAdapter.Adapters.LoggerAdapter"
@@ -10,6 +10,8 @@
       <TraceOn namespace="Stratis.SmartContracts.Core+*" class="private" method="private" />
       <TraceOn namespace="Stratis.SmartContracts.CLR+*" class="private" method="private" />
       <TraceOn namespace="Stratis.Bitcoin.Features.PoA+*" class="private" method="private" />
+      <TraceOn namespace="Stratis.Features.FederatedPeg+*" class="private" method="private" />
+      <TraceOn namespace="Stratis.Bitcoin.Features.SmartContracts+*" class="private" method="private" />
       <NoTrace namespace="Stratis.Bitcoin.Features.Consensus+*" />
       <NoTrace namespace="Stratis.Bitcoin.Features.Miner+*" />
       <NoTrace namespace="*.Tests+*" />

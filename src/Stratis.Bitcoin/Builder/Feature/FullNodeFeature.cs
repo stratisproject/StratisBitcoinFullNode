@@ -14,6 +14,11 @@ namespace Stratis.Bitcoin.Builder.Feature
         bool InitializeBeforeBase { get; set; }
 
         /// <summary>
+        /// The state in which the feature currently is.
+        /// </summary>
+        string State { get; set; }
+
+        /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
         Task InitializeAsync();
@@ -40,6 +45,9 @@ namespace Stratis.Bitcoin.Builder.Feature
     {
         /// <inheritdoc />
         public bool InitializeBeforeBase { get; set; }
+
+        /// <inheritdoc />
+        public string State { get; set; }
 
         /// <inheritdoc />
         public abstract Task InitializeAsync();

@@ -9,11 +9,13 @@ namespace Stratis.Features.FederatedPeg.Models
         [JsonConverter(typeof(ConcreteConverter<Withdrawal>))]
         public IWithdrawal withdrawal { get; set; }
 
+        public string SpendingOutputDetails { get; set; }
+
         public string TransferStatus { get; set; }
 
         public override string ToString()
         {
-            return this.withdrawal.GetInfo() + " Status=" + this.TransferStatus;
+            return this.withdrawal.GetInfo() + " Spending=" + this.SpendingOutputDetails + " Status=" + this.TransferStatus;
         }
     }
 }

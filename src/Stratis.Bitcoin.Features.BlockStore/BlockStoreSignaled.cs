@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -31,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly StoreSettings storeSettings;
 
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
-        private readonly AsyncQueue<ChainedHeader> blocksToAnnounce;
+        private readonly IAsyncQueue<ChainedHeader> blocksToAnnounce;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -43,6 +46,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Task dequeueLoopTask;
 
         private readonly ISignals signals;
+        private readonly IAsyncProvider asyncProvider;
+        private SubscriptionToken blockConnectedSubscription;
 
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
@@ -52,7 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ISignals signals)
+            ISignals signals,
+            IAsyncProvider asyncProvider)
         {
             this.blockStoreQueue = blockStoreQueue;
             this.chainState = chainState;
@@ -62,18 +68,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
+            this.asyncProvider = asyncProvider;
 
-            this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
+            this.blocksToAnnounce = asyncProvider.CreateAsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
+
+            this.asyncProvider.RegisterTask($"{nameof(BlockStoreSignaled)}.{nameof(this.dequeueLoopTask)}", this.dequeueLoopTask);
         }
 
         public void Initialize()
         {
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock blockPair)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock blockPair = blockConnected.ConnectedBlock;
+
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
@@ -81,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
+            this.logger.LogDebug("Block hash is '{0}'.", chainedHeader.HashBlock);
 
             bool isIBD = this.initialBlockDownloadState.IsInitialBlockDownload();
 
@@ -100,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
+            this.logger.LogDebug("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
         }
 
@@ -204,12 +215,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+            this.logger.LogDebug("There are {0} blocks in the announce queue.", announceBlockCount);
 
             // Remove blocks that we've reorged away from.
             foreach (ChainedHeader reorgedBlock in batch.Where(x => this.chainState.ConsensusTip.FindAncestorOrSelf(x) == null).ToList())
             {
-                this.logger.LogTrace("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
+                this.logger.LogDebug("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
 
                 // List removal is of O(N) complexity but in this case removals will happen just a few times a day (on orphaned blocks)
                 // and always only the latest items in this list will be subjected to removal so in this case it's better than creating
@@ -234,7 +245,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             List<BlockStoreBehavior> behaviors = peers.Select(peer => peer.Behavior<BlockStoreBehavior>())
                 .Where(behavior => behavior != null).ToList();
 
-            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviors.Count);
+            this.logger.LogDebug("{0} blocks will be sent to {1} peers.", batch.Count, behaviors.Count);
             foreach (BlockStoreBehavior behavior in behaviors)
                 await behavior.AnnounceBlocksAsync(batch).ConfigureAwait(false);
         }
@@ -246,7 +257,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
         }
     }
 }

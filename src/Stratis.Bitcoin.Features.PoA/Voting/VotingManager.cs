@@ -5,19 +5,22 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public class VotingManager : IDisposable
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly VotingDataEncoder votingDataEncoder;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IPollResultExecutor pollResultExecutor;
 
@@ -39,13 +42,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<Poll> polls;
 
+        private SubscriptionToken blockConnectedSubscription;
+        private SubscriptionToken blockDisconnectedSubscription;
+
         /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<VotingData> scheduledVotingData;
 
         private bool isInitialized;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
+        public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, ISlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
@@ -70,10 +76,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             this.polls = this.pollsRepository.GetAllPolls();
 
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
-            this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
 
-            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1200);
 
             this.isInitialized = true;
             this.logger.LogDebug("VotingManager initialized.");
@@ -94,6 +100,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             lock (this.locker)
             {
                 this.scheduledVotingData.Add(votingData);
+
+                this.CleanFinishedPollsLocked();
             }
 
             this.logger.LogDebug("Vote was scheduled with key: {0}.", votingData.Key);
@@ -106,6 +114,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
+                this.CleanFinishedPollsLocked();
+
                 return new List<VotingData>(this.scheduledVotingData);
             }
         }
@@ -118,6 +128,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
+                this.CleanFinishedPollsLocked();
+
                 List<VotingData> votingData = this.scheduledVotingData;
 
                 this.scheduledVotingData = new List<VotingData>();
@@ -126,6 +138,27 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     this.logger.LogDebug("{0} scheduled votes were taken.", votingData.Count);
 
                 return votingData;
+            }
+        }
+
+        /// <summary>Checks pending polls against finished polls and removes pending polls that will make no difference and basically are redundant.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private void CleanFinishedPollsLocked()
+        {
+            // We take polls that are not pending (collected enough votes in favor) but not executed yet (maxReorg blocks
+            // didn't pass since the vote that made the poll pass). We can't just take not pending polls because of the
+            // following scenario: federation adds a hash or fed member or does any other revertable action, then reverts
+            // the action (removes the hash) and then reapplies it again. To allow for this scenario we have to exclude
+            // executed polls here.
+            List<Poll> finishedPolls = this.polls.Where(x => !x.IsPending && !x.IsExecuted).ToList();
+
+            for (int i = this.scheduledVotingData.Count - 1; i >= 0; i--)
+            {
+                VotingData currentScheduledData = this.scheduledVotingData[i];
+
+                // Remove scheduled voting data that can be found in finished polls that were not yet executed.
+                if (finishedPolls.Any(x => x.VotingData == currentScheduledData))
+                    this.scheduledVotingData.RemoveAt(i);
             }
         }
 
@@ -151,8 +184,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chBlock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock chBlock = blockConnected.ConnectedBlock;
             uint256 newFinalizedHash = this.finalizedBlockInfo.GetFinalizedBlockInfo().Hash;
 
             lock (this.locker)
@@ -176,7 +210,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
 
             // Pub key of a fed member that created voting data.
-            string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+            string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
 
@@ -217,7 +251,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote. Poll: '{1}'.", fedMemberKeyHex, poll);
                     }
 
-                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                     // It is possible that there is a vote from a federation member that was deleted from the federation.
                     // Do not count votes from entities that are not active fed members.
@@ -236,8 +270,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void OnBlockDisconnected(ChainedHeaderBlock chBlock)
+        private void OnBlockDisconnected(BlockDisconnected blockDisconnected)
         {
+            ChainedHeaderBlock chBlock = blockDisconnected.DisconnectedBlock;
+
             lock (this.locker)
             {
                 foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockData?.Hash == chBlock.ChainedHeader.HashBlock).ToList())
@@ -265,8 +301,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData votingData in votingDataList)
                 {
-                    // Poll that was finished in the block being disconnected.
-                    Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
+                    // If the poll is pending, that's the one we want. There should be maximum 1 of these.
+                    Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending);
+
+                    // Otherwise, get the most recent poll. There could currently be unlimited of these, though they're harmless.
+                    if (targetPoll == null)
+                    {
+                        targetPoll = this.polls.Last(x => x.VotingData == votingData);
+                    }
 
                     this.logger.LogDebug("Reverting poll voting in favor: '{0}'.", targetPoll);
 
@@ -278,7 +320,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     }
 
                     // Pub key of a fed member that created voting data.
-                    string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+                    string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
                     targetPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
 
@@ -293,6 +335,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -300,11 +343,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished.");
+                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished, {this.polls.Count(x => x.IsExecuted)} polls are executed.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
             }
         }
 
+        [NoTrace]
         private void EnsureInitialized()
         {
             if (!this.isInitialized)
@@ -316,8 +360,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <inheritdoc />
         public void Dispose()
         {
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
-            this.signals.OnBlockDisconnected.Detach(this.OnBlockDisconnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.signals.Unsubscribe(this.blockDisconnectedSubscription);
 
             this.pollsRepository.Dispose();
         }

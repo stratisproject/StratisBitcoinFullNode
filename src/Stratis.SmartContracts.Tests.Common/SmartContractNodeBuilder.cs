@@ -46,6 +46,18 @@ namespace Stratis.SmartContracts.Tests.Common
             return node;
         }
 
+        public CoreNode CreateWhitelistedContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
+        {
+            string dataFolder = this.GetNextDataFolderName();
+
+            CoreNode node = this.CreateNode(new WhitelistedContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
+            var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
+
+            var tool = new KeyTool(settings.DataFolder);
+            tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
+            return node;
+        }
+
         public CoreNode CreateSmartContractPowNode()
         {
             Network network = new SmartContractsRegTest();

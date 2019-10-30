@@ -10,11 +10,12 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.BlockStore.Controllers;
+using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreFeature : FullNodeFeature
     {
         private readonly Network network;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly BlockStoreSignaled blockStoreSignaled;
 
@@ -47,9 +48,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IPrunedBlockRepository prunedBlockRepository;
 
+        private readonly IAddressIndexer addressIndexer;
+
         public BlockStoreFeature(
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             BlockStoreSignaled blockStoreSignaled,
             ILoggerFactory loggerFactory,
@@ -59,10 +62,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeStats nodeStats,
             IConsensusManager consensusManager,
             ICheckpoints checkpoints,
-            IPrunedBlockRepository prunedBlockRepository)
+            IPrunedBlockRepository prunedBlockRepository,
+            IAddressIndexer addressIndexer)
         {
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.blockStoreQueue = blockStoreQueue;
             this.blockStoreSignaled = blockStoreSignaled;
             this.connectionManager = connectionManager;
@@ -73,10 +77,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.consensusManager = consensusManager;
             this.checkpoints = checkpoints;
             this.prunedBlockRepository = prunedBlockRepository;
+            this.addressIndexer = addressIndexer;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 900);
         }
 
+        [NoTrace]
         private void AddInlineStats(StringBuilder log)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
@@ -109,9 +115,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
-        public override async Task InitializeAsync()
+        public override Task InitializeAsync()
         {
-            await this.prunedBlockRepository.InitializeAsync().ConfigureAwait(false);
+            this.prunedBlockRepository.Initialize();
 
             if (!this.storeSettings.PruningEnabled && this.prunedBlockRepository.PrunedTip != null)
                 throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");
@@ -122,17 +128,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
 
                 this.logger.LogInformation("Pruning BlockStore...");
-                await this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
+                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
             }
             else
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
             }
 
             // Signal to peers that this node can serve blocks.
@@ -146,6 +152,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.blockStoreSignaled.Initialize();
+
+            this.addressIndexer.Initialize();
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -157,9 +167,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, false);
             }
 
-            this.logger.LogInformation("Stopping BlockStore.");
-
+            this.logger.LogInformation("Stopping BlockStoreSignaled.");
             this.blockStoreSignaled.Dispose();
+
+            this.logger.LogInformation("Stopping AddressIndexer.");
+            this.addressIndexer.Dispose();
         }
     }
 
@@ -188,8 +200,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             services.AddSingleton<BlockStoreSignaled>();
 
                         services.AddSingleton<StoreSettings>();
-                        services.AddSingleton<BlockStoreController>();
                         services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
+                        services.AddSingleton<IAddressIndexer, AddressIndexer>();
                     });
             });
 

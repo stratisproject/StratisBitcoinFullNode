@@ -126,11 +126,20 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             foreach (string parameter in split)
             {
+                string parameterType = "";
+                string parameterValue = "";
+
                 try
                 {
                     string[] parameterSignature =
                         Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
                     parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
+
+                    parameterType = ulong.TryParse(parameterSignature[0], out var parsedParameterType) 
+                        ? Enum.GetName(typeof(MethodParameterDataType), parsedParameterType) ?? parameterSignature[0]
+                        : parameterSignature[0];
+
+                    parameterValue = parameterSignature[1];
 
                     if (parameterSignature[0] == MethodParameterDataType.Bool.ToString("d"))
                         processedParameters.Add(bool.Parse(parameterSignature[1]));
@@ -163,12 +172,11 @@ namespace Stratis.SmartContracts.CLR.Serialization
                         processedParameters.Add(parameterSignature[1].HexToByteArray());
 
                     else
-                        throw new MethodParameterStringSerializerException(string.Format("{0} is not supported.",
-                            parameterSignature[0]));
+                        throw new MethodParameterStringSerializerException($"Parameter type '{parameterType}' is not supported.");
                 }
                 catch (Exception e) when (e is FormatException || e is OverflowException || e is ArgumentException || e is ArgumentNullException)
                 {
-                    throw new MethodParameterStringSerializerException(string.Format("Error deserializing parameter {0}", parameter), e);
+                    throw new MethodParameterStringSerializerException($"Error deserializing parameter {parameterType} with value {parameterValue}", e);
                 }
             }
 

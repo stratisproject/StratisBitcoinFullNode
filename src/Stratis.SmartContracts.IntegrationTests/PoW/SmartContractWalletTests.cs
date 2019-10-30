@@ -15,13 +15,13 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -62,7 +62,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 HdAddress address = scReceiver.GetUnusedAddress();
                 scSender.SendTransaction(address.ScriptPubKey, Money.COIN * 100);
                 scReceiver.WaitMempoolCount(1);
-                TestHelper.WaitLoop(() => (long) scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds:10); // Give the wallet a bit of time to process receiving the transaction
+                TestBase.WaitLoop(() => (long)scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds: 10); // Give the wallet a bit of time to process receiving the transaction
 
                 // Transaction is in chain in last block.
                 scReceiver.MineBlocks(1);
@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-                var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 // Create a transfer token contract.
                 var compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -148,9 +148,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
-                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeController<SmartContractsController>();
 
-                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
+                SmartContractWalletController senderWalletController = scSender.FullNode.NodeController<SmartContractWalletController>();
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 

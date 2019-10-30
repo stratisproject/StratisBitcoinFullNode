@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -25,6 +29,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly ICrossChainTransferStore store;
 
         private readonly IFederationGatewayClient federationGatewayClient;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly ILogger logger;
 
@@ -33,7 +38,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private Task blockRequestingTask;
 
         /// <summary>The maximum amount of blocks to request at a time from alt chain.</summary>
-        private const int MaxBlocksToRequest = 100;
+        private const int MaxBlocksToRequest = 1000;
+
+        /// <summary>The maximum amount of deposits to request at a time from alt chain.</summary>
+        private const int MaxDepositsToRequest = 100;
 
         /// <summary>When we are fully synced we stop asking for more blocks for this amount of time.</summary>
         private const int RefreshDelayMs = 10_000;
@@ -42,10 +50,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
         private const int InitializationDelayMs = 10_000;
 
-        public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
+        public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
             this.store = store;
             this.federationGatewayClient = federationGatewayClient;
+            this.asyncProvider = asyncProvider;
 
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -55,6 +64,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public void Start()
         {
             this.blockRequestingTask = this.RequestMaturedBlocksContinouslyAsync();
+            this.asyncProvider.RegisterTask($"{nameof(MaturedBlocksSyncManager)}.{nameof(this.blockRequestingTask)}", this.blockRequestingTask);
         }
 
         /// <summary>Continuously requests matured blocks from another chain.</summary>
@@ -96,9 +106,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (!this.store.HasSuspended())
                 blocksToRequest = MaxBlocksToRequest;
 
-            // TODO investigate if we can ask for blocks that are reorgable. If so it's a problem and an attack vector.
             // API method that provides blocks should't give us blocks that are not mature!
-            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
+            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest, MaxDepositsToRequest);
 
             this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
                 nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
@@ -113,6 +122,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // Log what we've received.
                 foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
                 {
+                    // Order transactions in block deterministically
+                    maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id,
+                        Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
+
                     foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
                     {
                         this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.",
@@ -122,10 +135,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 if (matureBlockDeposits.Count > 0)
                 {
-                    bool success = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
+                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
 
                     // If we received a portion of blocks we can ask for new portion without any delay.
-                    if (success)
+                    if (result.MatureDepositRecorded)
                         delayRequired = false;
                 }
                 else
@@ -137,8 +150,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
                 }
             }
+            else
+                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node! {0} doesn't respond!", this.federationGatewayClient.EndpointUrl);
 
             return delayRequired;
+
         }
 
         /// <inheritdoc />

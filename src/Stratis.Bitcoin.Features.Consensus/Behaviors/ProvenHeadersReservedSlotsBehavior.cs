@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -74,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 if (freeSlots >= (MinimumRequiredPeerSupportingPH - phEnabledPeersConnected))
                 {
                     // There are enough free slot to allow the minimum required ph-enabled peers to connect to us.
-                    this.logger.LogTrace("Enough free slots. Free Slots: {0}, Required PH-enabled peers:{1}, Connected PH-enabled peers:{2}", freeSlots, MinimumRequiredPeerSupportingPH, phEnabledPeersConnected);
+                    this.logger.LogDebug("Enough free slots. Free Slots: {0}, Required PH-enabled peers:{1}, Connected PH-enabled peers:{2}", freeSlots, MinimumRequiredPeerSupportingPH, phEnabledPeersConnected);
                     return Task.CompletedTask;
                 }
 
@@ -99,6 +98,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         private bool DoesPeerSupportsPH(VersionPayload peerVersion)
         {
+            if (peerVersion == null)
+                return false;
+
             return peerVersion.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
 

@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
-    public class WhitelistedHashesRepository
+    public class WhitelistedHashesRepository : IWhitelistedHashesRepository
     {
         private const string dbKey = "hashesList";
 
@@ -76,5 +76,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 return new List<uint256>(this.whitelistedHashes);
             }
         }
+    }
+
+    public interface IWhitelistedHashesRepository
+    {
+        void AddHash(uint256 hash);
+
+        void RemoveHash(uint256 hash);
+
+        List<uint256> GetHashes();
+
+        void Initialize();
     }
 }

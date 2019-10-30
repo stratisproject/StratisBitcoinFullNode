@@ -148,30 +148,30 @@ namespace NBitcoin
             return blk;
         }
 
-        public static Block Parse(string hex, Network network)
+        public static Block Parse(string hex, ConsensusFactory consensusFactory)
         {
             if (string.IsNullOrEmpty(hex))
                 throw new ArgumentNullException(nameof(hex));
 
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
+            if (consensusFactory == null)
+                throw new ArgumentNullException(nameof(consensusFactory));
 
-            Block block = network.Consensus.ConsensusFactory.CreateBlock();
-            block.ReadWrite(Encoders.Hex.DecodeData(hex), consensusFactory: network.Consensus.ConsensusFactory);
+            Block block = consensusFactory.CreateBlock();
+            block.ReadWrite(Encoders.Hex.DecodeData(hex), consensusFactory);
 
             return block;
         }
 
-        public static Block Load(byte[] bytes, Network network)
+        public static Block Load(byte[] bytes, ConsensusFactory consensusFactory)
         {
             if (bytes == null)
                 throw new ArgumentNullException(nameof(bytes));
 
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
+            if (consensusFactory == null)
+                throw new ArgumentNullException(nameof(consensusFactory));
 
-            Block block = network.Consensus.ConsensusFactory.CreateBlock();
-            block.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+            Block block = consensusFactory.CreateBlock();
+            block.ReadWrite(bytes, consensusFactory);
 
             return block;
         }

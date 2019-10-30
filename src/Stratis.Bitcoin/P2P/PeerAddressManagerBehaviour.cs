@@ -89,13 +89,13 @@ namespace Stratis.Bitcoin.P2P
                     {
                         if (!peer.Inbound)
                         {
-                            this.logger.LogTrace("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
+                            this.logger.LogDebug("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
                             return;
                         }
 
                         if (this.addrPayloadSent)
                         {
-                            this.logger.LogTrace("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogDebug("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
                             return;
                         }
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.P2P
 
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
 
-                        this.logger.LogTrace("Sent address payload following GetAddr request.");
+                        this.logger.LogDebug("Sent address payload following GetAddr request.");
 
                         this.addrPayloadSent = true;
                     }
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.P2P
                         if (addr.Addresses.Length > MaxAddressesPerAddrPayload)
                         {
                             // Not respecting the protocol.
-                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Protocol violation: addr payload size is limited by 1000 entries.");
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Protocol violation: addr payload size is limited by {MaxAddressesPerAddrPayload} entries.");
 
                             this.logger.LogTrace("(-)[PROTOCOL_VIOLATION]");
                             return;
@@ -149,9 +149,9 @@ namespace Stratis.Bitcoin.P2P
             if ((peer.Inbound) && (peer.State == NetworkPeerState.HandShaked) &&
                 (this.Mode == PeerAddressManagerBehaviourMode.Advertise || this.Mode == PeerAddressManagerBehaviourMode.AdvertiseDiscover))
             {
-                this.logger.LogTrace("[INBOUND] {0}:{1}, {2}:{3}, {4}:{5}", nameof(peer.RemoteSocketAddress), peer.RemoteSocketAddress, nameof(peer.RemoteSocketEndpoint), peer.RemoteSocketEndpoint, nameof(peer.RemoteSocketPort), peer.RemoteSocketPort);
-                this.logger.LogTrace("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
-                this.logger.LogTrace("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
+                this.logger.LogDebug("[INBOUND] {0}:{1}, {2}:{3}, {4}:{5}", nameof(peer.RemoteSocketAddress), peer.RemoteSocketAddress, nameof(peer.RemoteSocketEndpoint), peer.RemoteSocketEndpoint, nameof(peer.RemoteSocketPort), peer.RemoteSocketPort);
+                this.logger.LogDebug("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
+                this.logger.LogDebug("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
 
                 IPEndPoint inboundPeerEndPoint = null;
 
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.P2P
                     inboundPeerEndPoint = new IPEndPoint(peer.PeerEndPoint.Address, peer.PeerVersion.AddressFrom.Port);
                 }
 
-                this.logger.LogTrace("{0}", inboundPeerEndPoint);
+                this.logger.LogDebug("{0}", inboundPeerEndPoint);
 
                 this.peerAddressManager.AddPeer(inboundPeerEndPoint, IPAddress.Loopback);
             }

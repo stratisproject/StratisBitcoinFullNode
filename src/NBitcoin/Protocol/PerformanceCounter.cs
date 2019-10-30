@@ -121,13 +121,13 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return Snapshot().ToString();
+            return this.Snapshot().ToString();
         }
 
         public void Add(PerformanceCounter counter)
         {
-            AddWritten(counter.WrittenBytes);
-            AddRead(counter.ReadBytes);
+            this.AddWritten(counter.WrittenBytes);
+            this.AddRead(counter.ReadBytes);
         }
     }
 }

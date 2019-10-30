@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
     /// Validates that the supplied smart contract code is signed with a valid signature.
     /// Depends on <see cref="SignedCodeCallDataSerializer"/> being injected into the node.
     /// </summary>
-    public class ContractSignedCodeLogic : IContractTransactionValidationLogic
+    public class ContractSignedCodeLogic : IContractTransactionPartialValidationRule
     {
         private readonly IContractSigner contractSigner;
         private readonly PubKey signingContractPubKey;

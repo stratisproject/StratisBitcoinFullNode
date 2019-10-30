@@ -64,9 +64,19 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 stream.ReadWrite(ref arr);
 
                 this.PubKeysHexVotedInFavor = arr.ToList();
+
+                if (this.PollExecutedBlockData.Hash == uint256.Zero)
+                    this.PollExecutedBlockData = null;
+
+                if (this.PollStartBlockData.Hash == uint256.Zero)
+                    this.PollStartBlockData = null;
+
+                if (this.PollVotedInFavorBlockData.Hash == uint256.Zero)
+                    this.PollVotedInFavorBlockData = null;
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{nameof(this.Id)}:{this.Id}, {nameof(this.IsPending)}:{this.IsPending}, {nameof(this.IsExecuted)}:{this.IsExecuted}, " +
@@ -74,6 +84,37 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                    $"{nameof(this.PollVotedInFavorBlockData)}:{this.PollVotedInFavorBlockData?.ToString() ?? "null"}, " +
                    $"{nameof(this.PollExecutedBlockData)}:{this.PollExecutedBlockData?.ToString() ?? "null"}, " +
                    $"{nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
+        }
+    }
+
+    public class PollViewModel
+    {
+        public bool IsPending { get; private set; }
+
+        public bool IsExecuted { get; private set; }
+
+        public int Id { get; private set; }
+
+        public HashHeightPair PollVotedInFavorBlockData { get; private set; }
+
+        public HashHeightPair PollStartBlockData { get; private set; }
+
+        public HashHeightPair PollExecutedBlockData { get; private set; }
+
+        public List<string> PubKeysHexVotedInFavor { get; private set; }
+
+        public string VotingDataString { get; private set; }
+
+        public PollViewModel(Poll poll, IPollResultExecutor executor)
+        {
+            this.IsPending = poll.IsPending;
+            this.IsExecuted = poll.IsExecuted;
+            this.Id = poll.Id;
+            this.PollVotedInFavorBlockData = poll.PollVotedInFavorBlockData;
+            this.PollStartBlockData = poll.PollStartBlockData;
+            this.PollExecutedBlockData = poll.PollExecutedBlockData;
+            this.PubKeysHexVotedInFavor = poll.PubKeysHexVotedInFavor;
+            this.VotingDataString = executor.ConvertToString(poll.VotingData);
         }
     }
 }

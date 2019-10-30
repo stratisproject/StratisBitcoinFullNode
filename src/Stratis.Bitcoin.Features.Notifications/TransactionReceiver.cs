@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -92,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
 
             // send the transaction to the notifier
-            this.signals.OnTransactionReceived.Notify(transaction);
+            this.signals.Publish(new TransactionReceived(transaction));
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 

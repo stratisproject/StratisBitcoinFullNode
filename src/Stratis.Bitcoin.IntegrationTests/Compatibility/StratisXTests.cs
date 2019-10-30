@@ -15,7 +15,10 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Compatibility
@@ -55,8 +58,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 // for this test. The blocks get accepted by X despite getting generated very rapidly.
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBlockCount() >= 10, cancellationToken: cancellationToken);
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: cancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBlockCount() >= 10, cancellationToken: cancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: cancellationToken);
             }
         }
 
@@ -104,8 +107,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 10, cancellationToken: cancellationToken);
-                TestHelper.WaitLoop(() => stratisXRpc.GetBestBlockHash() == stratisNodeRpc.GetBestBlockHash(), cancellationToken: cancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetBlockCount() >= 10, cancellationToken: cancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetBestBlockHash() == stratisNodeRpc.GetBestBlockHash(), cancellationToken: cancellationToken);
             }
         }
 
@@ -161,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var longCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(15)).Token;
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
 
                 // Send transaction to arbitrary address from SBFN side.
                 var alice = new Key().GetBitcoinSecret(network);
@@ -169,20 +172,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 stratisNodeRpc.WalletPassphrase("password", 60);
                 stratisNodeRpc.SendToAddress(aliceAddress, Money.Coins(1.0m));
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // Transaction should percolate through to X's mempool.
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // Now SBFN must mine the block.
                 TestHelper.MineBlocks(stratisNode, 1);
 
                 // We expect that X will sync correctly.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Sanity check - mempools should both become empty.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
             }
         }
 
@@ -231,7 +234,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var longCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(15)).Token;
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
 
                 // Send transaction to arbitrary address from SBFN side.
                 var alice = new Key().GetBitcoinSecret(network);
@@ -250,12 +253,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var transaction = stratisNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
-                stratisNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+                stratisNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // Transaction should percolate through to X's mempool.
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
             }
         }
 
@@ -298,33 +301,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 stratisXRpc.SendCommand(RPCOperations.generate, 11);
 
-                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
 
                 // Without this there seems to be a race condition between the blocks all getting generated and SBFN syncing high enough to fall through the getbestblockhash check.
-                TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Send transaction to arbitrary address from X side.
                 var alice = new Key().GetBitcoinSecret(network);
                 var aliceAddress = alice.GetAddress();
                 stratisXRpc.SendCommand(RPCOperations.sendtoaddress, aliceAddress.ToString(), 1);
 
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // Transaction should percolate through to SBFN's mempool.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // Now X must mine the block.
                 stratisXRpc.SendCommand(RPCOperations.generate, 1);
-                TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 12, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetBlockCount() >= 12, cancellationToken: shortCancellationToken);
 
                 // We expect that SBFN will sync correctly.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Sanity check - mempools should both become empty.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
             }
         }
 
@@ -380,19 +383,53 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
 
-                TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Send transaction to arbitrary address.
                 var alice = new Key().GetBitcoinSecret(network);
                 var aliceAddress = alice.GetAddress();
                 xRpc1.SendCommand(RPCOperations.sendtoaddress, aliceAddress.ToString(), 1);
 
-                TestHelper.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+            }
+        }
+
+        [Fact]
+        public void GatewayNodeCanSyncFirst15KBlocks()
+        {
+            Network network = new StratisMain10KCheckpoint();
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // TODO: Add the necessary executables for Linux & OSX
+                return;
+            }
+
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                CoreNode stratisXNode = builder.CreateMainnetStratisXNode()
+                    .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
+
+                var gatewayParameters = new NodeConfigParameters();
+                gatewayParameters.Add("regtest", "0");
+                gatewayParameters.Add("gateway", "1");
+                gatewayParameters.Add("whitelist", stratisXNode.Endpoint.ToString());
+                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
+
+                gatewayNode.Start();
+                stratisXNode.Start();
+
+                RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
+                RPCClient gatewayNodeRpc = gatewayNode.CreateRPCClient();
+
+                gatewayNodeRpc.AddNode(stratisXNode.Endpoint);
+
+                TestBase.WaitLoop(() => gatewayNode.FullNode.ChainIndexer.Height >= 15_000, waitTimeSeconds: 600);
             }
         }
 
@@ -450,32 +487,32 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
-                TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
 
-                TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Send transaction to arbitrary address.
                 var alice = new Key().GetBitcoinSecret(network);
                 var aliceAddress = alice.GetAddress();
                 xRpc1.SendCommand(RPCOperations.sendtoaddress, aliceAddress.ToString(), 1);
 
-                TestHelper.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
                 // TODO: Until #2468 is fixed we need an X node to mine the block so it doesn't get rejected.
                 xRpc1.SendCommand(RPCOperations.generate, 1);
-                TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 12, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetBlockCount() >= 12, cancellationToken: shortCancellationToken);
 
                 // We expect that SBFN and the other X node will sync correctly.
-                TestHelper.WaitLoop(() => sbfnRpc2.GetBestBlockHash() == xRpc1.GetBestBlockHash(), cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc3.GetBestBlockHash() == xRpc1.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => sbfnRpc2.GetBestBlockHash() == xRpc1.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc3.GetBestBlockHash() == xRpc1.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Sanity check - mempools should all become empty.
-                TestHelper.WaitLoop(() => xRpc1.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => xRpc3.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc1.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestBase.WaitLoop(() => xRpc3.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
             }
         }
     }

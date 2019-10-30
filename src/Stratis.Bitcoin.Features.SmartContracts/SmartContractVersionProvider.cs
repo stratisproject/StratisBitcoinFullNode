@@ -2,11 +2,12 @@
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractVersionProvider : IVersionProvider
+    public sealed class SmartContractVersionProvider : IVersionProvider
     {
+        /// <inheritdoc />
         public string GetVersion()
         {
-            return "0.13.0";
+            return "1.0.2.0";
         }
     }
 }

@@ -14,9 +14,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public class ConsensusQuery : IGetUnspentTransaction, INetworkDifficulty
     {
+        private readonly IChainState chainState;
         private readonly ICoinView coinView;
         private readonly ILogger logger;
-        private readonly IChainState chainState;
         private readonly Network network;
 
         public ConsensusQuery(
@@ -32,12 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
+        public Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            FetchCoinsResponse response = await this.coinView.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
+            FetchCoinsResponse response = this.coinView.FetchCoins(new[] { trxid });
 
             UnspentOutputs unspentOutputs = response.UnspentOutputs.FirstOrDefault();
-            return unspentOutputs;
+
+            return Task.FromResult(unspentOutputs);
         }
 
         /// <inheritdoc/>

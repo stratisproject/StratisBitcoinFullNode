@@ -61,12 +61,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             long timestamp = new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.consensusOptions.TargetSpacingSeconds * this.consensusOptions.TargetSpacingSeconds;
             DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(timestamp);
 
+            // Pretend we receive the next block right on its timestamp
             var provider = new Mock<IDateTimeProvider>();
-            provider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp()).Returns(timestamp);
+            provider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp()).Returns(timestamp + this.consensusOptions.TargetSpacingSeconds);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.chain, new NodeDeployments(this.network, this.chain),
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(provider.Object),
-                new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
+                new NodeStats(provider.Object, this.loggerFactory), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider, new ConsensusRulesContainer());
 
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Initialize();
@@ -78,11 +79,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
 
-            var validFutureDriftOffset = HeaderTimeChecksPoARule.MaxFutureDriftSeconds / this.consensusOptions.TargetSpacingSeconds * this.consensusOptions.TargetSpacingSeconds;
-            this.currentHeader.Header.Time = prevHeader.Header.Time + validFutureDriftOffset;
+            // There is no "valid future offset" as the time is restricted to be accurate within 1 target spacing.
+            this.currentHeader.Header.Time = prevHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds;
             this.timeChecksRule.Run(ruleContext);
 
-            this.currentHeader.Header.Time = prevHeader.Header.Time + validFutureDriftOffset + this.consensusOptions.TargetSpacingSeconds;
+            // Send a block too far into the future, more than a targetspacing away
+            this.currentHeader.Header.Time = this.currentHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds;
             Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
 
             try
@@ -98,7 +100,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         [Fact]
         public void EnsureTimestampDivisibleByTargetSpacing()
         {
+            // Set up a rule with a fixed time so that we don't have non-deterministic tests due to running times et.
             DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.consensusOptions.TargetSpacingSeconds * this.consensusOptions.TargetSpacingSeconds);
+
+            var timeProvider = new Mock<IDateTimeProvider>();
+            timeProvider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp())
+                .Returns(time.ToUnixTimeSeconds() + this.consensusOptions.TargetSpacingSeconds);
+
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, timeProvider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider.Object),
+                new NodeStats(timeProvider.Object, this.loggerFactory), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider, new ConsensusRulesContainer());
+
+            var timeRule = new HeaderTimeChecksPoARule();
+            this.InitRule(timeRule);
 
             ChainedHeader prevHeader = this.currentHeader.Previous;
 
@@ -109,15 +123,15 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
 
             this.currentHeader.Header.Time = prevHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds;
-            this.timeChecksRule.Run(ruleContext);
+            timeRule.Run(ruleContext);
 
             this.currentHeader.Header.Time = prevHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds - 1;
 
-            Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
+            Assert.Throws<ConsensusErrorException>(() => timeRule.Run(ruleContext));
 
             try
             {
-                this.timeChecksRule.Run(ruleContext);
+                timeRule.Run(ruleContext);
             }
             catch (ConsensusErrorException exception)
             {

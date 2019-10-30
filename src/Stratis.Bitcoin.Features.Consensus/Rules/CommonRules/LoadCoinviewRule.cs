@@ -25,13 +25,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
-            this.Logger.LogTrace("Saving coinview changes.");
+            this.Logger.LogDebug("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(), null, oldBlockHash, nextBlockHash, height).ConfigureAwait(false);
+            this.PowParent.UtxoSet.SaveChanges(utxoRuleContext.UnspentOutputSet.GetCoins(), null, oldBlockHash, nextBlockHash, height);
 
             // Use the default flush condition to decide if flush is required (currently set to every 60 seconds)
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                await cachedCoinView.FlushAsync(false).ConfigureAwait(false);
+                cachedCoinView.Flush(false);
         }
     }
 
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Catching a reorg at this point will not require a rewind.
             if (context.ValidationContext.BlockToValidate.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
-                this.Logger.LogTrace("Reorganization detected.");
+                this.Logger.LogDebug("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
             }
 
@@ -52,11 +52,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
-            this.Logger.LogTrace("Loading UTXO set of the new block.");
+            this.Logger.LogDebug("Loading UTXO set of the new block.");
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
 
             uint256[] ids = this.coinviewHelper.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
-            FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
+            FetchCoinsResponse coins = this.PowParent.UtxoSet.FetchCoins(ids);
             utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
         }
     }

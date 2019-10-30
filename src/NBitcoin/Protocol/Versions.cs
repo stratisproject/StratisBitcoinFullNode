@@ -75,6 +75,16 @@
         /// <summary>
         /// shord-id-based block download starts with this version.
         /// </summary>
-        SHORT_IDS_BLOCKS_VERSION = 70014
+        SHORT_IDS_BLOCKS_VERSION = 70014,
+
+        /// <summary>
+        /// Oldest supported version of the CirrusNode which this node can connect to.
+        /// </summary>
+        CIRRUS_MIN_SUPPORTED_VERSION = 80000,
+
+        /// <summary>
+        /// Current version of the CirrusNode.
+        /// </summary>
+        CIRRUS_VERSION = 80000,
     }
 }

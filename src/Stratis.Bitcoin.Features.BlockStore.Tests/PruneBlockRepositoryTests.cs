@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Networks;
@@ -16,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public async Task PruneRepository_PruneAndCompact_FromGenesis_OnStartUpAsync()
+        public void PruneRepository_PruneAndCompact_FromGenesis_OnStartUp()
         {
             var posBlocks = CreatePosBlocks(50);
             var chainedHeaderTip = BuildProvenHeaderChainFromBlocks(posBlocks);
@@ -24,10 +23,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolderPath = CreateTestDir(this);
             var dataFolder = new DataFolder(dataFolderPath);
 
-            var dBreezeSerializer = new DBreezeSerializer(this.Network);
+            var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -35,18 +34,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             };
 
             var prunedBlockRepository = new PrunedBlockRepository(blockRepository, dBreezeSerializer, this.LoggerFactory.Object, storeSettings);
-            await prunedBlockRepository.InitializeAsync();
-            await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(50), this.Network, true);
+            prunedBlockRepository.Initialize();
+            prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(50), this.Network, true);
 
             // The first prune will delete blocks from 40 to 0.
             Assert.Equal(chainedHeaderTip.GetAncestor(40).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(40).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(39).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(39).HashBlock));
         }
 
         [Fact]
-        public async Task PruneRepository_PruneAndCompact_MidChain_OnStartUpAsync()
+        public void PruneRepository_PruneAndCompact_MidChain_OnStartUp()
         {
             var posBlocks = CreatePosBlocks(200);
             var chainedHeaderTip = BuildProvenHeaderChainFromBlocks(posBlocks);
@@ -54,10 +53,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolderPath = CreateTestDir(this);
             var dataFolder = new DataFolder(dataFolderPath);
 
-            var dBreezeSerializer = new DBreezeSerializer(this.Network);
+            var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Take(100).Last().GetHash(), 100), posBlocks.Take(100).ToList());
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Take(100).Last().GetHash(), 100), posBlocks.Take(100).ToList());
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -65,27 +64,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             };
 
             var prunedBlockRepository = new PrunedBlockRepository(blockRepository, dBreezeSerializer, this.LoggerFactory.Object, storeSettings);
-            await prunedBlockRepository.InitializeAsync();
+            prunedBlockRepository.Initialize();
 
             // The first prune will delete blocks from 50 to 0.
-            await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(100), this.Network, true);
+            prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(100), this.Network, true);
             Assert.Equal(chainedHeaderTip.GetAncestor(50).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(50).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(49).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(49).HashBlock));
 
             // Push more blocks to the repository and prune again.
             // This will delete blocks from height 150 to 50.
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Skip(100).Take(100).Last().GetHash(), 200), posBlocks.Skip(100).Take(100).ToList());
-            await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip, this.Network, true);
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Skip(100).Take(100).Last().GetHash(), 200), posBlocks.Skip(100).Take(100).ToList());
+            prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip, this.Network, true);
             Assert.Equal(chainedHeaderTip.GetAncestor(150).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(150).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(149).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(149).HashBlock));
         }
 
         [Fact]
-        public async Task PruneRepository_PruneAndCompact_OnShutDownAsync()
+        public void PruneRepository_PruneAndCompact_OnShutDown()
         {
             var posBlocks = CreatePosBlocks(50);
             var chainedHeaderTip = BuildProvenHeaderChainFromBlocks(posBlocks);
@@ -93,10 +92,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolderPath = CreateTestDir(this);
             var dataFolder = new DataFolder(dataFolderPath);
 
-            var dBreezeSerializer = new DBreezeSerializer(this.Network);
+            var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -104,19 +103,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             };
 
             var prunedBlockRepository = new PrunedBlockRepository(blockRepository, dBreezeSerializer, this.LoggerFactory.Object, storeSettings);
-            await prunedBlockRepository.InitializeAsync();
+            prunedBlockRepository.Initialize();
 
             // Delete blocks 30 to 0 from the repo, this would have been done by the service before shutdown was initiated.
-            await blockRepository.DeleteBlocksAsync(posBlocks.Take(30).Select(b => b.GetHash()).ToList());
+            blockRepository.DeleteBlocks(posBlocks.Take(30).Select(b => b.GetHash()).ToList());
             prunedBlockRepository.UpdatePrunedTip(chainedHeaderTip.GetAncestor(30));
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(29).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(29).HashBlock));
 
             // On shutdown the database will only be compacted.
-            await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(50), this.Network, false);
+            prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(50), this.Network, false);
             Assert.Equal(chainedHeaderTip.GetAncestor(30).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(30).Height, prunedBlockRepository.PrunedTip.Height);
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(29).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(29).HashBlock));
         }
     }
 }

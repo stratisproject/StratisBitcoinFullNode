@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -29,11 +29,14 @@ namespace Stratis.Bitcoin.P2P
     /// <summary>Async loop that discovers new peers to connect to.</summary>
     public sealed class PeerDiscovery : IPeerDiscovery
     {
-        /// <summary>The async loop we need to wait upon before we can shut down this connector.</summary>
-        private IAsyncLoop asyncLoop;
+        /// <summary>The async loop for performing discovery on actual peers. We need to wait upon it before we can shut down this connector.</summary>
+        private IAsyncLoop discoverFromPeersLoop;
+
+        /// <summary>The async loop for discovering from DNS seeds & seed nodes. We need to wait upon it before we can shut down this connector.</summary>
+        private IAsyncLoop discoverFromDnsSeedsLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>The parameters cloned from the connection manager.</summary>
         private NetworkPeerConnectionParameters currentParameters;
@@ -59,13 +62,10 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        /// <summary>Indicates the dns and seed nodes were attempted.</summary>
-        private bool isSeedAndDnsAttempted;
-
         private const int TargetAmountOfPeersToDiscover = 2000;
 
         public PeerDiscovery(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.P2P
             NodeSettings nodeSettings,
             IPeerAddressManager peerAddressManager)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.loggerFactory = loggerFactory;
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
@@ -95,7 +95,15 @@ namespace Stratis.Bitcoin.P2P
 
             this.currentParameters = connectionManager.Parameters.Clone(); // TODO we shouldn't add all the behaviors, only those that we need.
 
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>
+            this.discoverFromDnsSeedsLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverFromDnsSeedsAsync), async token =>
+            {
+                if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
+                    await this.DiscoverFromDnsSeedsAsync();
+            },
+            this.nodeLifetime.ApplicationStopping,
+            TimeSpan.FromHours(1));
+
+            this.discoverFromPeersLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
                     await this.DiscoverPeersAsync();
@@ -105,56 +113,68 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// See <see cref="DiscoverPeers"/>.
+        /// See <see cref="DiscoverPeers"/>. This loop deals with discovery from DNS seeds and seed nodes as opposed to peers.
+        /// </summary>
+        private async Task DiscoverFromDnsSeedsAsync()
+        {
+            var peersToDiscover = new List<IPEndPoint>();
+
+            // First see if we need to do DNS discovery at all. We may have peers from a previous cycle that still need to be tried.
+            if (this.peerAddressManager.Peers.Select(a => !a.Attempted).Any())
+            {
+                this.logger.LogTrace("(-)[SKIP_DISCOVERY_UNATTEMPTED_PEERS_REMAINING]");
+                return;
+            }
+
+            // At this point there are either no peers that we know of, or all the ones we do know of have been attempted & failed.
+            this.AddDNSSeedNodes(peersToDiscover);
+            this.AddSeedNodes(peersToDiscover);
+
+            if (peersToDiscover.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_DNS_SEED_ADDRESSES]");
+                return;
+            }
+
+            // Randomise the order prior to attempting connections.
+            peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
+
+            await this.ConnectToDiscoveryCandidatesAsync(peersToDiscover).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// See <see cref="DiscoverPeers"/>. This loop deals with discovery from peers as opposed to DNS seeds and seed nodes.
         /// </summary>
         private async Task DiscoverPeersAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
+
+            // The peer selector returns a quantity of peers for discovery already in random order.
             List<PeerAddress> foundPeers = this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).ToList();
             peersToDiscover.AddRange(foundPeers.Select(p => p.Endpoint));
 
             if (peersToDiscover.Count == 0)
             {
-                // On normal circumstances the dns seeds are attempted only once per node lifetime.
-                if (this.isSeedAndDnsAttempted)
-                {
-                    this.logger.LogTrace("(-)[DNS_ATTEMPTED]");
-                    return;
-                }
-
-                this.AddDNSSeedNodes(peersToDiscover);
-                this.AddSeedNodes(peersToDiscover);
-                this.isSeedAndDnsAttempted = true;
-
-                if (peersToDiscover.Count == 0)
-                {
-                    this.logger.LogTrace("(-)[NO_ADDRESSES]");
-                    return;
-                }
-
-                peersToDiscover = peersToDiscover.OrderBy(a => RandomUtils.GetInt32()).ToList();
-            }
-            else
-            {
-                // If all attempts have failed then attempt the dns seeds again.
-                if (!this.isSeedAndDnsAttempted && foundPeers.All(peer => peer.Attempted))
-                {
-                    peersToDiscover.Clear();
-                    this.AddDNSSeedNodes(peersToDiscover);
-                    this.AddSeedNodes(peersToDiscover);
-                    this.isSeedAndDnsAttempted = true;
-                }
+                this.logger.LogTrace("(-)[NO_ADDRESSES]");
+                return;
             }
 
+            await this.ConnectToDiscoveryCandidatesAsync(peersToDiscover).ConfigureAwait(false);
+        }
+
+        private async Task ConnectToDiscoveryCandidatesAsync(List<IPEndPoint> peersToDiscover)
+        {
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
                 using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
-                    this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
+                    this.logger.LogDebug("Attempting to discover from : '{0}'", endPoint);
 
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
                     INetworkPeer networkPeer = null;
+
+                    // Try to connect to a peer with only the address-sharing behaviour, to learn about their peers and disconnect within 5 seconds.
 
                     try
                     {
@@ -167,7 +187,6 @@ namespace Stratis.Bitcoin.P2P
 
                         networkPeer = await this.networkPeerFactory.CreateConnectedNetworkPeerAsync(endPoint, clonedParameters).ConfigureAwait(false);
                         await networkPeer.VersionHandshakeAsync(connectTokenSource.Token).ConfigureAwait(false);
-                        await networkPeer.SendMessageAsync(new GetAddrPayload(), connectTokenSource.Token).ConfigureAwait(false);
 
                         this.peerAddressManager.PeerDiscoveredFrom(endPoint, DateTimeProvider.Default.GetUtcNow());
 
@@ -182,13 +201,13 @@ namespace Stratis.Bitcoin.P2P
                         networkPeer?.Dispose();
                     }
 
-                    this.logger.LogTrace("Discovery from '{0}' finished", endPoint);
+                    this.logger.LogDebug("Discovery from '{0}' finished", endPoint);
                 }
             }).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Add peers to the address manager from the network DNS's seed nodes.
+        /// Add peers to the address manager from the network's DNS seed nodes.
         /// </summary>
         private void AddDNSSeedNodes(List<IPEndPoint> endPoints)
         {
@@ -196,7 +215,8 @@ namespace Stratis.Bitcoin.P2P
             {
                 try
                 {
-                    IPAddress[] ipAddresses = seed.GetAddressNodes();
+                    // We want to try to ensure we get a fresh set of results from the seeder each time we query it.
+                    IPAddress[] ipAddresses = seed.GetAddressNodes(true);
                     endPoints.AddRange(ipAddresses.Select(ip => new IPEndPoint(ip, this.network.DefaultPort)));
                 }
                 catch (Exception)
@@ -217,7 +237,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public void Dispose()
         {
-            this.asyncLoop?.Dispose();
+            this.discoverFromPeersLoop?.Dispose();
+            this.discoverFromDnsSeedsLoop?.Dispose();
         }
     }
 }

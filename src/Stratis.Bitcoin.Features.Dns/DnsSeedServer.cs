@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -12,6 +11,7 @@ using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using DNS.Protocol.Utils;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
@@ -63,9 +63,9 @@ namespace Stratis.Bitcoin.Features.Dns
         private readonly IUdpClient udpClient;
 
         /// <summary>
-        /// Defines a factory for creating async loops.
+        /// Provider for creating and managing async loops.
         /// </summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>
         /// Defines a node lifetime object.
@@ -118,15 +118,15 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         /// <param name="client">The UDP client to use to receive DNS requests and send DNS responses.</param>
         /// <param name="masterFile">The initial DNS masterfile.</param>
-        /// <param name="asyncLoopFactory">The async loop factory.</param>
+        /// <param name="asyncProvider">The async loop factory.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="dateTimeProvider">The <see cref="DateTime"/> provider.</param>
         /// <param name="dataFolders">The data folders of the system.</param>
-        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, DnsSettings dnsSettings, DataFolder dataFolders)
+        public DnsSeedServer(IUdpClient client, IMasterFile masterFile, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, DnsSettings dnsSettings, DataFolder dataFolders)
         {
             Guard.NotNull(client, nameof(client));
             Guard.NotNull(masterFile, nameof(masterFile));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             this.udpClient = client;
             this.masterFile = masterFile;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Dns
             }
 
             // Create async loop for outputting metrics.
-            this.metricsLoop = this.asyncLoopFactory.Run(nameof(this.LogMetrics), async (token) => await Task.Run(() => this.LogMetrics()), this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(MetricsLogRate));
+            this.metricsLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.LogMetrics), async (token) => await Task.Run(() => this.LogMetrics()), this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(MetricsLogRate));
 
             // Create async loop for saving the master file.
             this.StartSaveMasterfileLoop();
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     {
                         Tuple<IPEndPoint, byte[]> request = await this.udpClient.ReceiveAsync();
 
-                        this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
+                        this.logger.LogDebug("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
                         // Received a request, now handle it. (measured)
                         using (new StopwatchDisposable((elapsed) => { this.metrics.CaptureRequestMetrics(this.GetPeerCount(), elapsed, false); }))
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 }
 
                 // We've been cancelled.
-                this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
+                this.logger.LogDebug("Cancellation requested, shutting down DNS listener.");
                 token.ThrowIfCancellationRequested();
             }
             catch (Exception e) when (!(e is OperationCanceledException))
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
                 }
 
-                this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
+                this.logger.LogDebug("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
 
             // Sort output so same order isn't returned every time.
@@ -349,6 +349,8 @@ namespace Stratis.Bitcoin.Features.Dns
                     response.AnswerRecords.Add(allAnswers[i]);
                 }
             }
+
+            response.AuthorativeServer = true;
 
             // Set new start index.
             Interlocked.Increment(ref this.startIndex);
@@ -502,7 +504,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void StartSaveMasterfileLoop()
         {
-            this.saveMasterfileLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
+            this.saveMasterfileLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
             {
                 string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
     public sealed class PruneBlockStoreService : IPruneBlockStoreService
     {
         private IAsyncLoop asyncLoop;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
         private readonly IBlockRepository blockRepository;
         private readonly IChainState chainState;
         private readonly ILogger logger;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         public ChainedHeader PrunedUpToHeaderTip { get; private set; }
 
         public PruneBlockStoreService(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             IBlockRepository blockRepository,
             IPrunedBlockRepository prunedBlockRepository,
             IChainState chainState,
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
             INodeLifetime nodeLifetime,
             StoreSettings storeSettings)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.blockRepository = blockRepository;
             this.prunedBlockRepository = prunedBlockRepository;
             this.chainState = chainState;
@@ -46,16 +47,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         {
             this.PrunedUpToHeaderTip = this.chainState.BlockStoreTip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
-            {
-                await this.PruneBlocksAsync().ConfigureAwait(false);
-            },
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{this.GetType().Name}.{nameof(this.PruneBlocks)}", token =>
+           {
+               this.PruneBlocks();
+               return Task.CompletedTask;
+           },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds);
         }
 
         /// <inheritdoc/>
-        public async Task PruneBlocksAsync()
+        public void PruneBlocks()
         {
             if (this.PrunedUpToHeaderTip == null)
                 throw new BlockStoreException($"{nameof(this.PrunedUpToHeaderTip)} has not been set, please call initialize first.");
@@ -99,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 
             ChainedHeader prunedTip = chainedHeadersToDelete.First();
 
-            await this.blockRepository.DeleteBlocksAsync(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
+            this.blockRepository.DeleteBlocks(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
             this.prunedBlockRepository.UpdatePrunedTip(prunedTip);
 
             this.PrunedUpToHeaderTip = prunedTip;

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         {
             this.InboundPeers = new List<ConnectedPeerModel>();
             this.OutboundPeers = new List<ConnectedPeerModel>();
-            this.EnabledFeatures = new List<string>();
+            this.FeaturesData = new List<FeatureData>();
         }
 
         /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
@@ -25,6 +25,9 @@ namespace Stratis.Bitcoin.Controllers.Models
 
         /// <summary>The node's version.</summary>
         public string Version { get; set; }
+
+        /// <summary>The public IP address of the node, either specified in config or ascertained by the endpoint tracker.</summary>
+        public string ExternalAddress { get; set; }
 
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
@@ -49,7 +52,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         public List<ConnectedPeerModel> OutboundPeers { get; set; }
 
         /// <summary>A collection of all the features enabled by this node.</summary>
-        public List<string> EnabledFeatures { get; set; }
+        public List<FeatureData> FeaturesData { get; set; }
 
         /// <summary>The path to the directory where the data is saved.</summary>
         public string DataDirectoryPath { get; set; }
@@ -71,6 +74,22 @@ namespace Stratis.Bitcoin.Controllers.Models
         public decimal RelayFee { get; set; }
 
         /// <summary>Returns the status of the node.</summary>
+        public string State { get; set; }
+    }
+
+    /// <summary>
+    /// Class containing some details about the features loaded by this node.
+    /// </summary>
+    public class FeatureData
+    {
+        /// <summary>
+        /// The namespace of the feature.
+        /// </summary>
+        public string Namespace { get; set; }
+
+        /// <summary>
+        /// The state in which the feature currently is.
+        /// </summary>
         public string State { get; set; }
     }
 }

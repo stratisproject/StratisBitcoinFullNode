@@ -8,18 +8,18 @@ namespace Stratis.Bitcoin.BlockPulling
     public class AssignedDownload
     {
         /// <summary>Unique identifier of a job to which this assignment belongs.</summary>
-        public int JobId;
+        public int JobId { get; set; }
 
         /// <summary>Id of a peer that was assigned to deliver a block.</summary>
-        public int PeerId;
+        public int PeerId { get; set; }
 
         /// <summary>Time when download was assigned to a peer.</summary>
-        public DateTime AssignedTime;
+        public DateTime AssignedTime { get; set; }
 
         /// <summary>Header of a block associated with this assignment.</summary>
-        public ChainedHeader Header;
+        public ChainedHeader Header { get; set; }
 
-        public LinkedListNode<AssignedDownload> LinkedListNode;
+        public LinkedListNode<AssignedDownload> LinkedListNode { get; set; }
 
         /// <inheritdoc />
         public override string ToString()

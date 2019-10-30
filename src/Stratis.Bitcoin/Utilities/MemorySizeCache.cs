@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                lock (this.lockObject)
+                lock (this.LockObject)
                 {
-                    return this.totalSize;
+                    return base.totalSize;
                 }
             }
         }
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="size">Value size in bytes.</param>
         public void AddOrUpdate(TKey key, TValue value, long size)
         {
-            var item = new MemoryCache<TKey, TValue>.CacheItem(key, value) { Size = size };
+            var item = new CacheItem(key, value) { Size = size };
 
             base.AddOrUpdate(item);
         }
@@ -51,16 +51,6 @@ namespace Stratis.Bitcoin.Utilities
         protected override bool IsCacheFullLocked(CacheItem item)
         {
             return this.TotalSize > (this.maxSize - item.Size);
-        }
-
-        protected override void ItemAddedLocked(CacheItem item)
-        {
-            this.totalSize += item.Size;
-        }
-
-        protected override void ItemRemovedLocked(CacheItem item)
-        {
-            this.totalSize -= item.Size;
         }
     }
 }

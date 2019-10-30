@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -25,12 +24,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
-            context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.ChainIndexer);
+            context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.ChainIndexer.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
-            context.ValidationContext.BlockToValidate.Header.BlockTime = testContext.Chain.Tip.Header.BlockTime.AddSeconds(-1);
+            context.ValidationContext.BlockToValidate.Header.BlockTime = testContext.ChainIndexer.Tip.Header.BlockTime.AddSeconds(-1);
 
             ConsensusErrorException error = Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
             Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
@@ -43,8 +42,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
-            context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.ChainIndexer);
+            context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.ChainIndexer.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.

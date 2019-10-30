@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Local;
@@ -90,8 +91,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
 
             // Set up services for later
-            this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
-            this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
+            this.smartContractWalletController = this.CoreNode.FullNode.NodeController<SmartContractWalletController>();
+            this.smartContractsController = this.CoreNode.FullNode.NodeController<SmartContractsController>();
             this.stateRoot = this.CoreNode.FullNode.NodeService<IStateRepositoryRoot>();
             this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
         }
@@ -107,8 +108,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public ulong GetWalletAddressBalance(string walletAddress)
         {
-            var jsonResult = (JsonResult) this.smartContractWalletController.GetAddressBalance(walletAddress);
-            return (ulong) (decimal) jsonResult.Value;
+            var jsonResult = (JsonResult)this.smartContractWalletController.GetAddressBalance(walletAddress);
+            return (ulong)(decimal)jsonResult.Value;
         }
 
         /// <summary>
@@ -161,7 +162,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             decimal feeAmount = 0.01M,
-            string sender = null)
+            string sender = null,
+            List<OutpointRequest> outpoints = null)
         {
             var request = new BuildCreateContractTransactionRequest
             {
@@ -174,10 +176,17 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Parameters = parameters,
                 Password = this.Password,
                 Sender = sender ?? this.MinerAddress.Address,
-                WalletName = this.WalletName
+                WalletName = this.WalletName,
+                Outpoints = outpoints
             };
-            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
-            return (BuildCreateContractTransactionResponse)response.Value;
+
+            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            if (result is JsonResult response)
+            {
+                return (BuildCreateContractTransactionResponse)response.Value;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -236,7 +245,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M, 
+            decimal feeAmount = 0.01M,
             string sender = null)
         {
             var request = new BuildCallContractTransactionRequest
@@ -279,7 +288,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address
             };
             JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
-            return (ILocalExecutionResult) response.Value;
+            return (ILocalExecutionResult)response.Value;
         }
 
         /// <summary>
@@ -311,7 +320,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary
         public NBitcoin.Block GetLastBlock()
         {
-            return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
+            return this.blockStore.GetBlock(this.CoreNode.FullNode.ChainIndexer.Tip.HashBlock);
         }
 
         /// <summary>
@@ -319,7 +328,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary>
         public void WaitMempoolCount(int num)
         {
-            TestHelper.WaitLoop(() => this.CoreNode.CreateRPCClient().GetRawMempool().Length >= num);
+            TestBase.WaitLoop(() => this.CoreNode.CreateRPCClient().GetRawMempool().Length >= num);
         }
     }
 }

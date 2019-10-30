@@ -1,73 +1,37 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NSubstitute;
-using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Networks;
+using Stratis.Features.Collateral.CounterChain;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 {
-    // TODO log assertions in the tests? WYDT
-    public class FederationGatewayClientTests : IDisposable
+    public class FederationGatewayClientTests
     {
-        private IHttpClientFactory httpClientFactory;
-
-        private HttpMessageHandler messageHandler;
-
-        private HttpClient httpClient;
-
-        private readonly ILoggerFactory loggerFactory;
-
-        private readonly ILogger logger;
-
+        private readonly FederationGatewayClient client;
         public FederationGatewayClientTests()
         {
-            this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.logger = Substitute.For<ILogger>();
-            this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
+            string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
+            string federationIps = "127.0.0.1:36201,127.0.0.1:36202,127.0.0.1:36203";
+            string multisigPubKey = "03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c";
+            string[] args = new[] { "-sidechain", "-regtest", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
+
+            var nodeSettings = new NodeSettings(Sidechains.Networks.CirrusNetwork.NetworksSelector.Regtest(), NBitcoin.Protocol.ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+
+            this.client = new FederationGatewayClient(new ExtendedLoggerFactory(), new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest()), new HttpClientFactory());
         }
 
-        private FederationGatewayClient createClient(bool isFailingClient = false)
+        [Fact]
+        public async Task ReturnsNullIfCounterChainNodeIsOfflineAsync()
         {
-            if (isFailingClient)
-                TestingHttpClient.PrepareFailingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
-            else
-                TestingHttpClient.PrepareWorkingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
+            List<MaturedBlockDepositsModel> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10));
 
-            IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
-            FederationGatewayClient client = new FederationGatewayClient(this.loggerFactory, federationSettings, this.httpClientFactory);
-
-            return client;
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task SendBlockTip_Should_Be_Able_To_Send_IBlockTipAsync()
-        {
-            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
-
-            await this.createClient().PushCurrentBlockTipAsync(blockTip).ConfigureAwait(false);
-
-            this.logger.Received(0).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Any<Exception>(), Arg.Any<Func<object, Exception, string>>());
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task SendBlockTip_Should_Log_Error_When_Failing_To_Send_IBlockTipAsync()
-        {
-            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
-
-            HttpResponseMessage result = await this.createClient(true).PushCurrentBlockTipAsync(blockTip).ConfigureAwait(false);
-            Assert.False(result.IsSuccessStatusCode);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.messageHandler?.Dispose();
-            this.httpClient?.Dispose();
+            Assert.Null(result);
         }
     }
 }

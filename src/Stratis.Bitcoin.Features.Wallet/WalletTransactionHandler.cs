@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security;
 using System.Text;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
-using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -46,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            
+
             this.TransactionPolicy = transactionPolicy;
         }
 
@@ -197,6 +193,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddSecrets(context);
             this.FindChangeAddress(context);
             this.AddFee(context);
+
+            if (context.Time.HasValue)
+                context.TransactionBuilder.SetTimeStamp(context.Time.Value);
         }
 
         /// <summary>
@@ -234,8 +233,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void FindChangeAddress(TransactionBuildContext context)
         {
-            // Get an address to send the change to.
-            context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
+            if (context.ChangeAddress == null)
+            {
+                // If no change address is supplied, get a new address to send the change to.
+                context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
+            }
+
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
         }
 
@@ -502,5 +505,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether the secret should be cached for 5 mins after it is used or not.
         /// </summary>
         public bool CacheSecret { get; set; }
+
+        /// <summary>
+        /// The timestamp to set on the transaction.
+        /// </summary>
+        public uint? Time { get; set; }
     }
 }

@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
-            this.node.FullNode.NodeService<WalletController>()
+            this.node.FullNode.NodeController<WalletController>()
                 .SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
         }
 
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void trying_to_retrieve_the_blocks_from_the_blockstore()
         {
             this.retrievedBlocks = this.blockIds.Concat(new[] { this.wrongBlockId })
-                .Select(id => this.node.FullNode.BlockStore().GetBlockAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
+                .Select(id => this.node.FullNode.BlockStore().GetBlock(id)).Select(b => b).ToList();
 
             this.retrievedBlocks.Count(b => b != null).Should().Be(this.blockIds.Count);
             this.retrievedBlocks.Count(b => b == null).Should().Be(1);
@@ -136,16 +136,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
         {
-            this.retrievedTransaction = this.node.FullNode.BlockStore().GetTransactionByIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
-            this.wontRetrieveTransaction = this.node.FullNode.BlockStore().GetTransactionByIdAsync(this.wrongTransactionId).GetAwaiter().GetResult();
+            this.retrievedTransaction = this.node.FullNode.BlockStore().GetTransactionById(this.transaction.GetHash());
+            this.wontRetrieveTransaction = this.node.FullNode.BlockStore().GetTransactionById(this.wrongTransactionId);
         }
 
         private void trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
         {
             this.retrievedBlockId = this.node.FullNode.BlockStore()
-                .GetBlockIdByTransactionIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+                .GetBlockIdByTransactionId(this.transaction.GetHash());
             this.wontRetrieveBlockId = this.node.FullNode.BlockStore()
-                .GetTransactionByIdAsync(this.wrongTransactionId).GetAwaiter().GetResult();
+                .GetTransactionById(this.wrongTransactionId);
         }
 
         private void real_blocks_should_be_retrieved()

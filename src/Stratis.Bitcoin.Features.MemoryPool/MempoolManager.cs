@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public class MempoolManager : IPooledTransaction, IPooledGetUnspentTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
-        private IMempoolPersistence mempoolPersistence;
+        private readonly IMempoolPersistence mempoolPersistence;
 
         /// <summary>Instance logger for memory pool manager.</summary>
         private readonly ILogger logger;
@@ -113,6 +113,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Check whether a transaction exists in the mempool.
         /// </summary>
+        /// <param name="trxid">The hash of the transaction to check.</param>
+        /// <returns><c>true</c>if the transaction exists in the mempool.</returns>
         public Task<bool> ExistsAsync(uint256 trxid)
         {
             return this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid));
@@ -219,7 +221,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            TxMempoolInfo txInfo = await this.InfoAsync(trxid);
+            TxMempoolInfo txInfo = this.Info(trxid);
             if (txInfo == null)
             {
                 this.logger.LogTrace("(-):[TX_IS_NULL]");
@@ -227,9 +229,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
-            await memPoolCoinView.LoadViewAsync(txInfo.Trx);
+            await this.MempoolLock.ReadAsync(() => { memPoolCoinView.LoadViewLocked(txInfo.Trx); });
             UnspentOutputs unspentOutputs = memPoolCoinView.GetCoins(trxid);
-            
+
             return unspentOutputs;
         }
 

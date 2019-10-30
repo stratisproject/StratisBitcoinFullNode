@@ -25,9 +25,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <summary>Size of the "checksum" part of the message in bytes, if it is present.</summary>
         public const int ChecksumSize = 4;
 
-        /// <summary>Length of the message including the header.</summary>
-        public uint MessageSize { get; set; }
-
         private uint magic;
 
         public uint Magic { get { return this.magic; } set { this.magic = value; } }
@@ -149,7 +146,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                     object payload = this.payloadObject;
                     payloadStream.ReadWrite(payloadType, ref payload);
                     if (unknown)
-                        ((UnknowPayload)payload).command = this.Command;
+                        ((UnknowPayload)payload).UpdateCommand(this.Command);
 
                     this.Payload = (Payload)payload;
                 }

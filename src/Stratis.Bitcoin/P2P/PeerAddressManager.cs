@@ -8,7 +8,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -58,24 +57,25 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
-        [NoTrace]
         public void LoadPeers()
         {
             List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
 
-            this.logger.LogTrace("{0} peers were loaded.", loadedPeers.Count);
+            this.logger.LogDebug("{0} peers were loaded.", loadedPeers.Count);
 
             foreach (PeerAddress peer in loadedPeers)
             {
                 // If no longer banned reset ban details.
                 if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
                 {
-                    peer.BanTimeStamp = null;
-                    peer.BanUntil = null;
-                    peer.BanReason = string.Empty;
+                    peer.UnBan();
 
-                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
+                    this.logger.LogDebug("{0} no longer banned.", peer.Endpoint);
                 }
+
+                // Reset the peer if the attempt threshold has been reached and the attempt window has lapsed.
+                if (peer.CanResetAttempts)
+                    peer.ResetAttempts();
 
                 this.peerInfoByPeerAddress.TryAdd(peer.Endpoint, peer);
             }
@@ -91,22 +91,35 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(IPEndPoint endPoint, IPAddress source)
+        public PeerAddress AddPeer(IPEndPoint endPoint, IPAddress source)
         {
-            this.AddPeerWithoutCleanup(endPoint, source);
+            PeerAddress peerAddress = this.AddPeerWithoutCleanup(endPoint, source);
 
             this.EnsureMaxItemsPerSource(source);
+
+            return peerAddress;
         }
 
-        private void AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
+        private PeerAddress AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
         {
             if (!endPoint.Address.IsRoutable(true))
-                return;
+            {
+                this.logger.LogTrace("(-)[PEER_NOT_ADDED_ISROUTABLE]:{0}", endPoint);
+                return null;
+            }
 
             IPEndPoint ipv6EndPoint = endPoint.MapToIpv6();
 
             PeerAddress peerToAdd = PeerAddress.Create(ipv6EndPoint, source.MapToIPv6());
-            this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd);
+            var added = this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd);
+            if (added)
+            {
+                this.logger.LogTrace("(-)[PEER_ADDED]:{0}", endPoint);
+                return peerToAdd;
+            }
+
+            this.logger.LogTrace("(-)[PEER_NOT_ADDED_ALREADY_EXISTS]:{0}", endPoint);
+            return null;
         }
 
         /// <inheritdoc/>
@@ -143,15 +156,8 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            // Reset the attempted count if:
-            // 1: The last attempt was more than the threshold time ago.
-            // 2: More than the threshold attempts was made.
-            if (peer.Attempted &&
-                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptResetThresholdHours) &&
-                peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
-            {
+            if (peer.CanResetAttempts)
                 peer.ResetAttempts();
-            }
 
             peer.SetAttempted(peerAttemptedAt);
         }

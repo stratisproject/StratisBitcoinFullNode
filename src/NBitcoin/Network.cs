@@ -33,6 +33,13 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
+    public enum NetworkType
+    {
+        Mainnet,
+        Testnet,
+        Regtest
+    }
+
     /// <summary>
     /// A container of all network instances of a certain high level network.
     /// Every network normally comes in 3 flavors mainnet, testnet and regtest.
@@ -58,6 +65,14 @@ namespace NBitcoin
         protected Block Genesis;
 
         /// <summary>
+        /// The default amount of seconds to keep misbehaving peers from reconnecting.
+        /// <para>
+        /// This value should be calculated as (TargetSpacingSeconds * maxReorgLength) / 2.
+        /// </para>
+        /// </summary>
+        public int DefaultBanTimeSeconds { get; protected set; }
+
+        /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
         /// </summary>
@@ -75,8 +90,8 @@ namespace NBitcoin
         /// 1-satoshi-fee transactions. It should be set above the real cost to you of processing a transaction.
         /// </summary>
         /// <remarks>
-        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network. 
-        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values, 
+        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network.
+        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values,
         /// which will lead to transactions filling the mempool without ever being mined.
         /// </remarks>
         public long MinTxFee { get; protected set; }
@@ -90,8 +105,8 @@ namespace NBitcoin
         /// The minimum fee under which transactions may be rejected from being relayed.
         /// </summary>
         /// <remarks>
-        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network. 
-        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values, 
+        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network.
+        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values,
         /// which will lead to transactions filling the mempool without ever being mined.
         /// </remarks>
         public long MinRelayTxFee { get; protected set; }
@@ -99,12 +114,22 @@ namespace NBitcoin
         /// <summary>
         /// Port on which to listen for incoming RPC connections.
         /// </summary>
-        public int RPCPort { get; protected set; }
+        public int DefaultRPCPort { get; protected set; }
 
         /// <summary>
-        /// The default port on which nodes of this network communicate with external clients. 
+        /// Port on which to listen for incoming API connections.
+        /// </summary>
+        public int DefaultAPIPort { get; protected set; }
+
+        /// <summary>
+        /// The default port on which nodes of this network communicate with external clients.
         /// </summary>
         public int DefaultPort { get; protected set; }
+        
+        /// <summary>
+        /// The default port on which SignalR broadcasts for this network.
+        /// </summary>
+        public int DefaultSignalRPort { get; protected set; }
 
         /// <summary>
         /// The default maximum number of outbound connections a node on this network will form.
@@ -125,6 +150,8 @@ namespace NBitcoin
         /// The name of the network.
         /// </summary>
         public string Name { get; protected set; }
+
+        public NetworkType NetworkType { get; protected set; }
 
         /// <summary>
         /// A list of additional names the network can be referred as.
@@ -249,7 +276,7 @@ namespace NBitcoin
         /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>
         /// <param name="consensusFactory">
-        /// The consensus factory used to create transactions and blocks. 
+        /// The consensus factory used to create transactions and blocks.
         /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
         /// </param>
         /// <param name="coinbaseText">
@@ -258,7 +285,7 @@ namespace NBitcoin
         /// It should be shorter than 92 characters.
         /// </param>
         /// <param name="target">
-        /// The difficulty target under which the hash of the block need to be. 
+        /// The difficulty target under which the hash of the block need to be.
         /// Some more details: As an example, the target for the Stratis Main network is 00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
         /// To make it harder to mine the genesis block, have more zeros at the beginning (keeping the length the same). This will make the target smaller, so finding a number under it will be more difficult.
         /// To make it easier to mine the genesis block ,do the opposite. Example of an easy one: 00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
@@ -268,7 +295,7 @@ namespace NBitcoin
         /// Specify how many coins to put in the genesis transaction's output. These coins are unspendable.
         /// </param>
         /// <param name="version">
-        /// The version of the transaction and the block header set in the genesis block. 
+        /// The version of the transaction and the block header set in the genesis block.
         /// </param>
         /// <example>
         /// The following example shows the creation of a genesis block.
@@ -636,7 +663,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return Block.Load(this.Genesis.ToBytes(this.Consensus.ConsensusFactory), this);
+            return Block.Load(this.Genesis.ToBytes(this.Consensus.ConsensusFactory), this.Consensus.ConsensusFactory);
         }
 
         public uint256 GenesisHash => this.Consensus.HashGenesisBlock;

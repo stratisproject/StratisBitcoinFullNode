@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -71,11 +72,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             TestHelper.Disconnect(this.jingNode, this.charlieNode);
             TestHelper.Disconnect(this.jingNode, this.daveNode);
 
-            TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.jingNode));
+            TestBase.WaitLoop(() => !TestHelper.IsNodeConnected(this.jingNode));
 
             TestHelper.MineBlocks(this.jingNode, 1);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void bob_creates_a_transaction_and_broadcasts()
@@ -99,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.shorterChainTransaction = this.bobNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             Money shortChainTransactionFee = this.bobNode.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
 
-            this.bobNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.shorterChainTransaction.ToHex()));
+            this.bobNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.shorterChainTransaction.ToHex()));
         }
 
         private HdAddress GetSecondUnusedAddressToAvoidClashWithMiningAddress(CoreNode node)
@@ -111,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void charlie_waits_for_the_trx_and_mines_this_block()
         {
-            TestHelper.WaitLoop(() => this.charlieNode.FullNode.MempoolManager().GetTransaction(this.shorterChainTransaction.GetHash()).Result != null);
+            TestBase.WaitLoop(() => this.charlieNode.FullNode.MempoolManager().GetTransaction(this.shorterChainTransaction.GetHash()).Result != null);
 
             TestHelper.MineBlocks(this.charlieNode, 1);
             TestHelper.WaitForNodeToSync(this.bobNode, this.charlieNode, this.daveNode);
@@ -119,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void dave_confirms_transaction_is_present()
         {
-            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result;
+            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash());
             transaction.Should().NotBeNull();
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
@@ -128,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             TestHelper.MineBlocks(this.jingNode, 5);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void jings_connection_comes_back()
@@ -139,15 +140,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
         {
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.charlieNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.daveNode.FullNode.Chain.Height == this.jingsBlockHeight);
+            TestBase.WaitLoop(() => this.bobNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestBase.WaitLoop(() => this.charlieNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestBase.WaitLoop(() => this.daveNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
         }
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result == null, waitTimeSeconds: 300);
-            this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result
+            TestBase.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash()) == null, waitTimeSeconds: 300);
+            this.bobNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash())
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 
@@ -163,16 +164,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             TestHelper.MineBlocks(this.bobNode, coinbaseMaturity + 1);
 
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.charlieNode));
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.daveNode));
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
+            TestBase.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
+            TestBase.WaitLoop(() => TestHelper.IsNodeSynced(this.charlieNode));
+            TestBase.WaitLoop(() => TestHelper.IsNodeSynced(this.daveNode));
+            TestBase.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
 
             // Ensure that all the nodes are synced to at least coinbase maturity.
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
-            TestHelper.WaitLoopMessage(() => (this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity, $"CHARLIENODE_TIP_{this.charlieNode.FullNode.ConsensusManager().Tip}"));
-            TestHelper.WaitLoop(() => this.daveNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
-            TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            TestBase.WaitLoop(() => this.bobNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            TestBase.WaitLoopMessage(() => (this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity, $"CHARLIENODE_TIP_{this.charlieNode.FullNode.ConsensusManager().Tip}"));
+            TestBase.WaitLoop(() => this.daveNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            TestBase.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
         }
     }
 }

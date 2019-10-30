@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using DBreeze.Utils;
 using NBitcoin;
@@ -13,12 +11,12 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
-        public DBreezeSerializer(Network network)
-        {
-            this.Network = network;
-        }
+        private readonly ConsensusFactory consensusFactory;
 
-        public Network Network { get; }
+        public DBreezeSerializer(ConsensusFactory consensusFactory)
+        {
+            this.consensusFactory = consensusFactory;
+        }
 
         /// <summary>
         /// Serializes object to a binary data format.
@@ -28,7 +26,7 @@ namespace Stratis.Bitcoin.Utilities
         public byte[] Serialize(object obj)
         {
             if (obj is IBitcoinSerializable serializable)
-                return serializable.ToBytes(this.Network.Consensus.ConsensusFactory);
+                return serializable.ToBytes(this.consensusFactory);
 
             if (obj is uint256 u256)
                 return u256.ToBytes();
@@ -92,15 +90,15 @@ namespace Stratis.Bitcoin.Utilities
         {
             if (type == typeof(BlockHeader))
             {
-                BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                BlockHeader header = this.consensusFactory.CreateBlockHeader();
+                header.ReadWrite(bytes, this.consensusFactory);
                 return header;
             }
 
             if (type == typeof(Transaction))
             {
-                Transaction transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction();
-                transaction.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                Transaction transaction = this.consensusFactory.CreateTransaction();
+                transaction.ReadWrite(bytes, this.consensusFactory);
                 return transaction;
             }
 
@@ -108,27 +106,27 @@ namespace Stratis.Bitcoin.Utilities
                 return new uint256(bytes);
 
             if (type == typeof(Block))
-                return Block.Load(bytes, this.Network);
+                return Block.Load(bytes, this.consensusFactory);
 
             if (type == typeof(BlockStake))
-                return BlockStake.Load(bytes, this.Network);
+                return BlockStake.Load(bytes, this.consensusFactory);
 
             if (type == typeof(ProvenBlockHeader))
             {
                 ProvenBlockHeader provenBlockHeader =
-                    ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader();
+                    ((PosConsensusFactory)this.consensusFactory).CreateProvenBlockHeader();
 
-                provenBlockHeader.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                provenBlockHeader.ReadWrite(bytes, this.consensusFactory);
                 return provenBlockHeader;
             }
 
             if (type == typeof(HashHeightPair))
-                return HashHeightPair.Load(bytes, this.Network);
+                return HashHeightPair.Load(bytes, this.consensusFactory);
 
             if (typeof(IBitcoinSerializable).IsAssignableFrom(type))
             {
                 var result = (IBitcoinSerializable)Activator.CreateInstance(type);
-                result.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                result.ReadWrite(bytes, this.consensusFactory);
                 return result;
             }
 

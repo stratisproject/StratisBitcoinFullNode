@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -11,9 +10,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCountCache{TKey,TValue}"/> class.</summary>
         protected class CacheItem
         {
-            public readonly TKey Key;
+            public TKey Key { get; private set; }
 
             public TValue Value { get; set; }
+
+            /// <summary>Indicates whether the item has been modified.</summary>
+            public bool Dirty { get; set; }
 
             /// <summary>Size of value in bytes.</summary>
             public long Size { get; set; }
@@ -37,18 +39,18 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Dictionary that contains cached items.</summary>
-        /// <remarks>Should be accessed inside a lock using <see cref="lockObject"/>.</remarks>
-        protected Dictionary<TKey, LinkedListNode<CacheItem>> cache;
+        /// <remarks>Should be accessed inside a lock using <see cref="LockObject"/>.</remarks>
+        protected Dictionary<TKey, LinkedListNode<CacheItem>> Cache { get; set; }
 
         /// <summary>Keys sorted by their last access time with most recent ones at the end.</summary>
-        /// <remarks>Should be accessed inside a lock using <see cref="lockObject"/>.</remarks>
-        protected readonly LinkedList<CacheItem> keys;
+        /// <remarks>Should be accessed inside a lock using <see cref="LockObject"/>.</remarks>
+        protected LinkedList<CacheItem> Keys { get; private set; }
 
-        /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
-        protected readonly object lockObject;
+        /// <summary>Lock to protect access to <see cref="Keys"/> and <see cref="Cache"/>.</summary>
+        protected object LockObject { get; private set; }
 
         /// <summary>Total size in bytes stored in the cache.</summary>
-        protected long totalSize;
+        protected long totalSize { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
@@ -56,9 +58,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> implementation to use when comparing keys, or <c>null</c> to use the default comparer for the type of the key.</param>
         public MemoryCache(IEqualityComparer<TKey> comparer = null)
         {
-            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem>>();
-            this.keys = new LinkedList<CacheItem>();
-            this.lockObject = new object();
+            this.Cache = new Dictionary<TKey, LinkedListNode<CacheItem>>();
+            this.Keys = new LinkedList<CacheItem>();
+            this.LockObject = new object();
         }
 
         /// <summary>Determine whether the cache has reached its limit.</summary>
@@ -68,11 +70,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>An item was added to the cache.</summary>
         protected virtual void ItemAddedLocked(CacheItem item)
         {
+            this.totalSize += item.Size;
         }
 
         /// <summary>An item was removed from the cache.</summary>
         protected virtual void ItemRemovedLocked(CacheItem item)
         {
+            this.totalSize -= item.Size;
         }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
@@ -80,9 +84,9 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                lock (this.lockObject)
+                lock (this.LockObject)
                 {
-                    return this.keys.Count;
+                    return this.Keys.Count;
                 }
             }
         }
@@ -93,21 +97,30 @@ namespace Stratis.Bitcoin.Utilities
         {
             LinkedListNode<CacheItem> node;
 
-            lock (this.lockObject)
+            lock (this.LockObject)
             {
-                if (this.cache.TryGetValue(item.Key, out node))
+                bool insertLast = true;
+
+                if (this.Cache.TryGetValue(item.Key, out node))
                 {
                     node.Value.Value = item.Value;
-                    this.keys.Remove(node);
+
+                    if (node.Next == null)
+                    {
+                        // Already last item.
+                        insertLast = false;
+                    }
+                    else
+                        this.Keys.Remove(node);
                 }
                 else
                 {
                     while (this.IsCacheFullLocked(item))
                     {
                         // Remove the item that was not used for the longest time.
-                        LinkedListNode<CacheItem> lastNode = this.keys.First;
-                        this.cache.Remove(lastNode.Value.Key);
-                        this.keys.RemoveFirst();
+                        LinkedListNode<CacheItem> lastNode = this.Keys.First;
+                        this.Cache.Remove(lastNode.Value.Key);
+                        this.Keys.RemoveFirst();
 
                         this.ItemRemovedLocked(lastNode.Value);
                     }
@@ -115,11 +128,14 @@ namespace Stratis.Bitcoin.Utilities
                     node = new LinkedListNode<CacheItem>(item);
                     node.Value.Size = item.Size;
 
-                    this.cache.Add(item.Key, node);
+                    this.Cache.Add(item.Key, node);
                     this.ItemAddedLocked(item);
                 }
 
-                this.keys.AddLast(node);
+                node.Value.Dirty = true;
+
+                if (insertLast)
+                    this.Keys.AddLast(node);
             }
         }
 
@@ -129,12 +145,12 @@ namespace Stratis.Bitcoin.Utilities
         {
             LinkedListNode<CacheItem> node = null;
 
-            lock (this.lockObject)
+            lock (this.LockObject)
             {
-                if (this.cache.TryGetValue(key, out node))
+                if (this.Cache.TryGetValue(key, out node))
                 {
-                    this.cache.Remove(node.Value.Key);
-                    this.keys.Remove(node);
+                    this.Cache.Remove(node.Value.Key);
+                    this.Keys.Remove(node);
                     this.ItemRemovedLocked(node.Value);
                 }
             }
@@ -146,12 +162,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            lock (this.lockObject)
+            lock (this.LockObject)
             {
-                if (this.cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
+                if (this.Cache.TryGetValue(key, out LinkedListNode<CacheItem> node))
                 {
-                    this.keys.Remove(node);
-                    this.keys.AddLast(node);
+                    this.Keys.Remove(node);
+                    this.Keys.AddLast(node);
 
                     value = node.Value.Value;
 
@@ -168,10 +184,10 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void ClearCache()
         {
-            lock (this.lockObject)
+            lock (this.LockObject)
             {
-                this.keys.Clear();
-                this.cache.Clear();
+                this.Keys.Clear();
+                this.Cache.Clear();
                 this.totalSize = 0;
             }
         }

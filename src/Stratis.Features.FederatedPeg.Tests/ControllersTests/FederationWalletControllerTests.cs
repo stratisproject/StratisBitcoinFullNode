@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -16,7 +18,6 @@ using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Features.FederatedPeg.Wallet;
 using Xunit;
 
@@ -29,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         private readonly IFederationWalletSyncManager walletSyncManager;
         private readonly IConnectionManager connectionManager;
         private readonly Network network;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
@@ -44,17 +45,17 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.network = new StratisTest();
 
-            this.chain = new ConcurrentChain(this.network);
+            this.chainIndexer = new ChainIndexer(this.network);
 
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(100, ChainedHeadersHelper.CreateGenesisChainedHeader(this.network), true, null, this.network).Last();
-            this.chain.SetTip(tip);
+            this.chainIndexer.SetTip(tip);
 
 
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
             this.withdrawalHistoryProvider = Substitute.For<IWithdrawalHistoryProvider>();
 
             this.controller = new FederationWalletController(this.loggerFactory, this.walletManager, this.walletSyncManager,
-                this.connectionManager, this.network, this.chain, this.dateTimeProvider, this.withdrawalHistoryProvider);
+                this.connectionManager, this.network, this.chainIndexer, this.dateTimeProvider, this.withdrawalHistoryProvider);
 
             this.fedWallet = new FederationWallet();
             this.fedWallet.Network = this.network;
@@ -62,35 +63,43 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.fedWallet.CreationTime = DateTimeOffset.Now;
 
             this.walletManager.GetWallet().Returns(this.fedWallet);
+
+            var federationWalletManager = (FederationWalletManager)FormatterServices.GetUninitializedObject(typeof(FederationWalletManager));
+            PropertyInfo lockProp = typeof(LockProtected).GetProperty("lockObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            lockProp.SetValue(federationWalletManager, new object());
+            federationWalletManager.Wallet = this.fedWallet;
+            this.walletManager.GetSpendableAmount().Returns((x) => {
+                return federationWalletManager.GetSpendableAmount();
+            });
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetGeneralInfo()
         {
             this.connectionManager.ConnectedPeers.Returns(info => new NetworkPeerCollection());
 
             IActionResult result = this.controller.GetGeneralInfo();
-            WalletGeneralInfoModel model = ActionResultToModel<WalletGeneralInfoModel>(result);
+            WalletGeneralInfoModel model = this.ActionResultToModel<WalletGeneralInfoModel>(result);
 
             Assert.Equal(this.fedWallet.CreationTime, model.CreationTime);
             Assert.Equal(this.fedWallet.LastBlockSyncedHeight, model.LastBlockSyncedHeight);
             Assert.Equal(this.fedWallet.Network, model.Network);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetBalance()
         {
             this.fedWallet.MultiSigAddress = new MultiSigAddress();
 
             IActionResult result = this.controller.GetBalance();
-            WalletBalanceModel model = ActionResultToModel<WalletBalanceModel>(result);
+            WalletBalanceModel model = this.ActionResultToModel<WalletBalanceModel>(result);
 
             Assert.Single(model.AccountsBalances);
             Assert.Equal(CoinType.Stratis, model.AccountsBalances.First().CoinType);
             Assert.Equal(0, model.AccountsBalances.First().AmountConfirmed.Satoshi);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetHistory()
         {
             var withdrawals = new List<WithdrawalModel>() {new WithdrawalModel(), new WithdrawalModel()};
@@ -98,15 +107,15 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.withdrawalHistoryProvider.GetHistory(0).ReturnsForAnyArgs(withdrawals);
 
             IActionResult result = this.controller.GetHistory(5);
-            List<WithdrawalModel> model = ActionResultToModel<List<WithdrawalModel>>(result);
+            List<WithdrawalModel> model = this.ActionResultToModel<List<WithdrawalModel>>(result);
 
             Assert.Equal(withdrawals.Count, model.Count);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void Sync()
         {
-            ChainedHeader header = this.chain.Tip;
+            ChainedHeader header = this.chainIndexer.Tip;
 
             bool called = false;
             this.walletSyncManager.When(x => x.SyncFromHeight(header.Height)).Do(info => called = true);
@@ -116,18 +125,18 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.True(called);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void EnableFederation()
         {
             bool called = false;
-            this.walletManager.When(x => x.EnableFederation(null)).Do(info => called = true);
+            this.walletManager.When(x => x.EnableFederationWallet(null)).Do(info => called = true);
 
             this.controller.EnableFederation(new EnableFederationRequest());
 
             Assert.True(called);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void RemoveTransactions()
         {
             var hashSet = new HashSet<(uint256, DateTimeOffset)>();
@@ -137,7 +146,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             IActionResult result = this.controller.RemoveTransactions(new RemoveFederationTransactionsModel());
 
-            IEnumerable<RemovedTransactionModel> model = ActionResultToModel<IEnumerable<RemovedTransactionModel>>(result);
+            IEnumerable<RemovedTransactionModel> model = this.ActionResultToModel<IEnumerable<RemovedTransactionModel>>(result);
 
             Assert.Single(model);
         }

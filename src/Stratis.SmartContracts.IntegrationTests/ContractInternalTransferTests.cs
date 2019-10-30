@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.senderRetriever = new SenderRetriever();
         }
 
-        [Retry]
+        [Fact]
         public void InternalTransfer_ToWalletAddress()
         {
             // Ensure fixture is funded.

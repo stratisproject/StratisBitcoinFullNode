@@ -6,12 +6,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -67,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
-            var chain = new ConcurrentChain(KnownNetworks.StratisMain);
+            var chain = new ChainIndexer(KnownNetworks.StratisMain);
             chain.SetTip(consensusTip);
 
             // Ibd
@@ -148,8 +150,11 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var peer = new Mock<INetworkPeer>();
 
+            var signals = new Bitcoin.Signals.Signals(this.loggerFactory, null);
+            var asyncProvider = new AsyncProvider(this.loggerFactory, signals, new NodeLifetime());
+
             var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
-                new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
+                new DateTimeProvider(), this.loggerFactory, new PayloadProvider(), asyncProvider);
 
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
@@ -219,6 +224,11 @@ namespace Stratis.Bitcoin.Tests.Base
             }
 
             public void ClearBannedPeers()
+            {
+                throw new NotImplementedException();
+            }
+
+            public List<PeerAddress> GetAllBanned()
             {
                 throw new NotImplementedException();
             }

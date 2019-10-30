@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -18,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
         /// and value is a rewind data index.
         /// </summary>
-        private readonly ConcurrentDictionary<string, int> items;
+        private readonly ConcurrentDictionary<OutPoint, int> items;
 
         /// <summary>
         /// Number of blocks to keep in cache after the flush.
@@ -37,13 +36,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.network = network;
 
-            this.items = new ConcurrentDictionary<string, int>();
+            this.items = new ConcurrentDictionary<OutPoint, int>();
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(int tipHeight, ICoinView coinView)
+        public void Initialize(int tipHeight, ICoinView coinView)
         {
             this.items.Clear();
 
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             for (int rewindHeight = tipHeight; rewindHeight >= heightToSyncTo; rewindHeight--)
             {
-                RewindData rewindData = await coinView.GetRewindData(rewindHeight).ConfigureAwait(false);
+                RewindData rewindData = coinView.GetRewindData(rewindHeight);
 
                 this.AddRewindData(rewindHeight, rewindData);
             }
@@ -81,29 +80,29 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                 {
-                    string key = $"{unspent.TransactionId}-{outputIndex}";
+                    var key = new OutPoint(unspent.TransactionId,outputIndex);
                     this.items[key] = rewindHeight;
                 }
             }
         }
 
         /// <inheritdoc />
-        public async Task Remove(int tipHeight, ICoinView coinView)
+        public void Remove(int tipHeight, ICoinView coinView)
         {
             this.Flush(tipHeight);
 
             int bottomHeight = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
 
-            RewindData rewindData = await coinView.GetRewindData(bottomHeight).ConfigureAwait(false);
+            RewindData rewindData = coinView.GetRewindData(bottomHeight);
             this.AddRewindData(bottomHeight, rewindData);
         }
 
         /// <inheritdoc />
-        public void Save(Dictionary<string, int> indexData)
+        public void Save(Dictionary<OutPoint, int> indexData)
         {
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
-                foreach (KeyValuePair<string, int> indexRecord in indexData)
+                foreach (KeyValuePair<OutPoint, int> indexRecord in indexData)
                 {
                     this.items[indexRecord.Key] = indexRecord.Value;
                 }
@@ -115,8 +114,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             int heightToKeepItemsTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1; ;
 
-            List<KeyValuePair<string, int>> listOfItems = this.items.ToList();
-            foreach (KeyValuePair<string, int> item in listOfItems)
+            List<KeyValuePair<OutPoint, int>> listOfItems = this.items.ToList();
+            foreach (KeyValuePair<OutPoint, int> item in listOfItems)
             {
                 if ((item.Value < heightToKeepItemsTo) || (item.Value > tipHeight))
                 {
@@ -128,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public int? Get(uint256 transactionId, int transactionOutputIndex)
         {
-            string key = $"{transactionId}-{transactionOutputIndex}";
+            var key = new OutPoint(transactionId, transactionOutputIndex);
 
             if (this.items.TryGetValue(key, out int rewindDataIndex))
                 return rewindDataIndex;

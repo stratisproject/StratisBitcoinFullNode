@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private readonly IChainState chainState;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ILoggerFactory loggerFactory;
 
@@ -41,14 +41,14 @@ namespace Stratis.Bitcoin.Features.Notifications
             IConnectionManager connectionManager,
             IConsensusManager consensusManager,
             IChainState chainState,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;
             this.connectionManager = connectionManager;
             this.consensusManager = consensusManager;
             this.chainState = chainState;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.loggerFactory = loggerFactory;
         }
 
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
 
             this.blockNotification.Start();
-            this.chainState.ConsensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chainIndexer.Tip;
 
             return Task.CompletedTask;
         }
@@ -83,7 +83,6 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IBlockNotification, BlockNotification>();
-                    services.AddSingleton<NotificationsController>();
                 });
             });
 

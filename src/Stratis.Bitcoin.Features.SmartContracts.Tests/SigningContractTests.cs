@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using NBitcoin.Crypto;
+﻿using NBitcoin.Crypto;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 

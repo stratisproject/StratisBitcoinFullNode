@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Connection
         /// Adds a peer to the address manager's collection as well as
         /// the connection manager's add node collection.
         /// </summary>
-        void AddNodeAddress(IPEndPoint ipEndpoint);
+        void AddNodeAddress(IPEndPoint ipEndpoint, bool excludeFromIpRangeFiltering = false);
 
         /// <summary>
         /// Adds a peer to the address manager's connected nodes collection.
@@ -35,11 +35,7 @@ namespace Stratis.Bitcoin.Connection
 
         IReadOnlyNetworkPeerCollection ConnectedPeers { get; }
 
-        INetworkPeer FindLocalNode();
-
         INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint);
-
-        INetworkPeer FindNodeByIp(IPAddress ipAddress);
 
         INetworkPeer FindNodeById(int peerId);
 
@@ -75,6 +71,9 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         void RemoveNodeAddress(IPEndPoint ipEndpoint);
 
+        /// <summary>
+        /// The endpoints the node is listening on for inbound connections.
+        /// </summary>
         List<NetworkPeerServer> Servers { get; }
     }
 }

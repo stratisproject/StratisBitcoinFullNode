@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly NodeDeployments nodeDeployments;
 
@@ -72,9 +73,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IConnectionManager connectionManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IWalletFeePolicy walletFeePolicy,
             BroadcasterBehavior broadcasterBehavior,
@@ -87,9 +88,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.connectionManager = connectionManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.nodeDeployments = nodeDeployments;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
             this.broadcasterBehavior = broadcasterBehavior;
@@ -100,8 +101,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.lightWalletBlockStoreService = lightWalletBlockStoreService;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chainIndexer, this.connectionManager, this.loggerFactory));
             this.walletSettings.IsLightWallet = true;
 
             this.walletManager.Start();
@@ -136,9 +137,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public IAsyncLoop StartDeploymentsChecksLoop()
         {
             CancellationTokenSource loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
-            return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
+            return this.asyncProvider.CreateAndRunAsyncLoop("LightWalletFeature.CheckDeployments", token =>
             {
-                if (!this.chain.IsDownloaded())
+                if (!this.chainIndexer.IsDownloaded())
                     return Task.CompletedTask;
 
                 // check segwit activation on the chain of headers
@@ -174,7 +175,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             if (this.walletManager is WalletManager manager)
             {
                 int height = manager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -225,7 +226,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
                             services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
                         else
                             services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
-                        services.AddSingleton<WalletController>();
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();

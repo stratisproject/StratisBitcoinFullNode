@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Features.Collateral.CounterChain;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
@@ -21,10 +22,13 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
     /// </summary>
     public class MainChainFederationNodeRunner : NodeRunner
     {
-        public MainChainFederationNodeRunner(string dataDir, string agent, Network network)
+        private Network counterChainNetwork;
+
+        public MainChainFederationNodeRunner(string dataDir, string agent, Network network, Network counterChainNetwork)
             : base(dataDir, agent)
         {
             this.Network = network;
+            this.counterChainNetwork = counterChainNetwork;
         }
 
         public override void BuildNode()
@@ -34,7 +38,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .AddFederationGateway()
+                .SetCounterChainNetwork(this.counterChainNetwork)
+                .AddFederatedPeg()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
