@@ -1060,8 +1060,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockProcess)
             {
-                foreach (string walletName in this.WalletRepository.GetWalletNames())
+                foreach (string walletName in this.WalletRepository.GetAffectedWallets(transaction))
+                {
+                    if (this.WalletRepository.ExistsTransacton(walletName, transaction.GetHash().ToString()))
+                        continue;
+
                     this.WalletRepository.ProcessTransaction(walletName, transaction);
+                }
             }
 
             return true;

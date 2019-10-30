@@ -332,6 +332,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         void AddWatchOnlyTransactions(string walletName, string accountName, HdAddress address, ICollection<TransactionData> transactions, bool force = false);
 
         /// <summary>
+        /// Gets the wallets that would be affected by the transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction to compare to the wallets.</param>
+        /// <returns>A string array of wallet names.</returns>
+        string[] GetAffectedWallets(Transaction transaction);
+
+        /// <summary>
+        /// Determines if a transaction already exists in a specified wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to look in.</param>
+        /// <param name="transactionId">the transaction id to look for.</param>
+        /// <returns>Returns <c>true</c> if the transaction exists.</returns>
+        bool ExistsTransacton(string walletName, string transactionId);
+
+        /// <summary>
         /// Provides a default for the "force" flag when calling <see cref="AddWatchOnlyAddresses"/> or <see cref="AddWatchOnlyTransactions"/>.
         /// </summary>
         bool TestMode { get; set; }

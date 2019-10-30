@@ -189,5 +189,24 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     OutputTxTime = {strTransactionTime}")}
                 AND     OutputTxId = {strTransactionId}");
         }
+
+        internal static bool ExistsTransaction(DBConnection conn, int walletId, string transactionId)
+        {
+            string strWalletId = DBParameter.Create(walletId);
+            string strTransactionId = DBParameter.Create(transactionId);
+
+            return conn.ExecuteScalar<int>($@"
+                SELECT EXISTS (
+	                    SELECT	SpendTxId TxId
+	                    FROM	HDTransactionData
+	                    WHERE	WalletId = {strWalletId}
+                        AND     SpendTxId = {strTransactionId}
+	                    UNION	ALL
+	                    SELECT	OutputTxId TxId
+	                    FROM	HDTransactionData
+	                    WHERE	WalletId = {strWalletId}
+                        AND     OutputTxID = {strTransactionId}
+                        )") == 1;
+        }
     }
 }

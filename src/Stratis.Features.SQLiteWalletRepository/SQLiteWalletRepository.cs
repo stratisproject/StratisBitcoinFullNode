@@ -1088,6 +1088,59 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
+        public string[] GetAffectedWallets(Transaction transaction)
+        {
+            IEnumerable<ProcessBlocksInfo> rounds;
+            if (this.DatabasePerWallet)
+                rounds = this.Wallets.Select(kv => kv.Value);
+            else
+                rounds = new[] { this.processBlocksInfo };
+
+            var affectedWallets = new HashSet<int>();
+
+            foreach (ProcessBlocksInfo round in rounds)
+            {
+                foreach (TxIn txIn in transaction.Inputs)
+                {
+                    if (round.TransactionsOfInterest.Contains(txIn.PrevOut, out HashSet<AddressIdentifier> addresses))
+                    {
+                        foreach (int walletId in addresses.Select(a => a.WalletId))
+                            affectedWallets.Add(walletId);
+                    }
+                }
+
+                var transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, round);
+
+                foreach (TxOut txOut in transaction.Outputs)
+                {
+                    if (txOut.IsEmpty)
+                        continue;
+
+                    if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
+                        continue;
+
+                    var destinations = transactionsToLists.GetDestinations(txOut.ScriptPubKey);
+                    foreach (Script destination in destinations)
+                    {
+                        if (round.AddressesOfInterest.Contains(destination, out AddressIdentifier addressIdentifier))
+                            affectedWallets.Add(addressIdentifier.WalletId);
+                    }
+                }
+            }
+
+            return affectedWallets.Select(a => this.Wallets.First(w => w.Value.Wallet.WalletId == a).Value.Wallet.Name).ToArray();
+        }
+
+        /// <inheritdoc />
+        public bool ExistsTransacton(string walletName, string transactionId)
+        {
+            WalletContainer walletContainer = this.GetWalletContainer(walletName);
+            (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
+
+            return HDTransactionData.ExistsTransaction(conn, wallet.WalletId, transactionId);
+        }
+
+        /// <inheritdoc />
         public void ProcessTransaction(string walletName, Transaction transaction, uint256 fixedTxId = null)
         {
             WalletContainer walletContainer = this.GetWalletContainer(walletName);

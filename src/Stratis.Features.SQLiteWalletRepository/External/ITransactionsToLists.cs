@@ -32,7 +32,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             this.addressesOfInterest = addressesOfInterest;
         }
 
-        protected IEnumerable<Script> GetDestinations(Script redeemScript)
+        internal IEnumerable<Script> GetDestinations(Script redeemScript)
         {
             ScriptTemplate scriptTemplate = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(redeemScript);
 
