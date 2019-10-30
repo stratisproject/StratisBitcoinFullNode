@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void ProcessTransaction_CallsWalletManager()
+        public void ProcessTransaction_CallsGetAffectedWallets()
         {
             this.SetupMockObjects(WalletTestsHelpers.GenerateChainWithHeight(5, KnownNetworks.StratisMain));
 
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             this.walletSyncManager.ProcessTransaction(transaction);
 
-            this.walletRepository.Verify(w => w.ProcessTransaction(this.walletName, transaction, null));
+            this.walletRepository.Verify(w => w.GetAffectedWallets(transaction));
         }
 
         /// <summary>
