@@ -1116,7 +1116,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.IsEmpty)
                         continue;
 
-                    if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
+                    var bytes = txOut.ScriptPubKey.ToBytes(true);
+
+                    if (bytes.Length == 0 || bytes[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
                     var destinations = transactionsToLists.GetDestinations(txOut.ScriptPubKey);
