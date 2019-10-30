@@ -1062,7 +1062,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (string walletName in this.WalletRepository.GetAffectedWallets(transaction))
                 {
-                    if (this.WalletRepository.ExistsTransacton(walletName, transaction.GetHash().ToString()))
+                    if (this.WalletRepository.ExistsTransaction(walletName, transaction.GetHash().ToString()))
                         continue;
 
                     this.WalletRepository.ProcessTransaction(walletName, transaction);

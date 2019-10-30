@@ -1132,7 +1132,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool ExistsTransacton(string walletName, string transactionId)
+        public bool ExistsTransaction(string walletName, string transactionId)
         {
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);

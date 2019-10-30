@@ -344,7 +344,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to look in.</param>
         /// <param name="transactionId">the transaction id to look for.</param>
         /// <returns>Returns <c>true</c> if the transaction exists.</returns>
-        bool ExistsTransacton(string walletName, string transactionId);
+        bool ExistsTransaction(string walletName, string transactionId);
 
         /// <summary>
         /// Provides a default for the "force" flag when calling <see cref="AddWatchOnlyAddresses"/> or <see cref="AddWatchOnlyTransactions"/>.
