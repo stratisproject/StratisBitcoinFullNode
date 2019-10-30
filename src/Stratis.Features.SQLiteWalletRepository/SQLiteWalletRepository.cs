@@ -125,52 +125,51 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void Initialize(bool dbPerWallet = true)
+        public void Initialize(bool databasePerWallet = true)
         {
             Reset();
 
             Directory.CreateDirectory(this.DBPath);
 
-            this.DatabasePerWallet = dbPerWallet;
+            this.DatabasePerWallet = databasePerWallet;
 
-            this.logger.LogDebug("Adding wallets found at '{0}' to wallet collection.", this.DBPath);
+            this.logger.LogInformation("Initializing wallets at location '{0}', '{1}'={2}.", this.DBPath, nameof(this.DatabasePerWallet), this.DatabasePerWallet);
 
             if (this.DatabasePerWallet)
             {
-                foreach (string walletName in Directory.EnumerateFiles(this.DBPath, "*.db")
-                    .Select(p => p.Substring(this.DBPath.Length + 1).Split('.')[0]))
+                var walletNames = Directory.EnumerateFiles(this.DBPath, "*.db").Select(p => p.Substring(this.DBPath.Length + 1).Split('.')[0]);
+                this.logger.LogInformation("Found {0} HD Wallets at location '{1}'.", walletNames.Count(), this.DBPath);
+
+                foreach (string walletName in walletNames)
                 {
-                    var conn = GetConnection(walletName);
-
-                    HDWallet wallet = conn.GetWalletByName(walletName);
-                    var walletContainer = new WalletContainer(conn, wallet, new ProcessBlocksInfo(conn, null, wallet));
-
-                    walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
-                    walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
-
-                    this.Wallets[walletName] = walletContainer;
-
-                    this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
+                    var connection = GetConnection(walletName);
+                    HDWallet wallet = connection.GetWalletByName(walletName);
+                    AddWalletToContainer(connection, wallet, new ProcessBlocksInfo(connection, null, wallet));
                 }
             }
             else
             {
-                var conn = GetConnection();
+                var connection = GetConnection();
 
-                this.processBlocksInfo = new ProcessBlocksInfo(conn, null);
+                this.processBlocksInfo = new ProcessBlocksInfo(connection, null);
 
-                foreach (HDWallet wallet in HDWallet.GetAll(conn))
+                var hdWallets = HDWallet.GetAll(connection);
+                this.logger.LogInformation("Found {0} HD Wallets.", hdWallets.Count());
+
+                foreach (HDWallet wallet in hdWallets)
                 {
-                    var walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
-
-                    walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
-                    walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
-
-                    this.Wallets[wallet.Name] = walletContainer;
-
-                    this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
+                    AddWalletToContainer(connection, wallet, this.processBlocksInfo);
                 }
             }
+        }
+
+        private void AddWalletToContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo)
+        {
+            var walletContainer = new WalletContainer(conn, wallet, processBlocksInfo);
+            walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
+            walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
+            this.Wallets[wallet.Name] = walletContainer;
+            this.logger.LogDebug("Wallet '{0}' added to collection.", wallet.Name);
         }
 
         /// <inheritdoc />
