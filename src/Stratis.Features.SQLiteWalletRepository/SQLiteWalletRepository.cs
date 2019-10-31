@@ -169,9 +169,19 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Remove all unconfirmed transactions.
             conn.BeginTransaction();
-            this.logger.LogDebug("Removing all unconfirmed transactions from wallet '{0}'.", wallet.Name);
-            conn.RemoveAllUnconfirmedTransactions(wallet.WalletId);
-            conn.Commit();
+            try
+            {
+                this.logger.LogDebug("Removing all unconfirmed transactions from wallet '{0}'.", wallet.Name);
+                conn.RemoveAllUnconfirmedTransactions(wallet.WalletId);
+                conn.Commit();
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("An exception occurred while removing unconfirmed transactions for wallet '{0}'.", wallet.Name);
+                this.logger.LogError(ex.ToString());
+                conn.Rollback();
+                throw;
+            }
 
             walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
             walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
