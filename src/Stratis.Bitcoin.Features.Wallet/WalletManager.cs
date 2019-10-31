@@ -1066,11 +1066,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockProcess)
             {
-                foreach (string walletName in this.WalletRepository.GetAffectedWallets(transaction))
-                {
-                    if (this.WalletRepository.ExistsTransaction(walletName, transaction.GetHash().ToString()))
-                        continue;
+                // TODO: Holding back on this version of the method for now. Enable and test this after release.
+                //foreach (string walletName in this.WalletRepository.GetAffectedWallets(transaction))
+                //{
+                //    if (this.WalletRepository.ExistsTransaction(walletName, transaction.GetHash().ToString()))
+                //        continue;
+                //
+                //    this.WalletRepository.ProcessTransaction(walletName, transaction);
+                //}
 
+                foreach (string walletName in this.WalletRepository.GetWalletNames())
+                {
                     this.WalletRepository.ProcessTransaction(walletName, transaction);
                 }
             }
