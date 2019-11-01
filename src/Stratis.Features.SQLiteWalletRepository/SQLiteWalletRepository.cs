@@ -166,6 +166,23 @@ namespace Stratis.Features.SQLiteWalletRepository
         private void AddWalletToContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo)
         {
             var walletContainer = new WalletContainer(conn, wallet, processBlocksInfo);
+
+            // Remove all unconfirmed transactions.
+            conn.BeginTransaction();
+            try
+            {
+                this.logger.LogDebug("Removing all unconfirmed transactions from wallet '{0}'.", wallet.Name);
+                conn.RemoveAllUnconfirmedTransactions(wallet.WalletId);
+                conn.Commit();
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("An exception occurred while removing unconfirmed transactions for wallet '{0}'.", wallet.Name);
+                this.logger.LogError(ex.ToString());
+                conn.Rollback();
+                throw;
+            }
+
             walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
             walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
             this.Wallets[wallet.Name] = walletContainer;

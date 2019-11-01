@@ -1067,7 +1067,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockProcess)
             {
                 foreach (string walletName in this.WalletRepository.GetWalletNames())
+                {
                     this.WalletRepository.ProcessTransaction(walletName, transaction);
+                }
             }
 
             return true;
