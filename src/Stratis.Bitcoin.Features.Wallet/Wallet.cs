@@ -287,6 +287,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
+        /// Lists all unspent transactions from all accounts in the wallet.
+        /// This is distinct from the list of spendable transactions. A transaction can be unspent but not yet spendable due to coinbase/stake maturity, for example.
+        /// </summary>
+        /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
+        /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
+        /// <returns>A collection of spendable outputs.</returns>
+        public IEnumerable<UnspentOutputReference> GetAllUnspentTransactions(int currentChainHeight, int confirmations = 0, Func<HdAccount, bool> accountFilter = null)
+        {
+            IEnumerable<HdAccount> accounts = this.GetAccounts(accountFilter);
+
+            // The logic for retrieving unspent transactions is almost identical to determining spendable transactions, we just don't take coinbase/stake maturity into consideration.
+            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, 0, confirmations));
+        }
+
+        /// <summary>
         /// Calculates the fee paid by the user on a transaction sent.
         /// </summary>
         /// <param name="transactionId">The transaction id to look for.</param>
