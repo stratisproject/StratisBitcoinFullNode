@@ -962,7 +962,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false);
@@ -971,12 +970,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 if (depth < 1)
                 {
                     this.logger.LogDebug("UTXO '{0}' is new or reorg happened.", utxoStakeDescription.OutPoint);
-                    continue;
-                }
-
-                if (depth < requiredDepth)
-                {
-                    this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth);
                     continue;
                 }
 
