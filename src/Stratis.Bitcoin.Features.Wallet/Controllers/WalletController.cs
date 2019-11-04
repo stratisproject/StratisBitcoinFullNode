@@ -427,7 +427,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 var model = new WalletHistoryModel();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
-                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, request.AccountName);
+                IEnumerable<AccountHistory> accountsHistory = this.walletManager
+                    .GetHistory(request.WalletName, 
+                        request.AccountName, 
+                        request.PrevOutputTxTime, 
+                        request.PrevOutputTxTime, 
+                        request.Take ?? int.MaxValue);
 
                 foreach (AccountHistory accountHistory in accountsHistory)
                 {
@@ -492,6 +497,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
                                     Id = transaction.SpendingDetails.TransactionId,
                                     Timestamp = transaction.SpendingDetails.CreationTime,
+                                    TxOutputIndex = transaction.Index,
                                     ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
                                     BlockIndex = transaction.SpendingDetails.BlockIndex
                                 };

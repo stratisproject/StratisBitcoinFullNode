@@ -22,6 +22,8 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
+
     public class WalletCollection : ICollection<Wallet>
     {
         public IWalletManager WalletManager { get; set; }
@@ -775,8 +777,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             return this.WalletRepository.GetUsedAddresses(accountReference, isChange);
         }
 
-        /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
+        {
+            return this.GetHistory(walletName, accountName, null, null, int.MaxValue);
+        }
+        
+        /// <inheritdoc />
+        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName, long? prevOutputTxTime, int? prevOutputIndex, int take)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
 
@@ -803,7 +810,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    accountsHistory.Add(this.GetHistory(account));
+                    accountsHistory.Add(this.GetHistory(account, prevOutputTxTime, prevOutputIndex, take));
                 }
             }
 
@@ -813,13 +820,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public AccountHistory GetHistory(HdAccount account)
         {
+            return this.GetHistory(account, null, null, int.MaxValue);
+        }
+      
+        protected AccountHistory GetHistory(HdAccount account, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue)
+        {
             Guard.NotNull(account, nameof(account));
             FlatHistory[] items;
             lock (this.lockObject)
             {
                 // Get transactions contained in the account.
                 items = account.GetCombinedAddresses()
-                    .Where(a => a.Transactions.Any())
+                    .Where(a => null == prevOutputTxTime ? a.Transactions.Any() : a.AsPaginated(prevOutputTxTime.Value, prevOutputIndex.Value, take).Transactions.Any())
                     .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 

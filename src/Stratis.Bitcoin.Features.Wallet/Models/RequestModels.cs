@@ -196,6 +196,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// wallet history records are retrieved.
         /// </summary>  
         public int? Take { get; set; }
+        
+        /// <summary>
+        /// Optional, Previous OutputTxTime, used for pagination
+        /// </summary>
+        public int? PrevOutputTxTime { get; set; }
+        
+        
+        /// <summary>
+        /// Optional, Previous PrevOutputIndex, used for pagination
+        /// </summary>
+        public int? PrevOutputIndex { get; set; }
 
         /// <summary>
         /// An optional string that can be used to match different data in the transaction records.

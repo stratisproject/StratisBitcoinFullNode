@@ -13,6 +13,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class TransactionCollection : ICollection<TransactionData>
     {
+        private readonly TransactionData previous;
+        private readonly int limit;
+
         private ICollection<TransactionData> transactions;
         public HdAddress Address { get; set; }
         private HdAccount account => this.Address?.AddressCollection?.Account;
@@ -34,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (this.repository == null)
                     this.transactions = this.transactions ?? new List<TransactionData>();
                 else
-                    this.transactions = this.repository.GetAllTransactions(this.Address).ToList();
+                    this.transactions = this.repository.GetAllTransactions(this.Address, this.limit, this.previous).ToList();
             }
 
             return this.transactions;
@@ -61,9 +64,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.Add(transaction);
         }
 
-        public TransactionCollection(HdAddress address)
+        public TransactionCollection(HdAddress address, TransactionData previous = null, int limit = int.MaxValue)
             : this(address, new List<TransactionData>())
         {
+            this.previous = previous;
+            this.limit = limit;
         }
 
         public void Add(TransactionData transaction)
@@ -121,6 +126,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         public HdAddress(ICollection<TransactionData> transactions = null)
         {
             this.Transactions = (transactions == null ) ? new TransactionCollection(this) : new TransactionCollection(this, transactions);
+        }
+
+        public HdAddress AsPaginated(long prevOutputTxTime, int prevOutputIndex, int limit = int.MaxValue)
+        {
+            this.Transactions = new TransactionCollection(this, new TransactionData
+            {
+                Index = prevOutputIndex,
+                CreationTime = DateTimeOffset.FromUnixTimeSeconds(prevOutputTxTime)
+            }, limit);
+
+            return this;
+
         }
 
         /// <summary>

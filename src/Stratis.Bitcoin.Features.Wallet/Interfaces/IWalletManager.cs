@@ -211,6 +211,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null);
 
         /// <summary>
+        /// Gets the history of transactions contained in an account.
+        /// If no account name is specified, history will be returned for all accounts in the wallet.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <param name="accountName">The account name.</param>
+        /// <param name="prevOutputTxTime">Previous OutputTxTime, used for pagination</param>
+        /// <param name="prevOutputIndex">Previous prevOutputIndex, used for pagination</param>
+        /// <param name="take">Number of records to Take</param>
+        /// <returns>Collection of address history and transaction pairs.</returns>
+
+        IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue);
+
+        /// <summary>
         /// Gets the history of the transactions in addresses contained in this account.
         /// </summary>
         /// <param name="account">The account for which to get history.</param>
