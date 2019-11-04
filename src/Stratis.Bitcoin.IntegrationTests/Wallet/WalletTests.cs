@@ -64,6 +64,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 long receivetotal = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 100, receivetotal);
+
+                // Check that on the sending node, the Spendable Balance includes unconfirmed transactions.
+                // The transaction will have consumed 3 outputs, leaving us 3, and will also return us some as change.
+                // Change is always the First output because Shuffle is false!
+                Money expectedSenderSpendableBalance = Money.COIN * 3 * 50 + trx.Outputs.First().Value; 
+                AccountBalance senderBalance = stratisSender.FullNode.WalletManager().GetBalances(WalletName).First();
+                Assert.Equal(expectedSenderSpendableBalance, senderBalance.SpendableAmount);
+
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // Generate two new blocks so the transaction is confirmed
