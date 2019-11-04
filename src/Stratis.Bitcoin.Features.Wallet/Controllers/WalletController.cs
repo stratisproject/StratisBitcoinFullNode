@@ -431,7 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     .GetHistory(request.WalletName, 
                         request.AccountName, 
                         request.PrevOutputTxTime, 
-                        request.PrevOutputTxTime, 
+                        request.PrevOutputIndex, 
                         request.Take ?? int.MaxValue);
 
                 foreach (AccountHistory accountHistory in accountsHistory)

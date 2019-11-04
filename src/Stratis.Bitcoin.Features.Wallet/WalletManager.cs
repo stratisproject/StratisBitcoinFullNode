@@ -831,7 +831,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // Get transactions contained in the account.
                 items = account.GetCombinedAddresses()
-                    .Where(a => null == prevOutputTxTime ? a.Transactions.Any() : a.AsPaginated(prevOutputTxTime.Value, prevOutputIndex.Value, take).Transactions.Any())
+                    .Where(a => take == int.MaxValue ? a.Transactions.Any() : a.AsPaginated(prevOutputTxTime, prevOutputIndex, take).Transactions.Any())
                     .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 

@@ -128,13 +128,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Transactions = (transactions == null ) ? new TransactionCollection(this) : new TransactionCollection(this, transactions);
         }
 
-        public HdAddress AsPaginated(long prevOutputTxTime, int prevOutputIndex, int limit = int.MaxValue)
+        public HdAddress AsPaginated(long? prevOutputTxTime, int? prevOutputIndex, int limit = int.MaxValue)
         {
-            this.Transactions = new TransactionCollection(this, new TransactionData
-            {
-                Index = prevOutputIndex,
-                CreationTime = DateTimeOffset.FromUnixTimeSeconds(prevOutputTxTime)
-            }, limit);
+            TransactionData transactionData = (null != prevOutputTxTime && null != prevOutputIndex)
+                ? new TransactionData
+                {
+                    Index = prevOutputIndex.Value,
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(prevOutputTxTime.Value)
+                }
+                : null;
+                
+            this.Transactions = new TransactionCollection(this, transactionData, limit);
 
             return this;
 
