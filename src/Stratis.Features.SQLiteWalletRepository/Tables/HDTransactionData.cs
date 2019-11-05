@@ -101,6 +101,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 LIMIT   {strLimit}");
         }
 
+        internal static int GetTransactionCount(DBConnection conn, int walletId, int? accountIndex)
+        {
+            string strWalletId = DBParameter.Create(walletId);
+            string strAccountIndex = DBParameter.Create(accountIndex);
+            return conn.ExecuteScalar<int>($@"
+                SELECT  Count (*)
+                FROM    HDTransactionData
+                WHERE   WalletId = {strWalletId} {(accountIndex == null ? $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {strWalletId})" : $@"
+                AND     AccountIndex = {strAccountIndex}")}");
+        }
+
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
         {
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;

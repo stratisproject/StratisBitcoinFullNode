@@ -347,6 +347,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletRepository.RewindWallet(walletName, chainedHeader);
         }
 
+        public int GetTransactionCount(string walletName, string accountName = null)
+        {
+            return this.WalletRepository.GetTransactionCount(walletName, accountName);
+        }
+
         /// <inheritdoc />
         public string SignMessage(string password, string walletName, string externalAddress, string message)
         {

@@ -155,6 +155,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public DateTime CreationDate { get; set; }
     }
 
+    public class WalletTransactionCountRequest : RequestModel
+    {
+        /// <summary>
+        /// The name of the wallet to query transaction count for.
+        /// </summary>
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        /// <summary>
+        /// Optional. The name of the account to query transaction count for. If no account name is specified,
+        /// the default account is used.
+        /// </summary>
+        public string AccountName { get; set; }
+    }
+
     /// <summary>
     /// A class containing the necessary parameters for a wallet history request.
     /// </summary>

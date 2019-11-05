@@ -19,6 +19,8 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
@@ -403,6 +405,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError(e, "Exception occurred: {0}");
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+        
+        /// <summary>
+        /// Get the transaction count for the specified Wallet and Account.
+        /// </summary>
+        /// <param name="request">The Transaction Count request Object</param>
+        /// <returns>Transaction Count</returns>
+        [Route("transactionCount")]
+        [HttpGet]
+        public async Task<IActionResult> GetTransactionCount([FromQuery] WalletTransactionCountRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+            return await Task.Run(() => this.Json(new
+            {
+                TransactionCount = this.walletManager.GetTransactionCount(request.WalletName, request.AccountName)
+            }));
         }
 
          /// <summary>

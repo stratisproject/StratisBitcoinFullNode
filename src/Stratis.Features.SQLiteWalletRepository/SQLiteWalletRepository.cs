@@ -1265,6 +1265,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             return this.GetWalletContainer(walletName).TransactionsOfInterest;
         }
+        
+        /// <inheritdoc />
+        public int GetTransactionCount(string walletName, string accountName = null)
+        {
+            var identifier = this.GetAddressIdentifier(walletName, accountName);
+
+            return HDTransactionData.GetTransactionCount(this.GetConnection(walletName), identifier.WalletId, identifier.AccountIndex);
+        }
 
         /// <inheritdoc />
         public IEnumerable<TransactionData> GetAllTransactions(HdAddress hdAddress, int limit = int.MaxValue, TransactionData prev = null, bool descending = true)

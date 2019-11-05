@@ -398,5 +398,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="tip">Identifies the height to sync from.</param>
         /// <param name="walletName">The optional wallet name if only a specific wallet should be synced.</param>
         void UpdateLastBlockSyncedHeight(ChainedHeader tip, string walletName = null);
+
+        /// <summary>
+        /// Get the Transaction Count for the specified Wallet and Account
+        /// </summary>
+        /// <param name="walletName">The Wallet Name to query</param>
+        /// <param name="accountName">The AccountName to query</param>
+        /// <returns>The transaction count</returns>
+        int GetTransactionCount(string walletName, string accountName = null);
     }
 }
