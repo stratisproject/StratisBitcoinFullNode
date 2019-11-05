@@ -974,12 +974,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                if (depth < requiredDepth)
-                {
-                    this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth);
-                    continue;
-                }
-
                 if (utxoStakeDescription.UtxoSet.Time > spendTime)
                 {
                     this.logger.LogDebug("UTXO '{0}' can't be added because its time {1} is greater than coinstake time {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.UtxoSet.Time, spendTime);
