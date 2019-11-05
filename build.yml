@@ -2,7 +2,6 @@
 
 parameters:
   name: ''
-  queue: ''
   platform: ''
   reason: '$(Build.Reason)'
   arch: 'x64' # Only overriden by 32-bit Windows
@@ -11,7 +10,6 @@ parameters:
 phases:
 - phase: ${{ parameters.name }}
   displayName: ${{ format('City Chain ({0}-{1})', parameters.platform, parameters.arch) }}
-  queue: ${{ parameters.queue }}
   steps:
 
   - powershell: |

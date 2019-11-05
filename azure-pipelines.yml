@@ -8,30 +8,68 @@
 #   exclude:
 #   - v* #Exclude verions tags
 
-phases:
-- template: build.yml
-  parameters:
-    name: macOS
-    platform: osx
-    queue: Hosted macOS
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - template: build.yml
+    parameters:
+      name: Linux
+      platform: linux
 
-- template: build.yml
-  parameters:
-    name: Linux
-    platform: linux
-    queue: Hosted Ubuntu 1604
+- job: macOS
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - template: build.yml
+    parameters:
+      name: macOS
+      platform: osx
 
-- template: build.yml
-  parameters:
-    name: Windows_x86
-    platform: win
-    arch: x86
-    queue: Hosted VS2017
+- job: Windows_x64
+  pool:
+    vmImage: 'windows-latest'
+  steps:
+  - template: build.yml
+    parameters:
+      name: Windows_x64
+      platform: win
 
-- template: build.yml
-  parameters:
-    name: Windows_x64
-    platform: win
-    queue: Hosted VS2017
+- job: Windows_x86
+  pool:
+    vmImage: 'windows-latest'
+  steps:
+  - template: build.yml
+    parameters:
+      name: Windows_x86
+      platform: win
+      arch: x86
+
+# phases:
+# - template: build.yml
+#   parameters:
+#     name: macOS
+#     platform: osx
+#     queue: Hosted macOS
+
+# - template: build.yml
+#   parameters:
+#     name: Linux
+#     platform: linux
+#     queue: Hosted Ubuntu 1604
+
+# - template: build.yml
+#   parameters:
+#     name: Windows_x86
+#     platform: win
+#     arch: x86
+#     queue: Hosted VS2017
+
+# - template: build.yml
+#   parameters:
+#     name: Windows_x64
+#     platform: win
+#     queue: Hosted VS2017
 
 name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.rr)
