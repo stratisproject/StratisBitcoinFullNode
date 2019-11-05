@@ -152,6 +152,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // There should be one spendable transaction. And it should be testTx2.
                 Assert.Single(spendableTxs);
                 Assert.Equal(testTx2.GetHash(), spendableTxs.First().Transaction.Id);
+
+                // It follows that if the above assert was violated we would have conflicts when we build a transaction. 
+                // Specifically what we don't want is to have testTx1 in our spendable transactions, which was causing the known issue.
             }
         }
 
