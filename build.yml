@@ -7,78 +7,77 @@ parameters:
   arch: 'x64' # Only overriden by 32-bit Windows
   configuration: 'Release' # Only do debug if specified
 
-jobs:
-- job: ${{ parameters.name }}
-  displayName: ${{ format('City Chain ({0}-{1})', parameters.platform, parameters.arch) }}
-  steps:
+# jobs:
+# - job: ${{ parameters.name }}
+#   displayName: ${{ format('City Chain ({0}-{1})', parameters.platform, parameters.arch) }}
+steps:
+- powershell: |
+    $version = (Get-Content package.json) -join "`n" | ConvertFrom-Json | Select -ExpandProperty "version"
+    Write-Host "##vso[task.setvariable variable=Build.BuildNumber]$version"
+    Write-Host "##vso[task.setvariable variable=App.BuildNumber]$version" 
+    Write-Host "BUILD_REASON: $Env:BUILD_REASON"
+    Write-Host "BUILD_SOURCEBRANCH: $Env:BUILD_SOURCEBRANCH"
+    Write-Host "BUILD_SOURCEBRANCHNAME: $Env:BUILD_SOURCEBRANCHNAME"
+    Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTID: $Env:SYSTEM_PULLREQUEST_PULLREQUESTID"
+    Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER: $Env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
+    Write-Host "SYSTEM_PULLREQUEST_SOURCEBRANCH: $Env:SYSTEM_PULLREQUEST_SOURCEBRANCH"
+  displayName: version number
 
-  - powershell: |
-      $version = (Get-Content package.json) -join "`n" | ConvertFrom-Json | Select -ExpandProperty "version"
-      Write-Host "##vso[task.setvariable variable=Build.BuildNumber]$version"
-      Write-Host "##vso[task.setvariable variable=App.BuildNumber]$version" 
-      Write-Host "BUILD_REASON: $Env:BUILD_REASON"
-      Write-Host "BUILD_SOURCEBRANCH: $Env:BUILD_SOURCEBRANCH"
-      Write-Host "BUILD_SOURCEBRANCHNAME: $Env:BUILD_SOURCEBRANCHNAME"
-      Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTID: $Env:SYSTEM_PULLREQUEST_PULLREQUESTID"
-      Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER: $Env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
-      Write-Host "SYSTEM_PULLREQUEST_SOURCEBRANCH: $Env:SYSTEM_PULLREQUEST_SOURCEBRANCH"
-    displayName: version number
+- task: DotNetCoreCLI@2
+  displayName: dotnet publish
+  inputs:
+    command: publish
+    projects: '**/City.Chain.csproj'
+    workingDirectory: 'src/City.Chain'
+    publishWebProjects: false
+    zipAfterPublish: false
+    modifyOutputPath: false
+    arguments: ${{ format('-c {0} -r {1}-{2} -v m', parameters.configuration, parameters.platform, parameters.arch) }}
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish
-    inputs:
-      command: publish
-      projects: '**/City.Chain.csproj'
-      workingDirectory: 'src/City.Chain'
-      publishWebProjects: false
-      zipAfterPublish: false
-      modifyOutputPath: false
-      arguments: ${{ format('-c {0} -r {1}-{2} -v m', parameters.configuration, parameters.platform, parameters.arch) }}
+# Run all unit tests, by applying the "*.Tests.csproj" filter it should avoid IntegrationTests projects.
+# Only run tests on Linux.
+- task: DotNetCoreCLI@2
+  displayName: dotnet test
+  #condition: and(succeeded(), eq(variables['parameters.platform'], 'linux')) # Unable to get condition to work.
+  inputs:
+    command: test
+    ${{ if eq(parameters.reason, 'Schedule') }}:
+      projects: '**/*.Tests.csproj'
+    ${{ if ne(parameters.reason, 'Schedule') }}:
+      projects: '**/City.*.Tests.csproj'
+    arguments: ${{ format('-c {0} -v m', parameters.configuration) }}
 
-  # Run all unit tests, by applying the "*.Tests.csproj" filter it should avoid IntegrationTests projects.
-  # Only run tests on Linux.
-  - task: DotNetCoreCLI@2
-    displayName: dotnet test
-    #condition: and(succeeded(), eq(variables['parameters.platform'], 'linux')) # Unable to get condition to work.
-    inputs:
-      command: test
-      ${{ if eq(parameters.reason, 'Schedule') }}:
-        projects: '**/*.Tests.csproj'
-      ${{ if ne(parameters.reason, 'Schedule') }}:
-        projects: '**/City.*.Tests.csproj'
-      arguments: ${{ format('-c {0} -v m', parameters.configuration) }}
+- task: ArchiveFiles@2
+  displayName: archive
+  inputs:
+    rootFolderOrFile: ${{ format('src/City.Chain/bin/{0}/netcoreapp2.1/{1}-{2}/publish/', parameters.configuration, parameters.platform, parameters.arch) }}
+    includeRootFolder: false
 
-  - task: ArchiveFiles@2
-    displayName: archive
-    inputs:
-      rootFolderOrFile: ${{ format('src/City.Chain/bin/{0}/netcoreapp2.1/{1}-{2}/publish/', parameters.configuration, parameters.platform, parameters.arch) }}
-      includeRootFolder: false
+    ${{ if eq(parameters.platform, 'linux') }}:
+      archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.tar.gz', parameters.platform, parameters.arch) }}
+      archiveType: tar
+    ${{ if ne(parameters.platform, 'linux') }}:
+      archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.zip', parameters.platform, parameters.arch) }}  
 
-      ${{ if eq(parameters.platform, 'linux') }}:
-        archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.tar.gz', parameters.platform, parameters.arch) }}
-        archiveType: tar
-      ${{ if ne(parameters.platform, 'linux') }}:
-        archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.zip', parameters.platform, parameters.arch) }}  
+# Publish Build Artifacts
+# Publish build artifacts to Azure Pipelines/TFS or a file share
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+    artifactName: 'drop' 
+    #publishLocation: 'Container' # Options: container, filePath
+    #targetPath: # Required when publishLocation == FilePath
+    #parallel: false # Optional
+    #parallelCount: # Optional
 
-  # Publish Build Artifacts
-  # Publish build artifacts to Azure Pipelines/TFS or a file share
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-      artifactName: 'drop' 
-      #publishLocation: 'Container' # Options: container, filePath
-      #targetPath: # Required when publishLocation == FilePath
-      #parallel: false # Optional
-      #parallelCount: # Optional
-
-  - task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@0
-    displayName: github release
-    condition: and(succeeded(), eq(variables['build.sourcebranch'], 'refs/heads/master'))
-    inputs:
-      githubEndpoint: github
-      githubRepository: 'CityChainFoundation/city-chain'
-      githubReleaseTitle: 'City Chain (Release $(Build.BuildNumber))'
-      githubReleasePrerelease: true
-      githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
-      manifestJson: package.json
-      githubEditRelease: true
+- task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@0
+  displayName: github release
+  condition: and(succeeded(), eq(variables['build.sourcebranch'], 'refs/heads/master'))
+  inputs:
+    githubEndpoint: github
+    githubRepository: 'CityChainFoundation/city-chain'
+    githubReleaseTitle: 'City Chain (Release $(Build.BuildNumber))'
+    githubReleasePrerelease: true
+    githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
+    manifestJson: package.json
+    githubEditRelease: true
