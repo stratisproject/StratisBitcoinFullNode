@@ -52,7 +52,7 @@ namespace City.Chain.Tests
         {
             Network network = new CityMain();
 
-            Assert.Equal(12, network.Checkpoints.Count);
+            Assert.Equal(15, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
 
@@ -104,7 +104,6 @@ namespace City.Chain.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(2500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);

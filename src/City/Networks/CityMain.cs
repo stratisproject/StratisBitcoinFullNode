@@ -71,20 +71,6 @@ namespace City.Networks
                 maxStandardTxSigopsCost: 20_000 / 5
             );
 
-            var buriedDeployments = new BuriedDeploymentsArray
-            {
-                [BuriedDeployments.BIP34] = 0,
-                [BuriedDeployments.BIP65] = 0,
-                [BuriedDeployments.BIP66] = 0
-            };
-
-            var bip9Deployments = new CityBIP9Deployments()
-            {
-                [CityBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2,
-                    new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
-                    new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
-            };
-
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
@@ -94,8 +80,13 @@ namespace City.Networks
                 majorityEnforceBlockUpgrade: 750,
                 majorityRejectBlockOutdated: 950,
                 majorityWindow: 1000,
-                buriedDeployments: buriedDeployments,
-                bip9Deployments: bip9Deployments,
+                buriedDeployments: new BuriedDeploymentsArray
+                {
+                    [BuriedDeployments.BIP34] = 0,
+                    [BuriedDeployments.BIP65] = 0,
+                    [BuriedDeployments.BIP66] = 0
+                },
+                bip9Deployments: new NoBIP9Deployments(),
                 bip34Hash: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
@@ -148,12 +139,18 @@ namespace City.Networks
                 { 40000, new CheckpointInfo(new uint256("0xd3fc0976cb034b1e3eccdd6c4ebb76c0933ea37c47d43831371880346b9200b8"), new uint256("0x03a09ede5eadd8dbbc36806ef530c21c5548a7a823cf173c97439576dcb4d26d")) },
                 { 100000, new CheckpointInfo(new uint256("0x05ca140afb76f1f1f3ac7f2c85751d90ce85a9c415628e4508c02983682647d9"), new uint256("0xc38b427f8aeab86baaa784e5e0b34ea471d35ebcb43a7651eb2eddbec7f0e73b")) },
                 { 150000, new CheckpointInfo(new uint256("0x0be1d4fce6a93989025d405292d12aca12c7417494e50c2c633ad2f7bb7cbb53"), new uint256("0xcaafe0d5594c6b12bd0b819ccc22dba5ae7dcea32721cd97df369dbe868e13e9")) },
+                { 300000, new CheckpointInfo(new uint256("0x8e6f02341f5db1af8e8bec7fb4471d789c180b627d853b764bbf9f360140f3dd"), new uint256("0x287f59ae242630024100c633ac452daa46c679c51be09c9f1432edd8de235bba")) },
+                { 400000, new CheckpointInfo(new uint256("0x6a3503d4e1c2d3353abc5eff5f9fade16a8c88f7424877178605f52e3809114f"), new uint256("0x8c9fb0439c272bd71390fe95a3991b84c450be17ecc10dffa4b9de189798af17")) },
+                { 470000, new CheckpointInfo(new uint256("0xe3bcd65fe121a112019b4bb8cd077536ee195d84e66f3bf1b7d00a0cdfda331d"), new uint256("0xeee34e8c50a761ecf2c73636842c9da4b5c5a6473890608c30f1702ef225f346")) },
             };
 
-            var encoder = new Bech32Encoder("bc");
             this.Bech32Encoders = new Bech32Encoder[2];
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            // Bech32 is currently unsupported - once supported uncomment lines below
+            //var encoder = new Bech32Encoder("bc");
+            //this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            //this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = null;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = null;
 
             this.DNSSeeds = new List<DNSSeedData>
             {
@@ -167,7 +164,8 @@ namespace City.Networks
             {
                 new NetworkAddress(IPAddress.Parse("23.97.234.230"), this.DefaultPort),
                 new NetworkAddress(IPAddress.Parse("13.73.143.193"), this.DefaultPort),
-                new NetworkAddress(IPAddress.Parse("52.246.182.23"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("94.177.215.201"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("96.126.122.213"), this.DefaultPort),
             };
 
 			this.StandardScriptsRegistry = new CityStandardScriptsRegistry();
@@ -242,7 +240,8 @@ namespace City.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule)
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxOutDustRule)
             };
         }
 
