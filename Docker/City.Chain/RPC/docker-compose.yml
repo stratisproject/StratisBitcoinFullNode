@@ -2,8 +2,8 @@ version: "3"
 services:
   node:
     container_name: city-node
-    image: citychain/citychain:1.0.20
-    command: ["-server=1", "-txindex=1", "-walletnotify=curl -X POST -d txid=%s http://localhost/api", "-apiuri=http://0.0.0.0:4335", "-rpcallowip=0.0.0.0", "-rpcport=4334", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-defaultwallet=1", "-defaultwalletpassword=default", "-addnode=52.246.182.23", "-addnode=13.73.143.193"]
+    image: citychain/citychain:1.0.21
+    command: ["-server=1", "-txindex=1", "-walletnotify=curl -X POST -d txid=%s http://localhost/api", "-apiuri=http://0.0.0.0:4335", "-rpcallowip=10.0.75.1", "-rpcport=4334", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-defaultwallet=1", "-defaultwalletpassword=default"]
     ports: 
         - 4333:4333
         - 4334:4334

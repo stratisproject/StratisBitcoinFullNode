@@ -51,3 +51,12 @@ curl rpcuser:rpcpassword@localhost:4334 -X POST --data-binary "{'jsonrpc': '1.0'
 ```json
 {"result":{"walletname":"default.wallet.json","walletversion":1,"balance":0,"unconfirmed_balance":0,"immature_balance":0},"id":1,"error":null}
 ```
+
+
+## listtransactions alternative
+
+Currently the RPC API does not support the "listtransactions", alternative is to use the REST API, example:
+
+```sh
+curl -X GET "http://localhost:4335/api/Wallet/history?WalletName=default&AccountName=account%200" -H "accept: application/json"
+```
