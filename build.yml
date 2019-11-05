@@ -7,8 +7,8 @@ parameters:
   arch: 'x64' # Only overriden by 32-bit Windows
   configuration: 'Release' # Only do debug if specified
 
-phases:
-- phase: ${{ parameters.name }}
+jobs:
+- job: ${{ parameters.name }}
   displayName: ${{ format('City Chain ({0}-{1})', parameters.platform, parameters.arch) }}
   steps:
 
