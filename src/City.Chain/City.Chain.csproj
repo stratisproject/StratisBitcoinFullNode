@@ -21,6 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Blockcore.Features.WalletNotify\Blockcore.Features.WalletNotify.csproj" />
     <ProjectReference Include="..\City\City.csproj" />
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj" />

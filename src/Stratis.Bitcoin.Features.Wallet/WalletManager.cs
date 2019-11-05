@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
@@ -95,6 +96,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
 
+        private readonly ISignals signals;
+
         public uint256 WalletTipHash { get; set; }
         public int WalletTipHeight { get; set; }
 
@@ -118,7 +121,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
+            IBroadcasterManager broadcasterManager = null, // no need to know about transactions the node will broadcast to.
+            ISignals signals = null)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -145,6 +149,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
+            this.signals = signals;
 
             // register events
             if (this.broadcasterManager != null)
@@ -1052,6 +1057,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
                         this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", hash);
+
+                        if (this.signals != null)
+                        {
+                            this.signals.Publish(new Events.TransactionFound(transaction));
+                        }
                     }
                 }
 

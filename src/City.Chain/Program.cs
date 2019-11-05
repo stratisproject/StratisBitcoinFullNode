@@ -3,6 +3,7 @@
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Blockcore.Features.WalletNotify;
     using City.Features.BlockExplorer;
     using City.Networks;
     using NBitcoin;
@@ -123,6 +124,7 @@
                         .AddPowPosMining()
                         .UseApi()
                         .UseApps()
+                        .UseWalletNotify()
                         .AddRPC()
                         .Build();
                 }
