@@ -66,6 +66,8 @@ namespace Stratis.Bitcoin.Configuration.Logging
             // { "lock", "" },
             // { "mempoolrej", "" },
             { "net", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Connection)}.*" },
+            { "walletnotify", $"Blockcore.Features.WalletNotify.*" },
+            { "city", $"City.*" },
             // { "proxy", "" },
             // { "prune", "" },
             // { "rand", "" },
@@ -202,6 +204,8 @@ namespace Stratis.Bitcoin.Configuration.Logging
             }
 
             LogManager.Configuration.LoggingRules.Add(defaultRule);
+            LogManager.Configuration.LoggingRules.Add(new LoggingRule($"Blockcore.*", settings.LogLevel, mainTarget));
+            LogManager.Configuration.LoggingRules.Add(new LoggingRule($"City.*", settings.LogLevel, mainTarget));
 
             // Apply new rules.
             LogManager.ReconfigExistingLoggers();

@@ -50,9 +50,6 @@ namespace Blockcore.Features.WalletNotify
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletSettings = walletSettings;
             this.signals = signals;
-
-            // TEMP EXAMPLE, left since code is not done yet.
-            // this.walletSettings.WalletNotify = "curl -X POST -d txid=%s http://127.0.0.1:8080";
         }
 
         public override Task InitializeAsync()
@@ -63,12 +60,17 @@ namespace Blockcore.Features.WalletNotify
                 return Task.CompletedTask;
             }
 
+            this.logger.LogInformation($"-walletnotify was configured with command: {this.walletSettings.WalletNotify}.");
+
             var cmdArray = this.walletSettings.WalletNotify.Split(' ');
 
             this.shellCommand = cmdArray.First();
             this.shellArguments = string.Join(" ", cmdArray.Skip(1));
 
             this.transactionFoundSubscription = this.signals.Subscribe<TransactionFound>(ev => this.ProcessTransactionAndNotify(ev.FoundTransaction));
+
+            
+            this.logger.LogInformation($"-walletnotify was parsed as: {this.shellCommand} {this.shellArguments}");
 
             return Task.CompletedTask;
         }
