@@ -32,6 +32,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public int MaxBlockMemoryInMB { get; private set; }
 
         /// <summary>
+        /// The maximum number of cache items to be stored in the coinview.
+        /// </summary>
+        public int MaxCoinViewCacheItems { get; private set; }
+
+        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -47,6 +52,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid, this.logger);
             this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge, this.logger);
             this.MaxBlockMemoryInMB = config.GetOrDefault("maxblkmem", 200, this.logger);
+            this.MaxCoinViewCacheItems = config.GetOrDefault("maxcoinviewcacheitems", 100_000, this.logger);
         }
 
         /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>
@@ -57,10 +63,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
-            builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
-            builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {network.MaxTipAge}.");
-            builder.AppendLine($"-maxblkmem=<number>       Max memory to use for unconsumed blocks in MB. Default 200.");
+            builder.AppendLine($"-checkpoints=<0 or 1>              Use checkpoints. Default 1.");
+            builder.AppendLine($"-assumevalid=<hex>                 If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all). Defaults to { network.Consensus.DefaultAssumeValid }.");
+            builder.AppendLine($"-maxtipage=<number>                Max tip age. Default {network.MaxTipAge}.");
+            builder.AppendLine($"-maxblkmem=<number>                Max memory to use for unconsumed blocks in MB. Default 200.");
+            builder.AppendLine($"-maxcoinviewcacheitems=<number>    Max number of items to store in the coinview cache. Default 100000.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }

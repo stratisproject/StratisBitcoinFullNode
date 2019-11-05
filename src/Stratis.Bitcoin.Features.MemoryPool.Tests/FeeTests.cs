@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var txf = new Transaction();
             txf.AddInput(new TxIn(garbage));
             txf.AddOutput(new TxOut(0L, Script.Empty));
-            var baseRate = new FeeRate(basefee, txf.GetVirtualSize());
+            var baseRate = new FeeRate(basefee, txf.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor));
 
             // Create a fake block
             var block = new List<Transaction>();

@@ -40,5 +40,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.ReadyData
         public static string BitcoinRegTest150NoWallet = @"ReadyData/RegTest150NoWallet.zip";
 
         public static string StratisXMainnet15K = @"ReadyData/StratisXOver15K.zip";
+        public static string StratisMainnet9500 = @"ReadyData/StratisMain9500.zip";
     }
 }

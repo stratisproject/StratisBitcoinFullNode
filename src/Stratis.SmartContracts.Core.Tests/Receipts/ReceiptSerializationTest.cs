@@ -52,14 +52,14 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
             TestStorageSerialize(receipt);
 
             // Test cases where either the sender or contract is null - AKA CALL vs CREATE
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null, true, "Test Result", "Test Error Message", 54321, 1_000_000, "TestMethodName") { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null, true, "Test Result", "Test Error Message", 54321, 1_000_000, "TestMethodName", 123456) { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
             receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), null, new uint160(23), true, "Test Result 2", "Test Error Message 2", 54321, 1_000_000) { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
         }
 
         [Fact]
-        public void Receipt_With_No_MethodName_Deserializes_Correctly()
+        public void Receipt_With_No_MethodName_Or_BlockNumber_Deserializes_Correctly()
         {
             var receipt = new Receipt(new uint256(1234), 12345, new Log[]{}, new uint256(12345), new uint160(25), new uint160(24), null, true, "Test Result", "Test Error Message", 54321, 1_000_000) { BlockHash = new uint256(1234) };
 
@@ -141,6 +141,7 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
             Assert.Equal(receipt1.Success, receipt2.Success);
             Assert.Equal(receipt1.ErrorMessage, receipt2.ErrorMessage);
             Assert.Equal(receipt1.MethodName, receipt2.MethodName);
+            Assert.Equal(receipt1.BlockNumber, receipt2.BlockNumber);
         }
 
         private static void TestLogsEqual(Log log1, Log log2)

@@ -653,6 +653,20 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             rpcCall.Should().Throw<ArgumentException>();
         }
 
+        [Fact]
+        public void GivenValidTxHexWithoutSegwit_WhenCallingDecodeRawTransaction_WeightShouldBe4TimesTheSize()
+        {
+            this.fullNode.SetupGet(p => p.Network).Returns(this.network);
+            var txId = new uint256(1243124);
+            Transaction transaction = this.CreateTransaction();
+            var decodedTx = this.controller.DecodeRawTransaction(transaction.ToHex());
+            decodedTx.Should().BeOfType<TransactionVerboseModel>();
+
+            var verboseTx = (TransactionVerboseModel) decodedTx;
+            verboseTx.Weight.Should().Be(verboseTx.VSize * 4 - 3);
+            verboseTx.Hex.Should().BeNullOrEmpty();
+        }
+
         private Transaction CreateTransaction()
         {
             var transaction = new Transaction();

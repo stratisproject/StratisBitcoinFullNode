@@ -57,6 +57,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Priority when entering the memory pool.</summary>
         private double entryPriority;
 
+        /// <summary> Proof of work consensus options.</summary>
+        private readonly ConsensusOptions consensusOptions;
+
         /// <summary>
         /// Constructs a transaction memory pool entry.
         /// </summary>
@@ -85,6 +88,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.SpendsCoinbase = spendsCoinbase;
             this.SigOpCost = nSigOpsCost;
             this.LockPoints = lp;
+            this.consensusOptions = consensusOptions;
 
             this.TxWeight = MempoolValidator.GetTransactionWeight(transaction, consensusOptions);
             this.nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction, consensusOptions);
@@ -217,7 +221,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The transaction size.</returns>
         public long GetTxSize()
         {
-            return (long)this.Transaction.GetVirtualSize();
+            return (long)this.Transaction.GetVirtualSize(this.consensusOptions.WitnessScaleFactor);
         }
 
         /// <summary>
