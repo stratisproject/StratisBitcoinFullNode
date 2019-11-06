@@ -11,9 +11,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         public Transaction RemovedTransaction { get; }
 
-        public TransactionRemovedFromMemoryPool(Transaction removedTransaction)
+        public bool RemovedForBlock { get; }
+
+        public TransactionRemovedFromMemoryPool(Transaction removedTransaction, bool removedForBlock)
         {
             this.RemovedTransaction = removedTransaction;
+            this.RemovedForBlock = removedForBlock;
         }
     }
 }

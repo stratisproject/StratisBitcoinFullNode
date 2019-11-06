@@ -64,7 +64,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
         public static DBCommand CmdUploadPrevOut(this DBConnection conn)
         {
             return conn.CreateCommand($@"
-                REPLACE INTO HDTransactionData
+                INSERT INTO HDTransactionData
                 SELECT A.WalletID
                 ,      A.AccountIndex
                 ,      A.AddressType
@@ -100,7 +100,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                        ON     TD.OutputTxId = T.OutputTxId
                        AND    TD.OutputIndex = T.OutputIndex
                        AND    TD.ScriptPubKey = T.ScriptPubKey
-                       AND    (TD.OutputBlockHash IS NOT NULL OR TD.OutputBlockHeight IS NOT NULL))");
+                       AND    (TD.OutputBlockHash IS NOT NULL OR TD.OutputBlockHeight IS NOT NULL))
+                ON CONFLICT(WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex) DO UPDATE SET 
+                       OutputBlockHeight = excluded.OutputBlockHeight,
+                       OutputBlockHash = excluded.OutputBlockHash");
         }
 
         public static DBCommand CmdReplacePayments(this DBConnection conn)

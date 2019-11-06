@@ -111,8 +111,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemovedFromMempool)
         {
-            this.logger.LogDebug("Removing transaction '{0}' as it was removed from the mempool.", transactionRemovedFromMempool.RemovedTransaction.GetHash());
-            this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
+            this.logger.LogDebug("Transaction '{0}' was removed from the mempool. RemovedForBlock={1}", 
+                transactionRemovedFromMempool.RemovedTransaction.GetHash(), transactionRemovedFromMempool.RemovedForBlock);
+
+            if (!transactionRemovedFromMempool.RemovedForBlock)
+            {
+                this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
+            }
         }
 
         /// <inheritdoc />
