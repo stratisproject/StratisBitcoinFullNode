@@ -215,6 +215,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// </summary>
         /// <param name="stage">Staged transactions.</param>
         /// <param name="updateDescendants">Whether to update decendants.</param>
+        /// <param name="removeForBlock">Whether the transaction is being removed because it was included in a block.</param>
         /// <remarks>
         /// If a transaction is in this set, then all in-mempool descendants must
         /// also be in the set, unless this transaction is being removed for being
@@ -222,7 +223,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// Set updateDescendants to true when removing a tx that was in a block, so
         /// that any in-mempool descendants have their ancestor state updated.
         /// </remarks>
-        void RemoveStaged(TxMempool.SetEntries stage, bool updateDescendants);
+        void RemoveStaged(TxMempool.SetEntries stage, bool updateDescendants, bool removeForBlock = false);
 
         /// <summary>
         /// Set how frequent the sanity check is executed.
