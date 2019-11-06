@@ -618,8 +618,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Check for spending overlaps.
             // Performs checks that we do not affect a confirmed transaction's spends.
-            // This will remove any unconfirmed transactions that spend the same inputs as incoming transactions, but will not
-            // remove the transactions themselves - they will be updated rather than inserted by the CmdUploadPrevOut query.  
+            // This will detect any existing unconfirmed transactions that spend the same inputs as incoming confirmed transactions, 
+            // unless it's the same transaction - those will be updated rather than inserted by the CmdUploadPrevOut query.  
             var cmdUpdateOverlaps = this.Commands["CmdUpdateOverlaps"];
             cmdUpdateOverlaps.Bind("walletName", walletName);
             cmdUpdateOverlaps.Bind("prevHash", prevHash);
