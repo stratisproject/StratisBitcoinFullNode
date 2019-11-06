@@ -199,10 +199,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 throw new ArgumentException(nameof(hex), ex.Message);
             }
-            catch (FormatException ex)
-            {
-                throw new ArgumentException(nameof(hex), ex.Message);
-            }
             catch (Exception)
             {
                 return null;
@@ -477,12 +473,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             foreach (var consensusBuriedDeployment in Enum.GetValues(typeof(BuriedDeployments)))
             {
-                bool active = this.ChainIndexer.Height >= this.Network.Consensus.BuriedDeployments[(BuriedDeployments) consensusBuriedDeployment];
+                bool active = this.ChainIndexer.Height >= this.Network.Consensus.BuriedDeployments[(BuriedDeployments)consensusBuriedDeployment];
                 blockchainInfo.SoftForks.Add(new SoftForks
                 {
                     Id = consensusBuriedDeployment.ToString().ToLower(),
                     Version = (int)consensusBuriedDeployment + 2, // hack to get the deployment number similar to bitcoin core without changing the enums
-                    Status = new SoftForksStatus {Status = active}
+                    Status = new SoftForksStatus { Status = active }
                 });
             }
 
@@ -503,7 +499,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 if (metric.TimeTimeOut?.Ticks > 0)
                     blockchainInfo.SoftForksBip9.Add(metric.DeploymentName, this.CreateSoftForksBip9(metric, thresholdStates[metric.DeploymentIndex]));
             }
-            
+
             // TODO: Implement blockchainInfo.warnings
             return blockchainInfo;
         }
