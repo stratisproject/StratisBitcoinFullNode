@@ -309,5 +309,175 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(inputAmount, firstInput.Amount);
             Assert.Equal(inputAmount2, secondInput.Amount);
         }
+
+        [Fact]
+        public void SpecificCaseThatFails()
+        {
+            var query = new AccountBasedWalletHistoryQuery();
+
+            var testAddress = "CUtNvY1Jxpn4V4RD1tgphsUKpQdo4q5i54";
+
+            var history = new List<FlatHistory>();
+
+            var firstInputHistoryItem = new FlatHistory();
+            var secondInputHistoryItem = new FlatHistory();
+            var thirdInputHistoryItem = new FlatHistory();
+            var fourthInputHistoryItem = new FlatHistory();
+
+            history.Add(firstInputHistoryItem);
+            history.Add(secondInputHistoryItem);
+            history.Add(thirdInputHistoryItem);
+            history.Add(fourthInputHistoryItem);
+
+            firstInputHistoryItem.Address = new HdAddress
+            {
+                Address = testAddress
+            };
+
+            secondInputHistoryItem.Address = firstInputHistoryItem.Address;
+            thirdInputHistoryItem.Address = firstInputHistoryItem.Address;
+            fourthInputHistoryItem.Address = firstInputHistoryItem.Address;
+
+            firstInputHistoryItem.Transaction = new TransactionData
+            {
+                Id = new uint256("e74c1de67a8d861dc10088bde97d0c9a416583342375c20de3e5f0ea82d33978"),
+                CreationTime = Utils.UnixTimeToDateTime(1572525168),
+                Amount = 10000000000000000,
+                Index = 0,
+                BlockHeight =  2,
+                BlockIndex = 1,
+                IsCoinBase = true,
+                SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = 5,
+                    CreationTime = Utils.UnixTimeToDateTime(1572525216),
+                    TransactionId = new uint256("1d14257b77c543077d1178e46ddbae963a34e1bcb1c6359f8f6967768a9aad3b"),
+                    Payments = new List<PaymentDetails>
+                    {
+                        new PaymentDetails
+                        {
+                            OutputIndex = 0,
+                            Amount = 9999998999990000,
+                            DestinationAddress = testAddress // Send to self
+                        },
+                        new PaymentDetails
+                        {
+                            OutputIndex = 1,
+                            Amount = 1000000000,
+                            DestinationAddress = testAddress, // Also send change to self
+                        }
+                    }
+                }
+            };
+
+            secondInputHistoryItem.Transaction = new TransactionData
+            {
+                Id = new uint256("1d14257b77c543077d1178e46ddbae963a34e1bcb1c6359f8f6967768a9aad3b"),
+                CreationTime = Utils.UnixTimeToDateTime(1572525216),
+                Amount = 9999998999990000,
+                Index = 0,
+                BlockHeight = 5,
+                BlockIndex = 1,
+                SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = 55,
+                    CreationTime = Utils.UnixTimeToDateTime(1572526192),
+                    TransactionId = new uint256("a14b74411bb1850e2ea0f4026916d8d1b64f01290317fcbc00966e73d31e56c5"),
+                    Payments = new List<PaymentDetails>
+                    {
+                        new PaymentDetails
+                        {
+                            OutputIndex = 0,
+                            Amount = 9999996999980000,
+                            DestinationAddress = testAddress // Send to self
+                        },
+                        new PaymentDetails
+                        {
+                            OutputIndex = 1,
+                            Amount = 2000000000,
+                            DestinationAddress = testAddress, // Also send change to self
+                        }
+                    }
+                }
+            };
+
+            thirdInputHistoryItem.Transaction = new TransactionData
+            {
+                Id = new uint256("1d14257b77c543077d1178e46ddbae963a34e1bcb1c6359f8f6967768a9aad3b"),
+                CreationTime = Utils.UnixTimeToDateTime(1572525216),
+                Amount = 1000000000,
+                Index = 0,
+                BlockHeight = 5,
+                BlockIndex = 1,
+                SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = 57,
+                    CreationTime = Utils.UnixTimeToDateTime(1572526224),
+                    TransactionId = new uint256("786b12b1726146dd8b07b1717f2180aca8d5e52d467ed515c54f66877d64b288"),
+                    Payments = new List<PaymentDetails>
+                    {
+                        new PaymentDetails
+                        {
+                            OutputIndex = 0,
+                            Amount = 899990000,
+                            DestinationAddress = testAddress // Send to self
+                        },
+                        new PaymentDetails
+                        {
+                            OutputIndex = 1,
+                            Amount = 100000000,
+                            DestinationAddress = testAddress, // Also send change to self
+                        }
+                    }
+                }
+            };
+
+            fourthInputHistoryItem.Transaction = new TransactionData
+            {
+                Id = new uint256("a14b74411bb1850e2ea0f4026916d8d1b64f01290317fcbc00966e73d31e56c5"),
+                CreationTime = Utils.UnixTimeToDateTime(1572526192),
+                Amount = 9999996999980000,
+                Index = 0,
+                BlockHeight = 55,
+                BlockIndex = 1,
+                SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = 59,
+                    CreationTime = Utils.UnixTimeToDateTime(1572526256),
+                    TransactionId = new uint256("d52d91d272e3f8e9068fec781c3759182549aecae53cdd18d3ab1d5b102641b7"),
+                    Payments = new List<PaymentDetails>
+                    {
+                        new PaymentDetails
+                        {
+                            OutputIndex = 0,
+                            Amount = 9999993999970000,
+                            DestinationAddress = testAddress // Send to self
+                        },
+                        new PaymentDetails
+                        {
+                            OutputIndex = 1,
+                            Amount = 3000000000,
+                            DestinationAddress = testAddress, // Also send change to self
+                        }
+                    }
+                }
+            };
+
+            var result = query.GetHistory(history, testAddress);
+
+            Assert.Equal(5, result.Count);
+
+            var first = result[0];
+            var second = result[1];
+            var third = result[2];
+            var fourth = result[3];
+            var fifth = result[4];
+
+            Assert.Equal((Money)10000000000000000, fifth.Amount);
+            Assert.Equal((Money)1000000000, fourth.Amount);
+            Assert.Equal(2000000000, third.Amount);
+            Assert.Equal(100000000, second.Amount);
+            Assert.Equal(3000000000, first.Amount);
+        }
     }
 }
