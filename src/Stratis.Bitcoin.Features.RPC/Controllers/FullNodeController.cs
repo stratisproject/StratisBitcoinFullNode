@@ -189,7 +189,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                return new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+                var transaction = new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+
+                // Clear hex to not include it into the output. Hex is already known to the client. This will reduce response size.
+                transaction.Hex = null;
+                return transaction;
+            }
+            catch (FormatException ex)
+            {
+                throw new ArgumentException(nameof(hex), ex.Message);
             }
             catch (FormatException ex)
             {

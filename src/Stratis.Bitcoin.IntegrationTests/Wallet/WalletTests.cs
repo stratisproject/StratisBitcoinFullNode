@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CSharpFunctionalExtensions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using System.Security;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
@@ -247,6 +250,66 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 long newsecondamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(newamount, newsecondamount);
                 TestBase.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any(b => b.Transaction.BlockHeight == transaction2MinedHeight));
+            }
+        }
+
+        [Fact]
+        public void BuildTransaction_From_ManyUtxos_EnoughFundsForFee()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+
+                int maturity = (int) node1.FullNode.Network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(node1, maturity + 1 + 15);
+
+                int currentBestHeight = maturity + 1 + 15;
+
+                // The mining should add coins to the wallet.
+                long total = node1.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * 16 * 50, total);
+
+                // Sync all nodes.
+                TestHelper.ConnectAndSync(node1, node2);
+
+                const int utxosToSend = 500;
+                const int howManyTimes = 8;
+
+                for (int i = 0; i < howManyTimes; i++)
+                {
+                    HdAddress sendto = node2.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
+                    SendManyUtxosTransaction(node1, sendto.ScriptPubKey, Money.FromUnit(907700, MoneyUnit.Satoshi), utxosToSend);
+                }
+
+                TestBase.WaitLoop(() => node1.CreateRPCClient().GetRawMempool().Length == howManyTimes);
+                TestHelper.MineBlocks(node1, 1);
+                TestHelper.WaitForNodeToSync(node1, node2);
+
+                var transactionsToSpend = node2.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName);
+                Assert.Equal(utxosToSend * howManyTimes, transactionsToSpend.Count());
+
+                // Firstly, build a tx with value 1. Previously this would fail as the WalletTransactionHandler didn't pass enough UTXOs.
+                IActionResult result = node2.FullNode.NodeController<WalletController>().BuildTransaction(
+                    new BuildTransactionRequest
+                    {
+                        WalletName = WalletName,
+                        AccountName = "account 0",
+                        FeeAmount = "0.1",
+                        Password = Password,
+                        Recipients = new List<RecipientModel>
+                        {
+                            new RecipientModel
+                            {
+                                Amount = "1",
+                                DestinationAddress = node1.FullNode.WalletManager()
+                                    .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
+                            }
+                        }
+                    });
+
+                JsonResult jsonResult = (JsonResult) result;
+                Assert.NotNull(((WalletBuildTransactionModel)jsonResult.Value).TransactionId);
             }
         }
 

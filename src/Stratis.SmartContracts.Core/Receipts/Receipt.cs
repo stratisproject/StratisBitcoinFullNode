@@ -60,6 +60,11 @@ namespace Stratis.SmartContracts.Core.Receipts
         public uint256 BlockHash { get; set; }
 
         /// <summary>
+        /// The height of the block. Nullable for backwards-compatibility with receipt data saved before this field was introduced.
+        /// </summary>
+        public ulong? BlockNumber { get; }
+
+        /// <summary>
         /// Address of the sender of the transaction.
         /// </summary>
         public uint160 From { get; }
@@ -112,8 +117,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             string errorMessage,
             ulong gasPrice,
             ulong amount,
-            string methodName = null) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, @from, to, newContractAddress, success, result, errorMessage, gasPrice, amount, methodName)
+            string methodName = null,
+            ulong? blockNumber = null) 
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, @from, to, newContractAddress, success, result, errorMessage, gasPrice, amount, methodName, blockNumber)
         { }
 
         /// <summary>
@@ -122,7 +128,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         public Receipt(uint256 postState,
             ulong gasUsed,
             Log[] logs)
-            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null, null, 0, 0, null)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null, null, 0, 0, null, null)
         { }
 
         /// <summary>
@@ -133,7 +139,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             ulong gasUsed,
             Log[] logs,
             Bloom bloom) 
-            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null, null, 0, 0, null)
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null, null, 0, 0, null, null)
         { }
 
         private Receipt(uint256 postState,
@@ -150,7 +156,8 @@ namespace Stratis.SmartContracts.Core.Receipts
             string errorMessage,
             ulong gasPrice,
             ulong amount,
-            string methodName)
+            string methodName,
+            ulong? blockNumber)
         {
             this.PostState = postState;
             this.GasPrice = gasPrice;
@@ -167,6 +174,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.ErrorMessage = errorMessage;
             this.Amount = amount;
             this.MethodName = methodName;
+            this.BlockNumber = blockNumber;
         }
 
         /// <summary>
@@ -246,6 +254,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             // Method name is the 15th item to be added. Existing receipts without this data will throw exceptions without this check.
             var hasMethodName = innerList.Count > 14;
 
+            // Block number is the 16th item to be added.
+            var hasBlockNumber = innerList.Count > 15;
+
             var receipt = new Receipt(
                 new uint256(innerList[0].RLPData),
                 BitConverter.ToUInt64(innerList[1].RLPData),
@@ -261,7 +272,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 innerList[11].RLPData != null ? Encoding.UTF8.GetString(innerList[11].RLPData) : null,
                 BitConverter.ToUInt64(innerList[12].RLPData),
                 BitConverter.ToUInt64(innerList[13].RLPData),
-                hasMethodName && innerList[14].RLPData != null ? Encoding.UTF8.GetString(innerList[14].RLPData) : null);
+                hasMethodName && innerList[14].RLPData != null ? Encoding.UTF8.GetString(innerList[14].RLPData) : null,
+                hasBlockNumber && innerList[15].RLPData != null ? BitConverter.ToUInt64(innerList[15].RLPData) : (ulong?) null);
 
             return receipt;
         }
@@ -288,7 +300,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(Encoding.UTF8.GetBytes(this.ErrorMessage ?? "")),
                 RLP.EncodeElement(BitConverter.GetBytes(this.GasPrice)),
                 RLP.EncodeElement(BitConverter.GetBytes(this.Amount)),
-                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.MethodName ?? ""))
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.MethodName ?? "")),
+                RLP.EncodeElement(this.BlockNumber.HasValue ? BitConverter.GetBytes(this.BlockNumber.Value) : null)
             );
         }
 

@@ -1428,7 +1428,7 @@ namespace NBitcoin.Tests
         {
             Action<Transaction, TransactionBuilder> AssertEstimatedSize = (tx, b) =>
             {
-                int expectedVSize = tx.GetVirtualSize();
+                int expectedVSize = tx.GetVirtualSize(KnownNetworks.Main.Consensus.Options.WitnessScaleFactor);
                 int actualVSize = b.EstimateSize(tx, true);
                 int expectedSize = tx.GetSerializedSize();
                 int actualSize = b.EstimateSize(tx, false);

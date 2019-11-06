@@ -24,6 +24,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -69,7 +70,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 new MinerSettings(testContext.NodeSettings),
                 testContext.network,
                 new SenderRetriever(),
-                testContext.StateRoot);
+                testContext.StateRoot,
+                testContext.executionCache, 
+                testContext.callDataSerializer);
         }
 
         public class Blockinfo
@@ -171,6 +174,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private SmartContractValidator validator;
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
+            public IBlockExecutionResultCache executionCache;
             public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
@@ -197,10 +201,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
-                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider, this.loggerFactory));
 
                 this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
+
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider, this.loggerFactory), consensusSettings);
 
                 var nodeDeployments = new NodeDeployments(this.network, this.ChainIndexer);
 
@@ -222,6 +227,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 var consensusRulesContainer = new ConsensusRulesContainer();
 
+                this.executionCache = new BlockExecutionResultCache();
+
                 consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(typeof(BitcoinHeaderVersionRule)) as HeaderValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SetActivationDeploymentsFullValidationRule() as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new LoadCoinviewRule() as FullValidationConsensusRule);
@@ -231,7 +238,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
-                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, new LoggerFactory()) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, this.executionCache, new LoggerFactory()) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(
