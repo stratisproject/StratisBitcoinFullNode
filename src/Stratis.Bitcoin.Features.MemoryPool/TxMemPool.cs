@@ -653,13 +653,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public void RemoveStaged(SetEntries stage, bool updateDescendants, bool removedForBlock = false)
+        public void RemoveStaged(SetEntries stage, bool updateDescendants)
         {
             //AssertLockHeld(cs);
             this.UpdateForRemoveFromMempool(stage, updateDescendants);
             foreach (TxMempoolEntry it in stage)
             {
-                this.RemoveUnchecked(it, removedForBlock);
+                this.RemoveUnchecked(it);
             }
         }
 
@@ -688,7 +688,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Removes entry from memory pool.
         /// </summary>
         /// <param name="entry">Entry to remove.</param>
-        private void RemoveUnchecked(TxMempoolEntry entry, bool removedForBlock)
+        private void RemoveUnchecked(TxMempoolEntry entry)
         {
             uint256 hash = entry.TransactionHash;
             foreach (TxIn txin in entry.Transaction.Inputs)
@@ -719,7 +719,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (this.signals != null)
             {
-                this.signals.Publish(new TransactionRemovedFromMemoryPool(entry.Transaction, removedForBlock));
+                this.signals.Publish(new TransactionRemovedFromMemoryPool(entry.Transaction));
             }
         }
 
@@ -854,7 +854,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     var stage = new SetEntries();
                     stage.Add(entry);
-                    this.RemoveStaged(stage, true, true);
+                    this.RemoveStaged(stage, true);
                 }
 
                 this.RemoveConflicts(tx);
