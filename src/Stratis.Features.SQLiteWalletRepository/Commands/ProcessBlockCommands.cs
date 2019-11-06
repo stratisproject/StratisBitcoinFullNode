@@ -185,6 +185,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 AND    TD.OutputIndex = T.OutputIndex
                 AND    TD.ScriptPubKey = T.ScriptPubKey
                 AND    TD.SpendTxId IS NOT NULL
+                AND    TD.SpendTxId != T.SpendTxId
                 AND    TD.WalletId IN (
                        SELECT   WalletId
                        FROM     HDWallet
