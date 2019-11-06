@@ -116,7 +116,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // If the transaction was removed from the mempool because it's part of a block, we don't want to remove it.
             // It makes more sense to keep the current entry in the database and update it with the confirmation details
-            // when the wallet processes that block.
+            // when the wallet processes that block. This also avoids race conditions where users might try and build transactions
+            // right after this operation, but just before the wallet processes the next queued block.
 
             // However if it was removed for any other reason, we will be out of sync with what's in the mempool.
             // So lets remove it from the wallet to keep the wallet up to date.
