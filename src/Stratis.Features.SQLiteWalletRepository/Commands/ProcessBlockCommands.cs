@@ -63,6 +63,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
 
         public static DBCommand CmdUploadPrevOut(this DBConnection conn)
         {
+            // UPSERTs TransactionDatas. If they already exist (i.e. as mempool transactions), they will be
+            // "confirmed" into a block, otherwise they will be created and inserted.
+
             return conn.CreateCommand($@"
                 INSERT INTO HDTransactionData
                 SELECT A.WalletID
@@ -177,6 +180,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
 
         public static DBCommand CmdUpdateOverlaps(this DBConnection conn)
         {
+            // Gets conflicting transactions, while leaving the transactions themselves.
+
             return conn.CreateCommand($@"
                 SELECT TD.*
                 FROM   temp.TempPrevOut T

@@ -114,6 +114,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogDebug("Transaction '{0}' was removed from the mempool. RemovedForBlock={1}", 
                 transactionRemovedFromMempool.RemovedTransaction.GetHash(), transactionRemovedFromMempool.RemovedForBlock);
 
+            // If the transaction was removed from the mempool because it's part of a block, we don't want to remove it.
+            // It makes more sense to keep the current entry in the database and update it with the confirmation details
+            // when the wallet processes that block.
+
+            // However if it was removed for any other reason, we will be out of sync with what's in the mempool.
+            // So lets remove it from the wallet to keep the wallet up to date.
             if (!transactionRemovedFromMempool.RemovedForBlock)
             {
                 this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
