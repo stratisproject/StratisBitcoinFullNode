@@ -596,7 +596,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            // TODO: Is the difference and duplication in logic between GetMatureBalanceAsync and GetStakeMinConfirmations acceptable?
             (Money balance, Money immature) = await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false);
             this.rpcGetStakingInfoModel.Immature = immature.Satoshi;
 
@@ -1003,12 +1002,19 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// </summary>
         /// <param name="utxoStakeDescription">The UTXO stake description.</param>
         /// <returns>How many blocks are left till UTXO is considered mature for staking.</returns>
+        /// <remarks>Do NOT use this for general-purpose maturity calculations outside of <see cref="PosMinting"/> as it will give off-by-one errors.
+        /// This method is making the assumption that we are adding a new block to the chain, and thus reduces the maturity threshold by 1.</remarks>
         private async Task<int> GetBlocksCountToMaturityAsync(UtxoStakeDescription utxoStakeDescription)
         {
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
 
-            return Math.Max(0, (int)this.network.Consensus.CoinbaseMaturity + 1 - await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false));
+            // CoinbaseMaturity cannot be used on its own, as the proven header soft fork increases the maturity requirement. We have to call GetStakeMinConfirmations to get the minimum confirmations based on activation height.
+            // We add 1 here because the height of the newly staked block is what must be used to determine the required minimum number of confirmations for a coinstake output.
+            int minConf = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(this.chainIndexer.Height + 1, this.network);
+
+            // The reason why we subtract 1 here is because any newly staked block will be at (chainTip + 1), effectively giving an extra confirmation over and above the depth calculation.
+            return Math.Max(0, minConf - 1 - await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -1027,6 +1033,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             if (chainedBlock == null)
                 return await this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).ConfigureAwait(false);
 
+            // Add 1 because a transaction is considered to have 1 confirmation when it is in a block.
             return this.chainIndexer.Tip.Height - chainedBlock.Height + 1;
         }
 
