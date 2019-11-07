@@ -4,8 +4,7 @@ services:
     container_name: city-nako
     restart: always
     networks: 
-        nakonet:
-            ipv4_address: 172.16.10.100
+        - nakonet
     image: coinvault/nako-indexer:latest
     command: city RpcDomain="{CoinTag}-client" RpcAccessPort=5000 ConnectionString="mongodb://{CoinTag}-mongo" DatabaseNameSubfix="false" NetworkWitnessPrefix="city" StoreRawTransactions="true"
     ports: 
@@ -19,19 +18,16 @@ services:
     container_name: city-client
     restart: always
     networks: 
-        nakonet:
-            ipv4_address: 172.16.10.101
+        - nakonet
     image: citychain/citychain:1.0.21
-    command: ["-server=1", "-rpcallowip=172.16.10.100", "-rpcbind=172.16.10.101", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-rpcthreads=300", "-txindex=1"]
+    command: ["-server=1", "-rpcallowip=172.16.10.0/24", "-rpcbind=city-client", "apiuri=http://0.0.0.0:4335/", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-txindex=1"]
     ports: 
         - 5019:5000
-        - 4333:4333
   mongo:
     container_name: city-mongo
     restart: always
     networks: 
-        nakonet:
-            ipv4_address: 172.16.10.102
+        - nakonet
     image: mongo:3.2
 networks:
   nakonet:
