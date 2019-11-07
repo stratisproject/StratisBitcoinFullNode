@@ -47,26 +47,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 TransactionData transaction = historyItem.Transaction;
 
-                // Ignore any change payments.
+                // Ignore any change payments as received items.
                 // It's "change" if it was received as the change output of another transaction.
                 // We have to match by transaction ID and the index of the change output in the transaction.
-                if (changePayments.Any(p => p.IsChange(historyItem.Transaction)))
-                    continue;
-                
-                // Add incoming fund transaction details.
-                var receivedItem = new TransactionItemModel
+                if (!changePayments.Any(p => p.IsChange(historyItem.Transaction)))
                 {
-                    Type = TransactionItemType.Received,
-                    ToAddress = historyItem.Address.Address,
-                    Amount = transaction.Amount,
-                    Id = transaction.Id,
-                    Timestamp = transaction.CreationTime,
-                    ConfirmedInBlock = transaction.BlockHeight,
-                    BlockIndex = transaction.BlockIndex
-                };
+                    // Add incoming fund transaction details.
+                    var receivedItem = new TransactionItemModel
+                    {
+                        Type = TransactionItemType.Received,
+                        ToAddress = historyItem.Address.Address,
+                        Amount = transaction.Amount,
+                        Id = transaction.Id,
+                        Timestamp = transaction.CreationTime,
+                        ConfirmedInBlock = transaction.BlockHeight,
+                        BlockIndex = transaction.BlockIndex
+                    };
 
-                transactionItems.Add(receivedItem);
-                uniqueProcessedTxIds.Add(receivedItem.Id);
+                    transactionItems.Add(receivedItem);
+                    uniqueProcessedTxIds.Add(receivedItem.Id);
+                }
 
                 SpendingDetails spendingDetail = transaction.SpendingDetails;
 
