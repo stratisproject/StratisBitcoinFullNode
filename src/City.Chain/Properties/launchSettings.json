@@ -14,7 +14,7 @@
     },
     "MAIN (LOCAL+RPC+DEFAULT)": {
       "commandName": "Project",
-      "commandLineArgs": "-datadir=citynode -walletnotify=\"curl -X POST -d txid=%s http://localhost:5000/\" -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet"
+      "commandLineArgs": "-datadir=citynode -walletnotify=\"curl -X POST -d txid=%s http://localhost:5000/\" -server -rpcallowip=127.0.0.0/16 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet"
     },
     "TEST": {
       "commandName": "Project",

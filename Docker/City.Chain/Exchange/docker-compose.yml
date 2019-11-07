@@ -1,0 +1,10 @@
+version: '2'
+services:
+ citycoin:
+    image: citychain/citychain:1.0.21
+    volumes:
+      - ./.citycoin:/root/.citychain
+      - ./citycoin/city.conf:/root/.citychain/city/CityMain/city.conf
+    ports:
+        - 4334:4334
+        - 4335:4335
