@@ -310,8 +310,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(inputAmount2, secondInput.Amount);
         }
 
+        /// <summary>
+        /// Ensures that a TransactionData item marked as change still has its payments
+        /// added to the history.
+        /// </summary>
         [Fact]
-        public void SpecificCaseThatFails()
+        public void WalletHistory_Transaction_Spent_After_New_Transactions()
         {
             var query = new AccountBasedWalletHistoryQuery();
 
