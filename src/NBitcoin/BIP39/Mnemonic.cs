@@ -70,6 +70,33 @@ namespace NBitcoin
         {
 
         }
+        
+        public Mnemonic(string language, WordCount wordCount)
+            : this(Mnemonic.GetWordListForLanguage(language), GenerateEntropy(wordCount))
+        {
+        }
+
+        private static Wordlist GetWordListForLanguage(string language)
+        {
+            switch (language.ToLowerInvariant())
+            {
+                case "english":
+                   return Wordlist.English;
+                case "french":
+                    return Wordlist.French;
+                case "spanish":
+                    return Wordlist.Spanish;
+                case "japanese":
+                    return Wordlist.Japanese;
+                case "chinesetraditional":
+                    return Wordlist.ChineseTraditional;
+                case "chinesesimplified":
+                    return Wordlist.ChineseSimplified;
+                default:
+                    throw new FormatException(
+                        $"Invalid language '{language}'. Choices are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional.");
+            }
+        }
 
         private static byte[] GenerateEntropy(WordCount wordCount)
         {
