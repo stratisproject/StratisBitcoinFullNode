@@ -889,6 +889,77 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void GetHistoryWithCoinStakeWithMultipleInputs()
+        {
+            const int numberOfCoinStakeInputs = 10;
+            const string walletName = "myWallet";
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+
+            // Set up a single address to have 10 transactions.
+            for (int i = 0; i < numberOfCoinStakeInputs; i++)
+            {
+                TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256((ulong) i + 1), new Money(500000), 1, creationTime:DateTimeOffset.FromUnixTimeSeconds(i));
+                address.Transactions.Add(transaction);
+            }
+
+            // Make these transactions inputs to a new CoinStake transaction.
+            TransactionData coinStake = WalletTestsHelpers.CreateTransaction(new uint256((ulong) numberOfCoinStakeInputs + 1), address.Transactions.Sum(x => x.Amount) + Money.Coins(1), 2, creationTime: DateTimeOffset.FromUnixTimeSeconds(numberOfCoinStakeInputs));
+            coinStake.IsCoinStake = true;
+
+            foreach (var spentTransaction in address.Transactions)
+            {
+                spentTransaction.SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = coinStake.BlockHeight,
+                    TransactionId = coinStake.Id,
+                    CreationTime = coinStake.CreationTime,
+                    IsCoinStake = true
+                };
+            }
+
+            address.Transactions.Add(coinStake);
+
+            var addresses = new List<HdAddress> { address };
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            HdAccount account = wallet.AddNewAccount((ExtPubKey)null);
+
+            account.ExternalAddresses.Add(address);
+
+            List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+            var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
+            var mockWalletManager = new Mock<IWalletManager>();
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.GetHistory(new WalletHistoryRequest
+            {
+                WalletName = walletName
+            });
+
+            var viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletHistoryModel;
+
+            Assert.NotNull(model);
+            Assert.Single(model.AccountsHistoryModel);
+
+            AccountHistoryModel historyModel = model.AccountsHistoryModel.ElementAt(0);
+            
+            // We should have 11 entries. The most recent is our stake. The other 10 are receives.
+            Assert.Equal(numberOfCoinStakeInputs + 1, historyModel.TransactionsHistory.Count);
+            TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
+
+            Assert.Equal(TransactionItemType.Staked, resultingTransactionModel.Type);
+            Assert.Equal(Money.Coins(1), resultingTransactionModel.Amount);
+            for (int i = 1; i <= numberOfCoinStakeInputs; i++)
+            {
+                TransactionItemModel receive = historyModel.TransactionsHistory.ElementAt(i);
+                Assert.Equal(TransactionItemType.Received, receive.Type);
+            }
+        }
+
+        [Fact]
         public void GetHistoryWithValidModelWithTransactionSpendingDetailsReturnsWalletHistoryModel()
         {
             string walletName = "myWallet";
