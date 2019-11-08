@@ -952,6 +952,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(TransactionItemType.Staked, resultingTransactionModel.Type);
             Assert.Equal(Money.Coins(1), resultingTransactionModel.Amount);
+
             for (int i = 1; i <= numberOfCoinStakeInputs; i++)
             {
                 TransactionItemModel receive = historyModel.TransactionsHistory.ElementAt(i);
