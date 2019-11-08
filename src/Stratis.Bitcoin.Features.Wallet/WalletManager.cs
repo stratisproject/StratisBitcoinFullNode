@@ -245,6 +245,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.LoadWallet(walletName.Substring(0, walletName.Length - WalletFileExtension.Length - 1));
             }
 
+            // Performs early rewinding of wallets that exceed the consensus tip instead of waiting for next WalletSyncManager.OrchestrateWalletSync invocation.
+            foreach (string walletName in this.WalletRepository.GetWalletNames())
+                this.WalletRepository.RewindWallet(walletName, this.ChainIndexer.Tip);
+
             if (this.walletSettings.IsDefaultWalletEnabled())
             {
                 // Check if it already exists, if not, create one.
