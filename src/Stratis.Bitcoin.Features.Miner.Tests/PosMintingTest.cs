@@ -432,9 +432,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_BeforeActivation_Testnet()
         {
-            // If the UTXO is not a coinbase/stake we do not anticipate any problems with it being selected for staking no matter what relative height it is.
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, 1000, 1000 - 8, false)); // utxo depth is 9, mining block at 10
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, 1000, 1000 - 7, false)); // utxo depth is 8, mining block at 9
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, 1000, 1000 - 7, false)); // utxo depth is 8, mining block at 9
         }
 
         /// <summary>This is a test of coinstake age softfork activation on testnet.</summary>
@@ -445,9 +444,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
             int afterActivationHeight = activationHeight + 1000;
 
-            // If the UTXO is not a coinbase/stake we do not anticipate any problems with it being selected for staking no matter what relative height it is.
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 18, false));
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 17, false));
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 17, false));
         }
 
         /// <summary>This is a test of coinstake age softfork activation on testnet.</summary>
@@ -457,10 +455,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
 
-            // If the UTXO is not a coinbase/stake we do not anticipate any problems with it being selected for staking no matter what relative height it is.
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, activationHeight - 2, activationHeight - 10, false)); // mining block before activation
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, activationHeight - 1, activationHeight - 19, false)); // mining activation block
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, activationHeight - 1, activationHeight - 18, false)); // mining activation block
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, activationHeight - 1, activationHeight - 18, false)); // mining activation block
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>
@@ -468,9 +465,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_BeforeActivation_Mainnet()
         {
-            // If the UTXO is not a coinbase/stake we do not anticipate any problems with it being selected for staking no matter what relative height it is.
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, 1000, 1000 - 48, false)); // utxo depth is 49, mining block at 50
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, 1000, 1000 - 47, false)); // utxo depth is 48, mining block at 49
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, 1000, 1000 - 47, false)); // utxo depth is 48, mining block at 49
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>
@@ -481,9 +477,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
             int afterActivationHeight = activationHeight + 1000;
 
-            // If the UTXO is not a coinbase/stake we do not anticipate any problems with it being selected for staking no matter what relative height it is.
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 498, false));
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 497, false));
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 497, false));
         }
 
         [Fact]
