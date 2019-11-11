@@ -124,14 +124,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Gets all the spendable transactions in a wallet from the accounts participating in staking.
+        /// Gets all the unspent transactions in a wallet from the accounts participating in staking.
         /// </summary>
         /// <param name="walletName">Name of the wallet to get the transactions from.</param>
         /// <param name="confirmations">Number of confirmation required.</param>
         /// <returns>An enumeration of <see cref="UnspentOutputReference"/> objects.</returns>
         public override IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0)
         {
-            return this.GetSpendableTransactionsInWallet(walletName, confirmations,
+            return this.GetUnspentTransactionsInWallet(walletName, confirmations,
                 a => (a.Index < Wallet.Wallet.SpecialPurposeAccountIndexesStart) || (a.Index == ColdStakingManager.HotWalletAccountIndex));
         }
 
