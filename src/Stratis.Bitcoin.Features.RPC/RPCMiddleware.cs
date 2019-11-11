@@ -107,10 +107,11 @@ namespace Stratis.Bitcoin.Features.RPC
             request.EnableRewind();
 
             // Read the request.
-            byte[] requestBuffer = new byte[request.ContentLength.Value];
-            await request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length).ConfigureAwait(false);
-
-            string requestBody = Encoding.UTF8.GetString(requestBuffer);
+            string requestBody;
+            using (var reader = new StreamReader(request.Body))
+            {
+                requestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+            }
 
             request.Body.Position = 0;
 
