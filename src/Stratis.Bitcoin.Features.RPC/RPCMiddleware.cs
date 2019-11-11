@@ -12,6 +12,7 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -107,15 +108,21 @@ namespace Stratis.Bitcoin.Features.RPC
             request.EnableRewind();
 
             // Read the request.
-            string requestBody;
-            using (var reader = new StreamReader(request.Body))
+            var builder = new StringBuilder();
+            byte[] requestBuffer = new byte[request.ContentLength.Value];
+
+            while (true)
             {
-                requestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                var remainingBytesCount = await request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length).ConfigureAwait(false);
+                if (remainingBytesCount == 0) break;
+
+                var encodedString = Encoding.UTF8.GetString(requestBuffer, 0, remainingBytesCount);
+                builder.Append(encodedString);
             }
 
             request.Body.Position = 0;
 
-            return requestBody;
+            return builder.ToString();
         }
 
         private async Task HandleRpcInvokeExceptionAsync(HttpContext httpContext, Exception ex)
