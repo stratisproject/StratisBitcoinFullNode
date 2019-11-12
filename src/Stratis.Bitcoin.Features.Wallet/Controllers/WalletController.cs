@@ -4,13 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
@@ -21,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
     using System.Threading;
     using System.Threading.Tasks;
+    using Builder.Feature;
     using Services;
 
     /// <summary>
@@ -28,31 +25,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     /// </summary>
     [ApiVersion("1")]
     [Route("api/[controller]")]
-    public class WalletController : Controller
+    public class WalletController : FeatureControllerBase
     {
         private readonly IWalletService walletService;
         private readonly IWalletManager walletManager;
-
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
         private readonly IWalletSyncManager walletSyncManager;
 
-        private readonly CoinType coinType;
-
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        // <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
-
-        private readonly IConnectionManager connectionManager;
-
         private readonly ChainIndexer chainIndexer;
-
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
-        private readonly IBroadcasterManager broadcasterManager;
-
-        /// <summary>Provider of date time functionality.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
 
         public WalletController(
             ILoggerFactory loggerFactory,
@@ -60,23 +43,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IWalletSyncManager walletSyncManager,
-            IConnectionManager connectionManager,
             Network network,
-            ChainIndexer chainIndexer,
-            IBroadcasterManager broadcasterManager,
-            IDateTimeProvider dateTimeProvider)
+            ChainIndexer chainIndexer)
+            : base(loggerFactory.CreateLogger(typeof(WalletController).FullName))
         {
             this.walletService = walletService;
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.walletSyncManager = walletSyncManager;
-            this.connectionManager = connectionManager;
             this.network = network;
-            this.coinType = (CoinType) network.Consensus.CoinType;
             this.chainIndexer = chainIndexer;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.broadcasterManager = broadcasterManager;
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <summary>
@@ -88,21 +64,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the generated mnemonic.</returns>
         [Route("mnemonic")]
         [HttpGet]
-        public Task<IActionResult> GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12,
+        public async Task<IActionResult> GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12,
             CancellationToken cancellationToken = default)
         {
-            var request = new
-            {
-                Language = language,
-                WordCount = wordCount
-            };
-
-            return this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
-            {
-                // generate the mnemonic
-                var mnemonic = new Mnemonic(language, (WordCount) wordCount);
-                return this.Json(mnemonic.ToString());
-            });
+            return await this.ExecuteAsAsync(new {Language = language, WordCount = wordCount},
+                cancellationToken, (req, token) =>
+                    // Generate the Mnemonic
+                    this.Json(new Mnemonic(language, (WordCount) wordCount).ToString()));
         }
 
         /// <summary>
@@ -135,12 +103,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             catch (WalletException e)
             {
                 // indicates that this wallet already exists
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (NotSupportedException e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
                     "There was a problem creating a wallet.", e.ToString());
             }
@@ -154,14 +122,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the generated signature.</returns>
         [Route("signmessage")]
         [HttpPost]
-        public Task<IActionResult> SignMessage([FromBody] SignMessageRequest request,
+        public async Task<IActionResult> SignMessage([FromBody] SignMessageRequest request,
             CancellationToken cancellationToken = default)
         {
-            return this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
-                string signature = this.walletManager.SignMessage(request.Password, request.WalletName,
-                    request.ExternalAddress, request.Message);
-
+                string signature =
+                    this.walletManager.SignMessage(req.Password, req.WalletName, req.ExternalAddress, req.Message);
                 return this.Json(signature);
             });
         }
@@ -170,36 +137,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Verifies the signature of a message.
         /// </summary>
         /// <param name="request">The object containing the parameters verify a signature.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing the result of the verification.</returns>
         [Route("verifymessage")]
         [HttpPost]
-        public IActionResult VerifyMessage([FromBody] VerifyRequest request)
+        public async Task<IActionResult> VerifyMessage([FromBody] VerifyRequest request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
                 bool result =
-                    this.walletManager.VerifySignedMessage(request.ExternalAddress, request.Message, request.Signature);
+                    this.walletManager.VerifySignedMessage(request.ExternalAddress, req.Message, req.Signature);
                 return this.Json(result.ToString());
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            });
         }
 
         /// <summary>
         /// Loads a previously created wallet.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to load an existing wallet</param>
+        /// <returns></returns>
         [Route("load")]
         [HttpPost]
         public IActionResult Load([FromBody] WalletLoadRequest request)
@@ -219,26 +176,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (FileNotFoundException e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound,
                     "This wallet was not found at the specified location.", e.ToString());
             }
             catch (WalletException e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound,
                     "This wallet was not found at the specified location.", e.ToString());
             }
             catch (SecurityException e)
             {
                 // indicates that the password is wrong
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Wrong password, please try again.",
                     e.ToString());
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -270,18 +227,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             catch (WalletException e)
             {
                 // indicates that this wallet already exists
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (FileNotFoundException e)
             {
                 // indicates that this wallet does not exist
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -300,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             if (!this.ModelState.IsValid)
             {
-                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                this.Logger.LogTrace("(-)[MODEL_STATE_INVALID]");
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
@@ -319,18 +276,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             catch (WalletException e)
             {
                 // Wallet already exists.
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (FileNotFoundException e)
             {
                 // Wallet does not exist.
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -348,23 +305,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public Task<IActionResult> GetGeneralInfo([FromQuery] WalletName request, CancellationToken cancellationToken)
         {
             return this.Execute(request, cancellationToken, async (req, token) =>
-                this.Json(await this.walletService.GetWalletGeneralInfo(request.Name, token)));
+                this.Json(await this.walletService.GetWalletGeneralInfo(req.Name, token)));
         }
 
         /// <summary>
         /// Get the transaction count for the specified Wallet and Account.
         /// </summary>
         /// <param name="request">The Transaction Count request Object</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>Transaction Count</returns>
         [Route("transactionCount")]
         [HttpGet]
-        public async Task<IActionResult> GetTransactionCount([FromQuery] WalletTransactionCountRequest request)
+        public async Task<IActionResult> GetTransactionCount([FromQuery] WalletTransactionCountRequest request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-            return await Task.Run(() => this.Json(new
-            {
-                TransactionCount = this.walletManager.GetTransactionCount(request.WalletName, request.AccountName)
-            }));
+            return await this.ExecuteAsAsync(request, cancellationToken,
+                (req, token) => this.Json(new
+                {
+                    TransactionCount = this.walletManager.GetTransactionCount(req.WalletName, req.AccountName)
+                }));
         }
 
         /// <summary>
@@ -372,6 +331,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// or a single account if one is specified.
         /// </summary>
         /// <param name="request">An object containing the parameters used to retrieve a wallet's history.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing the wallet history.</returns>
         [Route("history")]
         [HttpGet]
@@ -452,7 +412,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -498,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.Logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -510,147 +470,31 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the parameters used to estimate the fee
         /// for a specific transaction.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
         [HttpPost]
-        public IActionResult GetTransactionFeeEstimate([FromBody] TxFeeEstimateRequest request)
+        public async Task<IActionResult> GetTransactionFeeEstimate([FromBody] TxFeeEstimateRequest request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                var recipients = new List<Recipient>();
-                foreach (RecipientModel recipientModel in request.Recipients)
-                {
-                    recipients.Add(new Recipient
-                    {
-                        ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network)
-                            .ScriptPubKey,
-                        Amount = recipientModel.Amount
-                    });
-                }
-
-                var context = new TransactionBuildContext(this.network)
-                {
-                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
-                    FeeType = FeeParser.Parse(request.FeeType),
-                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Recipients = recipients,
-                    OpReturnData = request.OpReturnData,
-                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount)
-                        ? null
-                        : Money.Parse(request.OpReturnAmount),
-                    Sign = false
-                };
-
-                return this.Json(this.walletTransactionHandler.EstimateFee(context));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => Json(await this.walletService.GetTransactionFeeEstimate(req, token)));
         }
 
         /// <summary>
         /// Builds a transaction and returns the hex to use when executing the transaction.
         /// </summary>
         /// <param name="request">An object containing the parameters used to build a transaction.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object including the transaction ID, the hex used to execute
         /// the transaction, and the transaction fee.</returns>
         [Route("build-transaction")]
         [HttpPost]
-        public IActionResult BuildTransaction([FromBody] BuildTransactionRequest request)
+        public async Task<IActionResult> BuildTransaction([FromBody] BuildTransactionRequest request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                var recipients = new List<Recipient>();
-                foreach (RecipientModel recipientModel in request.Recipients)
-                {
-                    recipients.Add(new Recipient
-                    {
-                        ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network)
-                            .ScriptPubKey,
-                        Amount = recipientModel.Amount
-                    });
-                }
-
-                // If specified, get the change address, which must already exist in the wallet.
-                HdAddress changeAddress = null;
-                if (!string.IsNullOrWhiteSpace(request.ChangeAddress))
-                {
-                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                    HdAccount account = wallet.GetAccount(request.AccountName);
-                    if (account == null)
-                    {
-                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Account not found.",
-                            $"No account with the name '{request.AccountName}' could be found in wallet {wallet.Name}.");
-                    }
-
-                    changeAddress = account.GetCombinedAddresses()
-                        .FirstOrDefault(x => x.Address == request.ChangeAddress);
-
-                    if (changeAddress == null)
-                    {
-                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Change address not found.",
-                            $"No changed address '{request.ChangeAddress}' could be found in wallet {wallet.Name}.");
-                    }
-                }
-
-                var context = new TransactionBuildContext(this.network)
-                {
-                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
-                    TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
-                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ??
-                              true, // We shuffle transaction outputs by default as it's better for anonymity.
-                    OpReturnData = request.OpReturnData,
-                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount)
-                        ? null
-                        : Money.Parse(request.OpReturnAmount),
-                    WalletPassword = request.Password,
-                    SelectedInputs = request.Outpoints
-                        ?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
-                    AllowOtherInputs = false,
-                    Recipients = recipients,
-                    ChangeAddress = changeAddress
-                };
-
-                if (!string.IsNullOrEmpty(request.FeeType))
-                {
-                    context.FeeType = FeeParser.Parse(request.FeeType);
-                }
-
-                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
-
-                var model = new WalletBuildTransactionModel
-                {
-                    Hex = transactionResult.ToHex(),
-                    Fee = context.TransactionFee,
-                    TransactionId = transactionResult.GetHash()
-                };
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => Json(await this.walletService.BuildTransaction(req, token)));
         }
 
         /// <summary>
@@ -658,70 +502,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Use the /api/Wallet/build-transaction call to create transactions.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters used to a send transaction request.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing information about the sent transaction.</returns>
         [Route("send-transaction")]
         [HttpPost]
-        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
+        public async Task<IActionResult> SendTransaction([FromBody] SendTransactionRequest request,
+            CancellationToken cancellationToken)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden,
-                    "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-            }
-
-            try
-            {
-                Transaction transaction = this.network.CreateTransaction(request.Hex);
-
-                var model = new WalletSendTransactionModel
-                {
-                    TransactionId = transaction.GetHash(),
-                    Outputs = new List<TransactionOutputModel>()
-                };
-
-                foreach (TxOut output in transaction.Outputs)
-                {
-                    bool isUnspendable = output.ScriptPubKey.IsUnspendable;
-                    model.Outputs.Add(new TransactionOutputModel
-                    {
-                        Address = isUnspendable
-                            ? null
-                            : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
-                        Amount = output.Value,
-                        OpReturnData = isUnspendable
-                            ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData)
-                            : null
-                    });
-                }
-
-                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
-
-                TransactionBroadcastEntry transactionBroadCastEntry =
-                    this.broadcasterManager.GetTransaction(transaction.GetHash());
-
-                if (transactionBroadCastEntry.State == State.CantBroadcast)
-                {
-                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                        transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
-                }
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => Json(await this.walletService.SendTransaction(req, token)));
         }
 
         /// <summary>
@@ -731,22 +520,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </returns>
         [Route("list-wallets")]
         [HttpGet]
-        public IActionResult ListWallets()
+        public async Task<IActionResult> ListWallets(CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var model = new WalletInfoModel()
-                {
-                    WalletNames = this.walletManager.GetWalletsNames()
-                };
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.ExecuteAsAsync((object) null, cancellationToken, (req, token) =>
+                this.Json(new WalletInfoModel(this.walletManager.GetWalletsNames())));
         }
 
         /// <summary>
@@ -761,64 +538,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// for a given seed (or mnemonic) are always the same.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to create a new account in a wallet.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing the name of the new account or an existing account
         /// containing no transactions.</returns>
         [Route("account")]
         [HttpPost]
-        public IActionResult CreateNewAccount([FromBody] GetUnusedAccountModel request)
+        public async Task<IActionResult> CreateNewAccount([FromBody] GetUnusedAccountModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                HdAccount result = this.walletManager.GetUnusedAccount(request.WalletName, request.Password);
-                return this.Json(result.Name);
-            }
-            catch (CannotAddAccountToXpubKeyWalletException e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, string.Empty);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+                try
+                {
+                    HdAccount result = this.walletManager.GetUnusedAccount(request.WalletName, request.Password);
+                    return this.Json(result.Name);
+                }
+                catch (CannotAddAccountToXpubKeyWalletException e)
+                {
+                    this.Logger.LogError("Exception occurred: {0}", e.ToString());
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, string.Empty);
+                }
+            });
         }
 
         /// <summary>
         /// Gets a list of accounts for the specified wallet.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to list the accounts for a wallet.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing a list of accounts for the specified wallet.</returns>
         [Route("accounts")]
         [HttpGet]
-        public IActionResult ListAccounts([FromQuery] ListAccountsModel request)
+        public async Task<IActionResult> ListAccounts([FromQuery] ListAccountsModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
                 IEnumerable<HdAccount> result = this.walletManager.GetAccounts(request.WalletName);
                 return this.Json(result.Select(a => a.Name));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            });
         }
 
         /// <summary>
@@ -827,31 +585,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to retrieve an
         /// unused address for a wallet account.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing the last created and unused address (in Base58 format).</returns>
         [Route("unusedaddress")]
         [HttpGet]
-        public IActionResult GetUnusedAddress([FromQuery] GetUnusedAddressModel request)
+        public async Task<IActionResult> GetUnusedAddress([FromQuery] GetUnusedAddressModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                HdAddress result =
-                    this.walletManager.GetUnusedAddress(new WalletAccountReference(request.WalletName,
-                        request.AccountName));
+                HdAddress result = this.walletManager.GetUnusedAddress(new WalletAccountReference(
+                    request.WalletName,
+                    request.AccountName));
                 return this.Json(result.Address);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            });
         }
 
         /// <summary>
@@ -862,31 +609,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// unused addresses for a wallet account.</param>
         /// <returns>A JSON object containing the required amount of unused addresses (in Base58 format).</returns>
         /// </summary>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         [Route("unusedaddresses")]
         [HttpGet]
-        public IActionResult GetUnusedAddresses([FromQuery] GetUnusedAddressesModel request)
+        public async Task<IActionResult> GetUnusedAddresses([FromQuery] GetUnusedAddressesModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-            int count = int.Parse(request.Count);
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
+            {
+                var result = this.walletManager.GetUnusedAddresses(
+                        new WalletAccountReference(request.WalletName, req.AccountName), int.Parse(req.Count))
+                    .Select(x => x.Address).ToArray();
 
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                IEnumerable<HdAddress> result =
-                    this.walletManager.GetUnusedAddresses(
-                        new WalletAccountReference(request.WalletName, request.AccountName), count);
-                return this.Json(result.Select(x => x.Address).ToArray());
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+                return this.Json(result);
+            });
         }
 
         /// <summary>
@@ -897,64 +633,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         [Route("addresses")]
         [HttpGet]
-        public IActionResult GetAllAddresses([FromQuery] GetAllAddressesModel request)
+        public async Task<IActionResult> GetAllAddresses([FromQuery] GetAllAddressesModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // Checks the request is valid.
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccount(request.AccountName);
-                if (account == null)
-                    throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
-
-                var accRef = new WalletAccountReference(request.WalletName, request.AccountName);
-
-                var unusedNonChange = this.walletManager.GetUnusedAddresses(accRef, false)
-                    .Select(a => (address: a, isUsed: false, isChange: false, confirmed: Money.Zero, total: Money.Zero))
-                    .ToList();
-                var unusedChange = this.walletManager.GetUnusedAddresses(accRef, true)
-                    .Select(a => (address: a, isUsed: false, isChange: true, confirmed: Money.Zero, total: Money.Zero))
-                    .ToList();
-                var usedNonChange = this.walletManager.GetUsedAddresses(accRef, false)
-                    .Select(a => (address: a.address, isUsed: true, isChange: false, confirmed: a.confirmed,
-                        total: a.total)).ToList();
-                var usedChange = this.walletManager.GetUsedAddresses(accRef, true)
-                    .Select(a => (address: a.address, isUsed: true, isChange: true, confirmed: a.confirmed,
-                        total: a.total)).ToList();
-
-                var model = new AddressesModel()
-                {
-                    Addresses = unusedNonChange
-                        .Concat(unusedChange)
-                        .Concat(usedNonChange)
-                        .Concat(usedChange)
-                        .Select(a =>
-                        {
-                            return new AddressModel
-                            {
-                                Address = a.address.Address,
-                                IsUsed = a.isUsed,
-                                IsChange = a.isChange,
-                                AmountConfirmed = a.confirmed,
-                                AmountUnconfirmed = a.total - a.confirmed
-                            };
-                        })
-                };
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.ExecuteAsAsync(request, cancellationToken,
+                (req, token) => this.Json(this.walletService.GetAllAddresses(req, token)));
         }
 
         /// <summary>
@@ -976,84 +659,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         [Route("remove-transactions")]
         [HttpDelete]
-        public IActionResult RemoveTransactions([FromQuery] RemoveTransactionsModel request)
+        public async Task<IActionResult> RemoveTransactions([FromQuery] RemoveTransactionsModel request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // Checks the request is valid.
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
-
-                if (request.DeleteAll)
-                {
-                    result = this.walletManager.RemoveAllTransactions(request.WalletName);
-                }
-                else if (request.FromDate != default(DateTime))
-                {
-                    result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
-                }
-                else if (request.TransactionsIds != null)
-                {
-                    IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
-                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
-                }
-                else
-                {
-                    throw new WalletException("A filter specifying what transactions to remove must be set.");
-                }
-
-                // If the user chose to resync the wallet after removing transactions.
-                if (result.Any() && request.ReSync)
-                {
-                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
-                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader =
-                        this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
-
-                    // Start the syncing process from the block before the earliest transaction was seen.
-                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1, request.WalletName);
-                }
-
-                IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel
-                {
-                    TransactionId = r.transactionId,
-                    CreationTime = r.creationTime
-                });
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+            return await this.ExecuteAsAsync(request, cancellationToken,
+                (req, token) => this.Json(this.walletService.RemoveTransactions(req, token)));
         }
 
         /// <summary>
         /// Gets the extended public key of a specified wallet account.
-        /// <param name="request">An object containing the necessary parameters to retrieve
-        /// the extended public key for a wallet account.</param>
-        /// <returns>A JSON object containing the extended public key for a wallet account.</returns>
+        /// the extended public key for a wallet account
         /// </summary>
+        /// <param name="request">An object containing the necessary parameters to retrieve.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
+        /// <returns>A JSON object containing the extended public key for a wallet account.</returns>
         [Route("extpubkey")]
         [HttpGet]
-        public Task<IActionResult> GetExtPubKey([FromQuery] GetExtPubKeyModel request,
+        public async Task<IActionResult> GetExtPubKey([FromQuery] GetExtPubKeyModel request,
             CancellationToken cancellationToken)
         {
-            return this.ExecuteAsAsync(request, cancellationToken,
+            return await this.ExecuteAsAsync(request, cancellationToken,
                 (req, token) =>
-                {
-                    string result = this.walletManager.GetExtPubKey(new WalletAccountReference(request.WalletName,
-                        request.AccountName));
-                    
-                    return this.Json(result);
-                });
+                    this.Json(this.walletManager.GetExtPubKey(new WalletAccountReference(request.WalletName,
+                        request.AccountName))));
         }
 
         /// <summary>
@@ -1061,16 +689,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Internally, the specified block is taken as the new wallet tip
         /// and all blocks after it are resynced.
         /// </summary>
-        /// <param name="request">An object containing the necessary parameters
-        /// to request a resync.</param>
+        /// <param name="request">An object containing the necessary parameters to request a resync.</param>
         /// <param name="model">The Hash of the block to Sync From</param>
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A value of Ok if the re-sync was successful.</returns>
         [HttpPost]
         [Route("sync")]
-        public Task<IActionResult> Sync([FromBody] HashModel model, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Sync([FromBody] HashModel model, CancellationToken cancellationToken = default)
         {
-            return this.ExecuteAsAsync(model, cancellationToken, (req, token) =>
+            return await this.ExecuteAsAsync(model, cancellationToken, (req, token) =>
             {
                 ChainedHeader block = this.chainIndexer.GetHeader(uint256.Parse(model.Hash));
                 if (block == null)
@@ -1080,6 +707,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 }
 
                 this.walletSyncManager.SyncFromHeight(block.Height);
+
                 return this.Ok();
             });
         }
@@ -1091,74 +719,48 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the necessary parameters
         /// to request a resync.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A value of Ok if the resync was successful.</returns>
         [HttpPost]
         [Route("sync-from-date")]
-        public IActionResult SyncFromDate([FromBody] WalletSyncRequest request)
+        public async Task<IActionResult> SyncFromDate([FromBody] WalletSyncRequest request,
+            CancellationToken cancellationToken = default)
         {
-            if (!this.ModelState.IsValid)
+            return await this.ExecuteAsAsync(request, cancellationToken, (req, token) =>
             {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
+                if (!request.All)
+                {
+                    this.walletSyncManager.SyncFromDate(request.Date, request.WalletName);
+                }
+                else
+                {
+                    this.walletSyncManager.SyncFromHeight(0, request.WalletName);
+                }
 
-            if (!request.All)
-            {
-                this.walletSyncManager.SyncFromDate(request.Date, request.WalletName);
-            }
-            else
-            {
-                this.walletSyncManager.SyncFromHeight(0, request.WalletName);
-            }
-
-            return this.Ok();
+                return this.Ok();
+            });
         }
 
         [Route("wallet-stats")]
         [HttpGet]
-        public Task<IActionResult> WalletStats([FromQuery] WalletStatsRequest request,
+        public async Task<IActionResult> WalletStats([FromQuery] WalletStatsRequest request,
             CancellationToken cancellationToken)
         {
-            return this.Execute(request, cancellationToken,
-                async (req, token) => this.Json(await this.walletService.GetWalletStats(req, token))
-            );
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => this.Json(await this.walletService.GetWalletStats(req, token)));
         }
 
         /// <summary>Creates requested amount of UTXOs each of equal value.</summary>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <param name="request">An object containing the necessary parameters.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         [HttpPost]
         [Route("splitcoins")]
-        public Task<IActionResult> SplitCoins([FromBody] SplitCoinsRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> SplitCoins([FromBody] SplitCoinsRequest request,
+            CancellationToken cancellationToken = default)
         {
-            return this.Execute(request,cancellationToken,
-                async (req, token) => this.Json(await this.walletService.SplitCoins(req, token))
-            );
-        }
-
-        private async Task<IActionResult> Execute<TRequest>(TRequest request, CancellationToken token,
-            Func<TRequest, CancellationToken, Task<IActionResult>> action, bool checkModelState = true)
-        {
-            Guard.NotNull(request, nameof(request));
-            if (checkModelState && !this.ModelState.IsValid)
-            {
-                this.logger.LogTrace($"{nameof(request)}(-)[MODEL_STATE_INVALID]");
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                return await action(request, token);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        private async Task<IActionResult> ExecuteAsAsync<TRequest>(TRequest request, CancellationToken token,
-            Func<TRequest, CancellationToken, IActionResult> action, bool checkModelState = true)
-        {
-            return await Execute(request, token, (r, t) => Task.Run(() => action(r, t), t));
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => this.Json(await this.walletService.SplitCoins(req, token)));
         }
     }
 }

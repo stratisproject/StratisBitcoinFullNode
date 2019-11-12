@@ -1095,7 +1095,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
             {
                 WalletName = walletName
-            });
+            }).GetAwaiter().GetResult();
 
             var viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as WalletHistoryModel;

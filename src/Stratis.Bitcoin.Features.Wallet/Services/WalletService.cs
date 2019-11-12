@@ -3,10 +3,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Broadcasting;
+    using Builder.Feature;
     using Connection;
     using Helpers;
     using Interfaces;
@@ -14,12 +16,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
     using Models;
     using NBitcoin;
     using Utilities;
-    
+
     public class WalletService : IWalletService
     {
         private const int MaxHistoryItemsPerAccount = 1000;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
+        private readonly IWalletSyncManager walletSyncManager;
         private readonly IConnectionManager connectionManager;
         private readonly Network network;
         private readonly ChainIndexer chainIndexer;
@@ -40,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
+            this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
             this.network = network;
             this.chainIndexer = chainIndexer;
@@ -402,88 +406,275 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
 
                 return model;
-            });
+            }, cancellationToken);
         }
 
-        public Task<WalletSendTransactionModel> SplitCoins(SplitCoinsRequest request, CancellationToken cancellationToken)
-        {
-            var walletReference = new WalletAccountReference(request.WalletName, request.AccountName);
-            HdAddress address = this.walletManager.GetUnusedAddress(walletReference);
-
-            Money totalAmount = request.TotalAmountToSplit;
-            Money singleUtxoAmount = totalAmount / request.UtxosCount;
-
-            var recipients = new List<Recipient>(request.UtxosCount);
-            for (int i = 0; i < request.UtxosCount; i++)
-                recipients.Add(new Recipient {ScriptPubKey = address.ScriptPubKey, Amount = singleUtxoAmount});
-
-            var context = new TransactionBuildContext(this.network)
-            {
-                AccountReference = walletReference,
-                MinConfirmations = 1,
-                Shuffle = true,
-                WalletPassword = request.WalletPassword,
-                Recipients = recipients,
-                Time = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
-            };
-
-            Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
-
-            return this.SendTransaction(new SendTransactionRequest(transactionResult.ToHex()), CancellationToken.None);
-        }
-
-        private async Task<WalletSendTransactionModel> SendTransaction(SendTransactionRequest request, CancellationToken cancellationToken)
+        public async Task<WalletSendTransactionModel> SplitCoins(SplitCoinsRequest request,
+            CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
+            {
+                var walletReference = new WalletAccountReference(request.WalletName, request.AccountName);
+                HdAddress address = this.walletManager.GetUnusedAddress(walletReference);
+
+                Money totalAmount = request.TotalAmountToSplit;
+                Money singleUtxoAmount = totalAmount / request.UtxosCount;
+
+                var recipients = new List<Recipient>(request.UtxosCount);
+                for (int i = 0; i < request.UtxosCount; i++)
+                    recipients.Add(new Recipient {ScriptPubKey = address.ScriptPubKey, Amount = singleUtxoAmount});
+
+                var context = new TransactionBuildContext(this.network)
                 {
-                    if (!this.connectionManager.ConnectedPeers.Any())
+                    AccountReference = walletReference,
+                    MinConfirmations = 1,
+                    Shuffle = true,
+                    WalletPassword = request.WalletPassword,
+                    Recipients = recipients,
+                    Time = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
+                };
+
+                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+
+                return this.SendTransaction(new SendTransactionRequest(transactionResult.ToHex()),
+                    CancellationToken.None);
+            }, cancellationToken);
+        }
+
+        public async Task<WalletSendTransactionModel> SendTransaction(SendTransactionRequest request,
+            CancellationToken cancellationToken)
+        {
+            return await Task.Run(() =>
+            {
+                if (!this.connectionManager.ConnectedPeers.Any())
+                {
+                    this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+
+                    throw new FeatureException(HttpStatusCode.Forbidden,
+                        "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+                }
+
+                Transaction transaction = this.network.CreateTransaction(request.Hex);
+
+                var model = new WalletSendTransactionModel
+                {
+                    TransactionId = transaction.GetHash(),
+                    Outputs = new List<TransactionOutputModel>()
+                };
+
+                foreach (TxOut output in transaction.Outputs)
+                {
+                    bool isUnspendable = output.ScriptPubKey.IsUnspendable;
+                    model.Outputs.Add(new TransactionOutputModel
                     {
-                        this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                        Address = isUnspendable
+                            ? null
+                            : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
+                        Amount = output.Value,
+                        OpReturnData = isUnspendable
+                            ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData)
+                            : null
+                    });
+                }
 
-                        // TODO: Consider how to do this
-//                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden,
-//                    "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-                    }
+                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
+                TransactionBroadcastEntry transactionBroadCastEntry =
+                    this.broadcasterManager.GetTransaction(transaction.GetHash());
 
-                    Transaction transaction = this.network.CreateTransaction(request.Hex);
+                if (transactionBroadCastEntry.State == State.CantBroadcast)
+                {
+                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
 
-                    var model = new WalletSendTransactionModel
-                    {
-                        TransactionId = transaction.GetHash(),
-                        Outputs = new List<TransactionOutputModel>()
-                    };
+                    throw new FeatureException(HttpStatusCode.BadRequest,
+                        transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                }
 
-                    foreach (TxOut output in transaction.Outputs)
-                    {
-                        bool isUnspendable = output.ScriptPubKey.IsUnspendable;
-                        model.Outputs.Add(new TransactionOutputModel
+                return model;
+            }, cancellationToken);
+        }
+
+        public async Task<IEnumerable<RemovedTransactionModel>> RemoveTransactions(RemoveTransactionsModel request,
+            CancellationToken cancellationToken)
+        {
+            return await Task.Run(() =>
+            {
+                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> result;
+
+                if (request.DeleteAll)
+                {
+                    result = this.walletManager.RemoveAllTransactions(request.WalletName);
+                }
+                else if (request.FromDate != default)
+                {
+                    result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
+                }
+                else if (request.TransactionsIds != null)
+                {
+                    IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
+                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                }
+                else
+                {
+                    throw new WalletException("A filter specifying what transactions to remove must be set.");
+                }
+
+                // If the user chose to resync the wallet after removing transactions.
+                if (result.Any() && request.ReSync)
+                {
+                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
+                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
+                    ChainedHeader chainedHeader =
+                        this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
+
+                    // Start the syncing process from the block before the earliest transaction was seen.
+                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1, request.WalletName);
+                }
+
+                return result.Select(r => new RemovedTransactionModel
+                {
+                    TransactionId = r.transactionId,
+                    CreationTime = r.creationTime
+                });
+            }, cancellationToken);
+        }
+
+        public async Task<AddressesModel> GetAllAddresses(GetAllAddressesModel request,
+            CancellationToken cancellationToken = default)
+        {
+            return await Task.Run(() =>
+            {
+                Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccount(request.AccountName);
+                if (account == null)
+                    throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
+
+                var accRef = new WalletAccountReference(request.WalletName, request.AccountName);
+
+                var unusedNonChange = this.walletManager.GetUnusedAddresses(accRef, false)
+                    .Select(a => (address: a, isUsed: false, isChange: false, confirmed: Money.Zero, total: Money.Zero))
+                    .ToList();
+                var unusedChange = this.walletManager.GetUnusedAddresses(accRef, true)
+                    .Select(a => (address: a, isUsed: false, isChange: true, confirmed: Money.Zero, total: Money.Zero))
+                    .ToList();
+                var usedNonChange = this.walletManager.GetUsedAddresses(accRef, false)
+                    .Select(a => (address: a.address, isUsed: true, isChange: false, confirmed: a.confirmed,
+                        total: a.total)).ToList();
+                var usedChange = this.walletManager.GetUsedAddresses(accRef, true)
+                    .Select(a => (address: a.address, isUsed: true, isChange: true, confirmed: a.confirmed,
+                        total: a.total)).ToList();
+
+                return new AddressesModel()
+                {
+                    Addresses = unusedNonChange
+                        .Concat(unusedChange)
+                        .Concat(usedNonChange)
+                        .Concat(usedChange)
+                        .Select(a => new AddressModel
                         {
-                            Address = isUnspendable
-                                ? null
-                                : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
-                            Amount = output.Value,
-                            OpReturnData = isUnspendable
-                                ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData)
-                                : null
-                        });
-                    }
+                            Address = a.address.Address,
+                            IsUsed = a.isUsed,
+                            IsChange = a.isChange,
+                            AmountConfirmed = a.confirmed,
+                            AmountUnconfirmed = a.total - a.confirmed
+                        })
+                };
+            }, cancellationToken);
+        }
 
-                    this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+        public async Task<WalletBuildTransactionModel> BuildTransaction(BuildTransactionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return await Task.Run(() =>
+            {
+                var recipients = request.Recipients.Select(recipientModel => new Recipient
+                {
+                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    Amount = recipientModel.Amount
+                }).ToList();
 
-                    TransactionBroadcastEntry transactionBroadCastEntry =
-                        this.broadcasterManager.GetTransaction(transaction.GetHash());
-
-                    if (transactionBroadCastEntry.State == State.CantBroadcast)
+                // If specified, get the change address, which must already exist in the wallet.
+                HdAddress changeAddress = null;
+                if (!string.IsNullOrWhiteSpace(request.ChangeAddress))
+                {
+                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                    HdAccount account = wallet.GetAccount(request.AccountName);
+                    if (account == null)
                     {
-                        this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
-                        // TODO: Consider how to do this
-//                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-//                        transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                        throw new FeatureException(HttpStatusCode.BadRequest, "Account not found.",
+                            $"No account with the name '{request.AccountName}' could be found in wallet {wallet.Name}.");
                     }
 
-                    return model;
-                }, cancellationToken);
+                    changeAddress = account.GetCombinedAddresses()
+                        .FirstOrDefault(x => x.Address == request.ChangeAddress);
+
+                    if (changeAddress == null)
+                    {
+                        throw new FeatureException(HttpStatusCode.BadRequest, "Change address not found.",
+                            $"No changed address '{request.ChangeAddress}' could be found in wallet {wallet.Name}.");
+                    }
+                }
+
+                var context = new TransactionBuildContext(this.network)
+                {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                    TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Shuffle = request.ShuffleOutputs ??
+                              true, // We shuffle transaction outputs by default as it's better for anonymity.
+                    OpReturnData = request.OpReturnData,
+                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount)
+                        ? null
+                        : Money.Parse(request.OpReturnAmount),
+                    WalletPassword = request.Password,
+                    SelectedInputs = request.Outpoints
+                        ?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
+                    AllowOtherInputs = false,
+                    Recipients = recipients,
+                    ChangeAddress = changeAddress
+                };
+
+                if (!string.IsNullOrEmpty(request.FeeType))
+                {
+                    context.FeeType = FeeParser.Parse(request.FeeType);
+                }
+
+                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+
+                return new WalletBuildTransactionModel
+                {
+                    Hex = transactionResult.ToHex(),
+                    Fee = context.TransactionFee,
+                    TransactionId = transactionResult.GetHash()
+                };
+            }, cancellationToken);
+        }
+
+        public async Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request, CancellationToken cancellationToken)
+        {
+            return await Task.Run(() =>
+            {
+                var recipients = request.Recipients.Select(recipientModel => new Recipient
+                {
+                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    Amount = recipientModel.Amount
+                }).ToList();
+
+                var context = new TransactionBuildContext(this.network)
+                {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                    FeeType = FeeParser.Parse(request.FeeType),
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Recipients = recipients,
+                    OpReturnData = request.OpReturnData,
+                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount)
+                        ? null
+                        : Money.Parse(request.OpReturnAmount),
+                    Sign = false
+                };
+
+                return this.walletTransactionHandler.EstimateFee(context);
+            }, cancellationToken);
         }
 
 
