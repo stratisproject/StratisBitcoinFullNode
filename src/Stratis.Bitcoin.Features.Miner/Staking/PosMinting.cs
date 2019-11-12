@@ -872,7 +872,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
-                            
+
                             context.Logger.LogDebug("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                         }
                         else context.Logger.LogDebug("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
@@ -977,6 +977,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 if (depth < 1)
                 {
                     this.logger.LogDebug("UTXO '{0}' is new or reorg happened.", utxoStakeDescription.OutPoint);
+                    continue;
+                }
+
+                if (depth < requiredDepth)
+                {
+                    this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth); this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth);
                     continue;
                 }
 
