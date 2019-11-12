@@ -105,8 +105,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR", "Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj", "{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Apps.Tests", "Stratis.Bitcoin.Features.Apps.Tests\Stratis.Bitcoin.Features.Apps.Tests.csproj", "{C139889D-F480-4AEE-BA76-81C73B97AD30}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Networks", "Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj", "{C1D739B1-79CB-4D42-8147-3A31D1B84868}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR.Validation.Tests", "Stratis.SmartContracts.CLR.Validation.Tests\Stratis.SmartContracts.CLR.Validation.Tests.csproj", "{247C062D-8A16-4DD8-93B4-1D1C3D49B498}"
