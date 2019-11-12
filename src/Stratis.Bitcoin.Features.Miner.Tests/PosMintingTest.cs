@@ -569,11 +569,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             utxoDescription.UtxoSet.SetPrivatePropertyValue("Time", chainTip.Header.Time);
             utxoDescription.UtxoSet.SetPrivatePropertyValue("IsCoinstake", isCoinstake);
 
-            // Only add the UTXO if it would have been selected by the "GetSpendable*" methods.
-            int requiredDepth = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
-            int depth =  chainTip.Height + 1- this.chainIndexer.GetHeader(utxoDescription.HashBlock).Height;
-            if (depth >= requiredDepth)
-                descriptions.Add(utxoDescription);
+            descriptions.Add(utxoDescription);
 
             List<UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStakingAsync(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue).GetAwaiter().GetResult();
             return suitableCoins.Count == 1;
