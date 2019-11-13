@@ -32,5 +32,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             CancellationToken cancellationToken);
 
         Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request, CancellationToken cancellationToken);
+
+        Task RecoverViaExtPubKey(WalletExtPubRecoveryRequest request, CancellationToken token);
+
+        Task RecoverWallet(WalletRecoveryRequest request, CancellationToken cancellationToken);
+
+        Task LoadWallet(WalletLoadRequest request, CancellationToken cancellationToken);
+
+        Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request,
+            CancellationToken cancellationToken);
+
+        Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request,
+            CancellationToken cancellationToken);
     }
 }

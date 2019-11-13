@@ -2,14 +2,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Security;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Broadcasting;
     using Builder.Feature;
     using Connection;
+    using Controllers;
     using Helpers;
     using Interfaces;
     using Microsoft.Extensions.Logging;
@@ -650,7 +653,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request, CancellationToken cancellationToken)
+        public async Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request,
+            CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -674,6 +678,126 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 };
 
                 return this.walletTransactionHandler.EstimateFee(context);
+            }, cancellationToken);
+        }
+
+        public async Task RecoverViaExtPubKey(WalletExtPubRecoveryRequest request, CancellationToken token)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string accountExtPubKey =
+                        this.network.IsBitcoin()
+                            ? request.ExtPubKey
+                            : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
+
+                    this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey),
+                        request.AccountIndex,
+                        request.CreationDate);
+                }
+                catch (WalletException e)
+                {
+                    // Wallet already exists.
+                    throw new FeatureException(HttpStatusCode.Conflict, e.Message, e.ToString());
+                }
+                catch (FileNotFoundException e)
+                {
+                    // Wallet does not exist.
+                    throw new FeatureException(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
+                }
+            }, token);
+        }
+
+        public async Task RecoverWallet(WalletRecoveryRequest request, CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic,
+                        request.CreationDate, passphrase: request.Passphrase);
+                }
+                catch (WalletException e)
+                {
+                    // indicates that this wallet already exists
+                    throw new FeatureException(HttpStatusCode.Conflict, e.Message, e.ToString());
+                }
+                catch (FileNotFoundException e)
+                {
+                    // indicates that this wallet does not exist
+                    throw new FeatureException(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
+                }
+            }, cancellationToken);
+        }
+
+
+        public async Task LoadWallet(WalletLoadRequest request, CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    this.walletManager.LoadWallet(request.Password, request.Name);
+                }
+                catch (FileNotFoundException e)
+                {
+                    throw new FeatureException(HttpStatusCode.NotFound,
+                        "This wallet was not found at the specified location.", e.ToString());
+                }
+                catch (WalletException e)
+                {
+                    throw new FeatureException(HttpStatusCode.NotFound,
+                        "This wallet was not found at the specified location.", e.ToString());
+                }
+                catch (SecurityException e)
+                {
+                    // indicates that the password is wrong
+                    throw new FeatureException(HttpStatusCode.Forbidden,
+                        "Wrong password, please try again.",
+                        e.ToString());
+                }
+            }, cancellationToken);
+        }
+
+        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request,
+            CancellationToken cancellationToken)
+        {
+            return await Task.Run(() =>
+            {
+                (Money maximumSpendableAmount, Money fee) = this.walletTransactionHandler.GetMaximumSpendableAmount(
+                    new WalletAccountReference(request.WalletName, request.AccountName),
+                    FeeParser.Parse(request.FeeType), request.AllowUnconfirmed);
+
+                return new MaxSpendableAmountModel
+                {
+                    MaxSpendableAmount = maximumSpendableAmount,
+                    Fee = fee
+                };
+            }, cancellationToken);
+        }
+
+        public async Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request, CancellationToken cancellationToken)
+        {
+            return await Task.Run(() =>
+            {
+                IEnumerable<UnspentOutputReference> spendableTransactions =
+                    this.walletManager.GetSpendableTransactionsInAccount(
+                        new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
+
+                return new SpendableTransactionsModel
+                {
+                    SpendableTransactions = spendableTransactions.Select(st => new SpendableTransactionModel
+                    {
+                        Id = st.Transaction.Id,
+                        Amount = st.Transaction.Amount,
+                        Address = st.Address.Address,
+                        Index = st.Transaction.Index,
+                        IsChange = st.Address.IsChangeAddress(),
+                        CreationTime = st.Transaction.CreationTime,
+                        Confirmations = st.Confirmations
+                    }).ToList()
+                };
             }, cancellationToken);
         }
 
