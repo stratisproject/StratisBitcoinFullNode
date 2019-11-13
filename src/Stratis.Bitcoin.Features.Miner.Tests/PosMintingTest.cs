@@ -525,11 +525,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_PrevOutIsCoinstake_AfterActivation_Mainnet()
         {
-            int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
-            int afterActivationHeight = activationHeight + 1000;
-
-            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 498, true));
-            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 497, true));
+            // The logic here is that, before the activation, a coinstake UTXO requires 50 confirmations on mainnet to be used as a staking candidate.
+            // So if the chain tip is 1000, and the UTXO height is (1000 - 48) = 952, it currently has depth 49.
+            // Therefore a newly staked block using this UTXO would have precisely 50 confirmations.
+            Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, 1000, 1000 - 48, true)); // utxo depth is 49, mining block at 50
+            Assert.False(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, 1000, 1000 - 47, true)); // utxo depth is 48, mining block at 49
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public static Func<HdAccount, bool> NormalAccounts = a => a.Index < SpecialPurposeAccountIndexesStart;
 
         [JsonIgnore]
-        public IWalletRepository WalletRepository { get; private set;}
+        public IWalletRepository WalletRepository { get; private set; }
 
         [JsonIgnore]
         internal IWalletManager WalletManager { get; set; }
@@ -50,7 +50,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             : this()
         {
             this.Network = network;
-            this.AccountsRoot.Add(new AccountRoot(this) {
+            this.AccountsRoot.Add(new AccountRoot(this)
+            {
                 CoinType = (CoinType)network.Consensus.CoinType
             });
         }
