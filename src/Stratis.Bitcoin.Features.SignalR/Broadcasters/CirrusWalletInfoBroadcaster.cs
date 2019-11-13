@@ -8,6 +8,8 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    using Wallet.Services;
+
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
@@ -16,14 +18,11 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         public CirrusWalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
-            IConsensusManager consensusManager,
-            IConnectionManager connectionManager,
+            IWalletService walletService,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
-            ChainIndexer chainIndexer,
             EventsHub eventsHub)
-            : base(loggerFactory, walletManager, consensusManager, connectionManager, asyncProvider, nodeLifetime,
-                chainIndexer, eventsHub, true)
+            : base(loggerFactory, walletService, walletManager, asyncProvider, nodeLifetime, eventsHub, true)
         {
         }
     }
