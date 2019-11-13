@@ -596,7 +596,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            // TODO: Is the difference and duplication in logic between GetMatureBalanceAsync and GetStakeMinConfirmations acceptable?
             (Money balance, Money immature) = await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false);
             this.rpcGetStakingInfoModel.Immature = immature.Satoshi;
 
@@ -873,7 +872,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
-                            
+
                             context.Logger.LogDebug("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                         }
                         else context.Logger.LogDebug("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
@@ -962,9 +961,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
+            // Add 1 to chainTip because this is being called in the context of trying to create a new block, which will have height (chainTip + 1).
+            // Subtract 1 from the required depth, because if a UTXO is in a block with height == requiredDepth it already has 1 confirmation.
+            // e.g. consider a hypothetical chain with the coinstake age requirement = 5, a prospective UTXO at height 3 and a chainTip of 10.
+            // Taking (chainTip + 1) into account, the UTXO has ((10 + 1) - 3 + 1) = 9 confirmations, meaning it easily has sufficient depth.
+            // Now consider a different UTXO at height 7. This has (10 + 1) - 7 + 1) = 5 confirmations, meaning it just barely qualifies.
             long requiredDepth = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
+                // Internally GetDepthInMainChainAsync uses chainTip instead of (chainTip + 1). That is why there is a later comparison to
+                // (depth < requiredDepth) instead of (depth <= requiredDepth).
                 int depth = await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false);
                 this.logger.LogDebug("Checking if UTXO '{0}' value {1} can be added, its depth is {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.TxOut.Value, depth);
 
@@ -974,12 +980,21 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
+                if (depth < requiredDepth)
+                {
+                    this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth); this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth);
+                    continue;
+                }
+
                 if (utxoStakeDescription.UtxoSet.Time > spendTime)
                 {
                     this.logger.LogDebug("UTXO '{0}' can't be added because its time {1} is greater than coinstake time {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.UtxoSet.Time, spendTime);
                     continue;
                 }
 
+                // Under normal circumstances this maturity check will not trigger, as the requiredDepth calculation will have already filtered out
+                // a coinbase/coinstake with insufficient confirmations. However, see the comments within the GetBlocksCountToMaturityAsync method
+                // for the rationale of why we perform this check anyway.
                 int toMaturity = await this.GetBlocksCountToMaturityAsync(utxoStakeDescription).ConfigureAwait(false);
                 if (toMaturity > 0)
                 {
@@ -1000,16 +1015,27 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <summary>
-        /// Calculates blocks count till UTXO is considered mature for staking.
+        /// Calculates the number of blocks until a coinbase or coinstake UTXO is considered mature for staking.
         /// </summary>
         /// <param name="utxoStakeDescription">The UTXO stake description.</param>
         /// <returns>How many blocks are left till UTXO is considered mature for staking.</returns>
+        /// <remarks>Do NOT use this for general-purpose maturity calculations outside of <see cref="PosMinting"/> as it will give off-by-one errors.
+        /// This method is making the assumption that we are adding a new block to the chain, and thus reduces the maturity threshold by 1.</remarks>
         private async Task<int> GetBlocksCountToMaturityAsync(UtxoStakeDescription utxoStakeDescription)
         {
+            // The concept of maturity only applies to coinbase and coinstake outputs, so normal outputs do not have this restriction.
             if (!(utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake))
                 return 0;
 
-            return Math.Max(0, (int)this.network.Consensus.CoinbaseMaturity + 1 - await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false));
+            // Using CoinbaseMaturity here is not strictly correct. Due to the ProvenHeaderCoinstakeRule enforcing a unilateral prevOut depth equivalent
+            // to maxReorg, a mature UTXO is not necessarily old enough for staking. However, the minter also separately filters out UTXOs younger than
+            // the minimum required depth in the GetUtxoStakeDescriptionsSuitableForStakingAsync method. So this method retains the CoinbaseMaturity
+            // constant so that it returns an intuitive result, in case there are alternate network definitions where the coinstake age requirement is
+            // less than the maturity.
+            int minConf = (int)this.network.Consensus.CoinbaseMaturity;
+
+            // The reason why we subtract 1 here is because any newly staked block will be at (chainTip + 1), effectively giving an extra confirmation over and above the depth calculation.
+            return Math.Max(0, minConf - 1 - await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -1028,6 +1054,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             if (chainedBlock == null)
                 return await this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).ConfigureAwait(false);
 
+            // Add 1 because a transaction is considered to have 1 confirmation when it is in a block.
             return this.chainIndexer.Tip.Height - chainedBlock.Height + 1;
         }
 
