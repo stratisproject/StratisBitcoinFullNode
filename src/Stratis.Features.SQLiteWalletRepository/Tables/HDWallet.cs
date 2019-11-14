@@ -111,7 +111,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             internal string Hash { get; set; }
         }
 
-        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, uint256 prevTipHash)
+        internal static void AdvanceTip(DBConnection conn, HDWallet wallet, ChainedHeader newTip, uint256 prevTipHash)
         {
             uint256 lastBlockSyncedHash = newTip?.HashBlock ?? uint256.Zero;
             int lastBlockSyncedHeight = newTip?.Height ?? -1;
