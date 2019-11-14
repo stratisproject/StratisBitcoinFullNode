@@ -17,12 +17,11 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     {
         public CirrusWalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
-            IWalletManager walletManager,
             IWalletService walletService,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             EventsHub eventsHub)
-            : base(loggerFactory, walletService, walletManager, asyncProvider, nodeLifetime, eventsHub, true)
+            : base(loggerFactory, walletService, asyncProvider, nodeLifetime, eventsHub, true)
         {
         }
     }

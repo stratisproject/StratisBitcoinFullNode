@@ -56,6 +56,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        public async Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken = default)
+        {
+            return await Task.Run(() => this.walletManager.GetWalletsNames(), cancellationToken);
+        }
+
         public async Task<AddressBalanceModel> GetReceivedByAddress(string address,
             CancellationToken cancellationToken = default(CancellationToken))
         {

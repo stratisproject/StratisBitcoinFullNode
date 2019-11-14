@@ -8,6 +8,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
     public interface IWalletService
     {
+        Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken);
+        
         Task<AddressBalanceModel> GetReceivedByAddress(string address, CancellationToken cancellationToken);
 
         Task<WalletBalanceModel> GetBalance(string requestWalletName, string requestAccountName,

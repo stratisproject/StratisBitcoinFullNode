@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     /// </summary>
     public abstract class ClientBroadcasterBase : IClientEventBroadcaster, IDisposable
     {
-        private readonly EventsHub eventsHub;
+        protected readonly EventsHub eventsHub;
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncProvider asyncProvider;
         protected readonly ILogger logger;
@@ -65,6 +65,8 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 this.nodeLifetime.ApplicationStopping,
                 repeatEvery:
                 TimeSpan.FromSeconds(Math.Max(broadcasterSettings.BroadcastFrequencySeconds, 5)));
+
+            this.OnInitialise();
         }
 
         protected abstract Task<IEnumerable<IClientEvent>> GetMessages(CancellationToken cancellationToken);
@@ -73,6 +75,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         {
             if (!disposing) return;
             this.asyncLoop?.Dispose();
+        }
+
+        protected virtual void OnInitialise()
+        {
         }
 
         public void Dispose()

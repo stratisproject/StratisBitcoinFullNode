@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.SignalR.Events;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
@@ -18,29 +17,35 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     public class WalletInfoBroadcaster : ClientBroadcasterBase
     {
         private readonly IWalletService walletService;
-        private readonly IWalletManager walletManager;
         private readonly bool includeAddressBalances;
+        private string currentWalletName;
+        private string currentAddress;
 
         public WalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
             IWalletService walletService,
-            IWalletManager walletManager,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             EventsHub eventsHub, bool includeAddressBalances = false)
             : base(eventsHub, loggerFactory, nodeLifetime, asyncProvider)
         {
             this.walletService = walletService;
-            this.walletManager = walletManager;
             this.includeAddressBalances = includeAddressBalances;
         }
 
         protected override async Task<IEnumerable<IClientEvent>> GetMessages(CancellationToken cancellationToken)
         {
             var clientEvents = new List<WalletGeneralInfoClientEvent>();
-            foreach (string walletName in this.walletManager.GetWalletsNames())
+
+            foreach (string walletName in await this.walletService.GetWalletNames(cancellationToken))
             {
+                if (null != this.currentWalletName && walletName != this.currentWalletName)
+                {
+                    continue;
+                }
+                
                 WalletGeneralInfoClientEvent clientEvent = null;
+                
                 try
                 {
                     var generalInfo = this.walletService.GetWalletGeneralInfo(walletName, cancellationToken);
@@ -63,6 +68,32 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             }
 
             return clientEvents;
+        }
+
+        protected override void OnInitialise()
+        {
+            base.OnInitialise();
+            this.eventsHub.SubscribeToIncomingSignalRMessages(this.GetType().Name, (messageArgs) =>
+            {
+                if (messageArgs.Args.ContainsKey("currentWalletName"))
+                {
+                    this.currentWalletName = messageArgs.Args["currentWalletName"];
+                }
+                
+                if (messageArgs.Args.ContainsKey("currentAddress"))
+                {
+                    this.currentAddress = messageArgs.Args["currentAddress"];
+                }
+            });
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                this.eventsHub.UnSubscribeToIncomingSignalRMessages(this.GetType().Name);
+            }
         }
     }
 }

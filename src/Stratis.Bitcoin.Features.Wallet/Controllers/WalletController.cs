@@ -547,7 +547,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Internally, the specified block is taken as the new wallet tip
         /// and all blocks after it are resynced.
         /// </summary>
-        /// <param name="request">An object containing the necessary parameters to request a resync.</param>
         /// <param name="model">The Hash of the block to Sync From</param>
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A value of Ok if the re-sync was successful.</returns>
