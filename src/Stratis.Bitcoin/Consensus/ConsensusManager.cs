@@ -673,6 +673,11 @@ namespace Stratis.Bitcoin.Consensus
 
             // Add peers that needed to be banned as a result of a failure to connect blocks.
             // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
+            // We also need to set the ban reason and ban time otherwise it is not known why
+            // connecting the new chain failed and hence why the peer is being disconnected in 
+            // peer banning.
+            reconnectionResult.BanReason = connectBlockResult.BanReason;
+            reconnectionResult.BanDurationSeconds = connectBlockResult.BanDurationSeconds;
             reconnectionResult.PeersToBan = connectBlockResult.PeersToBan;
 
             return reconnectionResult;
