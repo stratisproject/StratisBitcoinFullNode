@@ -882,17 +882,21 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                                 conn.Rollback();
 
+                                throw;
+                            }
+                            finally
+                            {
                                 // Ensure locks are released.
                                 this.EndBatch(round);
 
-                                throw;
+                                this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                                this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
                             }
-
-                            this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
-                            this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
                         }
-
-                        this.EndBatch(round);
+                        else
+                        {
+                            this.EndBatch(round);
+                        }
 
                         if (chainedHeader == null)
                             return false;
