@@ -60,6 +60,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private readonly IDateTimeProvider dateTimeProvider;
         private ProcessBlocksInfo processBlocksInfo;
         private object lockObj;
+        internal const int MaxBatchDurationSeconds = 10;
 
         // Metrics.
         internal Metrics Metrics;
@@ -1000,7 +1001,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                 round.NewTip = null;
                 round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
-                round.BatchDeadline = DateTime.Now.Ticks + 10 * 10_000_000;
+                round.BatchDeadline = DateTime.Now.AddSeconds(MaxBatchDurationSeconds).Ticks;
 
                 return true;
             }
