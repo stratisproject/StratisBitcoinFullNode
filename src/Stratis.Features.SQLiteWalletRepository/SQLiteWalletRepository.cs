@@ -957,12 +957,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }
 
                     // Determine participating wallets.
-                    string lastBlockSyncedHash =
-                        (header == null) ? null : (header.Previous?.HashBlock ?? (uint256) 0).ToString();
+                    string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
                     if (round.Wallet == null && !this.DatabasePerWallet)
-                        round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values
-                            .Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                            .Select(c => c.Wallet.Name));
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
                     else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
                         round.ParticipatingWallets = new ConcurrentHashSet<string>() {round.Wallet.Name};
                     else
@@ -1005,9 +1002,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }
 
                     // Initialize round.
-                    round.PrevTip = (header.Previous == null)
-                        ? new HashHeightPair(0, -1)
-                        : new HashHeightPair(header.Previous);
+                    round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                     round.NewTip = null;
                     round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
 
