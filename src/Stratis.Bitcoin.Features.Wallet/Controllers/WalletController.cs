@@ -73,8 +73,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public async Task<IActionResult> Create([FromBody] WalletCreationRequest request,
             CancellationToken cancellationToken = default)
         {
-            return await this.ExecuteAsAsync(request, cancellationToken,
-                (req, token) => this.Json(this.walletService.CreateWallet(req, token)));
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => this.Json(await this.walletService.CreateWallet(req, token)));
         }
 
         /// <summary>

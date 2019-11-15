@@ -31,12 +31,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletControllerTest : LogsTestBase
     {
         private readonly ChainIndexer chainIndexer;
-        private static readonly IDictionary<string, PropertyInfo> wordLists;
-
+        private static readonly IDictionary<string, PropertyInfo> WordLists;
+        private readonly Dictionary<Type, object> configuredMocks = new Dictionary<Type, object>();
 
         static WalletControllerTest()
         {
-            wordLists = typeof(Wordlist)
+            WordLists = typeof(Wordlist)
                 .GetProperties(BindingFlags.Public | BindingFlags.Static).Where(p => p.PropertyType == typeof(Wordlist))
                 .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
         }
@@ -61,8 +61,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             foreach (string word in resultingWords)
             {
-                int index = -1;
-                Assert.True(Wordlist.English.WordExists(word, out index));
+                Assert.True(Wordlist.English.WordExists(word, out int _));
             }
         }
 
@@ -84,14 +83,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [InlineData("eNgLiSh", ' ')]
         [InlineData("english", ' ')]
         [InlineData("french", ' ')]
-        [InlineData("spanish",' ')]
+        [InlineData("spanish", ' ')]
         [InlineData("japanese", '　')]
         [InlineData("chinesetraditional", ' ')]
         [InlineData("chinesesimplified", ' ')]
-        public async Task GenerateMnemonicWithStrangeLanguageCasingReturnsCorrectMnemonic(string language, char separator)
+        public async Task GenerateMnemonicWithStrangeLanguageCasingReturnsCorrectMnemonic(string language,
+            char separator)
         {
             var controller = this.GetWalletController();
-            var wordList = (Wordlist) wordLists[language].GetValue(null, null);
+            var wordList = (Wordlist) WordLists[language].GetValue(null, null);
 
             IActionResult result = await controller.GenerateMnemonic(language);
 
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string[] resultingWords = (viewResult.Value as string).Split(separator);
 
             Assert.Equal(12, resultingWords.Length);
-            
+
             Assert.True(resultingWords.All(word => wordList.WordExists(word, out int _)));
         }
 
@@ -127,10 +127,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task CreateWalletSuccessfullyReturnsMnemonic()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate
-                .Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<Mnemonic>())).Returns((null, mnemonic));
+
+            var mockWalletCreate = this.ConfigureMock<IWalletManager>(
+                mock =>
+                {
+                    mock.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<Mnemonic>())).Returns((null, mnemonic));
+                });
 
             var controller = this.GetWalletController();
 
@@ -150,9 +153,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task CreateWalletWithInvalidModelStateReturnsBadRequest()
         {
-            var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            var mockWalletCreate = new Mock<IWalletManager>();
-
             var controller = this.GetWalletController();
 
             controller.ModelState.AddModelError("Name", "Name cannot be empty.");
@@ -176,11 +176,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task CreateWalletWithInvalidOperationExceptionReturnsConflict()
         {
             string errorMessage = "An error occurred.";
-            var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet =>
-                    wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                        It.IsAny<Mnemonic>()))
-                .Throws(new WalletException(errorMessage));
+
+            var mockWalletCreate = this.ConfigureMock<IWalletManager>(
+                mock =>
+                {
+                    mock.Setup(wallet =>
+                            wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                It.IsAny<Mnemonic>()))
+                        .Throws(new WalletException(errorMessage));
+                });
 
             var controller = this.GetWalletController();
 
@@ -204,11 +208,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task CreateWalletWithNotSupportedExceptionExceptionReturnsBadRequest()
         {
-            var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet =>
-                    wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                        It.IsAny<Mnemonic>()))
-                .Throws(new NotSupportedException("Not supported"));
+            var mockWalletCreate = this.ConfigureMock<IWalletManager>(
+                mock =>
+                {
+                    mock.Setup(wallet =>
+                            wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                It.IsAny<Mnemonic>()))
+                        .Throws(new NotSupportedException("Not supported"));
+                });
+
 
             var controller = this.GetWalletController();
 
@@ -238,13 +246,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = NetworkHelpers.GetNetwork("mainnet")
             };
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<DateTime>(), null, null)).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(
+                (mock) =>
+                    mock.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<DateTime>(), null, null)).Returns(wallet));
 
-            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
-            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
-                this.Network.GetGenesis().Header.GetHash(), 3));
+            this.ConfigureMock<IWalletSyncManager>(mock =>
+                mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
+                    this.Network.GetGenesis().Header.GetHash(), 3)));
 
             var controller = this.GetWalletController();
 
@@ -274,22 +283,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = NetworkHelpers.GetNetwork("mainnet")
             };
 
-            // The chain is at height 100.
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
             DateTime lastBlockDateTime = chainIndexer.Tip.Header.BlockTime.DateTime;
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<DateTime>(), null, null)).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<DateTime>(), null, null)).Returns(wallet));
 
-            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
-            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
-                this.Network.GetGenesis().Header.GetHash(), 3));
+            Mock<IWalletSyncManager> walletSyncManager = this.ConfigureMock<IWalletSyncManager>(mock =>
+                mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
+                    this.Network.GetGenesis().Header.GetHash(), 3)));
+
             walletSyncManager.Verify(w => w.SyncFromHeight(100, It.IsAny<string>()), Times.Never);
-
-//            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object,
-//                new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(),
-//                this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             var controller = this.GetWalletController();
 
@@ -334,10 +338,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task RecoverWalletWithInvalidOperationExceptionReturnsConflict()
         {
             string errorMessage = "An error occurred.";
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<DateTime>(), null, null))
-                .Throws(new WalletException(errorMessage));
+
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<DateTime>(), null, null))
+                    .Throws(new WalletException(errorMessage)));
 
             var controller = this.GetWalletController();
 
@@ -361,10 +366,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task RecoverWalletWithFileNotFoundExceptionReturnsNotFound()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<DateTime>(), null, null))
-                .Throws(new FileNotFoundException("File not found."));
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<DateTime>(), null, null))
+                    .Throws(new FileNotFoundException("File not found.")));
 
             var controller = this.GetWalletController();
 
@@ -389,10 +394,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task RecoverWalletWithExceptionReturnsBadRequest()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<DateTime>(), null, null))
-                .Throws(new FormatException("Formatting failed."));
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<DateTime>(), null, null))
+                    .Throws(new FormatException("Formatting failed.")));
 
             var controller = this.GetWalletController();
 
@@ -421,17 +426,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string extPubKey =
                 "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
 
-            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+            await this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
         }
 
         [Fact]
-        public void RecoverWalletViaExtPubKeySupportsStratisLegacyExtpubKey()
+        public async Task RecoverWalletViaExtPubKeySupportsStratisLegacyExtpubKey()
         {
             string walletName = "myWallet";
             string extPubKey =
                 "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy";
 
-            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+            await this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
         }
 
         private async Task RecoverWithExtPubAndCheckSuccessfulResponse(string walletName, string extPubKey)
@@ -442,13 +447,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = KnownNetworks.StratisMain
             };
 
-            var walletManager = new Mock<IWalletManager>();
-            walletManager.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
-                .Returns(wallet);
+            var walletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
+                    .Returns(wallet));
 
-            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
-            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
-                this.Network.GetGenesis().Header.GetHash(), 3));
+            this.ConfigureMock<IWalletSyncManager>(mock =>
+                mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
+                    this.Network.GetGenesis().Header.GetHash(), 3)));
 
             var controller = this.GetWalletController();
 
@@ -470,6 +475,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         /// and the user recovers a new wallet at height X + Y.
         /// The wallet should continue syncing from X without jumpoing forward.
         /// </summary>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
         [Fact]
         public async Task RecoverWalletWithExtPubDatedAfterCurrentSyncHeightDoesNotMoveSyncHeight()
         {
@@ -483,18 +489,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = KnownNetworks.StratisMain
             };
 
-            // The chain is at height 100.
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
             DateTime lastBlockDateTime = chainIndexer.Tip.Header.BlockTime.DateTime;
 
-            var walletManager = new Mock<IWalletManager>();
-            walletManager.Setup(w =>
-                    w.RecoverWallet(It.IsAny<string>(), It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
-                .Returns(wallet);
+            var walletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w =>
+                        w.RecoverWallet(It.IsAny<string>(), It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
+                    .Returns(wallet));
 
-            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
-            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
-                this.Network.GetGenesis().Header.GetHash(), 3));
+            Mock<IWalletSyncManager> walletSyncManager = this.ConfigureMock<IWalletSyncManager>(mock =>
+                mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
+                    this.Network.GetGenesis().Header.GetHash(), 3)));
+
             walletSyncManager.Verify(w => w.SyncFromHeight(100, It.IsAny<string>()), Times.Never);
 
             var controller = this.GetWalletController();
@@ -521,8 +526,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "myWallet",
                 Network = NetworkHelpers.GetNetwork("mainnet")
             };
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet));
 
             var controller = this.GetWalletController();
 
@@ -562,9 +567,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task LoadWalletWithFileNotFoundExceptionandReturnsNotFound()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
-                .Throws<FileNotFoundException>();
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
+                    .Throws<FileNotFoundException>());
 
             var controller = this.GetWalletController();
 
@@ -588,9 +593,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task LoadWalletWithSecurityExceptionandReturnsForbidden()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
-                .Throws<SecurityException>();
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
+                    .Throws<SecurityException>());
 
             var controller = this.GetWalletController();
 
@@ -614,9 +619,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task LoadWalletWithOtherExceptionandReturnsBadRequest()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
-                .Throws<FormatException>();
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>()))
+                    .Throws<FormatException>());
 
             var controller = this.GetWalletController();
 
@@ -656,12 +661,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var concurrentChain = new ChainIndexer(this.Network);
             ChainedHeader tip = WalletTestsHelpers.AppendBlock(this.Network, null, new[] {concurrentChain});
 
-            var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.Setup(c => c.ConnectedPeers)
-                .Returns(new NetworkPeerCollection());
+            var connectionManagerMock = this.ConfigureMock<IConnectionManager>(mock =>
+                mock.Setup(c => c.ConnectedPeers)
+                    .Returns(new NetworkPeerCollection()));
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetWallet("myWallet")).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetWallet("myWallet")).Returns(wallet));
 
             string walletFileExtension = "wallet.json";
             string testWalletFileName = Path.ChangeExtension("myWallet", walletFileExtension);
@@ -695,8 +700,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "myWallet",
             };
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetWallet("myWallet")).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetWallet("myWallet")).Returns(wallet));
 
             var controller = this.GetWalletController();
 
@@ -719,8 +724,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task GetGeneralInfoWithExceptionReturnsBadRequest()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetWallet("myWallet")).Throws<FormatException>();
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetWallet("myWallet")).Throws<FormatException>());
 
             var controller = this.GetWalletController();
 
@@ -743,16 +748,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task GetHistoryWithoutAddressesReturnsEmptyModel()
         {
             string walletName = "myWallet";
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(
-                new List<AccountHistory>
-                {
-                    new AccountHistory
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(
+                    new List<AccountHistory>
                     {
-                        History = new List<FlatHistory>(),
-                        Account = new HdAccount()
-                    }
-                });
+                        new AccountHistory
+                        {
+                            History = new List<FlatHistory>(),
+                            Account = new HdAccount()
+                        }
+                    }));
             mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(new Wallet());
 
             var controller = this.GetWalletController();
@@ -790,9 +795,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .SelectMany(s => s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
 
             var accountsHistory = new List<AccountHistory> {new AccountHistory {History = flat, Account = account}};
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
-                .Returns(accountsHistory);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
+                    .Returns(accountsHistory));
             mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
 
             var controller = this.GetWalletController();
@@ -852,9 +857,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .SelectMany(s => s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
             var accountsHistory = new List<AccountHistory> {new AccountHistory {History = flat, Account = account}};
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
-                .Returns(accountsHistory);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
+                    .Returns(accountsHistory));
             mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
 
             var controller = this.GetWalletController();
@@ -932,9 +937,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .SelectMany(s => s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
             var accountsHistory = new List<AccountHistory> {new AccountHistory {History = flat, Account = account}};
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
-                .Returns(accountsHistory);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
+                    .Returns(accountsHistory));
             mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
 
             var controller = this.GetWalletController();
@@ -1034,8 +1039,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .SelectMany(s => s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
             var accountsHistory = new List<AccountHistory> {new AccountHistory {History = flat, Account = account}};
 
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetWallet(walletName)).Returns(wallet));
             mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
                 .Returns(accountsHistory);
 
@@ -1072,9 +1077,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task GetHistoryWithExceptionReturnsBadRequest()
         {
             string walletName = "myWallet";
-            var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory("myWallet", WalletManager.DefaultAccount))
-                .Throws(new InvalidOperationException("Issue retrieving wallets."));
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(w => w.GetHistory("myWallet", WalletManager.DefaultAccount))
+                    .Throws(new InvalidOperationException("Issue retrieving wallets.")));
             mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(new Wallet());
 
             var controller = this.GetWalletController();
@@ -1147,7 +1152,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             List<FlatHistory> flat = addresses
                 .SelectMany(s => s.Transactions.Select(t => new FlatHistory {Address = s, Transaction = t})).ToList();
 
-            var mockWalletManager = new Mock<IWalletManager>();
+            var mockWalletManager = this.ConfigureMock<IWalletManager>(mock => { });
+
             var accountsHistory = new List<AccountHistory> {new AccountHistory {History = flat, Account = account}};
             mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
                 .Returns(accountsHistory);
@@ -1525,12 +1531,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task BuildTransactionWithCustomFeeAmountAndFeeTypeReturnsWalletBuildTransactionModelWithFeeAmount()
         {
-            var mockWalletManager = new Mock<IWalletManager>();
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
-            var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
-                .Returns(sentTrx);
+            this.ConfigureMock<IWalletTransactionHandler>(mock =>
+            {
+                var sentTrx = new Transaction();
+                mock.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                    .Returns(sentTrx);
+            });
 
             var controller = this.GetWalletController();
 
@@ -1563,11 +1570,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public async Task
             BuildTransactionWithCustomFeeAmountAndNoFeeTypeReturnsWalletBuildTransactionModelWithFeeAmount()
         {
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
-            var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
-                .Returns(sentTrx);
+            this.ConfigureMock<IWalletTransactionHandler>(mock =>
+            {
+                var sentTrx = new Transaction();
+                mock.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                    .Returns(sentTrx);
+            });
 
             var controller = this.GetWalletController();
 
@@ -1598,11 +1607,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task BuildTransactionWithValidRequestNotAllowingUnconfirmedReturnsWalletBuildTransactionModel()
         {
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
             var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
-                .Returns(sentTrx);
+            this.ConfigureMock<IWalletTransactionHandler>(mock =>
+            {
+                mock.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                    .Returns(sentTrx);
+            });
 
             var controller = this.GetWalletController();
 
@@ -1638,23 +1649,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             HdAddress usedReceiveAddress = WalletTestsHelpers.CreateAddress();
 
-            var receiveAddresses = new List<HdAddress> {usedReceiveAddress};
-            var changeAddresses = new List<HdAddress>();
-
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             HdAccount account = wallet.AddNewAccount((ExtPubKey) null, accountName: "Account 0");
             account.ExternalAddresses.Add(usedReceiveAddress);
 
-            var mockWalletManager = new Mock<IWalletManager>();
+            this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(m => m.GetWallet(walletName)).Returns(wallet));
 
-            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
-
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
-
-            var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m =>
-                    m.BuildTransaction(It.Is<TransactionBuildContext>(t => t.ChangeAddress == usedReceiveAddress)))
-                .Returns(sentTrx);
+            var mockWalletTransactionHandler = this.ConfigureMock<IWalletTransactionHandler>(mock =>
+            {
+                var sentTrx = new Transaction();
+                mock.Setup(m =>
+                        m.BuildTransaction(It.Is<TransactionBuildContext>(t => t.ChangeAddress == usedReceiveAddress)))
+                    .Returns(sentTrx);
+            });
 
             var controller = this.GetWalletController();
 
@@ -1683,13 +1691,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string walletName = "myWallet";
 
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            HdAccount account = wallet.AddNewAccount((ExtPubKey) null, accountName: "Account 0");
 
-            var mockWalletManager = new Mock<IWalletManager>();
+            this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(m => m.GetWallet(walletName)).Returns(wallet));
 
-            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
-
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+            var mockWalletTransactionHandler = this.ConfigureMock<IWalletTransactionHandler>();
 
             HdAddress addressNotInWallet = WalletTestsHelpers.CreateAddress();
 
@@ -1724,11 +1730,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // Create a wallet with no accounts.
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
 
-            var mockWalletManager = new Mock<IWalletManager>();
+            this.ConfigureMock<IWalletManager>(mock =>
+                mock.Setup(m => m.GetWallet(walletName)).Returns(wallet));
 
-            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
-
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+            var mockWalletTransactionHandler = this.ConfigureMock<IWalletTransactionHandler>();
 
             HdAddress addressNotInWallet = WalletTestsHelpers.CreateAddress();
 
@@ -1778,12 +1783,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public async Task BuildTransactionWithExceptionReturnsBadRequest()
         {
-            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
-
             var key = new Key();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
-                .Throws(new InvalidOperationException("Issue building transaction."));
-
+            this.ConfigureMock<IWalletTransactionHandler>(mock =>
+            {
+                mock.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                    .Throws(new InvalidOperationException("Issue building transaction."));
+            });
+            
             var controller = this.GetWalletController();
 
             IActionResult result = await controller.BuildTransaction(new BuildTransactionRequest
@@ -2475,69 +2481,42 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
         }
 
+        private Mock<TMock> ConfigureMock<TMock>(Action<Mock<TMock>> setup = null) where TMock : class
+        {
+            if (!this.configuredMocks.ContainsKey(typeof(TMock)))
+            {
+                this.configuredMocks.Add(typeof(TMock), new Mock<TMock>());
+            }
+
+            setup?.Invoke((Mock<TMock>) this.configuredMocks[typeof(TMock)]);
+            return (Mock<TMock>) this.configuredMocks[typeof(TMock)];
+        }
+
+        private TMock GetMock<TMock>(bool createIfNotExists = false) where TMock : class
+        {
+            return this.configuredMocks.ContainsKey(typeof(TMock))
+                ? ((Mock<TMock>) this.configuredMocks[typeof(TMock)]).Object
+                : createIfNotExists
+                    ? new Mock<TMock>().Object
+                    : null;
+        }
+
         private WalletController GetWalletController()
         {
             var mocker = new AutoMocker();
 
-            mocker.Use(typeof(ILoggerFactory), this.LoggerFactory.Object);
-            mocker.Use(typeof(IWalletManager), new Mock<IWalletManager>().Object);
-            mocker.Use(typeof(IWalletTransactionHandler), new Mock<IWalletTransactionHandler>().Object);
-            mocker.Use(typeof(IWalletSyncManager), new Mock<IWalletSyncManager>().Object);
-            mocker.Use(typeof(Network), this.Network);
-            mocker.Use(typeof(ChainIndexer), this.chainIndexer);
-            mocker.Use(typeof(IBroadcasterManager), new Mock<IBroadcasterManager>().Object);
-            mocker.Use(typeof(IDateTimeProvider), DateTimeProvider.Default);
-            mocker.Use(typeof(IConnectionManager), new Mock<IConnectionManager>().Object);
-            mocker.Use(typeof(IWalletService), mocker.CreateInstance<WalletService>());
+            mocker.Use(typeof(ILoggerFactory), this.GetMock<ILoggerFactory>() ?? this.LoggerFactory.Object);
+            mocker.Use(typeof(IWalletManager), this.GetMock<IWalletManager>(true));
+            mocker.Use(typeof(IWalletTransactionHandler), this.GetMock<IWalletTransactionHandler>(true));
+            mocker.Use(typeof(IWalletSyncManager), this.GetMock<IWalletSyncManager>(true));
+            mocker.Use(typeof(Network), this.GetMock<Network>() ?? this.Network);
+            mocker.Use(typeof(ChainIndexer), this.GetMock<ChainIndexer>() ?? this.chainIndexer);
+            mocker.Use(typeof(IBroadcasterManager), this.GetMock<IBroadcasterManager>(true));
+            mocker.Use(typeof(IDateTimeProvider), this.GetMock<IDateTimeProvider>() ?? DateTimeProvider.Default);
+            mocker.Use(typeof(IConnectionManager), this.GetMock<IConnectionManager>(true));
+            mocker.Use(typeof(IWalletService), this.GetMock<WalletService>() ?? mocker.CreateInstance<WalletService>());
 
             return mocker.CreateInstance<WalletController>();
-        }
-    }
-
-    public class TestReadOnlyNetworkPeerCollection : IReadOnlyNetworkPeerCollection
-    {
-        public event EventHandler<NetworkPeerEventArgs> Added;
-        public event EventHandler<NetworkPeerEventArgs> Removed;
-
-        private List<INetworkPeer> networkPeers;
-
-        public TestReadOnlyNetworkPeerCollection()
-        {
-            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = new List<INetworkPeer>();
-        }
-
-        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers)
-        {
-            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
-            this.networkPeers = peers;
-        }
-
-        public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
-        {
-            return null;
-        }
-
-        public List<INetworkPeer> FindByIp(IPAddress ip)
-        {
-            return null;
-        }
-
-        public INetworkPeer FindLocal()
-        {
-            return null;
-        }
-
-        public IEnumerator<INetworkPeer> GetEnumerator()
-        {
-            return this.networkPeers.GetEnumerator();
-        }
-
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
         }
     }
 }

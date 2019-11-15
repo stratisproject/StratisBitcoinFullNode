@@ -51,11 +51,11 @@ namespace Stratis.Bitcoin.Builder.Feature
             }
         }
 
-        protected async Task<IActionResult> ExecuteAsAsync<TRequest>(TRequest request,
+        protected Task<IActionResult> ExecuteAsAsync<TRequest>(TRequest request,
             CancellationToken cancellationToken,
             Func<TRequest, CancellationToken, IActionResult> action, bool checkModelState = true)
         {
-            return await this.Execute(request, cancellationToken, (req, token)
+            return this.Execute(request, cancellationToken, (req, token)
                 => Task.Run(() => action(req, token), token), checkModelState);
         }
     }
