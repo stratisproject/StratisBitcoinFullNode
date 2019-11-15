@@ -948,14 +948,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObj)
             {
+                if (!round.LockProcessBlocks.Wait(false))
+                {
+                    this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
+                    return false;
+                }
+
                 try
                 {
-                    if (!round.LockProcessBlocks.Wait(false))
-                    {
-                        this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
-                        return false;
-                    }
-
                     // Determine participating wallets.
                     string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
                     if (round.Wallet == null && !this.DatabasePerWallet)
@@ -1007,9 +1007,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     return true;
                 }
-                finally
+                catch (Exception ex)
                 {
                     round.LockProcessBlocks.Release();
+                    this.logger.LogError(ex, "An exception occurred starting batch.");
+                    throw;
                 }
             }
         }
