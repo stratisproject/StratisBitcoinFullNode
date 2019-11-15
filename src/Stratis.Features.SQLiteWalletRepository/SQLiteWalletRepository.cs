@@ -948,62 +948,75 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObj)
             {
-                if (!round.LockProcessBlocks.Wait(false))
+                try
                 {
-                    this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
-                    return false;
-                }
-
-                // Determine participating wallets.
-                string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
-                if (round.Wallet == null && !this.DatabasePerWallet)
-                    round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
-                else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                    round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
-                else
-                {
-                    this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
-                    round.LockProcessBlocks.Release();
-                    return false;
-                }
-
-                // See if all the wallet locks can be obtained, otherwise do nothing.
-                this.logger.LogDebug("Obtaining locks for {0} wallets.", round.ParticipatingWallets.Count);
-
-                bool failed = false;
-                Parallel.ForEach(round.ParticipatingWallets, walletName =>
-                {
-                    WalletContainer walletContainer = this.Wallets[walletName];
-
-                    if (walletContainer.LockUpdateWallet.Wait(false))
+                    if (!round.LockProcessBlocks.Wait(false))
                     {
-                        if (walletContainer.ReaderCount == 0)
-                            return;
-
-                        walletContainer.LockUpdateWallet.Release();
+                        this.logger.LogDebug("Exiting due to already processing a transaction or blocks.");
+                        return false;
                     }
 
-                    this.logger.LogDebug("Could not obtain lock for wallet '{0}'.", walletName);
+                    // Determine participating wallets.
+                    string lastBlockSyncedHash =
+                        (header == null) ? null : (header.Previous?.HashBlock ?? (uint256) 0).ToString();
+                    if (round.Wallet == null && !this.DatabasePerWallet)
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values
+                            .Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
+                            .Select(c => c.Wallet.Name));
+                    else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>() {round.Wallet.Name};
+                    else
+                    {
+                        this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
+                        round.LockProcessBlocks.Release();
+                        return false;
+                    }
 
-                    failed = true;
+                    // See if all the wallet locks can be obtained, otherwise do nothing.
+                    this.logger.LogDebug("Obtaining locks for {0} wallets.", round.ParticipatingWallets.Count);
 
-                    Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
-                });
+                    bool failed = false;
+                    Parallel.ForEach(round.ParticipatingWallets, walletName =>
+                    {
+                        WalletContainer walletContainer = this.Wallets[walletName];
 
-                if (failed)
-                {
-                    this.logger.LogDebug("Releasing locks and postponing until next sync event.");
-                    Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
-                    round.LockProcessBlocks.Release();
-                    return false;
+                        if (walletContainer.LockUpdateWallet.Wait(false))
+                        {
+                            if (walletContainer.ReaderCount == 0)
+                                return;
+
+                            walletContainer.LockUpdateWallet.Release();
+                        }
+
+                        this.logger.LogDebug("Could not obtain lock for wallet '{0}'.", walletName);
+
+                        failed = true;
+
+                        Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
+                    });
+
+                    if (failed)
+                    {
+                        this.logger.LogDebug("Releasing locks and postponing until next sync event.");
+                        Parallel.ForEach(round.ParticipatingWallets,
+                            walletName => this.Wallets[walletName].LockUpdateWallet.Release());
+                        round.LockProcessBlocks.Release();
+                        return false;
+                    }
+
+                    // Initialize round.
+                    round.PrevTip = (header.Previous == null)
+                        ? new HashHeightPair(0, -1)
+                        : new HashHeightPair(header.Previous);
+                    round.NewTip = null;
+                    round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
+
+                    return true;
                 }
-
-                // Initialize round.
-                round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
-                round.NewTip = null;
-                round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
-
-                return true;
+                finally
+                {
+                    round.LockProcessBlocks.Release();
+                }
             }
         }
 
