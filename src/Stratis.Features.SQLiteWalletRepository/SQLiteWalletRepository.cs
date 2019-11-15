@@ -61,6 +61,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private ProcessBlocksInfo processBlocksInfo;
         private object lockObj;
         internal const int MaxBatchDurationSeconds = 10;
+        internal const int MaxDataRowsProcessed = 10000;
 
         // Metrics.
         internal Metrics Metrics;
@@ -818,7 +819,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // See if other threads are waiting to update any of the wallets.
                     bool threadsWaiting = round.LockProcessBlocks.WaitingThreads != 0 && round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
-                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.BatchDeadline)
+                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= MaxDataRowsProcessed) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.BatchDeadline)
                     {
                         if (chainedHeader == null)
                             this.logger.LogDebug("Ending batch due to end-of-data.");
@@ -826,7 +827,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             this.logger.LogDebug("Ending batch due to other wallets joining.");
                         else if (threadsWaiting)
                             this.logger.LogDebug("Ending batch due to other threads waiting to update a wallet.");
-                        else if ((round.Outputs.Count + round.PrevOuts.Count) >= 10000)
+                        else if ((round.Outputs.Count + round.PrevOuts.Count) >= MaxDataRowsProcessed)
                             this.logger.LogDebug("Ending batch due to memory restrictions.");
                         else if (DateTime.Now.Ticks >= round.BatchDeadline)
                             this.logger.LogDebug("Ending batch due to time constraint.");
