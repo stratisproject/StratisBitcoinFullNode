@@ -22,7 +22,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal DBConnection Conn;
         internal HDWallet Wallet;
         internal ConcurrentHashSet<string> ParticipatingWallets;
-        internal long NextScheduledCatchup;
+        internal long BatchDeadline;
         internal Dictionary<TopUpTracker, TopUpTracker> Trackers;
 
         internal DBLock LockProcessBlocks;
