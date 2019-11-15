@@ -817,7 +817,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // See if other threads are waiting to update any of the wallets.
                     bool threadsWaiting = round.LockProcessBlocks.WaitingThreads != 0 && round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
-                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.BatchDeadline)
                     {
                         if (chainedHeader == null)
                             this.logger.LogDebug("Ending batch due to end-of-data.");
@@ -827,7 +827,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             this.logger.LogDebug("Ending batch due to other threads waiting to update a wallet.");
                         else if ((round.Outputs.Count + round.PrevOuts.Count) >= 10000)
                             this.logger.LogDebug("Ending batch due to memory restrictions.");
-                        else if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                        else if (DateTime.Now.Ticks >= round.BatchDeadline)
                             this.logger.LogDebug("Ending batch due to time constraint.");
 
                         if (round.NewTip != null)
@@ -903,8 +903,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     if (!this.StartBatch(round, chainedHeader))
                         return false;
-
-                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                 }
 
                 if (block != null)
@@ -1002,6 +1000,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                 round.NewTip = null;
                 round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
+                round.BatchDeadline = DateTime.Now.Ticks + 10 * 10_000_000;
 
                 return true;
             }
