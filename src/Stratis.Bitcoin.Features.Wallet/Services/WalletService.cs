@@ -61,6 +61,36 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             return await Task.Run(() => this.walletManager.GetWalletsNames(), cancellationToken);
         }
 
+        public async Task<string> CreateWallet(WalletCreationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    Mnemonic requestMnemonic =
+                        string.IsNullOrEmpty(request.Mnemonic) ? null : new Mnemonic(request.Mnemonic);
+
+                    (_, Mnemonic mnemonic) = this.walletManager.CreateWallet(request.Password, request.Name,
+                        request.Passphrase, mnemonic: requestMnemonic);
+
+                    return mnemonic.ToString();
+                }
+                catch (WalletException e)
+                {
+                    // indicates that this wallet already exists
+                    this.logger.LogError("Exception occurred: {0}", e.ToString());
+                    throw new FeatureException(HttpStatusCode.Conflict, e.Message, e.ToString());
+                }
+                catch (NotSupportedException e)
+                {
+                    this.logger.LogError("Exception occurred: {0}", e.ToString());
+                    throw new FeatureException(HttpStatusCode.BadRequest,
+                        "There was a problem creating a wallet.", e.ToString());
+                }
+            }, cancellationToken);
+        }
+
         public async Task<AddressBalanceModel> GetReceivedByAddress(string address,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -782,7 +812,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request, CancellationToken cancellationToken)
+        public async Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request,
+            CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {

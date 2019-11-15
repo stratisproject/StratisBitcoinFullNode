@@ -74,7 +74,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             if (walletTransactionModel == null)
                 return null;
 
-            return this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            return this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeController<WalletController>()
+                .SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex)).GetAwaiter().GetResult();
         }
 
         private IActionResult BuildTransaction()
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = this.proofOfStakeSteps.PremineWalletPassword,
                     WalletName = this.proofOfStakeSteps.PremineWallet,
                     FeeAmount = Money.Satoshis(20000).ToString()
-                });
+                }).GetAwaiter().GetResult();
 
             return transactionResult;
         }

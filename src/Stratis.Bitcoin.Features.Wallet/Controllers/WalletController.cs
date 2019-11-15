@@ -66,41 +66,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Creates a new wallet on this full node.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to create a wallet.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
         [Route("create")]
         [HttpPost]
-        public IActionResult Create([FromBody] WalletCreationRequest request)
+        public async Task<IActionResult> Create([FromBody] WalletCreationRequest request,
+            CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                Mnemonic requestMnemonic =
-                    string.IsNullOrEmpty(request.Mnemonic) ? null : new Mnemonic(request.Mnemonic);
-
-                (_, Mnemonic mnemonic) = this.walletManager.CreateWallet(request.Password, request.Name,
-                    request.Passphrase, mnemonic: requestMnemonic);
-
-                return this.Json(mnemonic.ToString());
-            }
-            catch (WalletException e)
-            {
-                // indicates that this wallet already exists
-                this.Logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
-            }
-            catch (NotSupportedException e)
-            {
-                this.Logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                    "There was a problem creating a wallet.", e.ToString());
-            }
+            return await this.ExecuteAsAsync(request, cancellationToken,
+                (req, token) => this.Json(this.walletService.CreateWallet(req, token)));
         }
 
         /// <summary>
@@ -168,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [Route("recover")]
         [HttpPost]
         public async Task<IActionResult> Recover([FromBody] WalletRecoveryRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             return await this.Execute(request, cancellationToken, async (req, token) =>
             {
@@ -206,7 +180,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the wallet information.</returns>
         [Route("general-info")]
         [HttpGet]
-        public Task<IActionResult> GetGeneralInfo([FromQuery] WalletName request, CancellationToken cancellationToken)
+        public Task<IActionResult> GetGeneralInfo([FromQuery] WalletName request,
+            CancellationToken cancellationToken = default)
         {
             return this.Execute(request, cancellationToken, async (req, token) =>
                 this.Json(await this.walletService.GetWalletGeneralInfo(req.Name, token)));
@@ -239,10 +214,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the wallet history.</returns>
         [Route("history")]
         [HttpGet]
-        public Task<IActionResult> GetHistory([FromQuery] WalletHistoryRequest request,
+        public async Task<IActionResult> GetHistory([FromQuery] WalletHistoryRequest request,
             CancellationToken cancellationToken = default)
         {
-            return this.Execute(request, cancellationToken,
+            return await this.Execute(request, cancellationToken,
                 async (req, token) => this.Json(await this.walletService.GetHistory(req, token)));
         }
 
@@ -255,10 +230,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the wallet balance.</returns>
         [Route("balance")]
         [HttpGet]
-        public Task<IActionResult> GetBalance([FromQuery] WalletBalanceRequest request,
+        public async Task<IActionResult> GetBalance([FromQuery] WalletBalanceRequest request,
             CancellationToken cancellationToken = default)
         {
-            return this.Execute(request, cancellationToken,
+            return await this.Execute(request, cancellationToken,
                 async (req, token) => this.Json(await this.walletService.GetBalance(req.WalletName, req.AccountName,
                     req.IncludeBalanceByAddress, token))
             );
@@ -275,10 +250,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the balance, fee, and an address for the balance.</returns>
         [Route("received-by-address")]
         [HttpGet]
-        public Task<IActionResult> GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request,
+        public async Task<IActionResult> GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request,
             CancellationToken cancellationToken = default)
         {
-            return this.Execute(request, cancellationToken,
+            return await this.Execute(request, cancellationToken,
                 async (req, token) =>
                     this.Json(await this.walletService.GetReceivedByAddress(request.Address, cancellationToken)));
         }
@@ -294,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [Route("maxbalance")]
         [HttpGet]
         public async Task<IActionResult> GetMaximumSpendableBalance([FromQuery] WalletMaximumBalanceRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             return await this.Execute(request, cancellationToken,
                 async (req, token) =>
@@ -362,7 +337,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [Route("send-transaction")]
         [HttpPost]
         public async Task<IActionResult> SendTransaction([FromBody] SendTransactionRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             return await this.Execute(request, cancellationToken,
                 async (req, token) => Json(await this.walletService.SendTransaction(req, token)));
@@ -592,6 +567,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     this.walletSyncManager.SyncFromHeight(0, request.WalletName);
                 }
+
                 return this.Ok();
             });
         }
