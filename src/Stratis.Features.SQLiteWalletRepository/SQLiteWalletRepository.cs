@@ -961,7 +961,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (round.Wallet == null && !this.DatabasePerWallet)
                         round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
                     else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                        round.ParticipatingWallets = new ConcurrentHashSet<string>() {round.Wallet.Name};
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
                     else
                     {
                         this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
@@ -995,8 +995,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (failed)
                     {
                         this.logger.LogDebug("Releasing locks and postponing until next sync event.");
-                        Parallel.ForEach(round.ParticipatingWallets,
-                            walletName => this.Wallets[walletName].LockUpdateWallet.Release());
+                        Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
                         round.LockProcessBlocks.Release();
                         return false;
                     }
