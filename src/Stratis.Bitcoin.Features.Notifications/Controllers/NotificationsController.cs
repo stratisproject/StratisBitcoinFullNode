@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
     /// <summary>
     /// Controller providing operations on blocks and transactions notifications.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class NotificationsController : Controller
     {

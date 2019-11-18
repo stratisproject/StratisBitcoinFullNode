@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
@@ -177,6 +178,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
 
         /// <summary>
+        /// Optional. If set, will filter the transaction history for all transactions made to or from the given address.
+        /// </summary>
+        [IsBitcoinAddress(Required = false)]
+        public string Address { get; set; }
+
+        /// <summary>
         /// An optional value allowing (with Take) pagination of the wallet's history. If given,
         /// the member specifies the numbers of records in the wallet's history to skip before
         /// beginning record retrieval; otherwise the wallet history records are retrieved starting from 0.
@@ -220,6 +227,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// then the balance for the entire wallet (all accounts) is retrieved.
         /// </summary>         
         public string AccountName { get; set; }
+        
+        /// <summary>
+        /// For Cirrus we need to get Balances By Address
+        /// </summary>
+        public bool IncludeBalanceByAddress { get; set; }
     }
 
     /// <summary>
@@ -625,7 +637,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// A class containing the necessary parameters for a new account request.  
+    /// A class containing the necessary parameters for a new account request.
     /// </summary>
     public class GetUnusedAccountModel : RequestModel
     {
@@ -643,17 +655,61 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// A class containing the necessary parameters for a wallet resynchronization request.  
+    /// A class containing the necessary parameters for a wallet resynchronization request.
     /// </summary>
-    public class WalletSyncFromDateRequest : RequestModel
+    public class WalletSyncRequest : RequestModel
     {
         /// <summary>
         /// The date and time from which to resync the wallet.
         /// </summary>
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime Date { get; set; }
-    }
 
+        /// <summary>
+        /// Sync from start of wallet creation.
+        /// </summary>
+        public bool All { get; set; }
+
+        /// <summary>
+        /// The WalletName to Sync
+        /// </summary>
+        public string WalletName { get; set; }
+    }
+    
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet stats request.
+    /// </summary>
+    public class WalletStatsRequest : RequestModel
+    {
+        public WalletStatsRequest()
+        {
+            this.AccountName = WalletManager.DefaultAccount;
+        }
+
+        /// <summary>
+        /// The name of the wallet for which to get the stats.
+        /// </summary>
+        [Required]
+        public string WalletName { get; set; }
+
+
+        /// <summary>
+        /// The name of the account for which to get the stats.
+        /// <summary>
+        public string AccountName { get; set; }
+
+        /// <summary>
+        /// The minimum number of confirmations a transaction needs to have to be included.
+        /// To include unconfirmed transactions, set this value to 0.
+        /// </summary>
+        public int MinConfirmations { get; set; }
+
+        /// <summary>
+        /// Should the request return a more detailed output
+        /// </summary>
+        public bool Verbose { get; set; }
+    }
+    
     /// <summary>
     /// A class containing the necessary parameters to perform an add address book entry request.
     /// </summary>

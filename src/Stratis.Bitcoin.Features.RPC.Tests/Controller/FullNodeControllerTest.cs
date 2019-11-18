@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
             {
-                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), false).ConfigureAwait(false);
             });
 
             Assert.NotNull(exception);
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.blockStore.Setup(b => b.GetTransactionById(txId))
                 .Returns(transaction);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), false).ConfigureAwait(false);
 
             Assert.NotNull(result);
             var model = Assert.IsType<TransactionBriefModel>(result);
@@ -134,7 +135,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), false).ConfigureAwait(false);
 
             Assert.NotNull(result);
             var model = Assert.IsType<TransactionBriefModel>(result);
@@ -155,7 +156,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
             {
-                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), false).ConfigureAwait(false);
             });
 
             Assert.NotNull(exception);
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
+            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), true).ConfigureAwait(false);
 
             Assert.NotNull(result);
             var model = Assert.IsType<TransactionVerboseModel>(result);
@@ -227,7 +228,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
                 .Returns(block.HashBlock);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
+            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), true).ConfigureAwait(false);
 
             Assert.NotNull(result);
             var model = Assert.IsType<TransactionVerboseModel>(result);
@@ -246,7 +247,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
                 .Returns((uint256)null);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
+            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), true).ConfigureAwait(false);
 
             Assert.NotNull(result);
             var model = Assert.IsType<TransactionVerboseModel>(result);
@@ -642,6 +643,28 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             bool isValid = result.IsValid;
             Assert.True(isValid);
+        }
+
+        [Fact]
+        public void GivenInvalidTxHex_WhenCallingDecodeRawTransaction_ArgumentExceptionIsThrown()
+        {
+            this.fullNode.SetupGet(p => p.Network).Returns(this.network);
+            Action rpcCall = () => this.controller.DecodeRawTransaction("12345");
+            rpcCall.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
+        public void GivenValidTxHexWithoutSegwit_WhenCallingDecodeRawTransaction_WeightShouldBe4TimesTheSize()
+        {
+            this.fullNode.SetupGet(p => p.Network).Returns(this.network);
+            var txId = new uint256(1243124);
+            Transaction transaction = this.CreateTransaction();
+            var decodedTx = this.controller.DecodeRawTransaction(transaction.ToHex());
+            decodedTx.Should().BeOfType<TransactionVerboseModel>();
+
+            var verboseTx = (TransactionVerboseModel) decodedTx;
+            verboseTx.Weight.Should().Be(verboseTx.VSize * 4 - 3);
+            verboseTx.Hex.Should().BeNullOrEmpty();
         }
 
         private Transaction CreateTransaction()

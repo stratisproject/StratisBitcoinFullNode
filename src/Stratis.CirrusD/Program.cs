@@ -8,11 +8,15 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SignalR;
+using Stratis.Bitcoin.Features.SignalR.Broadcasters;
+using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic;
+using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusD
@@ -28,7 +32,11 @@ namespace Stratis.CirrusD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector,
+                    protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
+                {
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                };
 
                 IFullNode node = GetSideChainFullNode(nodeSettings);
 
@@ -43,7 +51,7 @@ namespace Stratis.CirrusD
 
         private static IFullNode GetSideChainFullNode(NodeSettings nodeSettings)
         {
-            IFullNode node = new FullNodeBuilder()
+            IFullNodeBuilder nodeBuilder = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .UseMempool()
@@ -55,12 +63,33 @@ namespace Stratis.CirrusD
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
+                .AddSQLiteWalletRepository()
                 .UseApi()
                 .AddRPC()
-                .UseDiagnosticFeature()
-                .Build();
+                .UseDiagnosticFeature();
 
-            return node;
+            if (nodeSettings.EnableSignalR)
+            {
+                nodeBuilder.AddSignalR(options =>
+                {
+                    options.EventsToHandle = new[]
+                    {
+                        (IClientEvent) new BlockConnectedClientEvent(),
+                        new TransactionReceivedClientEvent()
+                    };
+
+                    options.ClientEventBroadcasters = new[]
+                    {
+                        (Broadcaster: typeof(CirrusWalletInfoBroadcaster),
+                            ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
+                            {
+                                BroadcastFrequencySeconds = 5
+                            })
+                    };
+                });
+            }
+
+            return nodeBuilder.Build();
         }
     }
 }

@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>
         /// A cancellation token source that can cancel the mining processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
         /// </summary>
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly IInitialBlockDownloadState ibdState;
 
@@ -73,6 +74,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly VotingDataEncoder votingDataEncoder;
 
         private readonly PoAMinerSettings settings;
+
         private readonly IAsyncProvider asyncProvider;
 
         private Task miningTask;
@@ -172,6 +174,14 @@ namespace Stratis.Bitcoin.Features.PoA
                     // ran into problems while constructing block or verifying it
                     // but it should not halt the mining operation.
                     this.logger.LogWarning("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
+                }
+                catch (ConsensusException ce)
+                {
+                    // Text from PosMinting:
+                    // All consensus exceptions (including translated ConsensusErrorException) should be ignored. It means that the miner
+                    // ran into problems while constructing block or verifying it
+                    // but it should not halt the mining operation.
+                    this.logger.LogWarning("Miner failed to mine block due to: '{0}'.", ce.Message);
                 }
                 catch (Exception exception)
                 {
@@ -331,6 +341,7 @@ namespace Stratis.Bitcoin.Features.PoA
             blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();

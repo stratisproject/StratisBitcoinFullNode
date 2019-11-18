@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -953,6 +954,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder statsBuilder)
         {
             statsBuilder.AppendLine();

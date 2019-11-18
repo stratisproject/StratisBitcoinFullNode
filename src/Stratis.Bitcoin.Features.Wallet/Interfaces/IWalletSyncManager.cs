@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
@@ -35,13 +36,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Synchronize the wallet starting from the date passed as a parameter.
         /// </summary>
         /// <param name="date">The date from which to start the sync process.</param>
-        void SyncFromDate(DateTime date);
+        /// <param name="walletName">The wallet to sync or <c>null</c> to rewind and sync all wallet.</param>
+        void SyncFromDate(DateTime date, string walletName = null);
 
         /// <summary>
         /// Synchronize the wallet starting from the height passed as a parameter.
         /// </summary>
         /// <param name="height">The height from which to start the sync process.</param>
-        void SyncFromHeight(int height);
+        /// <param name="walletName">The wallet to sync or <c>null</c> to rewind and sync all wallet.</param>
+        void SyncFromHeight(int height, string walletName = null);
 
         /// <summary>
         /// The current tip of the wallet.

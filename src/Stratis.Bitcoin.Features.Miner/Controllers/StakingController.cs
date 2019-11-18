@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// <summary>
     /// Controller providing operations on mining feature.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class StakingController : Controller
     {

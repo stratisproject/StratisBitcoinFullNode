@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -21,6 +22,7 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    [ApiVersion("1")]
     public class WalletRPCController : FeatureController
     {
         /// <summary>Provides access to the block store database.</summary>
@@ -109,8 +111,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.FullNode.Network)
             {
                 AccountReference = this.GetWalletAccountReference(),
-                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
-                CacheSecret = false
+                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
             };
 
             try
@@ -192,9 +193,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference account = this.GetWalletAccountReference();
 
-            Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
-            return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
-        }
+            AccountBalance balances = this.walletManager.GetBalances(account.WalletName, account.AccountName, minConfirmations).FirstOrDefault();
+            return balances?.SpendableAmount.ToUnit(MoneyUnit.BTC) ?? 0;
+       }
 
         /// <summary>
         /// RPC method to return transaction info from the wallet. Will only work fully if 'txindex' is set.
@@ -210,33 +211,45 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new ArgumentException(nameof(txid));
 
             WalletAccountReference accountReference = this.GetWalletAccountReference();
-            HdAccount account = this.walletManager.GetAccounts(accountReference.WalletName).Single(a => a.Name == accountReference.AccountName);
+
+            Wallet hdWallet = this.walletManager.WalletRepository.GetWallet(accountReference.WalletName);
+            HdAccount hdAccount = this.walletManager.WalletRepository.GetAccounts(hdWallet, accountReference.AccountName).First();
+
+            IWalletAddressReadOnlyLookup addressLookup = this.walletManager.WalletRepository.GetWalletAddressLookup(accountReference.WalletName);
+
+            bool IsChangeAddress(Script scriptPubKey)
+            {
+                return addressLookup.Contains(scriptPubKey, out AddressIdentifier addressIdentifier) && addressIdentifier.AddressType == 1;
+            }
 
             // Get the transaction from the wallet by looking into received and send transactions.
-            List<HdAddress> addresses = account.GetCombinedAddresses().ToList();
-            List<TransactionData> receivedTransactions = addresses.Where(r => !r.IsChangeAddress() && r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == trxid)).ToList();
-            List<TransactionData> sendTransactions = addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.SpendingDetails != null && t.SpendingDetails.TransactionId == trxid)).ToList();
+            List<TransactionData> receivedTransactions = this.walletManager.WalletRepository.GetTransactionOutputs(hdAccount, null, trxid, true)
+                .Where(td => !IsChangeAddress(td.ScriptPubKey)).ToList();
+            List<TransactionData> sentTransactions = this.walletManager.WalletRepository.GetTransactionInputs(hdAccount, null, trxid, true).ToList();
 
-            if (!receivedTransactions.Any() && !sendTransactions.Any())
+            TransactionData firstReceivedTransaction = receivedTransactions.FirstOrDefault();
+            TransactionData firstSendTransaction = sentTransactions.FirstOrDefault();
+            if (firstReceivedTransaction == null && firstSendTransaction == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id.");
 
-            // Get the block hash from the transaction in the wallet.
-            TransactionData transactionFromWallet = null;
             uint256 blockHash = null;
             int? blockHeight, blockIndex;
+            DateTimeOffset transactionTime;
+            SpendingDetails spendingDetails = firstSendTransaction?.SpendingDetails;
 
-            if (receivedTransactions.Any())
+            if (firstReceivedTransaction != null)
             {
-                blockHeight = receivedTransactions.First().BlockHeight;
-                blockIndex = receivedTransactions.First().BlockIndex;
-                blockHash = receivedTransactions.First().BlockHash;
-                transactionFromWallet = receivedTransactions.First();
+                blockHeight = firstReceivedTransaction.BlockHeight;
+                blockIndex = firstReceivedTransaction.BlockIndex;
+                blockHash = firstReceivedTransaction.BlockHash;
+                transactionTime = firstReceivedTransaction.CreationTime;
             }
             else
             {
-                blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
-                blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
-                blockHash = blockHeight != null ? this.ChainIndexer.GetHeader(blockHeight.Value).HashBlock : null;
+                blockHeight = spendingDetails.BlockHeight;
+                blockIndex = spendingDetails.BlockIndex;
+                blockHash = spendingDetails.BlockHash;
+                transactionTime = spendingDetails.CreationTime;
             }
 
             // Get the block containing the transaction (if it has  been confirmed).
@@ -249,10 +262,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (chainedHeaderBlock != null)
             {
                 block = chainedHeaderBlock.Block;
-                transactionFromStore = block.Transactions.Single(t => t.GetHash() == trxid);
+                if (block != null)
+                {
+                    if (blockIndex == null)
+                        blockIndex = block.Transactions.FindIndex(t => t.GetHash() == trxid);
+
+                    transactionFromStore = block.Transactions[(int)blockIndex];
+                }
             }
 
-            DateTimeOffset transactionTime;
             bool isGenerated;
             string hex;
             if (transactionFromStore != null)
@@ -262,15 +280,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = transactionFromStore.ToHex();
 
             }
-            else if (transactionFromWallet != null)
-            {
-                transactionTime = transactionFromWallet.CreationTime;
-                isGenerated = transactionFromWallet.IsCoinBase == true || transactionFromWallet.IsCoinStake == true;
-                hex = transactionFromWallet.Hex;
-            }
             else
             {
-                transactionTime = sendTransactions.First().SpendingDetails.CreationTime;
                 isGenerated = false;
                 hex = null; // TODO get from mempool
             }
@@ -280,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?)null,
                 BlockHash = blockHash,
-                BlockIndex = blockIndex ?? block?.Transactions.FindIndex(t => t.GetHash() == trxid),
+                BlockIndex = blockIndex,
                 BlockTime = block?.Header.BlockTime.ToUnixTimeSeconds(),
                 TransactionId = uint256.Parse(txid),
                 TransactionTime = transactionTime.ToUnixTimeSeconds(),
@@ -289,31 +300,37 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Hex = hex
             };
 
-            Money feeSent = Money.Zero;
-            if (sendTransactions.Any())
-            {
-                Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
-                feeSent = wallet.GetSentTransactionFee(trxid);
-            }
-
             // Send transactions details.
-            foreach (PaymentDetails paymentDetail in sendTransactions.Select(s => s.SpendingDetails).SelectMany(sd => sd.Payments))
+            if (spendingDetails != null)
             {
-                // Only a single item should appear per destination address.
-                if (model.Details.SingleOrDefault(d => d.Address == paymentDetail.DestinationAddress) == null)
+                Money feeSent = Money.Zero;
+                if (firstSendTransaction != null)
                 {
-                    model.Details.Add(new GetTransactionDetailsModel
-                    {
-                        Address = paymentDetail.DestinationAddress,
-                        Category = GetTransactionDetailsCategoryModel.Send,
-                        Amount = -paymentDetail.Amount.ToDecimal(MoneyUnit.BTC),
-                        Fee = -feeSent.ToDecimal(MoneyUnit.BTC),
-                        OutputIndex = paymentDetail.OutputIndex
-                    });
+                    // Get the change.
+                    long change = spendingDetails.Change.Sum(o => o.Amount);
+
+                    Money inputsAmount = new Money(sentTransactions.Sum(i => i.Amount));
+                    Money outputsAmount = new Money(spendingDetails.Payments.Sum(p => p.Amount) + change);
+
+                    feeSent = inputsAmount - outputsAmount;
                 }
+
+                var details = spendingDetails.Payments
+                    .GroupBy(detail => detail.DestinationAddress)
+                    .Select(p => new GetTransactionDetailsModel()
+                    {
+                        Address = p.Key,
+                        Category = GetTransactionDetailsCategoryModel.Send,
+                        OutputIndex = p.First().OutputIndex,
+                        Amount = 0 - p.Sum(detail => detail.Amount.ToDecimal(MoneyUnit.BTC)),
+                        Fee = -feeSent.ToDecimal(MoneyUnit.BTC)
+                    });
+
+                model.Details.AddRange(details);
             }
 
             // Receive transactions details.
+            IScriptAddressReader scriptAddressReader = this.FullNode.NodeService<IScriptAddressReader>();
             foreach (TransactionData trxInWallet in receivedTransactions)
             {
                 GetTransactionDetailsCategoryModel category;
@@ -326,9 +343,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                     category = GetTransactionDetailsCategoryModel.Receive;
                 }
 
+                string address = scriptAddressReader.GetAddressFromScriptPubKey(this.FullNode.Network, trxInWallet.ScriptPubKey);
+
                 model.Details.Add(new GetTransactionDetailsModel
                 {
-                    Address = addresses.First(a => a.Transactions.Contains(trxInWallet)).Address,
+                    Address = address,
                     Category = category,
                     Amount = trxInWallet.Amount.ToDecimal(MoneyUnit.BTC),
                     OutputIndex = trxInWallet.Index
@@ -343,157 +362,29 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         [ActionName("listaddressgroupings")]
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
-        public AddressGroupingModel[] ListAddressGroupings()
+        public List<object> ListAddressGroupings()
         {
-            if (!this.storeSettings.TxIndex)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
-
             var walletReference = this.GetWalletAccountReference();
-            var addressGroupings = this.GetAddressGroupings(walletReference.WalletName);
-            var addressGroupingModels = new List<AddressGroupingModel>();
+            var addressGroupings = this.walletManager.GetAddressGroupings(walletReference.WalletName);
+
+            var groupingObject = new List<object> { };
 
             foreach (var addressGrouping in addressGroupings)
             {
-                var addressGroupingModel = new AddressGroupingModel();
+                var inner = new List<object> { };
 
                 foreach (var address in addressGrouping)
                 {
                     var balance = this.walletManager.GetAddressBalance(address);
-                    addressGroupingModel.AddressGroups.Add(new AddressGroupModel()
-                    {
-                        Address = address,
-                        Amount = balance.AmountConfirmed
-                    });
+                    inner.Add(new { address, balance.AmountConfirmed.Satoshi });
                 }
 
-                addressGroupingModels.Add(addressGroupingModel);
+                var innerValues = JArray.FromObject(inner).Select(x => x.Values());
+
+                groupingObject.Add(innerValues);
             }
 
-            return addressGroupingModels.ToArray();
-        }
-
-        /// <summary>
-        /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
-        /// </summary
-        /// <remarks>
-        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
-        /// </remarks>
-        /// <param name="walletName">The wallet in question.</param>
-        /// <returns>The grouped list of base58 addresses.</returns>
-        private List<List<string>> GetAddressGroupings(string walletName)
-        {
-            // Get the wallet to check.
-            var wallet = this.walletManager.GetWallet(walletName);
-
-            // Cache all the addresses in the wallet.
-            var addresses = wallet.GetAllAddresses();
-
-            // Get the transaction data for this wallet.
-            var txs = wallet.GetAllTransactions();
-
-            // Create a transaction dictionary for performant lookups.
-            var txDictionary = new Dictionary<uint256, TransactionData>(txs.Count());
-            foreach (var item in txs)
-            {
-                txDictionary.TryAdd(item.Id, item);
-            }
-
-            // Cache the wallet's set of internal (change addresses).
-            var internalAddresses = wallet.GetAccounts().SelectMany(a => a.InternalAddresses);
-
-            var addressGroupings = new List<List<string>>();
-
-            foreach (var transaction in txDictionary)
-            {
-                var tx = this.blockStore.GetTransactionById(transaction.Value.Id);
-                if (tx.Inputs.Count > 0)
-                {
-                    var addressGroupBase58 = new List<string>();
-
-                    // Group all input addresses with each other.
-                    foreach (var txIn in tx.Inputs)
-                    {
-                        if (!IsTxInMine(addresses, txDictionary, txIn))
-                            continue;
-
-                        // Get the txIn's previous transaction address.
-                        var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
-                        var prevTransaction = this.blockStore.GetTransactionById(prevTransactionData.Id);
-                        var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
-
-                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, prevTransactionScriptPubkey);
-                        if (string.IsNullOrEmpty(addressBase58))
-                            continue;
-
-                        addressGroupBase58.Add(addressBase58);
-                    }
-
-                    // If any of the inputs were "mine", also include any change addresses associated to the transaction.
-                    if (addressGroupBase58.Any())
-                    {
-                        foreach (var txOut in tx.Outputs)
-                        {
-                            if (IsChange(internalAddresses, txOut.ScriptPubKey))
-                            {
-                                var txOutAddressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                                if (!string.IsNullOrEmpty(txOutAddressBase58))
-                                    addressGroupBase58.Add(txOutAddressBase58);
-                            }
-                        }
-
-                        addressGroupings.Add(addressGroupBase58);
-                    }
-                }
-
-                // Group lone addresses by themselves.
-                foreach (var txOut in tx.Outputs)
-                {
-                    if (IsAddressMine(addresses, txOut.ScriptPubKey))
-                    {
-                        var grouping = new List<string>();
-
-                        string addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                        if (string.IsNullOrEmpty(addressBase58))
-                            continue;
-
-                        grouping.Add(addressBase58);
-                        addressGroupings.Add(grouping);
-                    }
-                }
-            }
-
-            // Merge the results into a distinct set of grouped addresses.
-            var uniqueGroupings = new List<List<string>>();
-            foreach (var addressGroup in addressGroupings)
-            {
-                var addressGroupDistinct = addressGroup.Distinct();
-
-                List<string> existing = null;
-
-                foreach (var address in addressGroupDistinct)
-                {
-                    // If the address was found to be apart of an existing group add it here.
-                    // The assumption here is that if we have a grouping of [a,b], finding [a] would have returned
-                    // the existing set and we can just add the address to that set.
-                    if (existing != null)
-                    {
-                        var existingAddress = existing.FirstOrDefault(a => a == address);
-                        if (existingAddress == null)
-                            existing.Add(address);
-
-                        continue;
-                    }
-
-                    // Check if the address already exists in a group.
-                    // If it does not, add the distinct set into the unique groupings list,
-                    // thereby creating a new "grouping".
-                    existing = uniqueGroupings.FirstOrDefault(g => g.Contains(address));
-                    if (existing == null)
-                        uniqueGroupings.Add(new List<string>(addressGroupDistinct));
-                }
-            }
-
-            return uniqueGroupings.ToList();
+            return groupingObject;
         }
 
         /// <summary>
@@ -643,8 +534,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.
-                Recipients = recipients,
-                CacheSecret = false
+                Recipients = recipients
             };
 
             // Set fee type for transaction build context.

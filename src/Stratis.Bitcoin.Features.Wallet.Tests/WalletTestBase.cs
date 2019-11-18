@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -9,32 +8,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     {
         public static AccountRoot CreateAccountRoot(CoinType coinType)
         {
-            return new AccountRoot()
-            {
-                Accounts = new List<HdAccount>(),
-                CoinType = coinType
-            };
+            var accountRoot = new AccountRoot((Wallet)null) { CoinType = coinType };
+            accountRoot.Accounts = new WalletAccounts(accountRoot);
+            return accountRoot;
         }
 
         public static AccountRoot CreateAccountRootWithHdAccountHavingAddresses(string accountName, CoinType coinType)
         {
-            return new AccountRoot()
-            {
-                Accounts = new List<HdAccount> {
-                    new HdAccount {
-                        Name = accountName,
-                        InternalAddresses = new List<HdAddress>
-                        {
-                            CreateAddress(false),
-                        },
-                        ExternalAddresses = new List<HdAddress>
-                        {
-                            CreateAddress(false),
-                        }
-                    }
-                },
-                CoinType = coinType
-            };
+            return CreateAccountRootWithHdAccountHavingAddresses(null, accountName, coinType);
+        }
+
+        public static AccountRoot CreateAccountRootWithHdAccountHavingAddresses(Wallet wallet, string accountName, CoinType coinType)
+        {
+            var root = new AccountRoot(wallet) { CoinType = coinType };
+            var account = new HdAccount(root.Accounts) { Name = accountName };
+            account.ExternalAddresses.Add(CreateAddress(false));
+            account.InternalAddresses.Add(CreateAddress(true));
+
+            return root;
         }
 
         public static HdAccount CreateAccount(string name)
@@ -65,16 +56,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static HdAddress CreateAddress(bool changeAddress = false)
         {
-            string hdPath = "1/2/3/4/5";
-            if (changeAddress)
-            {
-                hdPath = "1/2/3/4/1";
-            }
             var key = new Key();
             var address = new HdAddress
             {
                 Address = key.PubKey.GetAddress(KnownNetworks.Main).ToString(),
-                HdPath = hdPath,
+                AddressType = changeAddress ? 1 : 0,
                 ScriptPubKey = key.ScriptPubKey
             };
 

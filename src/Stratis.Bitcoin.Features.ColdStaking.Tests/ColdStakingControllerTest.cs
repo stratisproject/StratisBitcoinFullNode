@@ -25,12 +25,14 @@ using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Features.SQLiteWalletRepository;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.ColdStaking.Tests
@@ -163,8 +165,35 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();
+
+            // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
+            var mempoolRules = new List<MempoolRule>
+            {
+                new CheckConflictsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckCoinViewMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CreateMempoolEntryMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory),
+                new CheckSigOpsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckFeeMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckRateLimitMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckAncestorsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckReplacementMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory),
+                new CheckTxOutDustRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer,  this.loggerFactory)
+            };
+
+            // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
+            for (int i = 0; i < this.Network.Consensus.MempoolRules.Count; i++)
+            {
+                if (this.Network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
+                {
+                    throw new Exception("Mempool rule type mismatch");
+                }
+            }
+
+            Assert.Equal(this.Network.Consensus.MempoolRules.Count, mempoolRules.Count);
+
             var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.chainIndexer,
-                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine);
+                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, mempoolRules, new NodeDeployments(this.Network, this.chainIndexer));
 
             // Create mempool manager.
             var mempoolPersistence = new Mock<IMempoolPersistence>();
@@ -179,14 +208,21 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private void Initialize([System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
             DataFolder dataFolder = CreateDataFolder(this, callingMethod);
-            this.nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+            string dataDir = dataFolder.RootPath;
+
+            this.nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new[] { $"-dataDir={dataDir}" });
             this.dateTimeProvider = DateTimeProvider.Default;
             var walletSettings = new WalletSettings(this.nodeSettings);
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
+            var scriptDestinationReader = new ColdStakingDestinationReader(new ScriptAddressReader());
+
+            IWalletRepository walletRepository = new SQLiteWalletRepository(this.loggerFactory, this.nodeSettings.DataFolder, this.Network, DateTimeProvider.Default, scriptDestinationReader);
+            walletRepository.TestMode = true;
+
             this.coldStakingManager = new ColdStakingManager(this.Network, new ChainIndexer(this.Network), walletSettings, this.nodeSettings.DataFolder,
-                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), new ScriptAddressReader(),
-                this.loggerFactory, DateTimeProvider.Default);
+                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), scriptDestinationReader,
+                this.loggerFactory, DateTimeProvider.Default, walletRepository);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.loggerFactory, this.coldStakingManager,
                 new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
@@ -194,6 +230,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.coldStakingController = new ColdStakingController(this.loggerFactory, this.coldStakingManager, walletTransactionHandler);
 
             this.asyncProvider = new AsyncProvider(this.loggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
+
+            this.coldStakingManager.Start();
         }
 
         /// <summary>
@@ -243,8 +281,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.coldStakingManager.GetOrCreateColdStakingAccount(walletName2, true, walletPassword);
             this.coldStakingManager.GetOrCreateColdStakingAccount(walletName2, false, walletPassword);
 
-            var wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
-            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
+            var wallet1 = this.coldStakingManager.GetWallet(walletName1);
+            var wallet2 = this.coldStakingManager.GetWallet(walletName2);
 
             HdAddress coldAddress1 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName1, true);
             HdAddress hotAddress1 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName1, false);
@@ -472,7 +510,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            Wallet.Wallet wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
+            Wallet.Wallet wallet1 = this.coldStakingManager.GetWallet(walletName1);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet1);
 
@@ -519,7 +557,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            Wallet.Wallet wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
+            Wallet.Wallet wallet2 = this.coldStakingManager.GetWallet(walletName2);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet2);
 
@@ -651,7 +689,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
+            var wallet2 = this.coldStakingManager.GetWallet(walletName2);
 
             Transaction prevTran = this.AddSpendableColdstakingTransactionToWallet(wallet2);
 
@@ -702,7 +740,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
+            var wallet2 = this.coldStakingManager.GetWallet(walletName2);
 
             Transaction prevTran = this.AddSpendableColdstakingTransactionToWallet(wallet2);
 
@@ -739,7 +777,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
+            var wallet2 = this.coldStakingManager.GetWallet(walletName2);
 
             BitcoinPubKeyAddress receivingAddress = new Key().PubKey.GetAddress(this.Network);
 

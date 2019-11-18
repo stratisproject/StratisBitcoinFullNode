@@ -84,9 +84,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.MineBlocks(minerB, 10);
                 TestBase.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
 
-                // Connect syncer to miner A
-                //TestHelper.Connect(syncer, minerA);
-
                 // MinerA = 35
                 // MinerB = 25
                 // Syncer = 25
@@ -97,9 +94,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 TestHelper.Connect(syncer, minerA);
 
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 35));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 35));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 35));
 
                 TestBase.WaitLoop(() => minerA.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
                 TestBase.WaitLoop(() => minerB.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
@@ -182,9 +179,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Reconnect minerB (the longer chain), this will trigger the reorg.
                 TestHelper.Connect(syncer, minerB);
 
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 60));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 60));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 60));
 
                 TestBase.WaitLoop(() => minerA.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 60);
                 TestBase.WaitLoop(() => minerB.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 60);
@@ -192,6 +189,68 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // The transaction got reverted.
                 TestHelper.CheckWalletBalance(syncer, 0);
+            }
+        }
+
+        [Fact]
+        public void IndexAddresses_All_Nodes_Synced_Reorg_Connected()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new BitcoinRegTest();
+
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-addressindex", "1" }
+                };
+
+                var minerA = builder.CreateStratisPowNode(network, "ai-4-minerA", configParameters: nodeConfig).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(network, "ai-4-minerB", configParameters: nodeConfig).WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(network, "ai-4-syncer", configParameters: nodeConfig).Start();
+
+                // Sync the network to height 10.
+                TestHelper.ConnectAndSync(syncer, minerA);
+                TestHelper.ConnectAndSync(syncer, minerB);
+
+                // Stop sending blocks from miner A to syncer
+                TestHelper.DisableBlockPropagation(minerA, syncer);
+
+                // Stop sending blocks from miner B to syncer
+                TestHelper.DisableBlockPropagation(minerB, syncer);
+
+                // Miner A advances 2 blocks [12]
+                // Syncer = 10
+                // Miner A = 12
+                // Miner B = 10
+                TestHelper.MineBlocks(minerA, 2);
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 10));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 12));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 10));
+
+                // Miner B advances 1 block [11]
+                // Syncer = 10
+                // Miner A = 12
+                // Miner B = 11
+                TestHelper.MineBlocks(minerB, 1);
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 10));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 12));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 11));
+
+                // Enable sending blocks from miner A to syncer
+                TestHelper.EnableBlockPropagation(minerA, syncer);
+                // Enable sending blocks from miner B to syncer
+                TestHelper.EnableBlockPropagation(minerB, syncer);
+
+                // Miner B advances 2 blocks [13]
+                // Syncer = 13
+                // Miner A = 13
+                // Miner B = 13
+                TestHelper.MineBlocks(minerA, 1, false);
+                TestHelper.MineBlocks(minerB, 1, false);
+
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 13));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 13));
+                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 13));
             }
         }
     }

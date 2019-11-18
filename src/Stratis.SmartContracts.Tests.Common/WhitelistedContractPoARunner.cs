@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -33,6 +34,7 @@ namespace Stratis.SmartContracts.Tests.Common
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
+                // Defer injection of the mempool rules until the smart contract feature.
                 .UseMempool()
                 .AddRPC()
                 .AddSmartContracts(options =>
@@ -43,6 +45,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
+                .AddSQLiteWalletRepository()
                 .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
                 .AddFastMiningCapability()

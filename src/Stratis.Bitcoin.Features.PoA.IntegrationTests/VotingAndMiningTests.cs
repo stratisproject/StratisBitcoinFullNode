@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -300,9 +301,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
                 await node.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
 
-                long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
+                TestBase.WaitLoop(() =>
+                {
+                    long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 
-                Assert.Equal(network.Consensus.PremineReward.Satoshi, balanceAfterPremine);
+                    return network.Consensus.PremineReward.Satoshi ==  balanceAfterPremine;
+                });
             }
         }
 
@@ -355,9 +359,13 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
                 TestBase.WaitLoop(() => nodeA.CreateRPCClient().GetRawMempool().Length == 0 && nodeB.CreateRPCClient().GetRawMempool().Length == 0);
 
                 IWalletManager walletManager = nodeB.FullNode.NodeService<IWalletManager>();
-                long balance = walletManager.GetBalances(walletName, walletAccount).Sum(x => x.AmountConfirmed);
 
-                Assert.True(balance == transferAmount + feeAmount);
+                TestBase.WaitLoop(() =>
+                {
+                    long balance = walletManager.GetBalances(walletName, walletAccount).Sum(x => x.AmountConfirmed);
+
+                    return balance == (transferAmount + feeAmount);
+                });
             }
         }
 

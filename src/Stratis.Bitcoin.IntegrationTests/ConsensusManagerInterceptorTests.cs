@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
@@ -17,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// tries to connect to another chain with longer chain work but containing an invalid block.
         /// </summary>
         [Fact]
-        public async Task ReorgChain_AfterInitialRewind_ChainA_Extension_MinerC_DisconnectsAsync()
+        public async Task ReorgChain_Scenario1_Async()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -94,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// tries to connect to another chain with longer chain work.
         /// </summary>
         [Fact]
-        public void ReorgChain_AfterInitialRewind_ChainB_MinerB_Disconnects()
+        public void ReorgChain_Scenario2()
         {
             using (var builder = NodeBuilder.Create(this))
             {

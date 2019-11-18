@@ -35,16 +35,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void IsChangeAddressWithTextInHdPathReturnsFalse()
+        public void IsChangeAddressWithTextInHdPathReturnsFormatException()
         {
-            var address = new HdAddress
+            Assert.Throws<FormatException>(() =>
             {
-                HdPath = "0/1/2/3/A"
-            };
+                var address = new HdAddress
+                {
+                    HdPath = "0/1/2/3/A"
+                };
 
-            bool result = address.IsChangeAddress();
-
-            Assert.False(result);
+                bool result = address.IsChangeAddress();
+            });
         }
 
         [Fact]
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsChangeAddressWithEmptyHdPathThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<ArgumentNullException>(() =>
            {
                var address = new HdAddress
                {
@@ -92,15 +93,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressHavingUnspentTransactionsReturnsUnspentTransactions()
         {
-            var address = new HdAddress
-            {
-                Transactions = new List<TransactionData> {
+            var address = new HdAddress(new List<TransactionData> {
                     new TransactionData { Id = new uint256(15)},
                     new TransactionData { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
                     new TransactionData { Id = new uint256(17)},
                     new TransactionData { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
-                }
-            };
+                });
 
             IEnumerable<TransactionData> result = address.UnspentTransactions();
 
@@ -112,13 +110,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressNotHavingUnspentTransactionsReturnsEmptyList()
         {
-            var address = new HdAddress
-            {
-                Transactions = new List<TransactionData> {
+            var address = new HdAddress(new List<TransactionData> {
                     new TransactionData { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
                     new TransactionData { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
-                }
-            };
+                });
 
             IEnumerable<TransactionData> result = address.UnspentTransactions();
 
@@ -128,10 +123,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressWithoutTransactionsReturnsEmptyList()
         {
-            var address = new HdAddress
-            {
-                Transactions = new List<TransactionData>()
-            };
+            var address = new HdAddress();
 
             IEnumerable<TransactionData> result = address.UnspentTransactions();
 

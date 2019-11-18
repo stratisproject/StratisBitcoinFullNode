@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeader Tip { get; private set; }
 
         /// <inheritdoc />
+        public int? HeaderTip => this.chainedHeaderTree.GetBestPeerTip()?.Height ?? this.Tip.Height;
+
+        /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules { get; private set; }
 
         /// <summary>
@@ -673,6 +676,11 @@ namespace Stratis.Bitcoin.Consensus
 
             // Add peers that needed to be banned as a result of a failure to connect blocks.
             // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
+            // We also need to set the ban reason and ban time otherwise it is not known why
+            // connecting the new chain failed and hence why the peer is being disconnected in 
+            // peer banning.
+            reconnectionResult.BanReason = connectBlockResult.BanReason;
+            reconnectionResult.BanDurationSeconds = connectBlockResult.BanDurationSeconds;
             reconnectionResult.PeersToBan = connectBlockResult.PeersToBan;
 
             return reconnectionResult;
@@ -1400,6 +1408,7 @@ namespace Stratis.Bitcoin.Consensus
             log.AppendLine(consensusLog);
         }
 
+        [NoTrace]
         private void AddBenchStats(StringBuilder benchLog)
         {
             benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
@@ -1424,7 +1433,7 @@ namespace Stratis.Bitcoin.Consensus
                 long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
                 long maxTipAge = this.consensusSettings.MaxTipAge;
 
-                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") })");
+                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"dd\.hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"dd\.hh\:mm\:ss") })");
                 log.AppendLine($"In IBD Stage: { (this.isIbd ? "Yes" : "No") }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");

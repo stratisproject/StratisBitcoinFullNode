@@ -58,9 +58,9 @@ namespace NBitcoin
                 nFee = this._FeePerK.Satoshi;
             return nFee;
         }
-        public Money GetFee(Transaction tx)
+        public Money GetFee(Transaction tx, int witnessScaleFactor)
         {
-            return GetFee(tx.GetVirtualSize());
+            return GetFee(tx.GetVirtualSize(witnessScaleFactor));
         }
 
         public override bool Equals(object obj)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,6 +8,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -19,39 +19,27 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletSyncManager : IWalletSyncManager, IDisposable
     {
         private readonly IWalletManager walletManager;
-
         private readonly ChainIndexer chainIndexer;
-
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
         private readonly IBlockStore blockStore;
-
         private readonly StoreSettings storeSettings;
-
         private readonly ISignals signals;
         private readonly IAsyncProvider asyncProvider;
-        protected ChainedHeader walletTip;
-
-        public ChainedHeader WalletTip => this.walletTip;
-
-        /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly IAsyncDelegateDequeuer<Block> blocksQueue;
-
-        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
-        private long blocksQueueSize;
-
-        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
-        private bool maxQueueSizeReached;
-
+        private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
+        private readonly INodeLifetime nodeLifetime;
+        private IAsyncLoop walletSynchronisationLoop;
+        private SubscriptionToken transactionAddedSubscription;
+        private SubscriptionToken transactionRemovedSubscription;
         private SubscriptionToken blockConnectedSubscription;
-        private SubscriptionToken transactionReceivedSubscription;
+        private CancellationTokenSource syncCancellationToken;
+        private object lockObject;
+        private readonly MempoolManager mempoolManager;
 
-        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
-        private const int MaxQueueSize = 100 * 1024 * 1024;
+        public ChainedHeader WalletTip => this.walletManager.WalletCommonTip(this.chainIndexer.Tip);
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime,
+            MempoolManager mempoolManager = null)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -61,7 +49,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
+            this.mempoolManager = mempoolManager;
             this.walletManager = walletManager;
             this.chainIndexer = chainIndexer;
             this.blockStore = blockStore;
@@ -69,50 +59,99 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.signals = signals;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(WalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
-
-            this.blocksQueueSize = 0;
+            this.nodeLifetime = nodeLifetime;
+            this.syncCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
+            this.lockObject = new object();
         }
 
         /// <inheritdoc />
         public void Start()
         {
-            // When a node is pruned it impossible to catch up
-            // if the wallet falls behind the block puller.
-            // To support pruning the wallet will need to be
-            // able to download blocks from peers to catch up.
+            // ToDo check if this is still required
             if (this.storeSettings.PruningEnabled)
-                throw new WalletException("Wallet can not yet run on a pruned node");
-
-            this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
-
-            this.walletTip = this.chainIndexer.GetHeader(this.walletManager.WalletTipHash);
-            if (this.walletTip == null)
             {
-                // The wallet tip was not found in the main chain.
-                // this can happen if the node crashes unexpectedly.
-                // To recover we need to find the first common fork
-                // with the best chain. As the wallet does not have a
-                // list of chain headers, we use a BlockLocator and persist
-                // that in the wallet. The block locator will help finding
-                // a common fork and bringing the wallet back to a good
-                // state (behind the best chain).
-                ICollection<uint256> locators = this.walletManager.ContainsWallets ? this.walletManager.GetFirstWalletBlockLocator() : new[] { this.chainIndexer.Tip.HashBlock };
-                var blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                ChainedHeader fork = this.chainIndexer.FindFork(blockLocator);
-                this.walletManager.RemoveBlocks(fork);
-                this.walletManager.WalletTipHash = fork.HashBlock;
-                this.walletManager.WalletTipHeight = fork.Height;
-                this.walletTip = fork;
+                throw new WalletException("Wallet can not yet run on a pruned node");
             }
 
+            this.logger.LogInformation("WalletSyncManager synchronising with mempool.");
+
+            // Ensure that all mempool transactions that apply to wallets have been applied.
+            if (this.mempoolManager != null)
+            {
+                foreach (uint256 trxId in this.mempoolManager.GetMempoolAsync().GetAwaiter().GetResult())
+                {
+                    Transaction transaction = this.mempoolManager.GetTransaction(trxId).GetAwaiter().GetResult();
+                    this.walletManager.ProcessTransaction(transaction);
+                }
+            }
+
+            this.logger.LogInformation("WalletSyncManager starting synchronisation loop.");
+
+            // Start sync job for wallets
+            this.walletSynchronisationLoop = this.asyncProvider.CreateAndRunAsyncLoop("WalletSyncManager.OrchestrateWalletSync",
+                token =>
+                {
+                    this.OrchestrateWalletSync();
+                    return Task.CompletedTask;
+                },
+                this.syncCancellationToken.Token,
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(1));
+
+            this.transactionAddedSubscription = this.signals.Subscribe<TransactionAddedToMemoryPool>(this.OnTransactionAdded);
+            this.transactionRemovedSubscription = this.signals.Subscribe<TransactionRemovedFromMemoryPool>(this.OnTransactionRemoved);
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
-            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
         }
 
-        private void OnTransactionAvailable(TransactionReceived transactionReceived)
+        private void OnTransactionAdded(TransactionAddedToMemoryPool transactionAddedToMempool)
         {
-            this.ProcessTransaction(transactionReceived.ReceivedTransaction);
+            this.logger.LogDebug("Adding transaction '{0}' as it was added to the mempool.", transactionAddedToMempool.AddedTransaction.GetHash());
+            this.walletManager.ProcessTransaction(transactionAddedToMempool.AddedTransaction);
+        }
+
+        private void OnTransactionRemoved(TransactionRemovedFromMemoryPool transactionRemovedFromMempool)
+        {
+            this.logger.LogDebug("Transaction '{0}' was removed from the mempool. RemovedForBlock={1}", 
+                transactionRemovedFromMempool.RemovedTransaction.GetHash(), transactionRemovedFromMempool.RemovedForBlock);
+
+            // If the transaction was removed from the mempool because it's part of a block, we don't want to remove it.
+            // It makes more sense to keep the current entry in the database and update it with the confirmation details
+            // when the wallet processes that block. This also avoids race conditions where users might try and build transactions
+            // right after this operation, but just before the wallet processes the next queued block.
+
+            // However if it was removed for any other reason, we will be out of sync with what's in the mempool.
+            // So lets remove it from the wallet to keep the wallet up to date.
+            if (!transactionRemovedFromMempool.RemovedForBlock)
+            {
+                this.walletManager.RemoveUnconfirmedTransaction(transactionRemovedFromMempool.RemovedTransaction);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            this.syncCancellationToken.Cancel();
+            this.walletSynchronisationLoop?.RunningTask.GetAwaiter().GetResult();
+            this.signals.Unsubscribe(this.transactionAddedSubscription);
+            this.signals.Unsubscribe(this.transactionRemovedSubscription);
+
+            this.logger.LogInformation("WalletSyncManager stopped.");
+        }
+
+        /// <inheritdoc />
+        public virtual void ProcessBlock(Block block)
+        {
+        }
+
+        /// <inheritdoc />
+        public virtual void ProcessTransaction(Transaction transaction)
+        {
+            this.walletManager.ProcessTransaction(transaction);
+        }
+
+        private void ProcessBlocks()
+        {
+            this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFrom(height); });
         }
 
         private void OnBlockConnected(BlockConnected blockConnected)
@@ -121,201 +160,89 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void Stop()
+        public virtual void SyncFromDate(DateTime date, string walletName = null)
         {
-            this.signals.Unsubscribe(this.blockConnectedSubscription);
-            this.signals.Unsubscribe(this.transactionReceivedSubscription);
+            lock (this.lockObject)
+            {
+                int syncFromHeight = this.chainIndexer.GetHeightAtTime(date);
+
+                this.SyncFromHeight(syncFromHeight, walletName);
+            }
         }
 
-        /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.
-        /// Depending on the <see cref="WalletTip"/> and incoming block height, this method will decide whether the <see cref="Block"/> will be processed by the <see cref="WalletManager"/>.
-        /// </summary>
-        /// <param name="block">Block to be processed.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
+
+        /// <inheritdoc />
+        public virtual void SyncFromHeight(int height, string walletName = null)
         {
-            Guard.NotNull(block, nameof(block));
-
-            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
-            this.logger.LogDebug("Queue sized changed to {0} bytes.", currentBlockQueueSize);
-
-            ChainedHeader newTip = this.chainIndexer.GetHeader(block.GetHash());
-
-            if (newTip == null)
+            lock (this.lockObject)
             {
-                this.logger.LogTrace("(-)[NEW_TIP_REORG]");
-                return;
-            }
+                if (height > (this.chainIndexer.Tip?.Height ?? -1))
+                    throw new WalletException("Can't start sync beyond end of chain");
 
-            // If the new block's previous hash is not the same as the one we have, there might have been a reorg.
-            // If the new block follows the previous one, just pass the block to the manager.
-            if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
-            {
-                // If previous block does not match there might have
-                // been a reorg, check if the wallet is still on the main chain.
-                ChainedHeader inBestChain = this.chainIndexer.GetHeader(this.walletTip.HashBlock);
-                if (inBestChain == null)
-                {
-                    // The current wallet hash was not found on the main chain.
-                    // A reorg happened so bring the wallet back top the last known fork.
-                    ChainedHeader fork = this.walletTip;
-
-                    // We walk back the chained block object to find the fork.
-                    while (this.chainIndexer.GetHeader(fork.HashBlock) == null)
-                        fork = fork.Previous;
-
-                    this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
-
-                    this.walletManager.RemoveBlocks(fork);
-                    this.walletTip = fork;
-
-                    this.logger.LogDebug("Wallet tip set to '{0}'.", this.walletTip);
-                }
-
-                // The new tip can be ahead or behind the wallet.
-                // If the new tip is ahead we try to bring the wallet up to the new tip.
-                // If the new tip is behind we just check the wallet and the tip are in the same chain.
-                if (newTip.Height > this.walletTip.Height)
-                {
-                    ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);
-                    if (findTip == null)
-                    {
-                        this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
-                        return;
-                    }
-
-                    this.logger.LogDebug("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
-
-                    ChainedHeader next = this.walletTip;
-                    while (next != newTip)
-                    {
-                        // While the wallet is catching up the entire node will wait.
-                        // If a wallet is recovered to a date in the past. Consensus will stop until the wallet is up to date.
-
-                        // TODO: This code should be replaced with a different approach
-                        // Similar to BlockStore the wallet should be standalone and not depend on consensus.
-                        // The block should be put in a queue and pushed to the wallet in an async way.
-                        // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
-
-                        next = newTip.GetAncestor(next.Height + 1);
-                        Block nextblock = null;
-                        int index = 0;
-                        while (true)
-                        {
-                            if (cancellationToken.IsCancellationRequested)
-                            {
-                                this.logger.LogTrace("(-)[CANCELLATION_REQUESTED]");
-                                return;
-                            }
-
-                            nextblock = this.blockStore.GetBlock(next.HashBlock);
-                            if (nextblock == null)
-                            {
-                                // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from consensus.
-                                index++;
-                                if (index > 10)
-                                {
-                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return;
-                                }
-
-                                // Really ugly hack to let store catch up.
-                                // This will block the entire consensus pulling.
-                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
-                                Thread.Sleep(100);
-                                continue;
-                            }
-
-                            break;
-                        }
-
-                        this.walletTip = next;
-                        this.walletManager.ProcessBlock(nextblock, next);
-                    }
-                }
+                if (walletName != null)
+                    this.walletManager.RewindWallet(walletName, this.chainIndexer.GetHeader(height - 1));
                 else
-                {
-                    ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
-                    if (findTip == null)
-                    {
-                        this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
-                        return;
-                    }
+                    foreach (string wallet in this.walletManager.GetWalletsNames())
+                        this.walletManager.RewindWallet(wallet, this.chainIndexer.GetHeader(height - 1));
+            }
+        }
 
-                    this.logger.LogDebug("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+        internal void OrchestrateWalletSync()
+        {
+            try
+            {
+                this.ProcessBlocks();
+            }
+            catch (Exception e)
+            {
+                // Log the error but keep going.
+                this.logger.LogError("'{0}' failed with: {1}.", nameof(OrchestrateWalletSync), e.ToString());
+            }
+        }
+
+        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFrom(int leftBoundry)
+        {
+            for (int height = leftBoundry; !this.syncCancellationToken.IsCancellationRequested;)
+            {
+                var hashes = new List<uint256>();
+                for (int i = 0; i < 100; i++)
+                {
+                    ChainedHeader header = this.chainIndexer.GetHeader(height + i);
+                    if (header == null)
+                        break;
+
+                    hashes.Add(header.HashBlock);
+                }
+
+                if (hashes.Count == 0)
+                    yield break;
+
+                long flagFall = DateTime.Now.Ticks;
+
+                List<Block> blocks = this.blockStore.GetBlocks(hashes);
+
+                var buffer = new List<(ChainedHeader, Block)>();
+                for (int i = 0; i < blocks.Count && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
+                {
+                    ChainedHeader header = this.chainIndexer.GetHeader(height);
+                    yield return ((header, blocks[i]));
                 }
             }
-            else this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
-
-            this.walletTip = newTip;
-            this.walletManager.ProcessBlock(block, newTip);
-        }
-
-        /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
-        {
-            Guard.NotNull(block, nameof(block));
-
-            if (!this.walletManager.ContainsWallets)
-            {
-                this.logger.LogTrace("(-)[NO_WALLET]");
-                return;
-            }
-
-            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
-            if (!this.maxQueueSizeReached)
-            {
-                if (this.blocksQueueSize >= MaxQueueSize)
-                {
-                    this.maxQueueSizeReached = true;
-                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
-                    return;
-                }
-            }
-            else
-            {
-                // If queue is empty then reset the maxQueueSizeReached flag.
-                this.maxQueueSizeReached = this.blocksQueueSize > 0;
-            }
-
-            if (!this.maxQueueSizeReached)
-            {
-                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogDebug("Queue sized changed to {0} bytes.", currentBlockQueueSize);
-
-                this.blocksQueue.Enqueue(block);
-            }
-        }
-
-        /// <inheritdoc />
-        public virtual void ProcessTransaction(Transaction transaction)
-        {
-            Guard.NotNull(transaction, nameof(transaction));
-
-            this.walletManager.ProcessTransaction(transaction);
-        }
-
-        /// <inheritdoc />
-        public virtual void SyncFromDate(DateTime date)
-        {
-            int blockSyncStart = this.chainIndexer.GetHeightAtTime(date);
-            this.SyncFromHeight(blockSyncStart);
-        }
-
-        /// <inheritdoc />
-        public virtual void SyncFromHeight(int height)
-        {
-            ChainedHeader chainedHeader = this.chainIndexer.GetHeader(height);
-            this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
-            this.walletManager.WalletTipHash = chainedHeader.HashBlock;
-            this.walletManager.WalletTipHeight = chainedHeader.Height;
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.blocksQueue.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                this.Stop();
+            }
         }
     }
 }

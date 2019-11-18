@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.BreezeD
 {
@@ -43,6 +44,7 @@ namespace Stratis.BreezeD
                                     .UseBlockStore()
                                     .UsePosConsensus()
                                     .UseLightWallet()
+                                    .AddSQLiteWalletRepository()
                                     .UseBlockNotification()
                                     .UseTransactionNotification();
                 }
@@ -56,6 +58,7 @@ namespace Stratis.BreezeD
                                     .UseBlockStore()
                                     .UsePowConsensus()
                                     .UseLightWallet()
+                                    .AddSQLiteWalletRepository()
                                     .UseBlockNotification()
                                     .UseTransactionNotification();
                 }

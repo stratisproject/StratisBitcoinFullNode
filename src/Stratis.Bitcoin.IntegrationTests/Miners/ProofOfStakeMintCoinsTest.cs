@@ -24,14 +24,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
+                var configParameters = new NodeConfigParameters { { "txindex", "1" } };
                 var network = new StratisRegTest();
 
                 var minerA = builder.CreateStratisPosNode(network, "stake-1-minerA", configParameters: configParameters).OverrideDateTimeProvider().WithWallet().Start();
 
                 var addressUsed = TestHelper.MineBlocks(minerA, (int)network.Consensus.PremineHeight).AddressUsed;
 
-                // Since the pre-mine will not be immediately spendable, the transactions have to be counted directly from the address.
+                //Since the pre - mine will not be immediately spendable, the transactions have to be counted directly from the address.
                 addressUsed.Transactions.Count().Should().Be((int)network.Consensus.PremineHeight);
 
                 addressUsed.Transactions.Sum(s => s.Amount).Should().Be(network.Consensus.PremineReward + network.Consensus.ProofOfWorkReward);
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 var minter = minerA.FullNode.NodeService<IPosMinting>();
                 minter.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
 
-                // If new transactions are appearing in the wallet, staking has been successful. Due to coin maturity settings the
+                // If new transactions are appearing in the wallet, staking has been successful.Due to coin maturity settings the
                 // spendable balance of the wallet actually drops after staking, so the wallet balance should not be used to
                 // determine whether staking occurred.
                 TestBase.WaitLoop(() =>
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                     {
                         if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                         {
-                            Transaction coinstakeTransaction = minerA.FullNode.Network.CreateTransaction(transactionData.Hex);
+                            Transaction coinstakeTransaction = minerA.FullNode.BlockStore().GetTransactionById(transactionData.Id);
                             var balance = new Money(0);
 
                             // Add coinstake outputs to balance.
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                                 balance += output.Value;
                             }
 
-                            // Subtract coinstake inputs from balance.
+                            //Subtract coinstake inputs from balance.
                             foreach (TxIn input in coinstakeTransaction.Inputs)
                             {
                                 this.transactionLookup.TryGetValue(input.PrevOut.Hash, out TransactionData prevTransactionData);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                                 if (prevTransactionData == null)
                                     continue;
 
-                                Transaction prevTransaction = minerA.FullNode.Network.CreateTransaction(prevTransactionData.Hex);
+                                Transaction prevTransaction = minerA.FullNode.BlockStore().GetTransactionById(prevTransactionData.Id);
 
                                 balance -= prevTransaction.Outputs[input.PrevOut.N].Value;
                             }

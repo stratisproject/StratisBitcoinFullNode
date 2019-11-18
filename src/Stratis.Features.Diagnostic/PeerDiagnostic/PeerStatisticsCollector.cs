@@ -85,7 +85,7 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
                     break;
                 case Event.PeerMessageReceived @event:
                     statistics.ReceivedMessages++;
-                    statistics.BytesReceived += @event.Message.MessageSize;
+                    statistics.BytesReceived += @event.MessageSize;
                     statistics.LogEvent($"Message Received: {@event.Message.Payload.Command}");
                     break;
                 case Event.PeerMessageSent @event:

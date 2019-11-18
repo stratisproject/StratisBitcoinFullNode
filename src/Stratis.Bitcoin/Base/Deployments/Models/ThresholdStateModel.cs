@@ -12,6 +12,12 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         /// <summary>
         /// BIP9 deployment index for this soft fork.
         /// </summary>
+        [JsonProperty(PropertyName = "deploymentName")]
+        public string DeploymentName { get; set; }
+
+        /// <summary>
+        /// BIP9 deployment index for this soft fork.
+        /// </summary>
         [JsonProperty(PropertyName = "deploymentIndex")]
         public int DeploymentIndex { get; set; }
 
@@ -32,6 +38,12 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         /// </summary>
         [JsonProperty(PropertyName = "height")]
         public int Height { get; set; }
+
+        /// <summary>
+        /// Height of when the deployment started.
+        /// </summary>
+        [JsonProperty(PropertyName = "sinceHeight")]
+        public int SinceHeight { get; set; }
 
         /// <summary>
         /// The number of blocks in the each confirmation window.

@@ -11,9 +11,12 @@ namespace Stratis.Bitcoin.EventBus.CoreEvents
     {
         public Message Message { get; }
 
-        public PeerMessageReceived(IPEndPoint peerEndPoint, Message message) : base(peerEndPoint)
+        public int MessageSize { get; }
+
+        public PeerMessageReceived(IPEndPoint peerEndPoint, Message message, int messageSize) : base(peerEndPoint)
         {
             this.Message = message;
+            this.MessageSize = messageSize;
         }
     }
 }

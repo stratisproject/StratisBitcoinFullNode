@@ -2,10 +2,10 @@
 // ReSharper disable once InconsistentNaming
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class Wallet_address_generation_and_funds_visibility
+    public partial class WalletAddressBuffer
     {
         [Fact]
-        public void Coins_beyond_gap_limit_not_visble_in_balance()
+        public void CoinsBeyondGapLimitAreNotVisible()
         {
             Given(a_default_gap_limit_of_20);
             And(a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit);
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Coins_are_visible_when_addresses_have_been_requested_prior_to_syncing_blocks()
+        public void CoinsBeyondDefaultLimitAreVisibleWhenAddressesRequestedBeforeSyncing()
         {
             Given(a_default_gap_limit_of_20);
             And(_21_new_addresses_are_requested);
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public void Coins_beyond_default_gap_limit_ARE_visble_in_balance_when_gap_limit_overridden()
+        public void CoinsBeyondDefaultGapLimitAREvisbleWhenGapLimitOverridden()
         {
             Given(a_gap_limit_of_21);
             And(a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit);

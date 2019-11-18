@@ -14,11 +14,15 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
 
@@ -47,6 +51,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.walletFilePath = Path.Combine(walletsFolderPath, filename);
             File.Copy(Path.Combine("Wallet", "Data", filename), this.walletFilePath, true);
 
+            ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
+
             var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
                 Name = this.walletWithFundsName,
@@ -55,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateAnAccountWhenAnUnusedAccountExists()
+        public async Task CreateAnAccountWhenAnUnusedAccountExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -116,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateAnAccountWhenNoUnusedAccountExists()
+        public async Task CreateAnAccountWhenNoUnusedAccountExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -155,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesWhenNoFilesArePresent()
+        public async Task GetWalletNamesWhenNoWalletsArePresentAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -163,18 +169,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 // Act.
-                WalletFileModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
-                .AppendPathSegment("wallet/files")
-                .GetJsonAsync<WalletFileModel>();
+                WalletInfoModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/list-wallets")
+                .GetJsonAsync<WalletInfoModel>();
 
                 // Assert.
-                walletFileModel.WalletsPath.Should().Be(node.FullNode.DataFolder.WalletPath);
-                walletFileModel.WalletsFiles.Should().BeEmpty();
+                walletFileModel.WalletNames.Should().BeEmpty();
             }
         }
 
         [Fact]
-        public async Task GetUnusedAddressesInAccountWhenAddressesNeedToBeCreated()
+        public async Task GetUnusedAddressesInAccountWhenAddressesNeedToBeCreatedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -202,7 +207,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetUnusedAddressesInAccountWhenNoAddressesNeedToBeCreated()
+        public async Task GetUnusedAddressesInAccountWhenNoAddressesNeedToBeCreatedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -237,7 +242,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveAllTransactionsFromWallet()
+        public async Task RemoveAllTransactionsFromWalletAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -274,7 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveTransactionsFromWalletWithoutFilters()
+        public async Task RemoveTransactionsFromWalletWithoutFiltersAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -282,7 +287,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
-                
+
                 // Make sure the account is used, i.e, it has transactions.
                 WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/history")
@@ -313,7 +318,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveTransactionsFromWalletCalledWithMoreThanOneFilter()
+        public async Task RemoveTransactionsFromWalletCalledWithMoreThanOneFilterAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -389,7 +394,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()
+        public async Task GetSpendableTransactionsInAccountAllowUnconfirmedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -397,8 +402,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
                 CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
-                this.AddAndLoadWalletFileToWalletFolder(node);
                 TestHelper.ConnectAndSync(node, miningNode);
+
+                // Prevent sync manager from affecting the wallet.
+                node.FullNode.NodeService<IWalletSyncManager>().Stop();
+
+                // Allow a wallet to be loaded that does not have verifiable blocks in the consensus chain.
+                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
+
+                this.AddAndLoadWalletFileToWalletFolder(node);
 
                 // Act.
                 var transactionsAllowUnconfirmed = await $"http://localhost:{node.ApiPort}/api"
@@ -421,7 +433,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingFromOneAddressToFiftyAddresses()
+        public async Task SendingFromOneAddressToFiftyAddressesAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -510,7 +522,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingFromManyAddressesToOneAddress()
+        public async Task SendingFromManyAddressesToOneAddressAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -532,7 +544,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 {
                     TestHelper.MineBlocks(sendingNode, 1, syncNode: false, miningAddress: address);
                 }
-                
+
                 TestHelper.ConnectAndSync(sendingNode, receivingNode);
 
                 // Check balances.
@@ -586,13 +598,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     })
                     .ReceiveJson<WalletBuildTransactionModel>();
 
-                    await $"http://localhost:{sendingNode.ApiPort}/api"
-                    .AppendPathSegment("wallet/send-transaction")
-                    .PostJsonAsync(new SendTransactionRequest
-                    {
-                        Hex = buildTransactionModel.Hex
-                    })
-                    .ReceiveJson<WalletSendTransactionModel>();
+                await $"http://localhost:{sendingNode.ApiPort}/api"
+                .AppendPathSegment("wallet/send-transaction")
+                .PostJsonAsync(new SendTransactionRequest
+                {
+                    Hex = buildTransactionModel.Hex
+                })
+                .ReceiveJson<WalletSendTransactionModel>();
 
                 // Assert.
                 // The sending node should have 50 (+ fee) fewer coins.
@@ -619,7 +631,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingATransactionWithAnOpReturn()
+        public async Task SendingATransactionWithAnOpReturnAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -715,7 +727,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 BlockTransactionDetailsModel block = await $"http://localhost:{receivingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
-                    .SetQueryParams(new {hash = lastBlockHash, showTransactionDetails = true, outputJson = true})
+                    .SetQueryParams(new { hash = lastBlockHash, showTransactionDetails = true, outputJson = true })
                     .GetJsonAsync<BlockTransactionDetailsModel>();
 
                 TransactionVerboseModel trx = block.Transactions.SingleOrDefault(t => t.TxId == buildTransactionModel.TransactionId.ToString());
@@ -733,15 +745,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task GetBalancesAsync()
         {
-            int sendingAccountBalanceOnStart = 98000596;
-            int receivingAccountBalanceOnStart = 0;
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
                 // Create a sending and a receiving node.
                 CoreNode node1 = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest10Miner).Start();
-                
+
                 // Act.
                 WalletBalanceModel node1Balances = await $"http://localhost:{node1.ApiPort}/api"
                     .AppendPathSegment("wallet/balance")
@@ -773,7 +782,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetHistoryFromMiningNode()
+        public async Task GetHistoryFromMiningNodeAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -807,10 +816,80 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 TransactionItemModel firstItem = history.First(); // First item in the list but last item to have occurred.
                 firstItem.Amount.Should().Be(new Money(4, MoneyUnit.BTC));
-                firstItem.BlockIndex.Should().Be(0);
+                //firstItem.BlockIndex.Should().Be(0);
                 firstItem.ConfirmedInBlock.Should().Be(5);
                 firstItem.ToAddress.Should().NotBeNullOrEmpty();
                 firstItem.Fee.Should().BeNull();
+            }
+        }
+
+        [Fact]
+        public async Task GetHistory_LargeUtxo_SendSmallAmount_Async()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var regTest = new BitcoinRegTestOverrideCoinbaseMaturity(5);
+
+                CoreNode miningNode = builder.CreateStratisPowNode(regTest, agent: "miningNode").AlwaysFlushBlocks().WithWallet().Start();
+                CoreNode senderNode = builder.CreateStratisPowNode(regTest, agent: "senderNode").AlwaysFlushBlocks().WithWallet().Start();
+                CoreNode receiverNode = builder.CreateStratisPowNode(regTest, agent: "receiverNode").AlwaysFlushBlocks().WithWallet().Start();
+
+                TestHelper.ConnectAndSync(miningNode, receiverNode);
+                TestHelper.ConnectAndSync(receiverNode, senderNode);
+
+                TestHelper.MineBlocks(miningNode, 10);
+
+                // Ensure that the nodes are synced.
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(receiverNode, 10));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(senderNode, 10));
+
+                // Send coins to from the miner to the sender.
+                TestHelper.SendCoins(miningNode, senderNode, Money.Coins(20));
+
+                // Advance the chain so that the coins become spendable.
+                TestHelper.MineBlocks(miningNode, 10);
+
+                // Ensure that the nodes are synced.
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(receiverNode, 20));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(senderNode, 20));
+
+                // Wait until the sender's balance is updated.
+                TestBase.WaitLoop(() => TestHelper.CheckWalletBalance(senderNode, Money.Coins(20)));
+
+                // Send an amount from the sender to the receiver that ensures change gets generated.
+                TestHelper.SendCoins(senderNode, receiverNode, Money.Coins(10));
+
+                // Advance the chain so that the coins become spendable.
+                TestHelper.MineBlocks(miningNode, 10);
+
+                // Ensure that the nodes are synced.
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(receiverNode, 30));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(senderNode, 30));
+
+                // Get the wallet history for the sender.
+                WalletHistoryModel walletHistory = await $"http://localhost:{senderNode.ApiPort}/api".AppendPathSegment("wallet/history").SetQueryParams(new { walletName = "mywallet", accountName = "account 0" }).GetJsonAsync<WalletHistoryModel>();
+                ICollection<TransactionItemModel> history = walletHistory.AccountsHistoryModel.First().TransactionsHistory;
+                history.Count.Should().Be(2);
+
+                // Oldest items are first.
+                var firstItem = history.ToArray()[0];
+                firstItem.Amount.Should().Be(new Money(10, MoneyUnit.BTC));
+                firstItem.Fee.Should().Be(Money.Coins(0.00004520m));
+                firstItem.Payments.Count.Should().Be(1);
+                firstItem.Payments.First().Amount.Should().Be(Money.Coins(10));
+                firstItem.Type.Should().Be(TransactionItemType.Send);
+
+                var secondItem = history.ToArray()[1];
+                secondItem.Amount.Should().Be(new Money(20, MoneyUnit.BTC));
+                secondItem.Fee.Should().BeNull();
+                secondItem.Payments.Count.Should().Be(0);
+                secondItem.Type.Should().Be(TransactionItemType.Received);
+
+                // The spendable amount on the sender should be change address.
+                var walletAccountReference = new WalletAccountReference("mywallet", "account 0");
+                var transactions = senderNode.FullNode.WalletManager().GetSpendableTransactionsInAccount(walletAccountReference);
+                transactions.Count().Should().Be(1);
+                transactions.First().Address.AddressType.Should().Be(1);
             }
         }
     }

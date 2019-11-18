@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
     /// <summary>
     /// Tests of <see cref="GetStakingInfoModel"/> class.
     /// </summary>
-    public class GetStakingInfoModelTest : BaseRPCModelTest
+    public class GetStakingInfoModelTest
     {
         /// <summary>List of all model properties.</summary>
         private static readonly string[] ModelPropertyNames = new string[]
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             IOrderedEnumerable<string> expectedSortedPropertyNames = ModelPropertyNames.OrderBy(name => name);
             var model = new GetStakingInfoModel();
 
-            JObject obj = ModelToJObject(model);
+            JObject obj = JObject.FromObject(model);
             Assert.True(obj.HasValues);
             IEnumerable<string> actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
 

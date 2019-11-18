@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -8,9 +9,11 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -27,10 +30,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private readonly List<TxOut> refundOutputs;
         private readonly List<Receipt> receipts;
         private readonly IStateRepositoryRoot stateRoot;
+        private readonly IBlockExecutionResultCache executionCache;
+        private readonly ICallDataSerializer callDataSerializer;
         private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
         private ulong blockGasConsumed;
-        private const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
+
+        /// <summary>The maximum amount of gas that can be spent in this block.</summary>
+        public const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
 
         public SmartContractBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
@@ -44,7 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             MinerSettings minerSettings,
             Network network,
             ISenderRetriever senderRetriever,
-            IStateRepositoryRoot stateRoot)
+            IStateRepositoryRoot stateRoot,
+            IBlockExecutionResultCache executionCache,
+            ICallDataSerializer callDataSerializer)
             : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
@@ -52,6 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.senderRetriever = senderRetriever;
             this.stateRoot = stateRoot;
+            this.callDataSerializer = callDataSerializer;
+            this.executionCache = executionCache;
             this.refundOutputs = new List<TxOut>();
             this.receipts = new List<Receipt>();
 
@@ -64,13 +75,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         }
 
         /// <summary>
-        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinitionProofOfWork"/>.
+        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinition"/>.
         /// <para>
         /// Determine whether or not the mempool entry contains smart contract execution
         /// code. If not, then add to the block as per normal. Else extract and deserialize
         /// the smart contract code from the TxOut's ScriptPubKey.
         /// </para>
         /// </summary>
+        /// <param name="mempoolEntry">The mempool entry containing the transactions to include.</param>
         public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
             TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
@@ -86,12 +98,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             {
                 this.logger.LogDebug("Transaction contains smart contract information.");
 
-                if (this.blockGasConsumed >= GasPerBlockLimit) 
+                if (this.blockGasConsumed >= GasPerBlockLimit)
+                {
+                    this.logger.LogDebug("The gas limit for this block has been reached.");
                     return;
+                }
 
-                // We HAVE to firstly execute the smart contract contained in the transaction
-                // to ensure its validity before we can add it to the block.
                 IContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
+
+                // If including this transaction would put us over the block gas limit, then don't include it
+                // and roll back all of the execution we did.
+                if (this.blockGasConsumed > GasPerBlockLimit)
+                {
+                    // Remove the last receipt.
+                    this.receipts.RemoveAt(this.receipts.Count - 1);
+
+                    // Set our state to where it was before this execution.
+                    uint256 lastState = this.receipts.Last().PostState;
+                    this.stateSnapshot.SyncToRoot(lastState.ToBytes());
+
+                    return;
+                }
+
                 this.AddTransactionToBlock(mempoolEntry.Transaction);
                 this.UpdateBlockStatistics(mempoolEntry);
                 this.UpdateTotalFees(result.Fee);
@@ -129,7 +157,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             base.OnBuild(chainTip, scriptPubKeyIn);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-            
+
+            // Cache the results. We don't need to execute these again when validating.
+            var cacheModel = new BlockExecutionResultModel(this.stateSnapshot, this.receipts);
+            this.executionCache.StoreExecutionResult(this.BlockTemplate.Block.GetHash(), cacheModel);
+
             return this.BlockTemplate;
         }
 
@@ -157,6 +189,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <summary>
         /// Sets the receipt root based on all the receipts generated in smart contract execution inside this block.
         /// </summary>
+        /// <param name="scHeader">The smart contract header that will be updated.</param>
         private void UpdateReceiptRoot(ISmartContractBlockHeader scHeader)
         {
             List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
@@ -167,6 +200,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <summary>
         /// Sets the bloom filter for all logs that occurred in this block's execution.
         /// </summary>
+        /// <param name="scHeader">The smart contract header that will be updated.</param>
         private void UpdateLogsBloom(ISmartContractBlockHeader scHeader)
         {
             Bloom logsBloom = new Bloom();
@@ -181,6 +215,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
+        /// <param name="mempoolEntry">The mempool entry containing the smart contract transaction.</param>
         private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
             // This coinview object can be altered by consensus whilst we're mining.
@@ -194,15 +229,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             IContractTransactionContext transactionContext = new ContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
             IContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
             IContractExecutionResult result = executor.Execute(transactionContext);
+            Result<ContractTxData> deserializedCallData = this.callDataSerializer.Deserialize(transactionContext.Data);
 
             this.blockGasConsumed += result.GasConsumed;
 
-            // As we're not storing receipts, can use only consensus fields. 
+            // Store all fields. We will reuse these in CoinviewRule.
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
                 result.GasConsumed,
-                result.Logs.ToArray()
-            );
+                result.Logs.ToArray(),
+                transactionContext.TransactionHash,
+                transactionContext.Sender,
+                result.To,
+                result.NewContractAddress,
+                !result.Revert,
+                result.Return?.ToString(),
+                result.ErrorMessage,
+                deserializedCallData.Value.GasPrice,
+                transactionContext.TxOutValue,
+                deserializedCallData.Value.IsCreateContract ? null : deserializedCallData.Value.MethodName);
 
             this.receipts.Add(receipt);
 

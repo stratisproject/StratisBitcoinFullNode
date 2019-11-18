@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.StratisDnsD
 {
@@ -52,6 +53,7 @@ namespace Stratis.StratisDnsD
                         .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
+                        .AddSQLiteWalletRepository()
                         .AddPowPosMining()
                         .UseApi()
                         .AddRPC()

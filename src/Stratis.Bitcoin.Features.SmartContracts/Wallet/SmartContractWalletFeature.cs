@@ -55,17 +55,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         private void AddComponentStats(StringBuilder log)
         {
-            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
+            IEnumerable<string> walletNamesSQL = this.walletManager.GetWalletsNames();
 
-            if (walletNames.Any())
+            if (walletNamesSQL.Any())
             {
                 log.AppendLine();
                 log.AppendLine("======Wallets======");
 
-                foreach (string walletName in walletNames)
+                var walletManager = (WalletManager)this.walletManager;
+
+                foreach (string walletName in walletNamesSQL)
                 {
-                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    log.AppendLine("Wallet[SC]: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    foreach (AccountBalance accountBalance in walletManager.GetBalances(walletName))
+                    {
+                        log.AppendLine(
+                            ($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(
+                                LoggingConfiguration.ColumnLength + 10)
+                            + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(
+                                LoggingConfiguration.ColumnLength + 20)
+                            + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
                 }
             }
         }
@@ -124,6 +133,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();
                     services.AddSingleton<WalletSettings>();
+                    services.AddSingleton<IAddressBookManager, AddressBookManager>();
 
                     services.AddTransient<WalletRPCController>();
                 });

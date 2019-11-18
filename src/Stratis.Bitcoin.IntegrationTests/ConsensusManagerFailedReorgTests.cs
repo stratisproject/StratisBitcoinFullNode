@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_ConnectedAsync()
+        public async Task Reorg_FailsFV_Reconnect_OldChain_ConnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_DisconnectedAsync()
+        public async Task Reorg_FailsFV_Reconnect_OldChain_Nodes_DisconnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_Reconnect_OldChain_FromSecondMiner_DisconnectedAsync()
+        public async Task Reorg_FailsFV_Reconnect_OldChain_From2ndMiner_DisconnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsPartialValidation_Nodes_ConnectedAsync()
+        public async Task Reorg_FailsPartialValidation_ConnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsPartialValidation_Nodes_DisconnectedAsync()
+        public async Task Reorg_FailsPartialValidation_DisconnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// 13 -> Header Only
         /// </summary>
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_ChainHasBlocksAndHeadersOnly_NodesDisconnectedAsync()
+        public async Task Reorg_FailsFV_ChainHasBlocksAndHeadersOnly_DisconnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {

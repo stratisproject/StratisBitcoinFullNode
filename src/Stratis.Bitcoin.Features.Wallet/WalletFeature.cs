@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -46,6 +45,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly BroadcasterBehavior broadcasterBehavior;
 
+        private readonly IWalletRepository walletRepository;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
         /// </summary>
@@ -62,7 +63,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Signals.ISignals signals,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IWalletRepository walletRepository)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -70,6 +72,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.signals = signals;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
+            this.walletRepository = walletRepository;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
@@ -96,35 +99,32 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void AddInlineStats(StringBuilder log)
         {
-            var walletManager = this.walletManager as WalletManager;
-
-            if (walletManager != null)
-            {
-                HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
-
-                log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                        (walletManager.ContainsWallets ? hashHeightPair.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashHeightPair.Hash) : string.Empty));
-            }
+            log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                (this.walletManager.ContainsWallets ? this.walletManager.WalletTipHeight.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                (this.walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.walletManager.WalletTipHash) : string.Empty));
         }
 
         private void AddComponentStats(StringBuilder log)
         {
-            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
+            List<string> walletNamesSQL = this.walletRepository.GetWalletNames();
 
-            if (walletNames.Any())
+            if (walletNamesSQL.Any())
             {
                 log.AppendLine();
                 log.AppendLine("======Wallets======");
 
-                foreach (string walletName in walletNames)
+                var walletManager = (WalletManager)this.walletManager;
+
+                foreach (string walletName in walletNamesSQL)
                 {
-                    foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
+                    foreach (AccountBalance accountBalance in walletManager.GetBalances(walletName))
                     {
-                        AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
-                        log.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
-                                                  + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
-                                                  + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                        log.AppendLine(
+                            ($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(
+                                LoggingConfiguration.ColumnLength + 10)
+                            + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(
+                                LoggingConfiguration.ColumnLength + 20)
+                            + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
                     }
                 }
             }
@@ -145,8 +145,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.walletManager.Stop();
             this.walletSyncManager.Stop();
+            this.walletManager.Stop();
         }
     }
 

@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public StratisConsensusOptionsOverrideTest()
             {
-                this.Name = Guid.NewGuid().ToString();
+                this.Name = Guid.NewGuid().ToString("N").Substring(0, 7);
             }
         }
 
@@ -78,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public BitcoinOverrideRegTest() : base()
             {
-                this.Name = Guid.NewGuid().ToString();
+                this.Name = Guid.NewGuid().ToString("N").Substring(0, 7);
             }
         }
 
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Occurs_Node_Reorgs_AndResyncs_ToBestHeight()
+        public void CM_Fork_Occurs_Node_Reorgs_AndResyncs_ToBestHeight()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -181,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_InvalidStakeDepth()
+        public void CM_Fork_Occurs_Node_Gets_Disconnected_Due_To_InvalidStakeDepth()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -228,7 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
+        public void CM_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -269,7 +270,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Old_Chain_Becomes_Longer_Then_Reorg_Back()
+        public void CM_Reorgs_Then_Old_Chain_Becomes_Longer_Then_Reorg_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -312,7 +313,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_With_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void CM_Reorgs_Connect_Longer_Chain_With_Connected_Blocks_Fails_Reverts()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -357,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_With_No_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void CMReorgsTryConnectLongerChainNoConnectedBlocksFailsReverts()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -398,7 +399,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorg_To_Longest_Chain_Multiple_Times_Without_Invalid_Blocks()
+        public void CM_Reorg_To_Longest_Chain_Multiple_Times_Without_Invalid_Blocks()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -449,7 +450,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Connect_New_Block_Failed()
+        public void CM_Connect_New_Block_Failed()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -476,7 +477,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Of_100_Blocks_Occurs_Node_Reorgs_And_Resyncs_ToBestHeight()
+        public void CM_Fork_Of_100_Blocks_Occurs_Node_Reorgs_And_Resyncs_ToBestHeight()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -510,7 +511,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         /// <summary>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</summary>
         [Fact]
-        public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
+        public void CM_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -528,7 +529,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the peers A and B (height 3)
                 TestHelper.ConnectAndSync(minerA, minerB);
 
-                // Miner A will spend the coins 
+                // Miner A will spend the coins
                 WalletSendTransactionModel walletSendTransactionModel = $"http://localhost:{minerA.ApiPort}/api"
                     .AppendPathSegment("wallet/splitcoins")
                     .PostJsonAsync(new SplitCoinsRequest
@@ -575,7 +576,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         /// <summary>We test that two chains that used the same UTXO to stake, the shorter chain can still swap to the longer chain.</summary>
         [Fact]
-        public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Mined_And_Found_In_Rewind_Data()
+        public void CM_Fork_Occurs_When_Stake_Coins_Are_Mined_And_Found_In_Rewind_Data()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -619,7 +620,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Occurs_When_Same_Coins_Are_Staked_On_Different_Chains()
+        public void CM_Fork_Occurs_When_Same_Coins_Are_Staked_On_Different_Chains()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -668,7 +669,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Block_That_Failed_Partial_Validation_Is_Rejected()
+        public void CM_Block_That_Failed_Partial_Validation_Is_Rejected()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {

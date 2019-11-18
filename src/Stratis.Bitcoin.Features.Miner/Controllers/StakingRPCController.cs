@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// <summary>
     /// RPC controller for calls related to PoS minting.
     /// </summary>
+    [ApiVersion("1")]
     [Controller]
     public class StakingRpcController : FeatureController
     {
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            
+
             Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
 
             // Check the password
@@ -106,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
 
             GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
-            
+
             return model;
         }
     }

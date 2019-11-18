@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -14,12 +14,10 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.ColdStaking.Controllers;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -116,8 +114,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.nodeSettings = nodeSettings;
             this.walletSettings = walletSettings;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
+            //nodeStats.RemoveStats(StatsType.Component, typeof(WalletFeature).Name);
+            //nodeStats.RemoveStats(StatsType.Inline, typeof(WalletFeature).Name);
+
+            //nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
+            //nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
         }
 
         /// <summary>
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            WalletSettings.PrintHelp(network);
+            // The wallet feature will print the help.
         }
 
         /// <summary>
@@ -136,12 +137,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            WalletSettings.BuildDefaultConfigurationFile(builder, network);
+            // The wallet feature will add its own settings to the config.
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
         {
-            var walletManager = this.coldStakingManager;
+            ColdStakingManager walletManager = this.coldStakingManager;
 
             if (walletManager != null)
             {
@@ -160,7 +161,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (walletNames.Any())
             {
                 benchLog.AppendLine();
-                benchLog.AppendLine("======Wallets======");
+                benchLog.AppendLine("======Wallets123======");
 
                 foreach (string walletName in walletNames)
                 {
@@ -198,11 +199,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.coldStakingManager.Start();
-            this.walletSyncManager.Start();
-            this.addressBookManager.Initialize();
-
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             return Task.CompletedTask;
         }
@@ -210,8 +206,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.coldStakingManager.Stop();
-            this.walletSyncManager.Stop();
         }
     }
 
@@ -252,6 +246,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 {
                     services.RemoveSingleton<IWalletManager>();
                     services.AddSingleton<IWalletManager, ColdStakingManager>();
+
+                    services.AddSingleton<ScriptAddressReader>();
+                    services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), typeof(ColdStakingDestinationReader), ServiceLifetime.Singleton));
                 });
             });
 

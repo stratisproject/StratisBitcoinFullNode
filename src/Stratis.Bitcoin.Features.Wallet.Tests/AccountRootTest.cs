@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             accountRoot.Accounts.Add(used);
 
             HdAccount used2 = CreateAccount("used2");
-            used2.InternalAddresses.Add(CreateAddress());
+            used2.InternalAddresses.Add(CreateAddress(true));
             used2.Index = 4;
             accountRoot.Accounts.Add(used2);
 

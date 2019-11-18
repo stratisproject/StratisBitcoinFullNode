@@ -6,10 +6,12 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -41,9 +43,11 @@ namespace Stratis.Features.FederatedPeg
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
             ICoinbaseSplitter premineSplitter,
+            IBlockExecutionResultCache executionCache,
+            ICallDataSerializer callDataSerializer,
             MinerSettings minerSettings,
             FederatedPegSettings federatedPegSettings)
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, executionCache, callDataSerializer, minerSettings)
         {
             this.payToMultisigScript = federatedPegSettings.MultiSigAddress.ScriptPubKey;
 
@@ -52,6 +56,12 @@ namespace Stratis.Features.FederatedPeg
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
+            // Note: When creating a new chain, ensure that the first nodes mining are the federated peg nodes, 
+            // so that the premine goes to the federated peg wallet.
+
+            // The other nodes don't know about the federated wallet in the current design.
+            // If this changes, a consensus rule should be built that enforces that the premine goes to that address.
+
             bool miningPremine = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight;
 
             // If we are not mining the premine, then the reward should fall back to what was selected by the caller.

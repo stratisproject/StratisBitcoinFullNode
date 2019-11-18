@@ -14,8 +14,16 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Registers action that will be used to append node stats when they are being collected.</summary>
         /// <param name="appendStatsAction">Action that will be invoked during stats collection.</param>
         /// <param name="statsType">Type of stats.</param>
+        /// <param name="componentName">The component name.</param>
         /// <param name="priority">Stats priority that will be used to determine invocation priority of stats collection.</param>
         void RegisterStats(Action<StringBuilder> appendStatsAction, StatsType statsType, string componentName, int priority = 0);
+
+        /// <summary>
+        /// Removes stats previously registered.
+        /// </summary>
+        /// <param name="statsType">Type of stats.</param>
+        /// <param name="componentName">The component name.</param>
+        void RemoveStats(StatsType statsType, string componentName);
 
         /// <summary>Collects inline stats and then feature stats.</summary>
         string GetStats();
@@ -60,6 +68,15 @@ namespace Stratis.Bitcoin.Utilities
                 });
 
                 this.stats = this.stats.OrderByDescending(x => x.Priority).ToList();
+            }
+        }
+
+        /// <inheritdoc />
+        public void RemoveStats(StatsType statsType, string componentName)
+        {
+            lock (this.locker)
+            {
+                this.stats.Remove(this.stats.Where(s => s.StatsType == statsType && s.ComponentName == componentName).FirstOrDefault());
             }
         }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -198,19 +197,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (coreNode.MinerSecret == null)
             {
+                Wallet wallet = coreNode.FullNode.WalletManager().GetWallet(walletName);
+                HdAccount account = wallet.GetAccount(accountName);
+
                 HdAddress address;
                 if (!string.IsNullOrEmpty(miningAddress))
                 {
-                    address = coreNode.FullNode.WalletManager().GetAccounts(walletName).Single(a => a.Name == accountName).GetCombinedAddresses().Single(add => add.Address == miningAddress);
+                    address = account.ExternalAddresses.Concat(account.InternalAddresses).Single(add => add.Address == miningAddress);
                 }
                 else
                 {
-                    address = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                    address = account.GetFirstUnusedReceivingAddress();
                 }
 
                 coreNode.MinerHDAddress = address;
 
-                Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
                 coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
@@ -498,13 +499,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         private const string Name = "mywallet";
         private const string AccountName = "account 0";
 
-        public static void CheckWalletBalance(CoreNode node, Money amount)
+        public static bool CheckWalletBalance(CoreNode node, Money amount)
         {
             var total = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
-            total.Should().Be(amount);
+            return total == amount;
         }
 
-        public static void SendCoins(CoreNode sender, CoreNode receiver, Money amount)
+        public static void SendCoins(CoreNode sender, CoreNode receiver, Money amount, int? confirmations = null)
         {
             var receivingAddress = receiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(Name, AccountName));
 
@@ -517,7 +518,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
 
-            CheckWalletBalance(receiver, amount);
+            TestBase.WaitLoop(() => CheckWalletBalance(receiver, amount));
         }
 
         private static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
