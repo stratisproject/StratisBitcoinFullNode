@@ -1,18 +1,22 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-
 namespace Stratis.Bitcoin.Features.SignalR
 {
+    using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-
+    using System.Threading.Tasks;
+    using Microsoft.AspNetCore.SignalR;
+    using Microsoft.Extensions.Logging;
+  
     // ReSharper disable once ClassNeverInstantiated.Global
     public class SignalRMessageArgs
     {
         public string Target { get; set; }
-        public IDictionary<string, string> Args { get; set; }
+        public Dictionary<string, string> Args { get; set; }
+
+        public string GetValue(string key)
+        {
+            return this.Args.ContainsKey(key) ? this.Args[key] : null;
+        }
     }
 
     public class EventsHub : Hub
@@ -42,14 +46,21 @@ namespace Stratis.Bitcoin.Features.SignalR
 
         // ReSharper disable once UnusedMember.Global
         // Called using reflection from SignalR
-        public void SendMessage(SignalRMessageArgs messageArgs)
+        public void SendMessage(SignalRMessageArgs message)
         {
-            if (this.featureSubscriptions.ContainsKey(messageArgs.Target))
+            try
             {
-                this.featureSubscriptions[messageArgs.Target].ForEach(featureSubscription =>
+                if (this.featureSubscriptions.ContainsKey(message.Target))
                 {
-                    featureSubscription.Invoke(messageArgs);
-                });
+                    this.featureSubscriptions[message.Target].ForEach(featureSubscription =>
+                    {
+                        featureSubscription.Invoke(message);
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Error SendMessage", e);
             }
         }
 

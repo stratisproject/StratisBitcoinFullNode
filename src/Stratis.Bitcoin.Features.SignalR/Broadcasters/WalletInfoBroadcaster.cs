@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Features.SignalR.Events;
-using Stratis.Bitcoin.Utilities;
-
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Wallet.Services;
+    using Microsoft.Extensions.Logging;
+    using Stratis.Bitcoin.AsyncWork;
+    using Stratis.Bitcoin.Features.SignalR.Events;
+    using Stratis.Bitcoin.Features.Wallet.Services;
+    using Stratis.Bitcoin.Utilities;
 
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
@@ -20,6 +19,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         private readonly bool includeAddressBalances;
         private string currentWalletName;
         private string currentAddress;
+        private string currentAccount;
 
         public WalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
@@ -75,9 +75,14 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             base.OnInitialise();
             this.eventsHub.SubscribeToIncomingSignalRMessages(this.GetType().Name, (messageArgs) =>
             {
-                if (messageArgs.Args.ContainsKey("currentWalletName"))
+                if (messageArgs.Args.ContainsKey("currentWallet"))
                 {
-                    this.currentWalletName = messageArgs.Args["currentWalletName"];
+                    this.currentWalletName = messageArgs.Args["currentWallet"];
+                }
+                
+                if (messageArgs.Args.ContainsKey("currentAccount"))
+                {
+                    this.currentAccount = messageArgs.Args["currentAccount"];
                 }
                 
                 if (messageArgs.Args.ContainsKey("currentAddress"))
