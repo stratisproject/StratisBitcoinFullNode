@@ -184,17 +184,17 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             ConsensusOptions options = this.stratisTest.Consensus.Options;
             int minerConfirmationWindow = this.stratisTest.Consensus.MinerConfirmationWindow;
-            int ruleChangeActivationThreshold = this.stratisTest.Consensus.RuleChangeActivationThreshold;
+
             try
             {
                 var newOptions = new PosConsensusOptions();
                 this.stratisTest.Consensus.Options = newOptions;
                 this.stratisTest.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters("Test",19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
-                    new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+                    new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    2);
 
                 this.stratisTest.Consensus.MinerConfirmationWindow = 2;
-                this.stratisTest.Consensus.RuleChangeActivationThreshold = 2;
 
                 ChainIndexer chainIndexer = GenerateChainWithHeightAndActivatedBip9(5, this.stratisTest, new Key(), this.stratisTest.Consensus.BIP9Deployments[0]);
                 this.SetupRulesEngine(chainIndexer);
@@ -214,7 +214,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stratisTest.Consensus.Options = options;
                 this.stratisTest.Consensus.BIP9Deployments[0] = null;
                 this.stratisTest.Consensus.MinerConfirmationWindow = minerConfirmationWindow;
-                this.stratisTest.Consensus.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
             }
         }
 

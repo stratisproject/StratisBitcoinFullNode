@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 softForksBip9.Statistics = new SoftForksBip9Statistics();
 
                 softForksBip9.Statistics.Period = metric.ConfirmationPeriod;
-                softForksBip9.Statistics.Threshold = metric.Threshold;
+                softForksBip9.Statistics.Threshold = (int)metric.Threshold;
                 softForksBip9.Statistics.Count = metric.Blocks;
                 softForksBip9.Statistics.Elapsed = metric.Height - metric.PeriodStartHeight;
                 softForksBip9.Statistics.Possible = (softForksBip9.Statistics.Period - softForksBip9.Statistics.Threshold) >= (softForksBip9.Statistics.Elapsed - softForksBip9.Statistics.Count);
