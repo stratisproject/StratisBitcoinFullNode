@@ -12,6 +12,8 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -129,6 +131,12 @@ namespace Stratis.Bitcoin.Features.RPC
             if (ex is ArgumentException || ex is FormatException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
+                httpContext.Response.ContentType = ContentType;
+                await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
+            }
+            else if (ex is BlockNotFoundException)
+            {
+                JObject response = CreateError(RPCErrorCode.RPC_INVALID_REQUEST, "Argument error: " + ex.Message);
                 httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
