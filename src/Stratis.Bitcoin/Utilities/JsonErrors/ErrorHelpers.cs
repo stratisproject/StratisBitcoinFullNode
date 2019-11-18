@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Utilities.JsonErrors
                     {
                         Status = (int) featureException.HttpStatusCode,
                         Message = featureException.Message,
-                        Description = featureException.Message
+                        Description = featureException.Description
                     }
                 }
             };

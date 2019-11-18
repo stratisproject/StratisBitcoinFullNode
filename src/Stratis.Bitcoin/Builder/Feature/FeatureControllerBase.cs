@@ -27,10 +27,9 @@ namespace Stratis.Bitcoin.Builder.Feature
         protected async Task<IActionResult> Execute<TRequest>(TRequest request, CancellationToken token,
             Func<TRequest, CancellationToken, Task<IActionResult>> action, bool checkModelState = true)
         {
-            Guard.NotNull(request, nameof(request));
-
             if (checkModelState && !this.ModelState.IsValid)
             {
+                Guard.NotNull(request, nameof(request));
                 this.Logger.LogTrace($"{nameof(request)}(-)[MODEL_STATE_INVALID]");
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }

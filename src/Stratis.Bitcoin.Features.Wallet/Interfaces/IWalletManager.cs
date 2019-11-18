@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="take">Number of records to Take</param>
         /// <returns>Collection of address history and transaction pairs.</returns>
 
-        IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue);
+        IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null, long? prevOutputTxTime = null, int? prevOutputIndex = null, int? take = int.MaxValue);
 
         /// <summary>
         /// Gets the history of the transactions in addresses contained in this account.

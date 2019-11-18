@@ -788,7 +788,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
         
         /// <inheritdoc />
-        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName, long? prevOutputTxTime, int? prevOutputIndex, int take)
+        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName, long? prevOutputTxTime, int? prevOutputIndex, int? take = int.MaxValue)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
 
@@ -815,7 +815,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    accountsHistory.Add(this.GetHistory(account, prevOutputTxTime, prevOutputIndex, take));
+                    accountsHistory.Add(this.GetHistoryForAccount(account, prevOutputTxTime, prevOutputIndex, take.GetValueOrDefault()));
                 }
             }
 
@@ -825,10 +825,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public AccountHistory GetHistory(HdAccount account)
         {
-            return this.GetHistory(account, null, null, int.MaxValue);
+            return this.GetHistoryForAccount(account, null, null, int.MaxValue);
         }
       
-        protected AccountHistory GetHistory(HdAccount account, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue)
+        protected AccountHistory GetHistoryForAccount(HdAccount account, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue)
         {
             Guard.NotNull(account, nameof(account));
             FlatHistory[] items;

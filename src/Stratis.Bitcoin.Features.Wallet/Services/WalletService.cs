@@ -9,6 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Bitcoin.Consensus;
     using Broadcasting;
     using Builder.Feature;
     using Connection;
@@ -27,6 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IConnectionManager connectionManager;
+        private readonly IConsensusManager consensusManager;
         private readonly Network network;
         private readonly ChainIndexer chainIndexer;
         private readonly IBroadcasterManager broadcasterManager;
@@ -36,6 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
         public WalletService(ILoggerFactory loggerFactory,
             IWalletManager walletManager,
+            IConsensusManager consensusManager,
             IWalletTransactionHandler walletTransactionHandler,
             IWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
@@ -45,6 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             IDateTimeProvider dateTimeProvider)
         {
             this.walletManager = walletManager;
+            this.consensusManager = consensusManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
@@ -56,13 +60,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public async Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> GetWalletNames(
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() => this.walletManager.GetWalletsNames(), cancellationToken);
         }
 
         public async Task<string> CreateWallet(WalletCreationRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -122,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
-                    ChainTip = this.chainIndexer.Tip.Height,
+                    ChainTip = this.consensusManager.HeaderTip,
                     IsChainSynced = this.chainIndexer.IsDownloaded(),
                     IsDecrypted = true
                 };
@@ -131,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
         public async Task<WalletBalanceModel> GetBalance(
             string walletName, string accountName, bool includeBalanceByAddress = false,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -182,12 +187,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 var model = new WalletHistoryModel();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
-                IEnumerable<AccountHistory> accountsHistory = this.walletManager
-                    .GetHistory(request.WalletName,
+                IEnumerable<AccountHistory> accountsHistory = request.Take != null
+                    ? this.walletManager.GetHistory(request.WalletName,
                         request.AccountName,
                         request.PrevOutputTxTime,
                         request.PrevOutputIndex,
-                        request.Take ?? int.MaxValue);
+                        request.Take)
+                    : this.walletManager.GetHistory(request.WalletName, request.AccountName);
 
                 foreach (AccountHistory accountHistory in accountsHistory)
                 {
@@ -390,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         }
 
         public async Task<WalletStatsModel> GetWalletStats(WalletStatsRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -543,7 +549,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 {
                     result = this.walletManager.RemoveAllTransactions(request.WalletName);
                 }
-                else if (request.FromDate != default)
+                else if (request.FromDate != default(DateTime))
                 {
                     result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
                 }
@@ -578,7 +584,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         }
 
         public async Task<AddressesModel> GetAllAddresses(GetAllAddressesModel request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -621,7 +627,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         }
 
         public async Task<WalletBuildTransactionModel> BuildTransaction(BuildTransactionRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -729,7 +735,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
                     this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey),
                         request.AccountIndex,
-                        request.CreationDate);
+                        request.CreationDate, null);
                 }
                 catch (WalletException e)
                 {

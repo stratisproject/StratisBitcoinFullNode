@@ -19,8 +19,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.networkPeers = new List<INetworkPeer>();
         }
 
-        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers) : this()
+        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers) 
         {
+            this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
+            this.networkPeers = peers;
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
