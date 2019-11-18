@@ -237,7 +237,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     if (rewindDataList != null)
                     {
-                        int nextRewindIndex = height - rewindDataList.Count + 1;
+                        int nextRewindIndex = GetRewindIndex(transaction) + 1;
+
+                        Guard.Assert(nextRewindIndex == (height - rewindDataList.Count + 1));
 
                         foreach (RewindData rewindData in rewindDataList)
                         {
