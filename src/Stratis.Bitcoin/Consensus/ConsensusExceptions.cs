@@ -84,15 +84,4 @@ namespace Stratis.Bitcoin.Consensus
             this.BanDurationSeconds = banDurationSeconds;
         }
     }
-
-    public class BlockNotFoundException : ConsensusException
-    {
-        public BlockNotFoundException() : base()
-        {
-        }
-
-        public BlockNotFoundException(string message) : base(message)
-        {
-        }
-    }
 }
