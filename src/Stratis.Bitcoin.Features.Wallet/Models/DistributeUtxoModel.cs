@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using NBitcoin;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
-    public class DistributeUtxoModel
+    public sealed class DistributeUtxoModel
     {
         [JsonProperty(PropertyName = "WalletName")]
         public string WalletName { get; set; }

@@ -1419,13 +1419,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // checks the request is valid
             if (!this.ModelState.IsValid)
-            {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
 
-            DistributeUtxoModel model = new DistributeUtxoModel()
+            var model = new DistributeUtxoModel()
             {
                 WalletName = request.WalletName,
                 UseUniqueAddressPerUtxo = request.UseUniqueAddressPerUtxo,
@@ -1443,14 +1440,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccount(request.AccountName);
 
-                List<HdAddress> addresses = new List<HdAddress>();
+                var addresses = new List<HdAddress>();
+
                 if (request.ReuseAddresses)
                 {
                     addresses = this.walletManager.GetUnusedAddresses(walletReference, request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1, request.UseChangeAddresses).ToList();
                 }
                 else if (request.UseChangeAddresses)
                 {
-
                     addresses = account.InternalAddresses.Take(request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
                 }
                 else if (!request.UseChangeAddresses)
@@ -1462,19 +1459,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 if (request.Outpoints != null && request.Outpoints.Any())
                 {
-                    List<UnspentOutputReference> selectedunspentOutputReferenceList = new List<UnspentOutputReference>();
+                    var selectedUnspentOutputReferenceList = new List<UnspentOutputReference>();
                     foreach (UnspentOutputReference unspentOutputReference in spendableTransactions)
                     {
                         if (request.Outpoints.Any(o => o.TransactionId == unspentOutputReference.Transaction.Id.ToString() && o.Index == unspentOutputReference.Transaction.Index))
                         {
-                            selectedunspentOutputReferenceList.Add(unspentOutputReference);
+                            selectedUnspentOutputReferenceList.Add(unspentOutputReference);
                         }
                     }
-                    spendableTransactions = selectedunspentOutputReferenceList;
+                    spendableTransactions = selectedUnspentOutputReferenceList;
                 }
 
                 int totalOutpointCount = spendableTransactions.Count();
-                Money totalAmount = spendableTransactions.Sum(s => s.Transaction.Amount);
                 int calculatedTransactionCount = request.UtxosCount / request.UtxoPerTransaction;
                 int inputsPerTransaction = totalOutpointCount / calculatedTransactionCount;
 
@@ -1486,16 +1482,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var recipients = new List<Recipient>(request.UtxosCount);
                 int addressIndex = 0;
-                List<Transaction> transactionList = new List<Transaction>();
+                var transactionList = new List<Transaction>();
+
                 for (int i = 0; i < request.UtxosCount; i++)
                 {
                     recipients.Add(new Recipient { ScriptPubKey = addresses[addressIndex].ScriptPubKey });
+
                     if (request.UseUniqueAddressPerUtxo)
                         addressIndex++;
 
                     if ((i + 1) % request.UtxoPerTransaction == 0 || i == request.UtxosCount - 1)
                     {
-                        Money transactionTransferAmount = new Money(0);
+                        var transactionTransferAmount = new Money(0);
                         var inputs = new List<OutPoint>();
 
                         foreach (UnspentOutputReference unspentOutputReference in spendableTransactions.Skip(transactionList.Count * inputsPerTransaction).Take(inputsPerTransaction))
@@ -1504,7 +1502,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             transactionTransferAmount += unspentOutputReference.Transaction.Amount;
                         }
 
-                        //Add any remaining UTXOs to the last transaction
+                        // Add any remaining UTXOs to the last transaction.
                         if (i == request.UtxosCount - 1)
                         {
                             foreach (UnspentOutputReference unspentOutputReference in spendableTransactions.Skip((transactionList.Count + 1) * inputsPerTransaction))
@@ -1514,8 +1512,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             }
                         }
 
-                        //For the purpose of fee estimation use the transfer amount as if the fee were network.MinTxFee
-                        FeeRate feeRate = new FeeRate(network.MinTxFee);
+                        // For the purpose of fee estimation use the transfer amount as if the fee were network.MinTxFee.
                         Money transferAmount = (transactionTransferAmount) / recipients.Count;
                         recipients.ForEach(r => r.Amount = transferAmount);
 
@@ -1531,17 +1528,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             FeeType = FeeType.Low
                         };
 
-                        //Set the amount once we know how much the transfer will cost
+                        // Set the amount once we know how much the transfer will cost.
                         Money transactionFee;
                         try
                         {
                             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-                            //Due to how the code works the line below is probably never used
-                            transactionFee = feeRate.GetFee(transaction);
+
+                            // Due to how the code works the line below is probably never used.
+                            transactionFee = new FeeRate(this.network.MinTxFee).GetFee(transaction);
                         }
                         catch (NotEnoughFundsException ex)
                         {
-                            //This remains the best apprach for estimating transaction fees
+                            // This remains the best approach for estimating transaction fees.
                             transactionFee = (Money)ex.Missing;
                         }
 

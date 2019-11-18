@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class WalletName : RequestModel
     {
-        
+
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
         public string Amount { get; set; }
     }
- 
+
     /// <summary>
     /// A class containing the necessary parameters for a build transaction request.
     /// </summary>
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
-                
+
         /// <summary>
         /// The password for the wallet containing the funds for the transaction.
         /// </summary>
@@ -435,12 +435,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// </summary>
     public class SendTransactionRequest : RequestModel
     {
-        
+
         public SendTransactionRequest()
         {
         }
 
-        
+
         public SendTransactionRequest(string transactionHex)
         {
             this.Hex = transactionHex;
@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
             }
 
             // Check that only one of the filters is set.
-            if ((this.DeleteAll && this.TransactionsIds != null) 
+            if ((this.DeleteAll && this.TransactionsIds != null)
                 || (this.DeleteAll && this.FromDate != default(DateTime))
                 || (this.TransactionsIds != null && this.FromDate != default(DateTime)))
             {
@@ -735,7 +735,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public int UtxosCount { get; set; }
     }
 
-    public class DistributeUtxosRequest : RequestModel, IValidatableObject
+    public sealed class DistributeUtxosRequest : RequestModel, IValidatableObject
     {
         public DistributeUtxosRequest()
         {
@@ -758,7 +758,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [DefaultValue(false)]
         public bool UseChangeAddresses { get; set; }
-        
+
         [Required]
         public int UtxosCount { get; set; }
 
