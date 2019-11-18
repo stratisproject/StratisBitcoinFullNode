@@ -71,7 +71,6 @@ namespace Stratis.SmartContracts.Networks
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
                 bip34Hash: new uint256(),
-                ruleChangeActivationThreshold: 108, // 95% of 2016
                 minerConfirmationWindow: 144, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
                 defaultAssumeValid: null, // turn off assumevalid for regtest.
