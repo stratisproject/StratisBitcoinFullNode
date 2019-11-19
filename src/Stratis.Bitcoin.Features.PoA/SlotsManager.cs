@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Check if we have missed our turn for this round.
             // We still consider ourselves "in a turn" if we are in the first half of the turn and we haven't mined there yet.
-            // This might happen when starting the node for the first time or if there was a problem when mining. 
+            // This might happen when starting the node for the first time or if there was a problem when mining.
             if (currentTime > nextTimestampForMining + (this.consensusOptions.TargetSpacingSeconds / 2) // We are closer to the next turn than our own
                   || this.consensusManager.Tip.Header.Time == nextTimestampForMining) // We have already mined in that slot
             {
