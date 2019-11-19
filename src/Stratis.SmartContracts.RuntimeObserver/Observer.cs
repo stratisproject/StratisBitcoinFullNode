@@ -1,10 +1,26 @@
 ﻿namespace Stratis.SmartContracts.RuntimeObserver
 {
+    public interface IObserver
+    {
+        IMemoryMeter MemoryMeter { get; }
+        IGasMeter GasMeter { get; }
+
+        /// <summary>
+        /// Forwards the spending of gas to the GasMeter reference.
+        /// </summary>
+        void SpendGas(long gas);
+
+        /// <summary>
+        /// Register that some amount of memory has been reserved.
+        /// </summary>
+        void SpendMemory(long memory);
+    }
+
     /// <summary>
     /// Is able to hold metrics about the current runtime.
     /// Currently tracking gas and some unit of memory.
     /// </summary>
-    public class Observer
+    public class Observer : IObserver
     {
         public IMemoryMeter MemoryMeter { get; private set; }
 
