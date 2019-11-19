@@ -1213,7 +1213,7 @@ namespace NBitcoin
             int witSize = 0;
             int baseSize = 0;
             EstimateScriptSigSize(c, ref witSize, ref baseSize);
-            var vSize = witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize;
+            var vSize = witSize / this.Network.Consensus.Options.WitnessScaleFactor + baseSize;
 
             return c.Amount >= this.FilterUneconomicalCoinsRate.GetFee(vSize);
         }
@@ -1464,7 +1464,7 @@ namespace NBitcoin
         {
             if (tx == null)
                 throw new ArgumentNullException("tx");
-            return Verify(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx), out errors);
+            return Verify(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options.WitnessScaleFactor), out errors);
         }
 
         /// <summary>
@@ -1475,7 +1475,7 @@ namespace NBitcoin
         /// <returns>Detected errors</returns>
         public TransactionPolicyError[] Check(Transaction tx, FeeRate expectedFeeRate)
         {
-            return Check(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx));
+            return Check(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx, this.Network.Consensus.Options.WitnessScaleFactor));
         }
 
         /// <summary>
@@ -1565,7 +1565,7 @@ namespace NBitcoin
                 baseSize += 41;
             }
 
-            return (virtualSize ? witSize / Transaction.WITNESS_SCALE_FACTOR + baseSize : witSize + baseSize);
+            return (virtualSize ? witSize / this.Network.Consensus.Options.WitnessScaleFactor + baseSize : witSize + baseSize);
         }
 
         private void EstimateScriptSigSize(ICoin coin, ref int witSize, ref int baseSize)

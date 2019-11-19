@@ -881,7 +881,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public virtual IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0)
         {
-            return this.GetSpendableTransactionsInWallet(walletName, confirmations);
+            return this.GetUnspentTransactionsInWallet(walletName, confirmations, Wallet.NormalAccounts);
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<UnspentOutputReference> GetUnspentTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter)
+        {
+            Guard.NotEmpty(walletName, nameof(walletName));
+
+            Wallet wallet = this.GetWalletByName(walletName);
+            UnspentOutputReference[] res = null;
+            lock (this.lockObject)
+            {
+                res = wallet.GetAllUnspentTransactions(this.ChainIndexer.Tip.Height, confirmations, accountFilter).ToArray();
+            }
+
+            return res;
         }
 
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter)

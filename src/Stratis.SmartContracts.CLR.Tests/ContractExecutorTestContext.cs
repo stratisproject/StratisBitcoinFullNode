@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Serialization;
@@ -27,6 +28,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         public IContractModuleDefinitionReader ModuleDefinitionReader { get; }
         public IContractPrimitiveSerializer ContractPrimitiveSerializer { get; }
         public IInternalExecutorFactory InternalTxExecutorFactory { get; }
+        public IContractAssemblyCache ContractCache { get; }
         public ReflectionVirtualMachine Vm { get; }
         public ISmartContractStateFactory SmartContractStateFactory { get; }
         public StateProcessor StateProcessor { get; }
@@ -45,7 +47,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.Validator = new SmartContractValidator();
             this.AssemblyLoader = new ContractAssemblyLoader();
             this.ModuleDefinitionReader = new ContractModuleDefinitionReader();
-            this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.AssemblyLoader, this.ModuleDefinitionReader);
+            this.ContractCache = new ContractAssemblyCache();
+            this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.AssemblyLoader, this.ModuleDefinitionReader, this.ContractCache);
             this.StateProcessor = new StateProcessor(this.Vm, this.AddressGenerator);
             this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.StateProcessor);
             this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.InternalTxExecutorFactory, this.Serializer);

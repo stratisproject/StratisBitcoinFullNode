@@ -151,6 +151,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             // Load us up with 100 utxos, each gets 1000.
             Result<WalletSendTransactionModel> fundingResult = node1.SendTransaction(node1.MinerAddress.ScriptPubKey, Money.Coins(100_000m), txsToSend);
+            node1.WaitMempoolCount(1);
             this.mockChain.MineBlocks(1);
 
             for (int i = 0; i < txsToSend; i++)

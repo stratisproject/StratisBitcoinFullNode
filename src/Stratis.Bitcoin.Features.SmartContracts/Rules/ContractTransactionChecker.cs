@@ -5,7 +5,6 @@ using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                this.CheckTransaction(transaction, contractTransactionValidationRules, null);
+                this.CheckTransaction(transaction, contractTransactionValidationRules);
             }
 
             return Task.CompletedTask;
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return txData;
         }
 
-        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules, Money suppliedBudget)
+        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
@@ -67,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (IContractTransactionValidationRule rule in rules)
             {
-                rule.CheckContractTransaction(txData, suppliedBudget);
+                rule.CheckContractTransaction(txData, null);
             }
         }
     }
