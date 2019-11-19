@@ -413,14 +413,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the wallet history.</returns>
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
-        {
+        public IActionResult GetHistory([FromQuery] WalletHistoryRequest request) 
+        { 
             Guard.NotNull(request, nameof(request));
 
             if (!this.ModelState.IsValid)
             {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
+
+            // TODO: Extract this code to its own file + start from scratch, with tests.
 
             try
             {
@@ -472,32 +474,42 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         HdAddress address = item.Address;
 
                         // First we look for staking transaction as they require special attention.
-                        // A staking transaction spends one of our inputs into 2 outputs or more, paid to the same address.
+                        // A staking transaction spends some of our inputs into 2 outputs or more, paid to the same address.
                         if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
                         {
-                            // We look for the output(s) related to our spending input.
-                            List<FlatHistory> relatedOutputs = lookup.Contains(transaction.Id)
-                                ? lookup[transaction.SpendingDetails.TransactionId].Where(h =>
-                                    h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList()
-                                : null;
-                            
-                            if (false != relatedOutputs?.Any())
+                            // If another input has already triggered the building of this history item, we need to remove the amount of this input from the Amount.
+                            // This will only ever happen when there are multiple inputs in a CoinStake. StratisX does this in certain situations.
+                            if (uniqueProcessedTxIds.Contains(transaction.SpendingDetails.TransactionId))
                             {
-                                // Add staking transaction details.
-                                // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
-                                var stakingItem = new TransactionItemModel
-                                {
-                                    Type = TransactionItemType.Staked,
-                                    ToAddress = address.Address,
-                                    Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
-                                    Id = transaction.SpendingDetails.TransactionId,
-                                    Timestamp = transaction.SpendingDetails.CreationTime,
-                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
-                                    BlockIndex = transaction.SpendingDetails.BlockIndex
-                                };
+                                TransactionItemModel existingStakeItem = transactionItems.Last(x => x.Id == transaction.SpendingDetails.TransactionId);
+                                existingStakeItem.Amount -= transaction.Amount;
+                            }
+                            else
+                            {
+                                // We look for the output(s) related to our spending input.
+                                List<FlatHistory> relatedOutputs = lookup.Contains(transaction.Id)
+                                    ? lookup[transaction.SpendingDetails.TransactionId].Where(h =>
+                                        h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList()
+                                    : null;
 
-                                transactionItems.Add(stakingItem);
-                                uniqueProcessedTxIds.Add(stakingItem.Id);
+                                if (false != relatedOutputs?.Any())
+                                {
+                                    // Add staking transaction details.
+                                    // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
+                                    var stakingItem = new TransactionItemModel
+                                    {
+                                        Type = TransactionItemType.Staked,
+                                        ToAddress = address.Address,
+                                        Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
+                                        Id = transaction.SpendingDetails.TransactionId,
+                                        Timestamp = transaction.SpendingDetails.CreationTime,
+                                        ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                        BlockIndex = transaction.SpendingDetails.BlockIndex
+                                    };
+
+                                    transactionItems.Add(stakingItem);
+                                    uniqueProcessedTxIds.Add(stakingItem.Id);
+                                }
                             }
 
                             // No need for further processing if the transaction itself is the output of a staking transaction.
