@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -12,8 +14,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
     {
         private ISlotsManager slotsManager;
         private TestPoANetwork network;
-        private PoAConsensusOptions consensusOptions;
-        private IFederationManager federationManager;
+        private readonly PoAConsensusOptions consensusOptions;
+        private readonly IFederationManager federationManager;
+        private Mock<IConsensusManager> consensusManagerMock;
 
         public SlotsManagerTests()
         {
@@ -21,7 +24,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.consensusOptions = this.network.ConsensusOptions;
 
             this.federationManager = PoATestsBase.CreateFederationManager(this);
-            this.slotsManager = new SlotsManager(this.network, this.federationManager, new LoggerFactory());
+            this.consensusManagerMock = new Mock<IConsensusManager>();
+            this.slotsManager = new SlotsManager(this.network, this.federationManager, this.consensusManagerMock.Object, new LoggerFactory());
         }
 
         [Fact]
@@ -61,9 +65,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey });
 
             IFederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
-            this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
+            this.consensusManagerMock.Setup(x => x.Tip).Returns(new ChainedHeader(new BlockHeader(), 0, 0));
+            this.slotsManager = new SlotsManager(this.network, fedManager, this.consensusManagerMock.Object, new LoggerFactory());
 
-            List<IFederationMember> federationMembers = this.federationManager.GetFederationMembers();
+            List<IFederationMember> federationMembers = fedManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count * 5;
 
             fedManager.SetPrivatePropertyValue(typeof(FederationManagerBase), nameof(IFederationManager.CurrentFederationKey), key);
@@ -77,6 +82,25 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - this.consensusOptions.TargetSpacingSeconds + 1));
 
             Assert.True(this.slotsManager.IsValidTimestamp(this.slotsManager.GetMiningTimestamp(roundStart - 5)));
+
+            uint thisTurnTimestamp = roundStart + this.consensusOptions.TargetSpacingSeconds;
+            uint nextTurnTimestamp = thisTurnTimestamp + this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count;
+
+            // If we are past our last timestamp's turn, always give us the NEXT timestamp.
+            uint justPastOurTurnTime = thisTurnTimestamp + (this.consensusOptions.TargetSpacingSeconds / 2) + 1;
+            Assert.Equal(nextTurnTimestamp, this.slotsManager.GetMiningTimestamp(justPastOurTurnTime));
+
+            // If we are only just past our last timestamp, but still in the "range" and we haven't mined a block yet, get THIS turn's timestamp.
+            Assert.Equal(thisTurnTimestamp, this.slotsManager.GetMiningTimestamp(thisTurnTimestamp + 1));
+
+            // If we are only just past our last timestamp, but we've already mined a block there, then get the NEXT turn's timestamp.
+            this.consensusManagerMock.Setup(x => x.Tip).Returns(new ChainedHeader(new BlockHeader
+            {
+                Time = thisTurnTimestamp
+            }, 0, 0));
+            this.slotsManager = new SlotsManager(this.network, fedManager, this.consensusManagerMock.Object, new LoggerFactory());
+            Assert.Equal(nextTurnTimestamp, this.slotsManager.GetMiningTimestamp(thisTurnTimestamp + 1));
+
         }
     }
 }
