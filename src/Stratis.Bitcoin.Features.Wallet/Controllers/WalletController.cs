@@ -1606,7 +1606,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
                             // Due to how the code works the line below is probably never used.
-                            transactionFee = new FeeRate(this.network.MinTxFee).GetFee(transaction);
+                            var transactionSize = transaction.GetSerializedSize();
+                            transactionFee = new FeeRate(this.network.MinTxFee).GetFee(transactionSize);
                         }
                         catch (NotEnoughFundsException ex)
                         {
