@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Sidechains.Networks;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
@@ -10,11 +11,11 @@ namespace Stratis.SmartContracts.Core.Tests
 {
     public class ChainIndexerRangeQueryTests
     {
-        private readonly SmartContractsPoATest network;
+        private readonly Network network;
 
         public ChainIndexerRangeQueryTests()
         {
-            this.network = new SmartContractsPoATest();
+            this.network = new CirrusRegTest();
         }
 
         [Theory]

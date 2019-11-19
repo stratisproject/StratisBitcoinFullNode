@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Stratis.Sidechains.Networks;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Networks;
 using Xunit;
@@ -9,11 +10,11 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
 {
     public class ReceiptMatcherTests
     {
-        private readonly SmartContractsPoATest network;
+        private readonly Network network;
 
         public ReceiptMatcherTests()
         {
-            this.network = new SmartContractsPoATest();
+            this.network = new CirrusRegTest();
         }
 
         [Fact]
