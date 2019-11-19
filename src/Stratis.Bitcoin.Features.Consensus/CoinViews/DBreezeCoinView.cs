@@ -321,6 +321,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     var keysToRemove = new List<int>();
                     var changes = new Dictionary<uint256, Coins>();
 
+                    // Determine rewind data to remove up to but excluding the target height.
                     for (;  currentHeight > targetHeight; currentHeight--)
                     {
                         Row<int, byte[]> firstRow = transaction.Select<int, byte[]>("Rewind", currentHeight);
@@ -344,20 +345,24 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     var byteListComparer = new ByteListComparer();
 
+                    // Remove the rewind data key.
                     foreach (int key in keysToRemove.OrderBy(k => k))
                         transaction.RemoveKey("Rewind", key);
 
+                    // Remove coins where changes have null.
                     foreach (uint256 txId in changes.Where(x => x.Value == null).Select(x => x.Key).OrderBy(t => t.ToBytes(false), byteListComparer))
                         transaction.RemoveKey("Coins", txId.ToBytes(false));
 
+                    // Add coins where changes contain the coins to add.
                     foreach (KeyValuePair<uint256, Coins> kv in changes.Where(x => x.Value != null).OrderBy(c => c.Key.ToBytes(false), byteListComparer))
                         transaction.Insert("Coins", kv.Key.ToBytes(false), this.dBreezeSerializer.Serialize(kv.Value));
                 }
 
+                // Set to hash of new tip.
                 this.SetBlockHash(transaction, res);
 
+                // Commit the changes.
                 transaction.Commit();
-
             }
 
             return res;
