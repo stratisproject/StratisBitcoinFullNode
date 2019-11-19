@@ -1,8 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Controllers.Models
 {
@@ -36,12 +34,10 @@ namespace Stratis.Bitcoin.Controllers.Models
         public object[] Transactions { get; private set; }
 
         [JsonProperty("time")]
-        [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset Time { get; private set; }
+        public long Time { get; private set; }
 
         [JsonProperty("mediantime")]
-        [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset MedianTime { get; private set; }
+        public long MedianTime { get; private set; }
 
         [JsonProperty("nonce")]
         public uint Nonce { get; private set; }
@@ -105,8 +101,8 @@ namespace Stratis.Bitcoin.Controllers.Models
             if (verbosity == 2)
                 this.Transactions = block.Transactions.Select(t => new TransactionVerboseModel(t, network)).ToArray();
 
-            this.Time = block.Header.BlockTime;
-            this.MedianTime = chainedHeader.GetMedianTimePast();
+            this.Time = block.Header.BlockTime.ToUnixTimeSeconds();
+            this.MedianTime = chainedHeader.GetMedianTimePast().ToUnixTimeSeconds();
             this.Nonce = block.Header.Nonce;
             this.Bits = block.Header.Bits.ToCompact().ToString("x8");
             this.Difficulty = block.Header.Bits.Difficulty;

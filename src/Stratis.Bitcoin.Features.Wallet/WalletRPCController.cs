@@ -21,6 +21,7 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    [ApiVersion("1")]
     public class WalletRPCController : FeatureController
     {
         /// <summary>Provides access to the block store database.</summary>

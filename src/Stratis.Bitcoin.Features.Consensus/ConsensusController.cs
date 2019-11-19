@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// A <see cref="FeatureController"/> that provides API and RPC methods from the consensus loop.
     /// </summary>
+    [ApiVersion("1")]
     public class ConsensusController : FeatureController
     {
         /// <summary>Instance logger.</summary>
@@ -114,7 +115,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (bestBlock == null)
                 return null;
             ChainedHeader block = this.ChainIndexer.GetHeader(height);
-            return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
+            uint256 hash = block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
+
+            if (hash == null)
+                throw new BlockNotFoundException($"No block found at height {height}");
+
+            return hash;
         }
 
         /// <summary>

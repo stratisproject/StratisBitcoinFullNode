@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -59,9 +59,9 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BitcoinBIP9Deployments
             {
-                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
-                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800),
-                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1479168000, 1510704000)
+                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, 1199145601, 1230767999, BIP9DeploymentsParameters.DefaultMainnetThreshold),
+                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0, 1462060800, 1493596800, BIP9DeploymentsParameters.DefaultMainnetThreshold),
+                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, 1479168000, 1510704000, BIP9DeploymentsParameters.DefaultMainnetThreshold)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -76,7 +76,6 @@ namespace Stratis.Bitcoin.Networks
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
-                ruleChangeActivationThreshold: 1916, // 95% of 2016,
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 0,
                 defaultAssumeValid: new uint256("0x0000000000000000000f1c54590ee18d15ec70e68c8cd4cfbadb1b4f11697eee"), // 563378
@@ -158,6 +157,7 @@ namespace Stratis.Bitcoin.Networks
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
             this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
 
         protected void RegisterRules(IConsensus consensus)
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Networks
                 .Register<CoinbaseHeightActivationRule>() // implements BIP34
                 .Register<WitnessCommitmentsRule>() // BIP141, BIP144
                 .Register<BlockSizeRule>()
-                
+
                 // rules that are inside the method CheckBlock
                 .Register<EnsureCoinbaseRule>()
                 .Register<CheckPowTransactionRule>()
@@ -192,6 +192,23 @@ namespace Stratis.Bitcoin.Networks
                 .Register<TransactionDuplicationActivationRule>() // implements BIP30
                 .Register<PowCoinviewRule>()// implements BIP68, MaxSigOps and BlockReward calculation
                 .Register<SaveCoinviewRule>();
+        }
+
+        protected void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxOutDustRule)
+            };
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>

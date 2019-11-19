@@ -12,8 +12,9 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
     public class ObserverRewriter : IILRewriter
     {
         private const string InjectedNamespace = "<Stratis>";
-        private const string InjectedTypeName = "<RuntimeObserverInstance>";
         private const string InjectedPropertyName = "Instance";
+        private const string InjectedTypeName = "<RuntimeObserverInstance>";
+        private const string ConstructorName = ".cctor";
 
         /// <summary>
         /// The individual rewriters to be applied to each method, which use the injected type.
@@ -32,6 +33,10 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             this.observerToInject = observer;
         }
 
+        /// <summary>
+        /// Completely rewrites a module with all of the code required to meter memory and gas.
+        /// Includes the injection of the specific observer for this contract.
+        /// </summary>
         public ModuleDefinition Rewrite(ModuleDefinition module)
         {
             Guid id = Guid.NewGuid();
@@ -74,7 +79,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
             // When this type is created, retrieve the Observer from our global static dictionary so it can be used.
             var constructor = new MethodDefinition(
-                ".cctor", MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
+                ConstructorName, MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
                 module.ImportReference(typeof(void))
             );
             MethodReference getGuardInstance = module.ImportReference(typeof(ObserverInstances).GetMethod(nameof(ObserverInstances.Get)));

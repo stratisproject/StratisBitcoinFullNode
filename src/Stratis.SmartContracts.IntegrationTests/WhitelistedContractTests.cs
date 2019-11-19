@@ -15,13 +15,13 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class WhitelistedContractTests : IDisposable
     {
-        private readonly SmartContractsPoARegTest network;
+        private readonly SmartContractsPoAWhitelistRegTest network;
         private readonly Func<int, CoreNode> nodeFactory;
         private readonly SmartContractNodeBuilder builder;
 
         public WhitelistedContractTests()
         {
-            this.network = new SmartContractsPoARegTest();
+            this.network = new SmartContractsPoAWhitelistRegTest();
 
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodeFactory = (nodeIndex) => this.builder.CreateWhitelistedContractPoANode(this.network, nodeIndex).Start();
@@ -40,13 +40,13 @@ namespace Stratis.SmartContracts.IntegrationTests
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
                 this.SetupNodes(chain, node1, node2);
-                
+
                 // Compile file
                 byte[] toSend = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs").Compilation;
-                
+
                 // Add the hash to all the nodes on the chain.
                 chain.WhitelistCode(toSend);
-                
+
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(toSend, 30);
                 node1.WaitMempoolCount(1);
@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Retry]
-        public async Task Create_NoWhitelist_Mempool_Rejects()
+        public async Task Create_NoWhitelist_Mempool_RejectsAsync()
         {
             using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
@@ -92,6 +92,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         private void SetupNodes(IMockChain chain, MockChainNode node1, MockChainNode node2)
         {
+            // TODO: Use ready chain data
             // Get premine
             chain.MineBlocks(10);
 

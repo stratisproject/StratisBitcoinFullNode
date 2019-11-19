@@ -1,4 +1,3 @@
-using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Stratis.SmartContracts.CLR.Compilation;
@@ -1150,7 +1149,7 @@ public partial class Test : SmartContract
 
             var result = this.validator.Validate(decomp.ModuleDefinition);
 
-            var contractModule = new ContractModuleDefinition(decomp.ModuleDefinition, new MemoryStream());
+            var contractModule = new ContractModuleDefinition(decomp.ModuleDefinition, null);
             Assert.True(result.IsValid);
             Assert.Contains(contractModule.ContractType.Methods, m => m.Name == "Method1");
             Assert.Contains(contractModule.ContractType.Methods, m => m.Name == "Method2");

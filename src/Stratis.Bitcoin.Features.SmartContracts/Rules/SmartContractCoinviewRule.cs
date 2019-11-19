@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
@@ -31,6 +32,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
+        private readonly IBlockExecutionResultCache executionCache;
+        private readonly ILoggerFactory loggerFactory;
 
         protected SmartContractCoinviewRule(Network network,
             IStateRepositoryRoot stateRepositoryRoot,
@@ -38,7 +41,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
-            ICoinView coinView)
+            ICoinView coinView,
+            IBlockExecutionResultCache executionCache,
+            ILoggerFactory loggerFactory)
         {
             this.network = network;
             this.stateRepositoryRoot = stateRepositoryRoot;
@@ -47,6 +52,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+            this.executionCache = executionCache;
+            this.loggerFactory = loggerFactory;
         }
 
         /// <inheritdoc />
@@ -54,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             base.Initialize();
 
-            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView);
+            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.executionCache, this.loggerFactory);
         }
 
         /// <inheritdoc />

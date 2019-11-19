@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -8,9 +9,11 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -27,6 +30,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private readonly List<TxOut> refundOutputs;
         private readonly List<Receipt> receipts;
         private readonly IStateRepositoryRoot stateRoot;
+        private readonly IBlockExecutionResultCache executionCache;
+        private readonly ICallDataSerializer callDataSerializer;
         private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
         private ulong blockGasConsumed;
@@ -46,7 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             MinerSettings minerSettings,
             Network network,
             ISenderRetriever senderRetriever,
-            IStateRepositoryRoot stateRoot)
+            IStateRepositoryRoot stateRoot,
+            IBlockExecutionResultCache executionCache,
+            ICallDataSerializer callDataSerializer)
             : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
@@ -54,6 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.senderRetriever = senderRetriever;
             this.stateRoot = stateRoot;
+            this.callDataSerializer = callDataSerializer;
+            this.executionCache = executionCache;
             this.refundOutputs = new List<TxOut>();
             this.receipts = new List<Receipt>();
 
@@ -149,6 +158,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
 
+            // Cache the results. We don't need to execute these again when validating.
+            var cacheModel = new BlockExecutionResultModel(this.stateSnapshot, this.receipts);
+            this.executionCache.StoreExecutionResult(this.BlockTemplate.Block.GetHash(), cacheModel);
+
             return this.BlockTemplate;
         }
 
@@ -216,15 +229,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             IContractTransactionContext transactionContext = new ContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
             IContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
             IContractExecutionResult result = executor.Execute(transactionContext);
+            Result<ContractTxData> deserializedCallData = this.callDataSerializer.Deserialize(transactionContext.Data);
 
             this.blockGasConsumed += result.GasConsumed;
 
-            // As we're not storing receipts, can use only consensus fields. 
+            // Store all fields. We will reuse these in CoinviewRule.
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
                 result.GasConsumed,
-                result.Logs.ToArray()
-            );
+                result.Logs.ToArray(),
+                transactionContext.TransactionHash,
+                transactionContext.Sender,
+                result.To,
+                result.NewContractAddress,
+                !result.Revert,
+                result.Return?.ToString(),
+                result.ErrorMessage,
+                deserializedCallData.Value.GasPrice,
+                transactionContext.TxOutValue,
+                deserializedCallData.Value.IsCreateContract ? null : deserializedCallData.Value.MethodName);
 
             this.receipts.Add(receipt);
 

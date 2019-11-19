@@ -44,6 +44,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0);
 
         /// <summary>
+        /// List all unspent transactions contained in a given wallet.
+        /// This is distinct from the list of spendable transactions. A transaction can be unspent but not yet spendable due to coinbase/stake maturity, for example.
+        /// </summary>
+        /// <returns>A collection of unspent outputs</returns>
+        IEnumerable<UnspentOutputReference> GetUnspentTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter);
+
+        /// <summary>
         /// Helps identify UTXO's that can participate in staking.
         /// </summary>
         /// <returns>A dictionary containing string and template pairs - e.g. { "P2PK", PayToPubkeyTemplate.Instance }</returns>

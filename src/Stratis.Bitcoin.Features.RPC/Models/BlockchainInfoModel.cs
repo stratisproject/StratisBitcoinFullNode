@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
@@ -78,5 +79,69 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         [JsonProperty(PropertyName = "pruned")]
         public bool IsPruned { get; set; }
+
+        [JsonProperty(PropertyName = "softforks")]
+        public List<SoftForks> SoftForks { get; set; }
+
+        [JsonProperty(PropertyName = "bip9_softforks")]
+        public Dictionary<string, SoftForksBip9> SoftForksBip9 { get; set; }
+    }
+
+    public class SoftForks
+    {
+        [JsonProperty(PropertyName = "id")]
+        public string Id { get; set; }
+
+        [JsonProperty(PropertyName = "version")]
+        public int Version { get; set; }
+
+        [JsonProperty(PropertyName = "reject")]
+        public SoftForksStatus Status { get; set; }
+    }
+
+    public class SoftForksStatus
+    {
+        [JsonProperty(PropertyName = "status")]
+        public bool Status { get; set; }
+    }
+
+    public class SoftForksBip9
+    {
+        [JsonProperty(PropertyName = "status")]
+        public string Status { get; set; }
+
+        [JsonProperty(PropertyName = "startTime")]
+        public int StartTime { get; set; }
+
+        [JsonProperty(PropertyName = "timeout")]
+        public int Timeout { get; set; }
+
+        [JsonProperty(PropertyName = "since")]
+        public int Since { get; set; }
+
+        [JsonProperty(PropertyName = "bit")]
+        public int Bit { get; set; }
+
+        [JsonProperty(PropertyName = "statistics")]
+        public SoftForksBip9Statistics Statistics { get; set; }
+
+    }
+
+    public class SoftForksBip9Statistics
+    {
+        [JsonProperty(PropertyName = "period")]
+        public int Period { get; set; }
+
+        [JsonProperty(PropertyName = "threshold")]
+        public int Threshold { get; set; }
+
+        [JsonProperty(PropertyName = "elapsed")]
+        public int Elapsed { get; set; }
+
+        [JsonProperty(PropertyName = "count")]
+        public int Count { get; set; }
+
+        [JsonProperty(PropertyName = "possible")]
+        public bool Possible { get; set; }
     }
 }

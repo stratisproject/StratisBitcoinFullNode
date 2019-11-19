@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         public async Task Can_BanAndDisconnect_Peer_From_ApiAsync()
         {
             using (var builder = NodeBuilder.Create(this))
+                
             {
                 var network = new StratisRegTest();
 
