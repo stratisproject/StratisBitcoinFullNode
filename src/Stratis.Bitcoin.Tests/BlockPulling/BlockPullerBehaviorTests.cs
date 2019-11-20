@@ -21,8 +21,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-            var loggerFactory = new ExtendedLoggerFactory();
-            loggerFactory.AddConsoleWithFilters();
+            var loggerFactory = ExtendedLoggerFactory.Create();
 
             this.behavior = new BlockPullerBehavior(puller.Object, ibdState.Object, DateTimeProvider.Default, loggerFactory);
         }
@@ -76,8 +75,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 var ibdState = new Mock<IInitialBlockDownloadState>();
                 ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-                var loggerFactory = new ExtendedLoggerFactory();
-                loggerFactory.AddConsoleWithFilters();
+                var loggerFactory = ExtendedLoggerFactory.Create();
 
                 behaviors.Add(new BlockPullerBehavior(puller.Object, ibdState.Object, DateTimeProvider.Default, loggerFactory));
             }

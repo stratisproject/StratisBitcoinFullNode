@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                                 .AllowCredentials();
                         });
                 });
-            services.AddSignalR().AddJsonProtocol(options =>
+            services.AddSignalR().AddNewtonsoftJsonProtocol(options =>
             {
                 var settings = new JsonSerializerSettings();
                 Serializer.RegisterFrontConverters(settings);

@@ -129,7 +129,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public class TestContext
         {
             public List<Blockinfo> blockinfo;
-            private ExtendedLoggerFactory loggerFactory;
+            private ILoggerFactory loggerFactory;
             internal uint Nonce { get; set; }
             public Network network;
             internal NodeSettings NodeSettings { get; private set; }
@@ -198,8 +198,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.ChainIndexer = new ChainIndexer(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
-                this.loggerFactory = new ExtendedLoggerFactory();
-                this.loggerFactory.AddConsoleWithFilters();
+                this.loggerFactory = ExtendedLoggerFactory.Create();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);

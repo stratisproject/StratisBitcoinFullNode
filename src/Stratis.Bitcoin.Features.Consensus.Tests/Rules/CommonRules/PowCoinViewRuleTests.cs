@@ -92,8 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
 
-                var loggerFactory = new ExtendedLoggerFactory();
-                loggerFactory.AddConsoleWithFilters();
+                var loggerFactory = ExtendedLoggerFactory.Create();
 
                 var dateTimeProvider = new DateTimeProvider();
 

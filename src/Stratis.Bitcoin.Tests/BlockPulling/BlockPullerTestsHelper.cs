@@ -41,8 +41,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public BlockPullerTestsHelper()
         {
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
             this.ChainState = new ChainState() { ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader() };

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -51,11 +52,10 @@ namespace Stratis.Bitcoin.Tests.Base
 
         public ConsensusManagerBehaviorTestsHelper()
         {
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
         }
 
-        private readonly ExtendedLoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Creates the and attaches a new <see cref="ConsensusManagerBehavior"/>.</summary>
         /// <param name="consensusTip">Consensus tip.</param>

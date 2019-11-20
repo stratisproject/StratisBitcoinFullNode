@@ -22,8 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
         {
             this.network = new StratisMain();
             this.chainIndexer = new ChainIndexer(this.network);
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
             this.nodeSettings = NodeSettings.Default(this.network);
             this.txMempool = new Mock<ITxMempool>().Object;
         }

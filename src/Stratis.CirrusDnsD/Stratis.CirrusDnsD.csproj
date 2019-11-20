@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
         <AssemblyName>Stratis.CirrusDnsD</AssemblyName>
         <OutputType>Exe</OutputType>
         <PackageId>Stratis.CirrusDnsD</PackageId>
-        <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+        <RuntimeFrameworkVersion>3.0.0</RuntimeFrameworkVersion>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
         <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
