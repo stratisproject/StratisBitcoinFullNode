@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env, IFullNode fullNode)
+        public Startup(IWebHostEnvironment env, IFullNode fullNode)
         {
             this.fullNode = fullNode;
 
@@ -64,10 +64,10 @@ namespace Stratis.Bitcoin.Features.Api
                 });
 
             // Add framework services.
-            services.AddMvc(options =>
+            services
+                .AddMvc(options =>
                 {
                     options.Filters.Add(typeof(LoggingActionFilter));
-                    options.EnableEndpointRouting = false;
                     ServiceProvider serviceProvider = services.BuildServiceProvider();
                     var apiSettings = (ApiSettings)serviceProvider.GetRequiredService(typeof(ApiSettings));
                     if (apiSettings.KeepaliveTimer != null)
@@ -109,14 +109,18 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApiVersionDescriptionProvider provider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IApiVersionDescriptionProvider provider)
         {
+            app.UseStaticFiles();
+            app.UseRouting();
+
             app.UseCors("CorsPolicy");
 
             // Register this before MVC and Swagger.
             app.UseMiddleware<NoCacheMiddleware>();
-
-            app.UseMvc();
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
