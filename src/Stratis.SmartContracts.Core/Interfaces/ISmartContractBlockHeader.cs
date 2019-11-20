@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.Core;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.SmartContracts.Core.Interfaces
 {
     public interface ISmartContractBlockHeader
     {

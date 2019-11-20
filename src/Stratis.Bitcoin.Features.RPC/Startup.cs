@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC
             })
                 .AddJsonFormatters()
                 .AddFormatterMappings();
+
             services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, RPCJsonMvcOptionsSetup>());
 
             // We have added API versioning to the URLs of the version2-onwards controllers, so to not break routing we need this line.
