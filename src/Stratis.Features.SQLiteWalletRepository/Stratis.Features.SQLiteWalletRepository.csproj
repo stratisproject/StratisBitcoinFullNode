@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Features SQLiteWalletRepository</Description>
     <AssemblyTitle>Stratis.Features.SQLiteWalletRepository</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <AssemblyName>Stratis.Features.SQLiteWalletRepository</AssemblyName>
     <PackageId>Stratis.Features.SQLiteWalletRepository</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

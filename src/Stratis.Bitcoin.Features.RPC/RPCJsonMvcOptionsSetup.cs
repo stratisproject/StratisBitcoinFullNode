@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="jsonOptions"></param>
         /// <param name="charPool"></param>
         /// <param name="objectPoolProvider"></param>
-        public RPCJsonMvcOptionsSetup(ILoggerFactory loggerFactory, IOptions<MvcJsonOptions> jsonOptions, ArrayPool<char> charPool, ObjectPoolProvider objectPoolProvider)
+        public RPCJsonMvcOptionsSetup(ILoggerFactory loggerFactory, IOptions<MvcNewtonsoftJsonOptions> jsonOptions, ArrayPool<char> charPool, ObjectPoolProvider objectPoolProvider)
             : base(delegate (MvcOptions options)
             {
                 ConfigureMvc(options, jsonOptions.Value.SerializerSettings, loggerFactory, charPool, objectPoolProvider);
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public static void ConfigureMvc(MvcOptions options, JsonSerializerSettings serializerSettings, ILoggerFactory loggerFactory, ArrayPool<char> charPool, ObjectPoolProvider objectPoolProvider)
         {
-            JsonOutputFormatter jsonOutput = options.OutputFormatters.OfType<JsonOutputFormatter>().First();
+            NewtonsoftJsonOutputFormatter jsonOutput = options.OutputFormatters.OfType<NewtonsoftJsonOutputFormatter>().First();
             options.OutputFormatters.Remove(jsonOutput);
             options.OutputFormatters.Add(new RPCJsonOutputFormatter(serializerSettings));
         }
