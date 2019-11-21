@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Services;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
@@ -134,6 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     services.AddSingleton<BroadcasterBehavior>();
                     services.AddSingleton<WalletSettings>();
                     services.AddSingleton<IAddressBookManager, AddressBookManager>();
+                    services.AddSingleton<IWalletService, WalletService>();
 
                     services.AddTransient<WalletRPCController>();
                 });
