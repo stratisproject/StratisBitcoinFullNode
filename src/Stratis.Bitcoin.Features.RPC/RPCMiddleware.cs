@@ -213,11 +213,9 @@ namespace Stratis.Bitcoin.Features.RPC
             contextFeatures.Set<IHttpRequestFeature>(requestFeature);
 
             var responseMemoryStream = new MemoryStream();
-            var responseFeature = new HttpResponseFeature()
-            {
-                Body = responseMemoryStream
-            };
-            contextFeatures.Set<IHttpResponseFeature>(responseFeature);
+            var responseFeature = new StreamResponseBodyFeature(responseMemoryStream);
+            
+            contextFeatures.Set<IHttpResponseBodyFeature>(responseFeature);
 
             contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
 

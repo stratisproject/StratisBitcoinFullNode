@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.Api
                         if (!apiSettings.UseHttps)
                             return;
 
+                        options.AllowSynchronousIO = true;
                         Action<ListenOptions> configureListener = listenOptions => { listenOptions.UseHttps(certificate); };
                         var ipAddresses = Dns.GetHostAddresses(apiSettings.ApiUri.DnsSafeHost);
                         foreach (var ipAddress in ipAddresses)

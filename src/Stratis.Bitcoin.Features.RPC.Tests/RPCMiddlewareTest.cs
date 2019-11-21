@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         private DefaultHttpContext httpContext;
         private RPCMiddleware middleware;
         private HttpResponseFeature response;
+        private StreamResponseBodyFeature responseBody;
         private FeatureCollection featureCollection;
         private HttpRequestFeature request;
 
@@ -33,8 +34,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             this.httpContext = new DefaultHttpContext();
             this.response = new HttpResponseFeature();
+            this.responseBody = new StreamResponseBodyFeature(new MemoryStream());
             this.request = new HttpRequestFeature();
-            this.response.Body = new MemoryStream();
             this.featureCollection = new FeatureCollection();
 
             this.httpContextFactory = new Mock<IHttpContextFactory>();
@@ -274,6 +275,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         {
             this.featureCollection.Set<IHttpRequestFeature>(this.request);
             this.featureCollection.Set<IHttpResponseFeature>(this.response);
+            this.featureCollection.Set<IHttpResponseBodyFeature>(this.responseBody);
             this.httpContext.Initialize(this.featureCollection);
         }
     }
