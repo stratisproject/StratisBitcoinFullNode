@@ -1,11 +1,11 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using NBitcoin;
+
 namespace Stratis.Bitcoin.Features.Wallet.Services
 {
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Models;
-    using NBitcoin;
-
     public interface IWalletService
     {
         Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken);

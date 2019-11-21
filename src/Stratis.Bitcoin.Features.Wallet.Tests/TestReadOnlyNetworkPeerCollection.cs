@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Net;
+using Stratis.Bitcoin.P2P.Peer;
+
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Net;
-    using P2P.Peer;
-
     public class TestReadOnlyNetworkPeerCollection : IReadOnlyNetworkPeerCollection
     {
         public event EventHandler<NetworkPeerEventArgs> Added;
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.networkPeers = new List<INetworkPeer>();
         }
 
-        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers) 
+        public TestReadOnlyNetworkPeerCollection(List<INetworkPeer> peers)
         {
             this.Added = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });
             this.Removed = new EventHandler<NetworkPeerEventArgs>((obj, eventArgs) => { });

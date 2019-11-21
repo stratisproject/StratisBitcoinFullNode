@@ -5,8 +5,6 @@ using Stratis.Bitcoin.Features.Wallet.Services;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    
-
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>

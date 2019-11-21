@@ -1,8 +1,8 @@
+using Stratis.Bitcoin.Features.Wallet.Models;
+using NBitcoin;
+
 namespace Stratis.Bitcoin.Features.Wallet.Extensions
 {
-    using Models;
-    using NBitcoin;
-
     public static class MappingExtensions
     {
         public static TransactionItemModel ToTransactionItemModel(this TransactionData transaction,
