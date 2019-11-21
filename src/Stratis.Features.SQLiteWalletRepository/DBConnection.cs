@@ -155,13 +155,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal void Rollback()
         {
             Guard.Assert(this.TransactionLock.IsHeld());
-            Guard.Assert(this.IsInTransaction);
 
             this.TransactionDepth--;
 
             if (this.TransactionDepth == 0)
             {
-                this.SQLiteConnection.Rollback();
+                if (this.IsInTransaction)
+                    this.SQLiteConnection.Rollback();
+
                 this.CommitActions.Clear();
 
                 while (this.RollBackActions.Count > 0)
@@ -618,6 +619,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Check for spending overlaps.
             // Performs checks that we do not affect a confirmed transaction's spends.
+            // This will detect any existing unconfirmed transactions that spend the same inputs as incoming confirmed transactions,
+            // unless it's the same transaction - those will be updated rather than inserted by the CmdUploadPrevOut query.
             var cmdUpdateOverlaps = this.Commands["CmdUpdateOverlaps"];
             cmdUpdateOverlaps.Bind("walletName", walletName);
             cmdUpdateOverlaps.Bind("prevHash", prevHash);

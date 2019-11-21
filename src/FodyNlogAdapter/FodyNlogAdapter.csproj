@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>FodyNlogAdapter</AssemblyName>
-    <Version>3.0.6.0-beta</Version>
+    <Version>3.0.7.0-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <Authors>Stratis Group Ltd.</Authors>
     <PackageId>Stratis.FodyNlogAdapter</PackageId>

@@ -10,14 +10,15 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
-using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Caching;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Decompilation;
 using Stratis.SmartContracts.CLR.Loader;
@@ -26,6 +27,7 @@ using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Interfaces;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -105,6 +107,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         // CONTRACT EXECUTION ---------------------------------------------------------------
                         services.AddSingleton<IInternalExecutorFactory, InternalExecutorFactory>();
+                        services.AddSingleton<IContractAssemblyCache, ContractAssemblyCache>();
                         services.AddSingleton<IVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
@@ -114,6 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IStateProcessor, StateProcessor>();
                         services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
                         services.AddSingleton<ILocalExecutor, LocalExecutor>();
+                        services.AddSingleton<IBlockExecutionResultCache, BlockExecutionResultCache>();
 
                         // RECEIPTS -------------------------------------------------------------------------
                         services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();

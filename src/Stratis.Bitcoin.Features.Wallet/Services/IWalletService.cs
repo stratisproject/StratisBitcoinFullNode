@@ -48,5 +48,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
         Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request,
             CancellationToken cancellationToken);
+
+        Task<DistributeUtxoModel> DistributeUtxos(DistributeUtxosRequest request,
+            CancellationToken cancellationToken);
     }
 }

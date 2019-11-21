@@ -153,9 +153,16 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             string strMaxConfirmationHeight = DBParameter.Create(maxConfirmationHeight);
             string strMaxCoinBaseHeight = DBParameter.Create(maxCoinBaseHeight);
 
+            // If confirmations is 0, then we want no restrictions on the max confirmation height. Even NULL height is allowed. (aka unconfirmed).
+            // IF confirmations is 1 or more, then we don't want NULL height and the restriction should be applied.
+            string confirmationsQuery = confirmations == 0
+                                        ? ""
+                                        : $"OutputBlockHeight <= {strMaxConfirmationHeight} AND ";
+
             var balanceData = conn.FindWithQuery<BalanceData>($@"
                 SELECT SUM(Value) TotalBalance
-                ,      SUM(CASE WHEN OutputBlockHeight <= {strMaxConfirmationHeight} AND (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {strMaxCoinBaseHeight}) THEN Value ELSE 0 END) SpendableBalance
+                ,      SUM(CASE WHEN {confirmationsQuery} (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {strMaxCoinBaseHeight})
+                       THEN Value ELSE 0 END) SpendableBalance
                 ,      SUM(CASE WHEN OutputBlockHeight IS NOT NULL THEN Value ELSE 0 END) ConfirmedBalance
                 FROM   HDTransactionData
                 WHERE  (WalletId, AccountIndex) IN (SELECT {strWalletId}, {strAccountIndex})

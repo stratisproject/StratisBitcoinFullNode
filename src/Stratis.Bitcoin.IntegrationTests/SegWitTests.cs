@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
                 // See issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
                 BIP9DeploymentsParameters prevSegwitDeployment = KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit];
-                KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Test", 1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+                KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Test", 1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp(), BIP9DeploymentsParameters.DefaultRegTestThreshold);
 
                 try
                 {

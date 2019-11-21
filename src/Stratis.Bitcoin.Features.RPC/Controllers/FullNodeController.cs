@@ -189,7 +189,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                return new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+                var transaction = new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+
+                // Clear hex to not include it into the output. Hex is already known to the client. This will reduce response size.
+                transaction.Hex = null;
+                return transaction;
             }
             catch (FormatException ex)
             {
@@ -469,12 +473,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             foreach (var consensusBuriedDeployment in Enum.GetValues(typeof(BuriedDeployments)))
             {
-                bool active = this.ChainIndexer.Height >= this.Network.Consensus.BuriedDeployments[(BuriedDeployments) consensusBuriedDeployment];
+                bool active = this.ChainIndexer.Height >= this.Network.Consensus.BuriedDeployments[(BuriedDeployments)consensusBuriedDeployment];
                 blockchainInfo.SoftForks.Add(new SoftForks
                 {
                     Id = consensusBuriedDeployment.ToString().ToLower(),
                     Version = (int)consensusBuriedDeployment + 2, // hack to get the deployment number similar to bitcoin core without changing the enums
-                    Status = new SoftForksStatus {Status = active}
+                    Status = new SoftForksStatus { Status = active }
                 });
             }
 
@@ -495,7 +499,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 if (metric.TimeTimeOut?.Ticks > 0)
                     blockchainInfo.SoftForksBip9.Add(metric.DeploymentName, this.CreateSoftForksBip9(metric, thresholdStates[metric.DeploymentIndex]));
             }
-            
+
             // TODO: Implement blockchainInfo.warnings
             return blockchainInfo;
         }
@@ -516,7 +520,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 softForksBip9.Statistics = new SoftForksBip9Statistics();
 
                 softForksBip9.Statistics.Period = metric.ConfirmationPeriod;
-                softForksBip9.Statistics.Threshold = metric.Threshold;
+                softForksBip9.Statistics.Threshold = (int)metric.Threshold;
                 softForksBip9.Statistics.Count = metric.Blocks;
                 softForksBip9.Statistics.Elapsed = metric.Height - metric.PeriodStartHeight;
                 softForksBip9.Statistics.Possible = (softForksBip9.Statistics.Period - softForksBip9.Statistics.Threshold) >= (softForksBip9.Statistics.Elapsed - softForksBip9.Statistics.Count);

@@ -6,8 +6,10 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
+using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -31,9 +33,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
+            IBlockExecutionResultCache executionCache,
+            ICallDataSerializer callDataSerializer,
             MinerSettings minerSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
-                mempoolLock, minerSettings, network, senderRetriever, stateRoot)
+                mempoolLock, minerSettings, network, senderRetriever, stateRoot, executionCache, callDataSerializer)
         {
             // TODO: Fix gross MinerSettings injection ^^
         }

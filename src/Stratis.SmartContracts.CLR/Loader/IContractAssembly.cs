@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Loader
 {
@@ -8,5 +9,11 @@ namespace Stratis.SmartContracts.CLR.Loader
         Assembly Assembly { get; }
 
         Type GetType(string name);
+
+        Type DeployedType { get; }
+
+        bool SetObserver(Observer observer);
+
+        Observer GetObserver();
     }
 }

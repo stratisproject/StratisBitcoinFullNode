@@ -523,7 +523,8 @@
         /// <returns>A value of Ok if the re-sync was successful.</returns>
         [HttpPost]
         [Route("sync")]
-        public async Task<IActionResult> Sync([FromBody] HashModel model, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<IActionResult> Sync([FromBody] HashModel model,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             return await this.ExecuteAsAsync(model, cancellationToken, (req, token) =>
             {
@@ -588,6 +589,31 @@
         {
             return await this.Execute(request, cancellationToken,
                 async (req, token) => this.Json(await this.walletService.SplitCoins(req, token)));
+        }
+
+
+        /// <summary>Splits and distributes UTXOs across wallet addresses</summary>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <param name="request">An object containing the necessary parameters.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
+        [HttpPost]
+        [Route("distribute-utxos")]
+        public async Task<IActionResult> DistributeUtxos([FromBody] DistributeUtxosRequest request,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await this.Execute(request, cancellationToken,
+                async (req, token) => this.Json(await this.walletService.DistributeUtxos(req, token)));
+        }
+
+        private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items,
+            TransactionData transaction)
+        {
+            TransactionItemModel existingTransaction = items.FirstOrDefault(i => i.Id == transaction.Id &&
+                                                                                 i.Type == TransactionItemType
+                                                                                     .Received &&
+                                                                                 i.ConfirmedInBlock ==
+                                                                                 transaction.BlockHeight);
+            return existingTransaction;
         }
     }
 }

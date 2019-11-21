@@ -3115,6 +3115,70 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void WalletRewindsToConsensusTipOnStartup()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var chain = new ChainIndexer(this.Network);
+
+            IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
+                dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
+
+            walletManager.Start();
+
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
+            HdAccount account = wallet.AddNewAccount("password", accountName: "account1", addressCounts: (2, 1));
+            HdAddress spendingAddress = account.ExternalAddresses.ElementAt(0);
+            HdAddress destinationAddress = account.ExternalAddresses.ElementAt(1);
+            HdAddress changeAddress = account.InternalAddresses.ElementAt(0);
+
+            (Money totalAmount1, Money confirmedAmount1, Money spendableAmount1) = walletRepository.GetAccountBalance(new WalletAccountReference("myWallet1", "account1"), chain.Tip.Height);
+
+            Assert.Equal(Money.Zero, totalAmount1);
+            Assert.Equal(Money.Zero, confirmedAmount1);
+            Assert.Equal(Money.Zero, spendableAmount1);
+
+            wallet = walletManager.GetWallet("myWallet1");
+            Assert.Equal(-1, wallet.AccountsRoot.First().LastBlockSyncedHeight);
+
+            // Generate a spendable transaction.
+            (uint256 blockhash, Block block) = WalletTestsHelpers.CreateFirstBlockWithPaymentToAddress(chain, this.Network, spendingAddress);
+            walletManager.ProcessBlock(block, chain.GetHeader(1));
+
+            (Money totalAmount2, Money confirmedAmount2, Money spendableAmount2) = walletRepository.GetAccountBalance(new WalletAccountReference("myWallet1", "account1"), chain.Tip.Height);
+            Assert.NotEqual(Money.Zero, totalAmount2);
+            Assert.NotEqual(Money.Zero, confirmedAmount2);
+            Assert.Equal(Money.Zero, spendableAmount2);
+
+            wallet = walletManager.GetWallet("myWallet1");
+            Assert.Equal(chain.Tip.Height, wallet.AccountsRoot.First().LastBlockSyncedHeight);
+
+            walletManager.Stop();
+
+            // Rewind the chain.
+            chain = new ChainIndexer(this.Network);
+            walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
+                dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
+            walletManager.Start();
+
+            (Money totalAmount3, Money confirmedAmount3, Money spendableAmount3) = walletRepository.GetAccountBalance(new WalletAccountReference("myWallet1", "account1"), chain.Tip.Height);
+
+            Assert.Equal(Money.Zero, totalAmount3);
+            Assert.Equal(Money.Zero, confirmedAmount3);
+            Assert.Equal(Money.Zero, spendableAmount3);
+
+            wallet = walletManager.GetWallet("myWallet1");
+            Assert.Equal(chain.Tip.Height, wallet.AccountsRoot.First().LastBlockSyncedHeight);
+        }
+
+        [Fact]
         public void ConfirmedTransactionsShouldWipeOutUnconfirmedWithSameInputs()
         {
             DataFolder dataFolder = CreateDataFolder(this);

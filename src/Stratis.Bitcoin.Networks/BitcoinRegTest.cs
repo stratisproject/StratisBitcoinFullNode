@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BitcoinBIP9Deployments
             {
-                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, 0, 999999999),
-                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV",0, 0, 999999999),
-                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, 0, 999999999, BIP9DeploymentsParameters.DefaultRegTestThreshold),
+                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV",0, 0, 999999999, BIP9DeploymentsParameters.DefaultRegTestThreshold),
+                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999, BIP9DeploymentsParameters.AlwaysActive)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -62,7 +62,6 @@ namespace Stratis.Bitcoin.Networks
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
                 bip34Hash: new uint256(),
-                ruleChangeActivationThreshold: 108,
                 minerConfirmationWindow: 144,
                 maxReorgLength: 0,
                 defaultAssumeValid: null, // turn off assumevalid for regtest.

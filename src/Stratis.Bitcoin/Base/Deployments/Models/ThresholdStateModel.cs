@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         public int SinceHeight { get; set; }
 
         /// <summary>
-        /// The number of blocks in the each confirmation window.
+        /// The number of blocks in each confirmation window.
         /// </summary>
         [JsonProperty(PropertyName = "confirmationPeriod")]
         public int ConfirmationPeriod { get; set; }
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         /// Activation vote threshold for this BIP9 deployment.
         /// </summary>
         [JsonProperty(PropertyName = "threshold")]
-        public int Threshold { get; set; }
+        public long Threshold { get; set; }
 
         /// <summary>
         /// Start time for vote counting for this BIP9 deployment.

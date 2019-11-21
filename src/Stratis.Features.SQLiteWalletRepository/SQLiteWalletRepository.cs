@@ -60,6 +60,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         private readonly IDateTimeProvider dateTimeProvider;
         private ProcessBlocksInfo processBlocksInfo;
         private object lockObj;
+        internal const int MaxBatchDurationSeconds = 10;
+        internal const int MaxDataRowsProcessed = 10000;
 
         // Metrics.
         internal Metrics Metrics;
@@ -817,7 +819,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // See if other threads are waiting to update any of the wallets.
                     bool threadsWaiting = round.LockProcessBlocks.WaitingThreads != 0 && round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
-                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= MaxDataRowsProcessed) || chainedHeader == null || walletsJoining || DateTime.Now.Ticks >= round.BatchDeadline)
                     {
                         if (chainedHeader == null)
                             this.logger.LogDebug("Ending batch due to end-of-data.");
@@ -825,9 +827,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                             this.logger.LogDebug("Ending batch due to other wallets joining.");
                         else if (threadsWaiting)
                             this.logger.LogDebug("Ending batch due to other threads waiting to update a wallet.");
-                        else if ((round.Outputs.Count + round.PrevOuts.Count) >= 10000)
+                        else if ((round.Outputs.Count + round.PrevOuts.Count) >= MaxDataRowsProcessed)
                             this.logger.LogDebug("Ending batch due to memory restrictions.");
-                        else if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                        else if (DateTime.Now.Ticks >= round.BatchDeadline)
                             this.logger.LogDebug("Ending batch due to time constraint.");
 
                         if (round.NewTip != null)
@@ -882,17 +884,21 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                                 conn.Rollback();
 
+                                throw;
+                            }
+                            finally
+                            {
                                 // Ensure locks are released.
                                 this.EndBatch(round);
 
-                                throw;
+                                this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                                this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
                             }
-
-                            this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
-                            this.Metrics.LogMetrics(this, conn, chainedHeader, wallet);
                         }
-
-                        this.EndBatch(round);
+                        else
+                        {
+                            this.EndBatch(round);
+                        }
 
                         if (chainedHeader == null)
                             return false;
@@ -903,8 +909,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     if (!this.StartBatch(round, chainedHeader))
                         return false;
-
-                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                 }
 
                 if (block != null)
@@ -954,56 +958,66 @@ namespace Stratis.Features.SQLiteWalletRepository
                     return false;
                 }
 
-                // Determine participating wallets.
-                string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
-                if (round.Wallet == null && !this.DatabasePerWallet)
-                    round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
-                else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
-                    round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
-                else
+                try
                 {
-                    this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
-                    round.LockProcessBlocks.Release();
-                    return false;
-                }
-
-                // See if all the wallet locks can be obtained, otherwise do nothing.
-                this.logger.LogDebug("Obtaining locks for {0} wallets.", round.ParticipatingWallets.Count);
-
-                bool failed = false;
-                Parallel.ForEach(round.ParticipatingWallets, walletName =>
-                {
-                    WalletContainer walletContainer = this.Wallets[walletName];
-
-                    if (walletContainer.LockUpdateWallet.Wait(false))
+                    // Determine participating wallets.
+                    string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
+                    if (round.Wallet == null && !this.DatabasePerWallet)
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>(this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name));
+                    else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
+                        round.ParticipatingWallets = new ConcurrentHashSet<string>() { round.Wallet.Name };
+                    else
                     {
-                        if (walletContainer.ReaderCount == 0)
-                            return;
-
-                        walletContainer.LockUpdateWallet.Release();
+                        this.logger.LogDebug("Exiting due to no wallet tips matching next block to process.");
+                        round.LockProcessBlocks.Release();
+                        return false;
                     }
 
-                    this.logger.LogDebug("Could not obtain lock for wallet '{0}'.", walletName);
+                    // See if all the wallet locks can be obtained, otherwise do nothing.
+                    this.logger.LogDebug("Obtaining locks for {0} wallets.", round.ParticipatingWallets.Count);
 
-                    failed = true;
+                    bool failed = false;
+                    Parallel.ForEach(round.ParticipatingWallets, walletName =>
+                    {
+                        WalletContainer walletContainer = this.Wallets[walletName];
 
-                    Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
-                });
+                        if (walletContainer.LockUpdateWallet.Wait(false))
+                        {
+                            if (walletContainer.ReaderCount == 0)
+                                return;
 
-                if (failed)
-                {
-                    this.logger.LogDebug("Releasing locks and postponing until next sync event.");
-                    Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
-                    round.LockProcessBlocks.Release();
-                    return false;
-                }
+                            walletContainer.LockUpdateWallet.Release();
+                        }
+
+                        this.logger.LogDebug("Could not obtain lock for wallet '{0}'.", walletName);
+
+                        failed = true;
+
+                        Guard.Assert(round.ParticipatingWallets.TryRemove(walletName));
+                    });
+
+                    if (failed)
+                    {
+                        this.logger.LogDebug("Releasing locks and postponing until next sync event.");
+                        Parallel.ForEach(round.ParticipatingWallets, walletName => this.Wallets[walletName].LockUpdateWallet.Release());
+                        round.LockProcessBlocks.Release();
+                        return false;
+                    }
 
                 // Initialize round.
                 round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                 round.NewTip = null;
                 round.Trackers = new Dictionary<TopUpTracker, TopUpTracker>();
+                round.BatchDeadline = DateTime.Now.AddSeconds(MaxBatchDurationSeconds).Ticks;
 
-                return true;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    round.LockProcessBlocks.Release();
+                    this.logger.LogError(ex, "An exception occurred starting batch.");
+                    throw;
+                }
             }
         }
 

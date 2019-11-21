@@ -245,6 +245,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.LoadWallet(walletName.Substring(0, walletName.Length - WalletFileExtension.Length - 1));
             }
 
+            // Performs early rewinding of wallets that exceed the consensus tip instead of waiting for
+            // the next WalletSyncManager.OrchestrateWalletSync invocation.
+            foreach (string walletName in this.WalletRepository.GetWalletNames())
+            {
+                this.WalletRepository.RewindWallet(walletName, this.ChainIndexer.Tip);
+            }
+
             if (this.walletSettings.IsDefaultWalletEnabled())
             {
                 // Check if it already exists, if not, create one.
@@ -955,7 +962,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public virtual IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0)
         {
-            return this.GetSpendableTransactionsInWallet(walletName, confirmations);
+            return this.GetUnspentTransactionsInWallet(walletName, confirmations, Wallet.NormalAccounts);
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<UnspentOutputReference> GetUnspentTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter)
+        {
+            Guard.NotEmpty(walletName, nameof(walletName));
+
+            Wallet wallet = this.GetWallet(walletName);
+            UnspentOutputReference[] res = null;
+            lock (this.lockObject)
+            {
+                res = wallet.GetAllUnspentTransactions(this.ChainIndexer.Tip.Height, confirmations, accountFilter).ToArray();
+            }
+
+            return res;
         }
 
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter)

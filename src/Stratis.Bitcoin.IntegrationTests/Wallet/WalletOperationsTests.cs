@@ -991,6 +991,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task FundsReceivedByAddressAsync()
         {
+            // TODO: These tests are all in the situation where the wallet is ahead of the ChainIndexer.
+            // They don't make much sense. How could the chain be at height 0 but we have new "Money(10150100000000)" Confirmed???
+            // The tests should be checking a real situation, like where the wallet is at block N and the ChainIndexer is also at block N (or higher).
+
             // Arrange.
             string address = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
 
@@ -1005,9 +1009,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             addressBalance.AmountConfirmed.Should().Be(new Money(10150100000000));
             addressBalance.AmountUnconfirmed.Should().Be(Money.Zero);
 
-            // The spendable amount will be 0 as the prebuilt wallet transaction adds the transaction at height 36
-            // whilst the chain indexer is 0.
-            addressBalance.SpendableAmount.Should().Be(new Money(0));
+            // The total that we have received to this address, apart from coinbases/staking which require maturity.
+            addressBalance.SpendableAmount.Should().Be(new Money(1500, MoneyUnit.BTC));
         }
 
         [Fact]

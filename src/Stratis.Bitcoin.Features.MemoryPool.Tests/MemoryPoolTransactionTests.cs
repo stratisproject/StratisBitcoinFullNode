@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var tx2 = new Transaction();
             tx2.AddOutput(new TxOut(new Money(2 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
             pool.AddUnchecked(tx2.GetHash(), entry.Fee(new Money(20000L)).Priority(9.0).FromTx(tx2));
-            int tx2Size = tx2.GetVirtualSize();
+            int tx2Size = tx2.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor);
 
             /* lowest fee */
             var tx3 = new Transaction();
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var tx6 = new Transaction();
             tx6.AddOutput(new TxOut(new Money(20 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
             pool.AddUnchecked(tx6.GetHash(), entry.Fee(new Money(0L)).FromTx(tx6));
-            int tx6Size = tx6.GetVirtualSize();
+            int tx6Size = tx6.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor);
             Assert.Equal(6, pool.Size);
             // Ties are broken by hash
             if (tx3.GetHash() < tx6.GetHash())
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var tx7 = new Transaction();
             tx7.AddInput(new TxIn(new OutPoint(tx6.GetHash(), 0), new Script(OpcodeType.OP_11)));
             tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
-            int tx7Size = tx7.GetVirtualSize();
+            int tx7Size = tx7.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor);
             Money fee = (20000 / tx2Size) * (tx7Size + tx6Size) - 1;
             pool.AddUnchecked(tx7.GetHash(), entry.Fee(fee).FromTx(tx7));
             Assert.Equal(7, pool.Size);
@@ -426,12 +426,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.True(pool.Exists(tx2.GetHash()));
             Assert.True(pool.Exists(tx3.GetHash()));
 
-            pool.TrimToSize(tx1.GetVirtualSize()); // mempool is limited to tx1's size in memory usage, so nothing fits
+            pool.TrimToSize(tx1.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor)); // mempool is limited to tx1's size in memory usage, so nothing fits
             Assert.True(!pool.Exists(tx1.GetHash()));
             Assert.True(!pool.Exists(tx2.GetHash()));
             Assert.True(!pool.Exists(tx3.GetHash()));
 
-            var maxFeeRateRemoved = new FeeRate(25000, tx3.GetVirtualSize() + tx2.GetVirtualSize());
+            var maxFeeRateRemoved = new FeeRate(25000, tx3.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor) + tx2.GetVirtualSize(KnownNetworks.TestNet.Consensus.Options.WitnessScaleFactor));
             Assert.Equal(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000);
 
             var tx4 = new Transaction();
