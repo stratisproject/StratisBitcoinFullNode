@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             TestHelper.MineBlocks(this.sendingStratisBitcoinNode, this.coinbaseMaturity);
         }
 
-        private void spending_the_coins_from_original_block()
+        private async Task spending_the_coins_from_original_block()
         {
             HdAddress sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager().GetUnusedAddress();
 
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
                     .BuildTransaction(transactionBuildContext);
 
-                this.sendingStratisBitcoinNode.FullNode.NodeController<WalletController>()
+                await this.sendingStratisBitcoinNode.FullNode.NodeController<WalletController>()
                     .SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
             }
             catch (Exception exception)
