@@ -1,33 +1,33 @@
-﻿namespace Stratis.Bitcoin.Features.Wallet.Tests
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Reflection;
-    using System.Security;
-    using System.Threading.Tasks;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Logging;
-    using Moq;
-    using Moq.AutoMock;
-    using NBitcoin;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Consensus;
-    using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-    using Stratis.Bitcoin.Features.Wallet.Controllers;
-    using Stratis.Bitcoin.Features.Wallet.Interfaces;
-    using Stratis.Bitcoin.Features.Wallet.Models;
-    using Stratis.Bitcoin.Features.Wallet.Services;
-    using Stratis.Bitcoin.P2P.Peer;
-    using Stratis.Bitcoin.Tests.Common;
-    using Stratis.Bitcoin.Tests.Common.Logging;
-    using Stratis.Bitcoin.Tests.Wallet.Common;
-    using Stratis.Bitcoin.Utilities;
-    using Stratis.Bitcoin.Utilities.JsonErrors;
-    using Xunit;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Security;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Moq.AutoMock;
+using NBitcoin;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Features.Wallet.Services;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Tests.Wallet.Common;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.JsonErrors;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.Wallet.Tests
+{
     public class WalletControllerTest : LogsTestBase
     {
         private readonly ChainIndexer chainIndexer;
