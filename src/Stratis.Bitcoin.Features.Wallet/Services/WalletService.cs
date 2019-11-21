@@ -1,26 +1,26 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Helpers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Builder.Feature;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+
 namespace Stratis.Bitcoin.Features.Wallet.Services
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Security;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Bitcoin.Consensus;
-    using Broadcasting;
-    using Builder.Feature;
-    using Connection;
-    using Controllers;
-    using Helpers;
-    using Interfaces;
-    using Microsoft.Extensions.Logging;
-    using Models;
-    using NBitcoin;
-    using Utilities;
-
     public class WalletService : IWalletService
     {
         private const int MaxHistoryItemsPerAccount = 1000;

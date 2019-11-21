@@ -1,19 +1,19 @@
-﻿namespace Stratis.Bitcoin.Features.Wallet.Controllers
-{
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Builder.Feature;
-    using Stratis.Bitcoin.Features.Wallet.Interfaces;
-    using Stratis.Bitcoin.Features.Wallet.Models;
-    using Stratis.Bitcoin.Features.Wallet.Services;
-    using Stratis.Bitcoin.Utilities.JsonErrors;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Features.Wallet.Services;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 
+namespace Stratis.Bitcoin.Features.Wallet.Controllers
+{
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
