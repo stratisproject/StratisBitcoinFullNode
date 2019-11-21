@@ -22,8 +22,6 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure;
-
     public class WalletCollection : ICollection<Wallet>
     {
         public IWalletManager WalletManager { get; set; }

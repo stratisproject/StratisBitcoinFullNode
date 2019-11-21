@@ -141,7 +141,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Transactions = new TransactionCollection(this, transactionData, limit);
 
             return this;
-
         }
 
         /// <summary>

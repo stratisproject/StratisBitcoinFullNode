@@ -220,7 +220,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="prevOutputIndex">Previous prevOutputIndex, used for pagination</param>
         /// <param name="take">Number of records to Take</param>
         /// <returns>Collection of address history and transaction pairs.</returns>
-
         IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null, long? prevOutputTxTime = null, int? prevOutputIndex = null, int? take = int.MaxValue);
 
         /// <summary>

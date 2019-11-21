@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
@@ -8,8 +9,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using System.Threading;
-
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>

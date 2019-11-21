@@ -1,12 +1,12 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+
 namespace Stratis.Bitcoin.Features.SignalR
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Microsoft.AspNetCore.SignalR;
-    using Microsoft.Extensions.Logging;
-  
     // ReSharper disable once ClassNeverInstantiated.Global
     public class SignalRMessageArgs
     {

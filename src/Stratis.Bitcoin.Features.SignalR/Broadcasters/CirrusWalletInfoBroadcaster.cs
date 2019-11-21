@@ -1,14 +1,11 @@
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Wallet.Services;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using Wallet.Services;
+    
 
     /// <summary>
     /// Broadcasts current staking information to SignalR clients

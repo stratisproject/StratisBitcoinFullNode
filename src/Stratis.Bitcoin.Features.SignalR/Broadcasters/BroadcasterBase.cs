@@ -39,26 +39,22 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 $"Broadcast {this.GetType().Name}",
                 async token =>
                 {
-                    using (var cancellationTokenSource = new CancellationTokenSource())
+                    using (var linkedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping, token))
                     {
-                        cancellationTokenSource.CancelAfter(new TimeSpan(0, 0, 10));
-
-                        using (var linkedTokenSource =
-                            CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, token))
+                        linkedTokenSource.CancelAfter(new TimeSpan(0, 0, 10));
+                        try
                         {
-                            try
+                            var messages = await this.GetMessages(linkedTokenSource.Token);
+                            foreach (IClientEvent clientEvent in messages)
                             {
-                                var messages = await this.GetMessages(linkedTokenSource.Token);
-                                foreach (IClientEvent clientEvent in messages)
-                                {
-                                    await this.eventsHub.SendToClientsAsync(clientEvent);
-                                }
+                                await this.eventsHub.SendToClientsAsync(clientEvent);
                             }
-                            catch (Exception ex)
-                            {
-                                this.logger.LogError($"{this.GetType().Name} Error in GetMessages",
-                                    ex);
-                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.logger.LogError($"{this.GetType().Name} Error in GetMessages",
+                                ex);
                         }
                     }
                 },

@@ -1,15 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Features.SignalR.Events;
+using Stratis.Bitcoin.Features.Wallet.Services;
+using Stratis.Bitcoin.Utilities;
+
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Stratis.Bitcoin.AsyncWork;
-    using Stratis.Bitcoin.Features.SignalR.Events;
-    using Stratis.Bitcoin.Features.Wallet.Services;
-    using Stratis.Bitcoin.Utilities;
-
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>

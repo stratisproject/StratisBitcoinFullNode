@@ -20,7 +20,6 @@ namespace Stratis.Bitcoin.Builder.Feature
 
         public HttpStatusCode HttpStatusCode { get; set; }
 
-
         public string Description { get; set; }
     }
 }
