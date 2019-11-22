@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Features.Wallet.Services
 {
@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken);
 
         Task<string> CreateWallet(WalletCreationRequest request, CancellationToken cancellationToken);
-        
+
         Task<AddressBalanceModel> GetReceivedByAddress(string address, CancellationToken cancellationToken);
 
         Task<WalletBalanceModel> GetBalance(string requestWalletName, string requestAccountName,

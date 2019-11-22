@@ -38,13 +38,12 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 $"Broadcast {this.GetType().Name}",
                 async token =>
                 {
-                    using (var linkedTokenSource =
-                        CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping, token))
+                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping, token))
                     {
                         linkedTokenSource.CancelAfter(new TimeSpan(0, 0, 10));
                         try
                         {
-                            var messages = await this.GetMessages(linkedTokenSource.Token);
+                            IEnumerable<IClientEvent> messages = await this.GetMessages(linkedTokenSource.Token);
                             foreach (IClientEvent clientEvent in messages)
                             {
                                 await this.eventsHub.SendToClientsAsync(clientEvent);
@@ -52,8 +51,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                         }
                         catch (Exception ex)
                         {
-                            this.logger.LogError($"{this.GetType().Name} Error in GetMessages",
-                                ex);
+                            this.logger.LogError($"{this.GetType().Name} Error in GetMessages", ex);
                         }
                     }
                 },
