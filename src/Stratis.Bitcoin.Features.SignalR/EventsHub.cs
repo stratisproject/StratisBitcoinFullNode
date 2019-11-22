@@ -43,8 +43,8 @@ namespace Stratis.Bitcoin.Features.SignalR
             return base.OnDisconnectedAsync(exception);
         }
 
+        /// <summary>Called using reflection from SignalR</summary> 
         // ReSharper disable once UnusedMember.Global
-        // Called using reflection from SignalR
         public void SendMessage(SignalRMessageArgs message)
         {
             try
