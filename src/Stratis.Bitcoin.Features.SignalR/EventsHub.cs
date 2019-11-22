@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Features.SignalR
 
         private readonly ILogger<EventsHub> logger;
 
-
         public EventsHub(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger<EventsHub>();

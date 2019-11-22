@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                     {(IClientEvent) new StakingInfoClientEvent(this.posMinting.GetGetStakingInfoModel())});
             }
 
-            return Task.FromResult((IEnumerable<IClientEvent>) new IClientEvent[0]);
+            return Task.FromResult((IEnumerable<IClientEvent>)new IClientEvent[0]);
         }
     }
 }

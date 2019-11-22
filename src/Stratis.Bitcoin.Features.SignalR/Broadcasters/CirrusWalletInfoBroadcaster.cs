@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet.Services;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
