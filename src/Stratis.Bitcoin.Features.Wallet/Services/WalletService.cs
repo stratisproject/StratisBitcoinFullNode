@@ -543,7 +543,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 {
                     result = this.walletManager.RemoveAllTransactions(request.WalletName);
                 }
-                else if (request.FromDate != default)
+                else if (request.FromDate != default(DateTime))
                 {
                     result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
                 }
