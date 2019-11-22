@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             await this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
         }
 
-        [Fact(Skip = "Does not pass, invalid Base58 string needs investigation")]
+        [Fact]
         public async Task RecoverWalletViaExtPubKeySupportsStratisLegacyExtpubKey()
         {
             string walletName = "myWallet";
@@ -452,6 +452,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 mock.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
                     .Returns(wallet));
 
+            this.ConfigureMockInstance(KnownNetworks.StratisMain);
             this.ConfigureMock<IWalletSyncManager>(mock =>
                 mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
                     this.Network.GetGenesis().Header.GetHash(), 3)));
@@ -496,6 +497,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 mock.Setup(w =>
                         w.RecoverWallet(It.IsAny<string>(), It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>(), null))
                     .Returns(wallet));
+
+            this.ConfigureMockInstance(KnownNetworks.StratisMain);
 
             Mock<IWalletSyncManager> walletSyncManager = this.ConfigureMock<IWalletSyncManager>(mock =>
                 mock.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header,
@@ -2569,6 +2572,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.True(model.SingleOrDefault(t => t.TransactionId == trxId1) != null);
         }
 
+        private TMock ConfigureMockInstance<TMock>(TMock value) where TMock : class
+        {
+            if (!this.configuredMocks.ContainsKey(typeof(TMock)))
+            {
+                this.configuredMocks.Add(typeof(TMock), value);
+            }
+
+            return (TMock) this.configuredMocks[typeof(TMock)];
+        }
+
         private Mock<TMock> ConfigureMock<TMock>(Action<Mock<TMock>> setup = null) where TMock : class
         {
             if (!this.configuredMocks.ContainsKey(typeof(TMock)))
@@ -2582,8 +2595,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         private TMock GetMock<TMock>(bool createIfNotExists = false) where TMock : class
         {
+            if (this.configuredMocks.ContainsKey(typeof(TMock))
+                && this.configuredMocks[typeof(TMock)] as Mock<TMock> != null)
+            {
+                return ((Mock<TMock>) this.configuredMocks[typeof(TMock)]).Object;
+            }
+
             return this.configuredMocks.ContainsKey(typeof(TMock))
-                ? ((Mock<TMock>) this.configuredMocks[typeof(TMock)]).Object
+                ? (TMock) this.configuredMocks[typeof(TMock)]
                 : createIfNotExists
                     ? new Mock<TMock>().Object
                     : null;
