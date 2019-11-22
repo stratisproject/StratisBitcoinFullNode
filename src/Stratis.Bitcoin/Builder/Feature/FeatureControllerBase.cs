@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Builder.Feature
     /// Has boilerplate code for consistent request validation, handling and mapping of errors without the need to
     /// duplicate lots of code.
     /// </summary>
-    public class FeatureControllerBase : Controller
+    public abstract class FeatureControllerBase : Controller
     {
-        protected readonly ILogger Logger;
+        public readonly ILogger Logger;
 
         protected FeatureControllerBase(ILogger logger)
         {
