@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonProperty(PropertyName = "txOutputTime")]
         public long TxOutputTime => Timestamp.ToUnixTimeSeconds();
         
-        [JsonProperty(PropertyName = "TtOutputIndex")]
+        [JsonProperty(PropertyName = "txOutputIndex")]
         public int TxOutputIndex { get; set; }
 
         /// <summary>
