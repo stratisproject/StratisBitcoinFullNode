@@ -60,12 +60,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public async Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> GetWalletNames(CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() => this.walletManager.GetWalletsNames(), cancellationToken);
         }
 
-        public async Task<string> CreateWallet(WalletCreationRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> CreateWallet(WalletCreationRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -94,8 +94,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<AddressBalanceModel> GetReceivedByAddress(string address,
-            CancellationToken cancellationToken = default)
+        public async Task<AddressBalanceModel> GetReceivedByAddress(string address, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -111,8 +110,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletGeneralInfoModel> GetWalletGeneralInfo(string walletName,
-            CancellationToken cancellationToken)
+        public async Task<WalletGeneralInfoModel> GetWalletGeneralInfo(string walletName, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -133,8 +131,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         }
 
         public async Task<WalletBalanceModel> GetBalance(
-            string walletName, string accountName, bool includeBalanceByAddress = false,
-            CancellationToken cancellationToken = default)
+            string walletName, string accountName, bool includeBalanceByAddress = false, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -177,8 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletHistoryModel> GetHistory(WalletHistoryRequest request,
-            CancellationToken cancellationToken)
+        public async Task<WalletHistoryModel> GetHistory(WalletHistoryRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -398,8 +394,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletStatsModel> GetWalletStats(WalletStatsRequest request,
-            CancellationToken cancellationToken = default)
+        public async Task<WalletStatsModel> GetWalletStats(WalletStatsRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -455,8 +450,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletSendTransactionModel> SplitCoins(SplitCoinsRequest request,
-            CancellationToken cancellationToken)
+        public async Task<WalletSendTransactionModel> SplitCoins(SplitCoinsRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -487,8 +481,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletSendTransactionModel> SendTransaction(SendTransactionRequest request,
-            CancellationToken cancellationToken)
+        public async Task<WalletSendTransactionModel> SendTransaction(SendTransactionRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -540,8 +533,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<IEnumerable<RemovedTransactionModel>> RemoveTransactions(RemoveTransactionsModel request,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<RemovedTransactionModel>> RemoveTransactions(RemoveTransactionsModel request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -585,8 +577,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<AddressesModel> GetAllAddresses(GetAllAddressesModel request,
-            CancellationToken cancellationToken = default)
+        public async Task<AddressesModel> GetAllAddresses(GetAllAddressesModel request, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -626,8 +617,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<WalletBuildTransactionModel> BuildTransaction(BuildTransactionRequest request,
-            CancellationToken cancellationToken = default)
+        public async Task<WalletBuildTransactionModel> BuildTransaction(BuildTransactionRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await Task.Run(() =>
             {
@@ -694,8 +684,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request,
-            CancellationToken cancellationToken)
+        public async Task<Money> GetTransactionFeeEstimate(TxFeeEstimateRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -800,8 +789,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request,
-            CancellationToken cancellationToken)
+        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -817,8 +805,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request,
-            CancellationToken cancellationToken)
+        public async Task<SpendableTransactionsModel> GetSpendableTransactions(SpendableTransactionsRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -842,8 +829,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<DistributeUtxoModel> DistributeUtxos(DistributeUtxosRequest request,
-            CancellationToken cancellationToken)
+        public async Task<DistributeUtxoModel> DistributeUtxos(DistributeUtxosRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
@@ -1052,8 +1038,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items,
-            TransactionData transaction)
+        private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items, TransactionData transaction)
         {
             return items.FirstOrDefault(i => i.Id == transaction.Id &&
                                              i.Type == TransactionItemType.Received &&
