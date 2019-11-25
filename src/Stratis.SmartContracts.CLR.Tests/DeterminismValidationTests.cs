@@ -140,7 +140,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = AppDomain.CurrentDomain; var test2 = test.Id;").Replace(ReplaceReferencesString, "");
 
             ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
-            Assert.False(compilationResult.Success);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
         }
 
         #endregion
@@ -409,7 +414,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             string adjustedSource = TestString.Replace(ReplaceCodeString, "int test = Environment.TickCount;").Replace(ReplaceReferencesString, "");
 
             ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
-            Assert.False(compilationResult.Success);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
         }
 
         #endregion
