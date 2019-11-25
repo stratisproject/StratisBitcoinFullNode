@@ -36,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Flurl.Http" Version="2.4.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
     <PackageReference Include="Stratis.XUnitRetry" Version="1.0.1" />
@@ -148,6 +149,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\RecursiveLoopCreate.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\ReturnStruct.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\StandardToken.cs">

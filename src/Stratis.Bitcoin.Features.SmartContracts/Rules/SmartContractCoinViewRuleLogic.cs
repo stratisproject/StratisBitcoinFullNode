@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -218,6 +219,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             IContractExecutionResult result = executor.Execute(txContext);
 
+            string returnValue = GetSerializedReturnValue(result.Return);
+
             var receipt = new Receipt(
                 new uint256(this.mutableStateRepository.Root),
                 result.GasConsumed,
@@ -227,7 +230,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 result.To,
                 result.NewContractAddress,
                 !result.Revert,
-                result.Return?.ToString(),
+                returnValue,
                 result.ErrorMessage,
                 deserializedCallData.Value.GasPrice,
                 txContext.TxOutValue,
@@ -250,6 +253,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
 
             this.CheckBlockGasLimit(result.GasConsumed);
+        }
+
+        /// <summary>
+        /// Get a string representation of a smart contract execution's return value.
+        /// </summary>
+        public static string GetSerializedReturnValue(object returnValue)
+        {
+            if (returnValue == null)
+                return null;
+
+            // A primitive. Return the standard string representation.
+            if (returnValue.GetType().Assembly.FullName == "System")
+                return returnValue.ToString();
+
+            // A custom type. Get a JSON representation.
+            return JsonConvert.SerializeObject(returnValue);
         }
 
         /// <summary>
