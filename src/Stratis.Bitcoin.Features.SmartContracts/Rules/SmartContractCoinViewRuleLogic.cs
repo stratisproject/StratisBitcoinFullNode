@@ -263,11 +263,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (returnValue == null)
                 return null;
 
-            // A primitive. Return the standard string representation.
-            if (returnValue.GetType().Assembly.FullName == "System")
+            // All primitives will come from "a real place". Return the standard string representation.
+            if (!String.IsNullOrEmpty(returnValue.GetType().Namespace))
                 return returnValue.ToString();
 
-            // A custom type. Get a JSON representation.
+            // A custom type. From an empty namespace. Get a JSON representation.
             return JsonConvert.SerializeObject(returnValue);
         }
 
