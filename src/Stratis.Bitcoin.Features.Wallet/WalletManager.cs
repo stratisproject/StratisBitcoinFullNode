@@ -352,6 +352,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletRepository.RewindWallet(walletName, chainedHeader);
         }
 
+        public int GetTransactionCount(string walletName, string accountName = null)
+        {
+            return this.WalletRepository.GetTransactionCount(walletName, accountName);
+        }
+
         /// <inheritdoc />
         public string SignMessage(string password, string walletName, string externalAddress, string message)
         {
@@ -782,8 +787,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             return this.WalletRepository.GetUsedAddresses(accountReference, isChange);
         }
 
-        /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
+        {
+            return this.GetHistory(walletName, accountName, null, null, int.MaxValue);
+        }
+        
+        /// <inheritdoc />
+        public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName, long? prevOutputTxTime, int? prevOutputIndex, int? take = int.MaxValue)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
 
@@ -810,7 +820,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    accountsHistory.Add(this.GetHistory(account));
+                    accountsHistory.Add(this.GetHistoryForAccount(account, prevOutputTxTime, prevOutputIndex, take.GetValueOrDefault()));
                 }
             }
 
@@ -820,13 +830,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public AccountHistory GetHistory(HdAccount account)
         {
+            return this.GetHistoryForAccount(account, null, null, int.MaxValue);
+        }
+      
+        protected AccountHistory GetHistoryForAccount(HdAccount account, long? prevOutputTxTime = null, int? prevOutputIndex = null, int take = int.MaxValue)
+        {
             Guard.NotNull(account, nameof(account));
             FlatHistory[] items;
             lock (this.lockObject)
             {
                 // Get transactions contained in the account.
                 items = account.GetCombinedAddresses()
-                    .Where(a => a.Transactions.Any())
+                    .Where(a => take == int.MaxValue ? a.Transactions.Any() : a.AsPaginated(prevOutputTxTime, prevOutputIndex, take).Transactions.Any())
                     .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 

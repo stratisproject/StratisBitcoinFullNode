@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
@@ -9,9 +11,9 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     /// <summary>
     /// Base class for all SignalR Broadcasters
     /// </summary>
-    public abstract class ClientBroadcasterBase : IClientEventBroadcaster
+    public abstract class ClientBroadcasterBase : IClientEventBroadcaster, IDisposable
     {
-        private readonly EventsHub eventsHub;
+        protected readonly EventsHub eventsHub;
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncProvider asyncProvider;
         protected readonly ILogger logger;
@@ -36,16 +38,46 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 $"Broadcast {this.GetType().Name}",
                 async token =>
                 {
-                    foreach (IClientEvent clientEvent in this.GetMessages())
+                    using (var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping, token))
                     {
-                        await this.eventsHub.SendToClientsAsync(clientEvent)
-                            .ConfigureAwait(false);
+                        linkedTokenSource.CancelAfter(new TimeSpan(0, 0, 10));
+                        try
+                        {
+                            IEnumerable<IClientEvent> messages = await this.GetMessages(linkedTokenSource.Token);
+                            foreach (IClientEvent clientEvent in messages)
+                            {
+                                await this.eventsHub.SendToClientsAsync(clientEvent);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.logger.LogError($"{this.GetType().Name} Error in GetMessages", ex);
+                        }
                     }
                 },
                 this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpan.FromSeconds(Math.Max(broadcasterSettings.BroadcastFrequencySeconds, 5)));
+                repeatEvery:
+                TimeSpan.FromSeconds(Math.Max(broadcasterSettings.BroadcastFrequencySeconds, 5)));
+
+            this.OnInitialise();
         }
 
-        protected abstract IEnumerable<IClientEvent> GetMessages();
+        protected abstract Task<IEnumerable<IClientEvent>> GetMessages(CancellationToken cancellationToken);
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing) return;
+            this.asyncLoop?.Dispose();
+        }
+
+        protected virtual void OnInitialise()
+        {
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

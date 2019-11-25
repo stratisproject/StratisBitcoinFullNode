@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                         "CorsPolicy",
                         builder =>
                         {
-                            var allowedDomains = new[] {"http://localhost", "http://localhost:4200"};
+                            var allowedDomains = new[] { "http://localhost", "http://localhost:4200" };
 
                             builder
                                 .WithOrigins(allowedDomains)

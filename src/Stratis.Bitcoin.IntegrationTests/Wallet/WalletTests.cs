@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                                     .GetUnusedAddress(new WalletAccountReference(WalletName, Account)).Address
                             }
                         }
-                    });
+                    }).GetAwaiter().GetResult();
 
                 JsonResult jsonResult = (JsonResult)result;
                 Assert.NotNull(((WalletBuildTransactionModel)jsonResult.Value).TransactionId);
@@ -549,7 +549,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             // Broadcast to the other node.
 
-            IActionResult result = node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            IActionResult result = node.FullNode.NodeController<WalletController>()
+                .SendTransaction(new SendTransactionRequest(trx.ToHex())).GetAwaiter().GetResult();
             if (result is ErrorResult errorResult)
             {
                 var errorResponse = (ErrorResponse)errorResult.Value;
