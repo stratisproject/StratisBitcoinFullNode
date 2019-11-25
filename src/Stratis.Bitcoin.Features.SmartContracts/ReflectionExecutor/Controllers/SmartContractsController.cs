@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
@@ -581,9 +582,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ContractTxData txData = this.smartContractTransactionService.BuildLocalCallTxData(request);
 
                 ILocalExecutionResult result = this.localExecutor.Execute(
-                    (ulong) this.chainIndexer.Height,
+                    (ulong)this.chainIndexer.Height,
                     request.Sender?.ToUint160(this.network) ?? new uint160(),
-                    string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
+                    string.IsNullOrWhiteSpace(request.Amount) ? (Money)request.Amount : 0,
                     txData);
 
                 return this.Json(result, new JsonSerializerSettings
@@ -595,11 +596,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 return this.Json(ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message,
                     "Error deserializing method parameters"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw e;
             }
         }
 
