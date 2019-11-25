@@ -6,14 +6,68 @@ using System.Threading;
 using City.Networks;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
-//using NBitcoin.NetworkDefinitions;
 using Xunit;
 
 namespace City.Chain.Tests
 {
     public class NetworkTests
     {
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ShouldProduceCorrectExtPubKey()
+        {
+            // This test is a replicate of 'should produce correct extpubkey' test in Angular (City Hub).
+            var passphrase = "";
+            var recoveryPhrase = "mystery problem faith negative member bottom concert bundle asthma female process twelve";
+            var walletPassword = "test";
+
+            var network = new CityMain();
+            var chainCode = new byte[] { 166, 209, 155, 88, 182, 124, 193, 127, 139, 220, 152, 1, 213, 145, 245, 80, 118, 188, 53, 211, 33, 37, 158, 40, 118, 207, 42, 83, 219, 233, 188, 161 };
+
+            // Intentionally blank lines to be 
+            // line-compatible with JavaScript unit test.
+
+            // The master node is made without network information, always same no matter network.
+            ExtKey masterNode = HdOperations.GetExtendedKey(recoveryPhrase, passphrase);
+            ExtPubKey extPubKey = masterNode.Neuter();
+
+            // masterNode in C# and JavaScript should both have the same chaincode at this step, verify:
+            Assert.Equal(chainCode, masterNode.ChainCode);
+            Assert.Equal(chainCode, extPubKey.ChainCode);
+
+            // Get the private key in WIF format and verify.
+            var xprv = masterNode.GetWif(network).ToWif();
+            Assert.Equal("xprv9s21ZrQH143K3ignAgXxaBbyVbrCTuUJSHNrMwdTa7n4i1zpFsiWdRCerTWrKaZXVehZFbXcFtwnmndrzC1AVs1BueiycVSxXjMyhXHpBqx", xprv);
+
+            // Get the public key in WIF format and verify.
+            var xpub = extPubKey.GetWif(network).ToWif();
+            Assert.Equal("xpub661MyMwAqRbcGCmFGi4xwKYi3dggsNC9oWJTAL358TK3apKxoR2mBDX8hkD1cUePJyzkkNWffsfZEzkExFXN1sNfJoVw161LfQyCuNVDadK", xpub);
+
+            // Get the "root" address.
+            var address = masterNode.PrivateKey.PubKey.GetAddress(network);
+
+            // Ensure that the generated address is a City Chain address and not Bitcoin.
+            Assert.Equal("CQtq75vu4bAceku6FmenWBh35i1Y4oskdu", address.ToString());
+
+            var publicNode = masterNode.Derive(new KeyPath("m/44'/1926'/0'/0/0"));
+            var changeNode = masterNode.Derive(new KeyPath("m/44'/1926'/0'/1/0"));
+
+            Assert.Equal("CPtzM2XwLCVS3L6BFK1xYsCcGqgrgsxHrP", publicNode.PrivateKey.PubKey.GetAddress(network).ToString());
+            Assert.Equal("CY35ZGxzZBYHKyNV4KWKunYLHsTWejVSdR", changeNode.PrivateKey.PubKey.GetAddress(network).ToString());
+
+            // Get the first account in the HD wallet, this is same as the level stored in the wallet files.
+            var accountNode = masterNode.Derive(new KeyPath("m/44'/1926'/0'"));
+            var accountExtPubKey = accountNode.Neuter().GetWif(network).ToWif();
+
+            Assert.Equal("xpub6BwCLtuvjt6TZ495sJruY1UWPXg6ME9HA92ro75YDHvGpPKY6kQ6ifp6DEszRpJGMtdBvWBaSn4gQDTz4Ctm5m1BMLeFUh3F19mTXA4s3bE", accountExtPubKey);
+
+            // Create a wallet file.
+            string encryptedSeed = masterNode.PrivateKey.GetEncryptedBitcoinSecret(walletPassword, network).ToWif();
+            Assert.Equal("6PYW8DRnFZSu3CVC3NfghKFSozZE8gmf76GmsGrrA9ciWbv6F6HhVSKkEQ", encryptedSeed);
+        }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanGetNetworkFromName()
