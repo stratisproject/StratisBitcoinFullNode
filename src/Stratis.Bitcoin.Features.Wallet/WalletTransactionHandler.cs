@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Recipients.Any())
                 throw new WalletException("Adding outputs is not allowed.");
 
-            // Turn the txout set into a Recipient array
+            // Turn the txout set into a Recipient array.
             context.Recipients.AddRange(transaction.Outputs
                 .Select(s => new Recipient
                 {
