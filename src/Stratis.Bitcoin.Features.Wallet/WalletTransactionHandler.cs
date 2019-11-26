@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (context.TransactionBuilder.Verify(transaction, out errors))
                     return transaction;
 
-                // Retry only if error is of type 'FeeTooLowPolicyError'
+                // Retry only if error is of type 'FeeTooLowPolicyError'.
                 if (!errors.Any(e => e is FeeTooLowPolicyError)) break;
 
                 retryCount++;
