@@ -6,15 +6,13 @@ using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.ILRewrite
 {
-    /// <summary>
-    /// Injects a new type with reference to an <see cref="Observer"/> into a module which can be used to track runtime metrics.
-    /// </summary>
-    public class ObserverRewriter : IILRewriter
+    public class ObserverInstanceRewriter : IILRewriter
     {
         private const string InjectedNamespace = "<Stratis>";
-        private const string InjectedPropertyName = "Instance";
-        private const string InjectedTypeName = "<RuntimeObserverInstance>";
-        private const string ConstructorName = ".cctor";
+        public const string InjectedTypeName = "<RuntimeObserverInstance>";
+        public const string MethodName = "SetObserver";
+        public const string ParameterName = "observer";
+        public const string InjectedPropertyName = "Instance";
 
         /// <summary>
         /// The individual rewriters to be applied to each method, which use the injected type.
@@ -25,32 +23,19 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             new MemoryLimitRewriter()
         };
 
-
-        private readonly Observer observerToInject;
-
-        public ObserverRewriter(Observer observer)
-        {
-            this.observerToInject = observer;
-        }
-
         /// <summary>
         /// Completely rewrites a module with all of the code required to meter memory and gas.
-        /// Includes the injection of the specific observer for this contract.
         /// </summary>
         public ModuleDefinition Rewrite(ModuleDefinition module)
         {
-            Guid id = Guid.NewGuid();
-
-            (FieldDefinition observerInstanceField, TypeDefinition observerType) = this.GetObserverInstance(module, id);
+            (FieldDefinition observerInstanceField, TypeDefinition observerType) = this.GetRuntimeInstance(module);
             var observer = new ObserverReferences(observerInstanceField, module);
 
             foreach (TypeDefinition type in module.GetTypes())
             {
                 this.RewriteType(type, observer);
             }
-
-            ObserverInstances.Set(id, this.observerToInject);
-
+            
             module.Types.Add(observerType);
 
             return module;
@@ -58,9 +43,9 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
         /// <summary>
         /// Inserts a static type into the module which gives access to an instance of <see cref="Observer"/>.
-        /// Because this is injected per module, it counts as a separate type and will not be a shared static.
+        /// Inserts a method which allows the static field to be set.
         /// </summary>
-        private (FieldDefinition, TypeDefinition) GetObserverInstance(ModuleDefinition module, Guid id)
+        private (FieldDefinition, TypeDefinition) GetRuntimeInstance(ModuleDefinition module)
         {
             // Add new type that can't be instantiated
             var instanceType = new TypeDefinition(
@@ -75,20 +60,25 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
                 FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly,
                 module.ImportReference(typeof(Observer))
             );
+
+            // Add the ThreadStaticAttribute so that each new thread has its own instance of the observer.
+            instanceField.CustomAttributes.Add(new CustomAttribute(module.ImportReference(typeof(ThreadStaticAttribute).GetConstructor(Type.EmptyTypes))));
             instanceType.Fields.Add(instanceField);
 
-            // When this type is created, retrieve the Observer from our global static dictionary so it can be used.
-            var constructor = new MethodDefinition(
-                ConstructorName, MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
+            // Add a static method that can be used to set the observer instance.
+            var method = new MethodDefinition(
+                MethodName,
+                MethodAttributes.Public | MethodAttributes.Static,
                 module.ImportReference(typeof(void))
             );
-            MethodReference getGuardInstance = module.ImportReference(typeof(ObserverInstances).GetMethod(nameof(ObserverInstances.Get)));
-            ILProcessor il = constructor.Body.GetILProcessor();
-            il.Emit(OpCodes.Ldstr, id.ToString());
-            il.Emit(OpCodes.Call, getGuardInstance);
+
+            method.Parameters.Add(new ParameterDefinition(ParameterName, ParameterAttributes.None, module.ImportReference(typeof(Observer))));
+
+            ILProcessor il = method.Body.GetILProcessor();
+            il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Stsfld, instanceField);
             il.Emit(OpCodes.Ret);
-            instanceType.Methods.Add(constructor);
+            instanceType.Methods.Add(method);
 
             return (instanceField, instanceType);
         }
@@ -120,7 +110,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
             var context = new ObserverRewriterContext(observer, observerVariable);
 
-            foreach(IObserverMethodRewriter rewriter in methodRewriters)
+            foreach (IObserverMethodRewriter rewriter in methodRewriters)
             {
                 rewriter.Rewrite(methodDefinition, il, context);
             }

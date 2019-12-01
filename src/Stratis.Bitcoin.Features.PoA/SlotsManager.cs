@@ -34,13 +34,15 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IFederationManager federationManager;
 
+        private readonly IConsensusManager consensusManager;
+
         private readonly ILogger logger;
 
-        public SlotsManager(Network network, IFederationManager federationManager, ILoggerFactory loggerFactory)
+        public SlotsManager(Network network, IFederationManager federationManager, IConsensusManager consensusManager, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
-
+            this.consensusManager = consensusManager;
             this.consensusOptions = (network as PoANetwork).ConsensusOptions;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -83,9 +85,11 @@ namespace Stratis.Bitcoin.Features.PoA
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;
             uint nextTimestampForMining = roundStartTimestamp + slotIndex * this.consensusOptions.TargetSpacingSeconds;
 
-            // We already passed our slot in this round.
-            // Get timestamp of our slot from next round.
-            if (nextTimestampForMining < currentTime)
+            // Check if we have missed our turn for this round.
+            // We still consider ourselves "in a turn" if we are in the first half of the turn and we haven't mined there yet.
+            // This might happen when starting the node for the first time or if there was a problem when mining.
+            if (currentTime > nextTimestampForMining + (this.consensusOptions.TargetSpacingSeconds / 2) // We are closer to the next turn than our own
+                  || this.consensusManager.Tip.Header.Time == nextTimestampForMining) // We have already mined in that slot
             {
                 // Get timestamp for next round.
                 nextTimestampForMining = roundStartTimestamp + roundTime + slotIndex * this.consensusOptions.TargetSpacingSeconds;

@@ -91,8 +91,6 @@ namespace NBitcoin
 
         int MinerConfirmationWindow { get; set; }
 
-        int RuleChangeActivationThreshold { get; set; }
-
         /// <summary>
         /// Specify the BIP44 coin type for this network.
         /// </summary>
