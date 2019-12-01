@@ -325,7 +325,6 @@ namespace City.Chain.Tests
             Assert.False(network.Consensus.PowAllowMinDifficultyBlocks);
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);
@@ -402,7 +401,6 @@ namespace City.Chain.Tests
             Assert.True(network.Consensus.PowAllowMinDifficultyBlocks);
             Assert.True(network.Consensus.PowNoRetargeting);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);
