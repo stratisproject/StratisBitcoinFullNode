@@ -59,13 +59,6 @@ namespace City.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new CityBIP9Deployments()
-            {
-                [CityBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2,
-                    new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
-                    new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
-            };
-
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
@@ -76,9 +69,8 @@ namespace City.Networks
                 majorityRejectBlockOutdated: 950,
                 majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
-                bip9Deployments: bip9Deployments,
+                bip9Deployments: new NoBIP9Deployments(),
                 bip34Hash: new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"),
-                ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
                 defaultAssumeValid: new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"),

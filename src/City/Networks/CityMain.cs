@@ -88,7 +88,7 @@ namespace City.Networks
                 },
                 bip9Deployments: new NoBIP9Deployments(),
                 bip34Hash: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
-                ruleChangeActivationThreshold: 1916, // 95% of 2016
+                // ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
                 defaultAssumeValid: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),

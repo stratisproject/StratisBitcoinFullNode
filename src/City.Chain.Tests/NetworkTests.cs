@@ -156,7 +156,6 @@ namespace City.Chain.Tests
             Assert.Equal(TimeSpan.FromSeconds(10 * 60), network.Consensus.PowTargetSpacing);
             Assert.False(network.Consensus.PowAllowMinDifficultyBlocks);
             Assert.False(network.Consensus.PowNoRetargeting);
-            Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
             Assert.Equal(2500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
@@ -325,7 +324,6 @@ namespace City.Chain.Tests
             Assert.Equal(TimeSpan.FromSeconds(10 * 60), network.Consensus.PowTargetSpacing);
             Assert.False(network.Consensus.PowAllowMinDifficultyBlocks);
             Assert.False(network.Consensus.PowNoRetargeting);
-            Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
             Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
@@ -403,7 +401,6 @@ namespace City.Chain.Tests
             Assert.Equal(TimeSpan.FromSeconds(10 * 60), network.Consensus.PowTargetSpacing);
             Assert.True(network.Consensus.PowAllowMinDifficultyBlocks);
             Assert.True(network.Consensus.PowNoRetargeting);
-            Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
             Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
