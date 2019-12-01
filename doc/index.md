@@ -1,4 +1,4 @@
-![City Chain](https://city-chain.org/images/logo/city-chain-gold-100x.png "City Chain")
+![City Chain](https://www.city-chain.org/images/logo/city-chain-gold-100x.png "City Chain")
 
 # City Chain: **Developer Reference**.
 

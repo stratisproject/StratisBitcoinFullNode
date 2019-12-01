@@ -1,6 +1,6 @@
 <div align="center">
 	<br>
-  <img src="https://city-chain.org/images/logo/city-chain-gold-100x.png" alt="modern-normalize">
+  <img src="https://www.city-chain.org/images/logo/city-chain-gold-100x.png" alt="modern-normalize">
 	<br>
 	<br>
 </div>
@@ -9,7 +9,7 @@ City Chain
 ===============
 
 Offical homepage:
-https://city-chain.org
+https://www.city-chain.org
 
 Blockchain for the Smart City Platform
 ----------------------------
@@ -75,7 +75,7 @@ Check this guides for more info:
 
 There is a lot to do and we welcome contributers developers and testers who want to get some Blockchain experience.
 
-Specification and API reference for source code is published to [https://citychainfoundation.github.io/city-chain/](https://citychainfoundation.github.io/city-chain/).
+Specification and API reference for source code is published to [https://www.citychainfoundation.github.io/city-chain/](https://www.citychainfoundation.github.io/city-chain/).
 
 Testing
 -------
