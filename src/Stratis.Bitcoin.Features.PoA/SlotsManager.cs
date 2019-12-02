@@ -34,15 +34,15 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IFederationManager federationManager;
 
-        private readonly IConsensusManager consensusManager;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ILogger logger;
 
-        public SlotsManager(Network network, IFederationManager federationManager, IConsensusManager consensusManager, ILoggerFactory loggerFactory)
+        public SlotsManager(Network network, IFederationManager federationManager, ChainIndexer chainIndexer, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
-            this.consensusManager = consensusManager;
+            this.chainIndexer = chainIndexer;
             this.consensusOptions = (network as PoANetwork).ConsensusOptions;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.PoA
             // We still consider ourselves "in a turn" if we are in the first half of the turn and we haven't mined there yet.
             // This might happen when starting the node for the first time or if there was a problem when mining.
             if (currentTime > nextTimestampForMining + (this.consensusOptions.TargetSpacingSeconds / 2) // We are closer to the next turn than our own
-                  || this.consensusManager.Tip.Header.Time == nextTimestampForMining) // We have already mined in that slot
+                  || this.chainIndexer.Tip.Header.Time == nextTimestampForMining) // We have already mined in that slot
             {
                 // Get timestamp for next round.
                 nextTimestampForMining = roundStartTimestamp + roundTime + slotIndex * this.consensusOptions.TargetSpacingSeconds;
