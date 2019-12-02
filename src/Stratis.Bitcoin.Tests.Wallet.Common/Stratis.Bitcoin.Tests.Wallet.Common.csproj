@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>3.0.1</RuntimeFrameworkVersion>
     <AssemblyName>Stratis.Bitcoin.Tests.Wallet.Common</AssemblyName>
     <PackageId>Stratis.Bitcoin.Tests.Wallet.Common</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

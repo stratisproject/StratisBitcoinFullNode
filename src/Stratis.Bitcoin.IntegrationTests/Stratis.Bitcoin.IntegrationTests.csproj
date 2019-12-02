@@ -9,7 +9,7 @@
     <AssemblyName>Stratis.Bitcoin.IntegrationTests</AssemblyName>    
     <PackageId>Stratis.Bitcoin.IntegrationTests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>3.0.1</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
