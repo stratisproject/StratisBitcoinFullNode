@@ -57,15 +57,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.InitializeTransactionBuilder(context);
 
-            if (context.Shuffle)
-                context.TransactionBuilder.Shuffle();
-
-            const int maxRetries = 3;
+            const int maxRetries = 5;
             int retryCount = 0;
 
             TransactionPolicyError[] errors = null;
             while (retryCount <= maxRetries)
             {
+                if (context.Shuffle)
+                    context.TransactionBuilder.Shuffle();
+
                 Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
                 if (context.Sign)
                 {
