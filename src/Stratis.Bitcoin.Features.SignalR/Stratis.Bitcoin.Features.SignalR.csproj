@@ -1,19 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-      <TargetFramework>netcoreapp2.1</TargetFramework>
-      <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
-      <Version>3.0.7.0-beta</Version>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
-        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.12" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
-      <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
-      <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-    </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.0</TargetFramework>
+		<RuntimeFrameworkVersion>3.0.0</RuntimeFrameworkVersion>
+		<Version>3.0.7.0-beta</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+		<PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="3.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+		<ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
+		<ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Properties\" />
+	</ItemGroup>
 
 </Project>

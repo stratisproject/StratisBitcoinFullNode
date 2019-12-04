@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -257,7 +256,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool serverError = false;
-            logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) => serverError = state.ToString().StartsWith("Failed whilst running the DNS server"));
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    if (!serverError && (LogLevel)invocation.Arguments[0] == LogLevel.Error)
+                    {
+                        // Not yet set, check trace message
+                        serverError = invocation.Arguments[2].ToString().StartsWith("Failed whilst running the DNS server");
+                    }
+                }));
             this.defaultConstructorParameters.loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             // Act.

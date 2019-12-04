@@ -135,11 +135,8 @@ namespace Stratis.Bitcoin.Configuration
             string agent = "StratisNode", string[] args = null, NetworksSelector networksSelector = null)
         {
             // Create the default logger factory and logger.
-            var loggerFactory = new ExtendedLoggerFactory();
-            this.LoggerFactory = loggerFactory;
-            this.LoggerFactory.AddConsoleWithFilters();
-            this.LoggerFactory.AddNLog();
-            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+            var loggerFactory = ExtendedLoggerFactory.Create();
+            this.Logger = loggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
             // Record arguments.
             this.Network = network;
@@ -219,7 +216,12 @@ namespace Stratis.Bitcoin.Configuration
             this.DataFolder = new DataFolder(this.DataDir);
 
             // Attempt to load NLog configuration from the DataFolder.
-            loggerFactory.LoadNLogConfiguration(this.DataFolder);
+            this.Log = new LogSettings();
+            this.Log.Load(this.ConfigReader);
+            this.LoggerFactory = ExtendedLoggerFactory.Create(this.Log);
+            this.LoggerFactory.AddNLog();
+            this.LoggerFactory.LoadNLogConfiguration(this.DataFolder);
+            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
             // Get the configuration file name for the network if it was not specified on the command line.
             if (this.ConfigurationFile == null)
@@ -234,10 +236,7 @@ namespace Stratis.Bitcoin.Configuration
             this.EnableSignalR = this.ConfigReader.GetOrDefault<bool>("enableSignalR",  false, this.Logger);
 
             // Create the custom logger factory.
-            this.Log = new LogSettings();
-            this.Log.Load(this.ConfigReader);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
-            this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
             // Load the configuration.
             this.LoadConfiguration();

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             ArrayPool<char> charpool = ArrayPool<char>.Create();
             var options = new MvcOptions();
             options.OutputFormatters.Clear();
-            options.OutputFormatters.Add(new JsonOutputFormatter(settings, charpool));
+            options.OutputFormatters.Add(new NewtonsoftJsonOutputFormatter(settings, charpool, options));
 
             RPCJsonMvcOptionsSetup.ConfigureMvc(options, settings, null, charpool, null);
 

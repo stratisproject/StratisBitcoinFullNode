@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
@@ -466,11 +466,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         protected void AssertLog<T>(Mock<ILogger> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
         {
-            logger.Verify(f => f.Log<Object>(logLevel,
-                It.IsAny<EventId>(),
-                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                It.Is<T>(t => t.Message.Equals(exceptionMessage)),
-                It.IsAny<Func<object, Exception, string>>()));
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    if ((LogLevel)invocation.Arguments[0] == logLevel)
+                    {
+                        invocation.Arguments[2].ToString().Should().EndWith(message);
+                        ((T)invocation.Arguments[3]).Message.Should().Be(exceptionMessage);
+                    }
+                }));
         }
     }
 }

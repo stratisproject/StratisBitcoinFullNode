@@ -15,8 +15,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ContractRefundProcessorTests()
         {
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
             this.network = new SmartContractsRegTest();
             this.refundProcessor = new ContractRefundProcessor(this.loggerFactory);
         }

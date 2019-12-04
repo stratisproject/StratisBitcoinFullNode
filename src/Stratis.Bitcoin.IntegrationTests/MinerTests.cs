@@ -149,8 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-                var loggerFactory = new ExtendedLoggerFactory();
-                loggerFactory.AddConsoleWithFilters();
+                var loggerFactory = ExtendedLoggerFactory.Create();
 
                 var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
                 var nodeStats = new NodeStats(dateTimeProvider, loggerFactory);

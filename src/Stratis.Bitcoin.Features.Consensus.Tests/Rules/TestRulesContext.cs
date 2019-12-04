@@ -165,7 +165,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             testRulesContext.NodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" });
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
-            testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new ConsensusOptions();
 

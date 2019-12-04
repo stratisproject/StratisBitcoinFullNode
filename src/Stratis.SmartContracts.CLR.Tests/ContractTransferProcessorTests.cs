@@ -21,8 +21,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ContractTransferProcessorTests()
         {
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
             this.network = new SmartContractsRegTest();
             this.transferProcessor = new ContractTransferProcessor(this.loggerFactory, this.network);
         }

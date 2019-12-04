@@ -37,8 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.fullNode = new Mock<IFullNode>();
             this.fullNode.Setup(i => i.Network).Returns(this.network);
 
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
+            this.loggerFactory = ExtendedLoggerFactory.Create();
             this.fullNode.Setup(i => i.NodeService<ILoggerFactory>(false)).Returns(this.loggerFactory);
         }
 

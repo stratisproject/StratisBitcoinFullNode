@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env, IFullNode fullNode)
+        public Startup(IWebHostEnvironment env, IFullNode fullNode)
         {
             this.fullNode = fullNode;
 
@@ -33,6 +33,14 @@ namespace Stratis.Bitcoin.Features.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging(
+                loggingBuilder =>
+                {
+                    loggingBuilder.AddConfiguration(this.Configuration.GetSection("Logging"));
+                    loggingBuilder.AddConsole();
+                    loggingBuilder.AddDebug();
+                });
+
             // Add service and create Policy to allow Cross-Origin Requests
             services.AddCors
             (
@@ -56,7 +64,8 @@ namespace Stratis.Bitcoin.Features.Api
                 });
 
             // Add framework services.
-            services.AddMvc(options =>
+            services
+                .AddMvc(options =>
                 {
                     options.Filters.Add(typeof(LoggingActionFilter));
 
@@ -68,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Api
                     }
                 })
                 // add serializers for NBitcoin objects
-                .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
+                .AddNewtonsoftJson(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddControllers(this.fullNode.Services.Features, services);
 
             // Enable API versioning.
@@ -101,17 +110,19 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApiVersionDescriptionProvider provider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IApiVersionDescriptionProvider provider)
         {
-            loggerFactory.AddConsole(this.Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
+            app.UseStaticFiles();
+            app.UseRouting();
 
             app.UseCors("CorsPolicy");
 
             // Register this before MVC and Swagger.
             app.UseMiddleware<NoCacheMiddleware>();
 
-            app.UseMvc();
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();

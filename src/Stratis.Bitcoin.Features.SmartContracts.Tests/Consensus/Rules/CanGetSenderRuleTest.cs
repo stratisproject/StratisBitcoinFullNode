@@ -37,8 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public CanGetSenderRuleTest()
         {
-            var loggerFactory = new ExtendedLoggerFactory();
-            loggerFactory.AddConsoleWithFilters();
+            var loggerFactory = ExtendedLoggerFactory.Create();
 
             this.network = new SmartContractsRegTest();
             this.senderRetriever = new Mock<ISenderRetriever>();

@@ -9,7 +9,6 @@ using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
@@ -253,15 +252,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>(MockBehavior.Loose);
             bool receivedSocketException = false;
-            logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
-            {
-                // Don't reset if we found the error message we were looking for
-                if (!receivedSocketException)
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
                 {
-                    // Not yet set, check error message
-                    receivedSocketException = state.ToString().StartsWith("Socket exception");
-                }
-            });
+                    if (!receivedSocketException && (LogLevel)invocation.Arguments[0] == LogLevel.Error)
+                    {
+                        // Not yet set, check trace message
+                        receivedSocketException = invocation.Arguments[2].ToString().StartsWith("Socket exception");
+                    }
+                }));
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
@@ -315,26 +315,25 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool receivedRequest = false;
-            logger.Setup(l => l.Log(LogLevel.Debug, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
-            {
-                // Don't reset if we found the trace message we were looking for
-                if (!receivedRequest)
-                {
-                    // Not yet set, check trace message
-                    receivedRequest = state.ToString().StartsWith("DNS request received");
-                }
-            });
-
+            
             bool receivedBadRequest = false;
-            logger.Setup(l => l.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
-            {
-                // Don't reset if we found the warning message we were looking for
-                if (!receivedBadRequest)
+
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
                 {
-                    // Not yet set, check warning message
-                    receivedBadRequest = state.ToString().StartsWith("Failed to process DNS request");
-                }
-            });
+                    if (!receivedRequest && (LogLevel)invocation.Arguments[0] == LogLevel.Debug)
+                    {
+                        // Not yet set, check trace message
+                        receivedRequest = invocation.Arguments[2].ToString().StartsWith("DNS request received");
+                    }
+
+                    if (!receivedBadRequest && (LogLevel)invocation.Arguments[0] == LogLevel.Warning)
+                    {
+                        // Not yet set, check trace message
+                        receivedBadRequest = invocation.Arguments[2].ToString().StartsWith("Failed to process DNS request");
+                    }
+                }));
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
@@ -391,15 +390,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool receivedRequest = false;
-            logger.Setup(l => l.Log(LogLevel.Debug, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
-            {
-                // Don't reset if we found the trace message we were looking for
-                if (!receivedRequest)
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
                 {
-                    // Not yet set, check trace message
-                    receivedRequest = state.ToString().StartsWith("DNS request received");
-                }
-            });
+                    if (!receivedRequest && (LogLevel)invocation.Arguments[0] == LogLevel.Debug)
+                    {
+                        // Not yet set, check trace message
+                        receivedRequest = invocation.Arguments[2].ToString().StartsWith("DNS request received");
+                    }
+                }));
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
@@ -552,15 +552,16 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool startedLoop = false;
-            logger.Setup(l => l.Log(LogLevel.Information, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
-            {
-                // Don't reset if we found the trace message we were looking for
-                if (!startedLoop)
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
                 {
-                    // Not yet set, check trace message
-                    startedLoop = state.ToString().Contains("DNS Metrics");
-                }
-            });
+                    if (!startedLoop && (LogLevel)invocation.Arguments[0] == LogLevel.Information)
+                    {
+                        // Not yet set, check trace message
+                        startedLoop = invocation.Arguments[2].ToString().Contains("DNS Metrics");
+                    }
+                }));
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 

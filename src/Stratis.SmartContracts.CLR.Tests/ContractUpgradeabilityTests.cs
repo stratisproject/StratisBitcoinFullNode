@@ -64,7 +64,7 @@ public class TestLoader
 
             var references = new List<MetadataReference>
             {
-                MetadataReference.CreateFromFile(Path.Combine(basePath, "Packages", "netcoreapp2.1", "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(Path.Combine(basePath, "Packages", "netcoreapp3.0", "System.Runtime.dll")),
             };
 
             // Stratis.SmartContracts.SmartContract with the constructor removed

@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -50,29 +51,43 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
 
         protected void AssertLog<T>(Mock<ILogger> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
         {
-            logger.Verify(f => f.Log<Object>(logLevel,
-                It.IsAny<EventId>(),
-                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                It.Is<T>(t => t.Message.Equals(exceptionMessage)),
-                It.IsAny<Func<object, Exception, string>>()));
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    if ((LogLevel)invocation.Arguments[0] == logLevel)
+                    {
+                        invocation.Arguments[2].ToString().Should().EndWith(message);
+                        ((T)invocation.Arguments[3]).Message.Should().Be(exceptionMessage);
+                    }
+                }));
         }
 
         protected void AssertLog<T>(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
         {
-            logger.Verify(f => f.Log<Object>(logLevel,
-                It.IsAny<EventId>(),
-                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                It.Is<T>(t => t.Message.Equals(exceptionMessage)),
-                It.IsAny<Func<object, Exception, string>>()));
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    if ((LogLevel)invocation.Arguments[0] == logLevel)
+                    {
+                        invocation.Arguments[2].ToString().Should().EndWith(message);
+                        ((T)invocation.Arguments[3]).Message.Should().Be(exceptionMessage);
+                    }
+                }));
         }
 
         protected void AssertLog(Mock<ILogger> logger, LogLevel logLevel, string message)
         {
-            logger.Verify(f => f.Log<Object>(logLevel,
-                It.IsAny<EventId>(),
-                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<object, Exception, string>>()));
+            logger
+                .Setup(f => f.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+                .Callback(new InvocationAction(invocation =>
+                {
+                    if ((LogLevel)invocation.Arguments[0] == logLevel)
+                    {
+                        invocation.Arguments[2].ToString().Should().EndWith(message);
+                    }
+                }));
         }
 
         /* TODO: Re-factor
@@ -90,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
         {
             logger.Verify(f => f.Log<Object>(logLevel,
                 It.IsAny<EventId>(),
-                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                It.Is<object>(l => ((IReadOnlyList<KeyValuePair<string, object>>)l)[0].Value.ToString().EndsWith(message)),
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
         }

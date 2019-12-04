@@ -38,8 +38,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             this.Network = new SmartContractsRegTest();
             this.KeyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-            this.LoggerFactory = new ExtendedLoggerFactory();
-            this.LoggerFactory.AddConsoleWithFilters();
+            this.LoggerFactory = ExtendedLoggerFactory.Create();
             this.State = new StateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.ContractPrimitiveSerializer = new ContractPrimitiveSerializer(this.Network);
             this.Serializer = new Serializer(this.ContractPrimitiveSerializer);

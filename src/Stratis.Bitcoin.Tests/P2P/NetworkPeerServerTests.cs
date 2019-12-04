@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -17,15 +18,14 @@ namespace Stratis.Bitcoin.Tests.P2P
 {
     public sealed class NetworkPeerServerTests : LogsTestBase
     {
-        private readonly ExtendedLoggerFactory extendedLoggerFactory;
+        private readonly ILoggerFactory extendedLoggerFactory;
 
         private readonly ITestOutputHelper testOutput;
 
         public NetworkPeerServerTests(ITestOutputHelper output)
         {
             this.testOutput = output;
-            this.extendedLoggerFactory = new ExtendedLoggerFactory();
-            this.extendedLoggerFactory.AddConsoleWithFilters();
+            this.extendedLoggerFactory = ExtendedLoggerFactory.Create();
         }
 
         [Theory]

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                                 .AllowCredentials();
                         });
                 });
-            services.AddSignalR().AddJsonProtocol(options =>
+            services.AddSignalR().AddNewtonsoftJsonProtocol(options =>
             {
                 var settings = new JsonSerializerSettings();
                 Serializer.RegisterFrontConverters(settings);
@@ -36,16 +37,21 @@ namespace Stratis.Bitcoin.Features.SignalR
             });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory,
             IServiceProvider serviceProvider)
         {
+            app.UseRouting();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
             app.UseCors("CorsPolicy");
-            app.UseSignalR(route => { route.MapHub<EventsHub>("/events-hub"); });
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHub<EventsHub>("/events-hub");
+            });
         }
     }
 }

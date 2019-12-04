@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NBitcoin.DataEncoders;
@@ -104,7 +103,7 @@ namespace Stratis.Bitcoin.Features.RPC
             }
 
             // Allows streams to be read multiple times.
-            request.EnableRewind();
+            request.EnableBuffering();
 
             // Read the request.
             var builder = new StringBuilder();
@@ -206,11 +205,10 @@ namespace Stratis.Bitcoin.Features.RPC
             contextFeatures.Set<IHttpRequestFeature>(requestFeature);
 
             var responseMemoryStream = new MemoryStream();
-            var responseFeature = new HttpResponseFeature()
-            {
-                Body = responseMemoryStream
-            };
-            contextFeatures.Set<IHttpResponseFeature>(responseFeature);
+            var responseFeature = new StreamResponseBodyFeature(responseMemoryStream);
+
+            contextFeatures.Set<IHttpResponseFeature>(new HttpResponseFeature());
+            contextFeatures.Set<IHttpResponseBodyFeature>(responseFeature);
 
             contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
 

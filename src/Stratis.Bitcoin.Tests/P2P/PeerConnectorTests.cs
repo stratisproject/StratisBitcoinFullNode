@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -24,14 +25,13 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerConnectorTests : LogsTestBase
     {
         private readonly IAsyncProvider asyncProvider;
-        private readonly ExtendedLoggerFactory extendedLoggerFactory;
+        private readonly ILoggerFactory extendedLoggerFactory;
         private readonly NodeLifetime nodeLifetime;
         private readonly ISignals signals;
 
         public PeerConnectorTests()
         {
-            this.extendedLoggerFactory = new ExtendedLoggerFactory();
-            this.extendedLoggerFactory.AddConsoleWithFilters();
+            this.extendedLoggerFactory = ExtendedLoggerFactory.Create();
 
             this.nodeLifetime = new NodeLifetime();
             this.signals = new Mock<ISignals>().Object;

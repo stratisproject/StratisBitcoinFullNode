@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly IChainState chainState;
         private readonly ICheckpoints checkpoints;
         private readonly ConnectionManagerSettings connectionManagerSettings;
-        private readonly ExtendedLoggerFactory extendedLoggerFactory;
+        private readonly ILoggerFactory extendedLoggerFactory;
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
         private readonly IPeerBanning peerBanning;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.chainState = new Mock<IChainState>().Object;
             this.checkpoints = new Mock<ICheckpoints>().Object;
             this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
-            this.extendedLoggerFactory = new ExtendedLoggerFactory(); this.extendedLoggerFactory.AddConsoleWithFilters();
+            this.extendedLoggerFactory = ExtendedLoggerFactory.Create();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>().Object;
             this.peerBanning = new Mock<IPeerBanning>().Object;
             this.provenBlockHeaderStore = new Mock<IProvenBlockHeaderStore>().Object;
