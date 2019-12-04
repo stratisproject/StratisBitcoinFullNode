@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="bin\Debug\netcoreapp3.0\Packages\netcoreapp3.0\System.Runtime.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
