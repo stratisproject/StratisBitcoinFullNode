@@ -115,7 +115,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             return await Task.Run(() =>
             {
                 Wallet wallet = this.walletManager.GetWallet(walletName);
-
                 return new WalletGeneralInfoModel
                 {
                     WalletName = wallet.Name,
