@@ -77,13 +77,15 @@ jobs:
 
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: |
-        zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+      run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
-    - name: Package (Win/Mac)
-      if: matrix.os != 'ubuntu-latest'
-      run: |
-        zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+    - name: Package (Win)
+      if: matrix.os != 'windows-latest'
+      run: Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\ -DestinationPath .\${{env.RELEASE_NAME}}
+
+    - name: Package (Mac)
+      if: matrix.os != 'macos-latest'
+      run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Release
       uses: ncipollo/release-action@v1
