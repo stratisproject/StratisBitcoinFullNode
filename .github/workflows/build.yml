@@ -96,7 +96,8 @@ jobs:
         draft: true
         prerelease: true
         name: "City Chain (Release ${{env.VERSION}})"
-        commit: "${{github.sha}}"
+        #commit: "${{github.sha}}"
+        commit: master
         tag: v${{env.VERSION}}
 
     # - name: Release
