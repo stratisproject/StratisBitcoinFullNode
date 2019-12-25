@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
         node_version: [12.x]
-        dotnet_version: ['2.1.607', '2.1.x', '2.2']
+        dotnet_version: ['2.1.607']
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -45,7 +45,12 @@ jobs:
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
       
-    - name: Build
+    - name: Build (Win/macOS)
+      if: (matrix.os != 'ubuntu-latest')
+      run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
+      
+    - name: Build (Linux)
+      if: (matrix.os == 'ubuntu-latest')
       run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
       
 #    - name: Unit Test
