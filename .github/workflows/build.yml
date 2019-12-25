@@ -38,13 +38,12 @@ jobs:
 #    - name: Unit Test
 #      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
 
-    - name: Release
     - uses: "marvinpinto/action-automatic-releases@latest"
+      name: "Release"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: "latest"
-        draft: true
-        prerelease: false
+        prerelease: true
         title: "Development Build"
         files: |
           LICENSE
