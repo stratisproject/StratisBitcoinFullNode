@@ -70,14 +70,14 @@ steps:
     #parallel: false # Optional
     #parallelCount: # Optional
 
-- task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@0
-  displayName: github release
-  condition: and(succeeded(), eq(variables['build.sourcebranch'], 'refs/heads/master'))
-  inputs:
-    githubEndpoint: github
-    githubRepository: 'CityChainFoundation/city-chain'
-    githubReleaseTitle: 'City Chain (Release $(Build.BuildNumber))'
-    githubReleasePrerelease: true
-    githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
-    manifestJson: package.json
-    githubEditRelease: true
+# - task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@0
+#   displayName: github release
+#   condition: and(succeeded(), eq(variables['build.sourcebranch'], 'refs/heads/master'))
+#   inputs:
+#     githubEndpoint: github
+#     githubRepository: 'CityChainFoundation/city-chain'
+#     githubReleaseTitle: 'City Chain (Release $(Build.BuildNumber))'
+#     githubReleasePrerelease: true
+#     githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
+#     manifestJson: package.json
+#     githubEditRelease: true

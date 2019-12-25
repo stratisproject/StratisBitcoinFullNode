@@ -7,13 +7,13 @@ on:
 
 jobs:
   
-  buildAndUnitTest:
+  buildTestRelease:
 
     strategy:
       matrix:
-        #os: [ windows-latest, ubuntu-latest, macos-latest ]
-        os: [ ubuntu-latest ]
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
         node_version: [12.x]
+        dotnet_version: ['2.1.607']
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -24,36 +24,23 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v1'
+      name: Checkout
 
-    - name: Set Node.js version ${{ matrix.node_version }}
+    - name: Setup Node.js (${{ matrix.node_version }})
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node_version }}
 
-    - name: Set Version
+    - name: Version
       id: setversion
       run: |
         echo ::set-env name=VERSION::$(npm run version --silent)
-#        echo ::set-output name=VERSION2::$(npm run version --silent) // Kept for reference, example on how to create an output.
 
-    # KEPT FOR REFERENCE, SHOULD BE REMOVED EVENTUALLY.
-    # - name: Get Version 1
-    #   run: |
-    #     echo "$MYVERSION"
-    #   env:
-    #     MYVERSION: ${{ steps.setversion.outputs.VERSION2 }}
-
-    # - name: Get Version 2
-    #   run: |
-    #     echo "$MYVERSION2"
-    #   env:
-    #     MYVERSION2: ${{ env.VERSION1 }}
-
-    - name: Setup .NET Core
+    - name: Setup .NET Core (${{ matrix.dotnet_version }})
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.1.607' 
+        dotnet-version: ${{ matrix.dotnet_version }}
 
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
