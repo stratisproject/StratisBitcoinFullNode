@@ -26,7 +26,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.2.402' 
+        dotnet-version: '2.1.607' 
                                     
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
