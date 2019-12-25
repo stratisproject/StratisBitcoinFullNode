@@ -31,15 +31,22 @@ jobs:
         node-version: ${{ matrix.node_version }}
 
     - name: Set Version
+      id: setversion
       run: |
-        echo "::set-env name=VERSION1::$(npm run version)"
+        echo ::set-env name=VERSION1::$(npm run version)
+        echo ::set-output name=VERSION2::$(npm run version)
 
-    - name: Get Version
+    - name: Get Version 1
       run: |
-        echo "${{ VERSION1 }}"
         echo "$MYVERSION"
       env:
-        MYVERSION: ${{ VERSION1 }}
+        MYVERSION: ${{ steps.setversion.outputs.VERSION2 }}
+
+    - name: Get Version 2
+      run: |
+        echo "$MYVERSION2"
+      env:
+        MYVERSION2: ${{ env.VERSION1 }}
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
