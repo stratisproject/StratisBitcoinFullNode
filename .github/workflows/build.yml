@@ -36,21 +36,21 @@ jobs:
     - name: Version
       id: setversion
       run: |
-        echo ::set-env name=VERSION::$(npm run version --silent)
+        echo "::set-env name=VERSION::$(npm run version --silent)"
 
 
     # TODO: Improve this, doesn't need to be separate steps, can be simpliefied, did not have time bother learning that as well at this moment in human history.
     - name: Configuration
       if: (matrix.os == 'windows-latest')
-      run: echo ::set-env name=RELEASE_CONFIGURATION::win-x64
+      run: "echo ::set-env name=RELEASE_CONFIGURATION::win-x64"
 
     - name: Configuration
       if: (matrix.os == 'ubuntu-latest')
-      run: echo ::set-env name=RELEASE_CONFIGURATION::linux-x64
+      run: "echo ::set-env name=RELEASE_CONFIGURATION::linux-x64"
 
     - name: Configuration
       if: (matrix.os == 'macos-latest')
-      run: echo ::set-env name=RELEASE_CONFIGURATION::osx-x64
+      run: "echo ::set-env name=RELEASE_CONFIGURATION::osx-x64"
 
 
     - name: Setup .NET Core (${{ matrix.dotnet_version }})
@@ -76,6 +76,10 @@ jobs:
       if: (matrix.os != 'ubuntu-latest')
       run: |
         zip -r release.zip ./src/City.Chain/bin/publish/
+
+
+
+
 
 # THE BUILT IN TASKS WILL CREATE NEW RELEASES ON EVERY EXECUTION... NOT USABLE.
     # - name: Release
@@ -103,15 +107,17 @@ jobs:
 #    - name: Unit Test
 #      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
 
-    - uses: "marvinpinto/action-automatic-releases@latest"
-      name: "Release"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "v${{env.VERSION}}"
-        prerelease: true
-        draft: true
-        title: "City Chain (Release ${{env.VERSION}})"
-        files: |
-          LICENSE
-          package.json
-          release.zip
+
+# CANNOT BE USED - CREATE NEW RELEASE ON EVERY BUILD
+    # - uses: "marvinpinto/action-automatic-releases@latest"
+    #   name: "Release"
+    #   with:
+    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
+    #     automatic_release_tag: "v${{env.VERSION}}"
+    #     prerelease: true
+    #     draft: true
+    #     title: "City Chain (Release ${{env.VERSION}})"
+    #     files: |
+    #       LICENSE
+    #       package.json
+    #       release.zip
