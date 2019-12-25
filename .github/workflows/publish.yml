@@ -1,9 +1,24 @@
-# name: Publish Packages
+name: Publish Packages
 
-# on:
-#   push:
-#     branches:
-#       - master
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  
+  createRelease:
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+
+    - uses: actions/checkout@v1
 
 # jobs:
 

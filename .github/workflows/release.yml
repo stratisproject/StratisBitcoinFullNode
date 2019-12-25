@@ -1,3 +1,18 @@
 on:
   release:
     types: [published, prereleased]
+
+jobs:
+  
+  createRelease:
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+
+    - uses: actions/checkout@v1
