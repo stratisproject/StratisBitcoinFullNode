@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
+        node_version: [8.x, 10.x]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -23,6 +24,19 @@ jobs:
     steps:
 
     - uses: actions/checkout@v1
+
+    - name: Set Node.js version ${{ matrix.node_version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node_version }}
+
+    - name: Get Version
+      run: |
+        node -p "require('./package.json').version"
+        echo "::set-env name=VERSION::1.0"
+        echo "::set-env name=VERSION1::$(node -p \"require('./package.json').version\")"
+        echo "::set-env name=VERSION2::$(node -p '"'require('./package.json').version'"')"
+#        echo "::set-env VERSION=$(<.version/version.txt)
       
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
