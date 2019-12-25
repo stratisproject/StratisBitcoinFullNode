@@ -1,7 +1,7 @@
-name: Build
+name: Pull Request
 
 on: 
-  push:
+  pull_request:
     branches:
       - master
 
