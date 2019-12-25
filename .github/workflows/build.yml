@@ -32,11 +32,7 @@ jobs:
 
     - name: Get Version
       run: |
-        echo node -p "require('./package.json').version"
-        echo "::set-env name=VERSION::1.0"
-        echo "::set-env name=VERSION1::$(node -p \"require('./package.json').version\")"
-#        echo "::set-env name=VERSION2::$(node -p '"'require('./package.json').version'"')"
-#        echo "::set-env VERSION=$(<.version/version.txt)
+        echo "::set-env name=VERSION1::$(npm run version)"
       
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
