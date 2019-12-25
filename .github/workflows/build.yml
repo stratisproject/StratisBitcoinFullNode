@@ -20,6 +20,7 @@ jobs:
     
     env:
       SOLUTION_PATH: 'src/City.Chain.sln'
+      PROJECT_PATH: 'src/City.Chain/City.Chain.csproj'
       BUILD_CONFIGURATION: 'Release'
 
     steps:
@@ -44,21 +45,25 @@ jobs:
 
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
-      
+
     - name: Build
       run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
-      
+
+    - name: Publish
+      run: dotnet publish -v m -o ./bin/publish -c ${{env.BUILD_CONFIGURATION}} ${{env.PROJECT_PATH}}
+
     - name: Package (Linux)
       if: (matrix.os == 'ubuntu-latest')
-      run: zip --junk-paths README.md
+      run: |
+        zip -r release.zip ./src/City.Chain/bin/publish/
 
     - name: Package (Win/Mac)
       if: (matrix.os == 'ubuntu-latest')
       run: |
-        zip --junk-paths README.md
+        zip -r release.zip ./src/City.Chain/bin/publish/
 
     - name: Release
-      id: create_release
+      id: release
       uses: actions/create-release@v1.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,23 +73,19 @@ jobs:
         draft: true
         prerelease: true
 
-    - name: Upload Release Asset
-      id: upload-release-asset 
+    - name: Upload
+      id: upload
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: ./my-artifact.zip
-        asset_name: my-artifact.zip
+        upload_url: ${{ steps.release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./release.zip
+        asset_name: release.zip
         asset_content_type: application/zip
 
 #    - name: Unit Test
 #      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
-
-
-
-
 
     # - uses: "marvinpinto/action-automatic-releases@latest"
     #   name: "Release"
