@@ -1,0 +1,38 @@
+name: Test
+
+on: 
+  push:
+  pull_request:
+
+jobs:
+  
+  integrationTest:
+
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+    
+    env:
+      SOLUTION_PATH: 'src/City.Chain.sln'
+      BUILD_CONFIGURATION: 'Release'
+
+    steps:
+
+    - uses: actions/checkout@v1
+      
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '2.2.402' 
+                                    
+    - name: Restore
+      run: dotnet restore ${{env.SOLUTION_PATH}}
+      
+    - name: Build
+      run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
+
+    - name: Integration Test
+      run: dotnet test -v=normal --no-build --filter FullyQualifiedName~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}

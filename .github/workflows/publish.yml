@@ -1,0 +1,52 @@
+# name: Publish Packages
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# jobs:
+
+#   publishPackages:
+
+#     runs-on: windows-latest
+    
+#     env:
+#       SOLUTION_PATH: 'src/City.Chain.sln'
+#       BUILD_CONFIGURATION: 'Debug'
+#       NUGET_RELEASE_TYPE: 'alpha'
+
+#     steps:
+
+#     - uses: actions/checkout@v1
+      
+#     - name: Setup .NET Core
+#       uses: actions/setup-dotnet@v1
+
+#     - name: Generate build number
+#       uses: einaregilsson/build-number@v2 
+#       with:
+#         token: ${{secrets.GITHUB_TOKEN}}   
+                                            
+#     - name: Setup NuGet.exe
+#       uses: NuGet/setup-nuget@v1.0.2
+
+#     - name: Set GITHUB_OWNER
+#       run: echo "::set-env name=GITHUB_OWNER::$(echo ${{github.repository}} | cut -d "/" -f 1)"
+
+#     - name: Update Directory.Build.props for Push
+#       run: |
+#         find . -name 'Directory.Build.props' -print0 | while read -d $'\0' file
+#         do
+#           sed -i 's,</IsPackable>,</IsPackable>\n\t<RepositoryType>git</RepositoryType>\n\t<RepositoryUrl>git://github.com/${{github.repository}}</RepositoryUrl>,g' $file
+#         done
+#       shell: bash
+
+#     - name: Nuget Pack
+#       run: dotnet pack --include-source --include-symbols --version-suffix "${{env.NUGET_RELEASE_TYPE}}${{env.BUILD_NUMBER}}" --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH }}
+
+#     - name: Nuget Add Source
+#       run: nuget sources add -name "GPR" -Source "https://nuget.pkg.github.com/${{env.GITHUB_OWNER}}/index.json" -Username "${{env.GITHUB_OWNER}}" -Password ${{secrets.GITHUB_TOKEN}} 
+
+#     - name: Nuget Push
+#       run: nuget push **/*.nupkg -Source "GPR" -SkipDuplicate  
