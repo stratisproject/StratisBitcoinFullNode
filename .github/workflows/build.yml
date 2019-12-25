@@ -43,7 +43,7 @@ jobs:
     - name: Configuration
       if: (matrix.os == 'windows-latest')
       run: |
-        echo ::set-env name=RELEASE_CONFIGURATION::osx-x64
+        echo ::set-env name=RELEASE_CONFIGURATION::win-x64
 
     - name: Configuration
       if: (matrix.os == 'ubuntu-latest')
