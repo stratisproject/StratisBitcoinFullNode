@@ -19,6 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     env:
+      PROJECT_NAME: 'City.Chain'
       SOLUTION_PATH: 'src/City.Chain.sln'
       PROJECT_PATH: 'src/City.Chain/City.Chain.csproj'
       BUILD_CONFIGURATION: 'Release'
@@ -52,6 +53,13 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: echo "::set-env name=RELEASE_CONFIGURATION::osx-x64"
 
+    - name: Variables
+      if: matrix.os == 'ubuntu-latest'
+      run: echo "::set-env name=RELEASE_NAME::${{env.PROJECT_NAME}}-${{env.VERSION}}-${{env.RELEASE_CONFIGURATION}}.zip"
+
+    - name: Variables
+      if: matrix.os != 'ubuntu-latest'
+      run: echo "::set-env name=RELEASE_NAME::${{env.PROJECT_NAME}}-${{env.VERSION}}-${{env.RELEASE_CONFIGURATION}}.zip"
 
     - name: Setup .NET Core (${{ matrix.dotnet_version }})
       uses: actions/setup-dotnet@v1
@@ -70,17 +78,17 @@ jobs:
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        zip -r release.zip ./src/City.Chain/bin/publish/
+        zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Package (Win/Mac)
       if: matrix.os != 'ubuntu-latest'
       run: |
-        zip -r release.zip ./src/City.Chain/bin/publish/
+        zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "release.zip"
+        artifacts: "${{env.RELEASE_NAME}}"
         allowUpdates: true
         token: ${{ secrets.GITHUB_TOKEN }}
         draft: true
