@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
+        node_version: [8.x, 10.x]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -28,7 +29,20 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '2.1.607' 
-                                    
+      
+    - name: Set Node.js version ${{ matrix.node_version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node_version }}
+
+    - name: Get Version
+      run: |
+        node -p "require('./package.json').version"
+        echo "::set-env name=VERSION::1.0"
+        echo "::set-env name=VERSION1::$(node -p \"require('./package.json').version\")"
+        echo "::set-env name=VERSION2::$(node -p '"'require('./package.json').version'"')"
+#        echo "::set-env VERSION=$(<.version/version.txt)
+
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
       
@@ -38,26 +52,14 @@ jobs:
 #    - name: Unit Test
 #      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
 
-    # - name: Release
-    # - uses: "marvinpinto/action-automatic-releases@latest"
-    #   with:
-    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
-    #     automatic_release_tag: "latest"
-    #     draft: true
-    #     prerelease: false
-    #     title: "Development Build"
-    #     files: |
-    #       LICENSE
-    #       package.json
-
     - name: Release
-      uses: anton-yurchenko/git-release@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DRAFT_RELEASE: "true"
-        PRE_RELEASE: "false"
-        CHANGELOG_FILE: "CHANGELOG.md"
+    - uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        args: |
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        draft: true
+        prerelease: false
+        title: "Development Build"
+        files: |
           LICENSE
           package.json

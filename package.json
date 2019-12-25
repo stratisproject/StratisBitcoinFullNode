@@ -18,7 +18,7 @@
   "homepage": "https://github.com/CityChainFoundation/city-chain#readme",
   "main": "main.js",
   "scripts": {
-    "version": "conventional-changelog -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
+    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
   },
   "private": true,
   "dependencies": {
