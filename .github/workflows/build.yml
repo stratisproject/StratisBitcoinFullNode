@@ -45,25 +45,55 @@ jobs:
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
       
-    - name: Build (Win/macOS)
-      if: (matrix.os != 'ubuntu-latest')
+    - name: Build
       run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
       
-    - name: Build (Linux)
+    - name: Package (Linux)
       if: (matrix.os == 'ubuntu-latest')
-      run: dotnet build --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
-      
+      run: zip --junk-paths README.md
+
+    - name: Package (Win/Mac)
+      if: (matrix.os == 'ubuntu-latest')
+      run: |
+        zip --junk-paths README.md
+
+    - name: Release
+      id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{env.VERSION}}
+        release_name: City Chain (Release ${{env.VERSION}})
+        draft: true
+        prerelease: true
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./my-artifact.zip
+        asset_name: my-artifact.zip
+        asset_content_type: application/zip
+
 #    - name: Unit Test
 #      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
 
-    - uses: "marvinpinto/action-automatic-releases@latest"
-      name: "Release"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "v${{env.VERSION}}"
-        prerelease: true
-        draft: true
-        title: "City Chain (Release ${{env.VERSION}})"
-        files: |
-          LICENSE
-          package.json
+
+
+
+
+    # - uses: "marvinpinto/action-automatic-releases@latest"
+    #   name: "Release"
+    #   with:
+    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
+    #     automatic_release_tag: "v${{env.VERSION}}"
+    #     prerelease: true
+    #     draft: true
+    #     title: "City Chain (Release ${{env.VERSION}})"
+    #     files: |
+    #       LICENSE
+    #       package.json
