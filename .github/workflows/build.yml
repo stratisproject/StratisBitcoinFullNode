@@ -96,7 +96,17 @@ jobs:
         draft: true
         prerelease: true
         name: "City Chain (Release ${{env.VERSION}})"
+        commit: "${{github.sha}}"
         tag: v${{env.VERSION}}
+
+    # - name: Release
+    #   uses: tix-factory/release-manager@v1
+    #   with:
+    #     github_token: ${{ secrets.github_token }}
+    #     mode: uploadReleaseAsset
+    #     filePath: ./${{env.RELEASE_NAME}}
+    #     assetName: ${{env.RELEASE_NAME}}
+    #     tag: v${{env.VERSION}}
 
 # THE BUILT IN TASKS WILL CREATE NEW RELEASES ON EVERY EXECUTION... NOT USABLE.
     # - name: Release
