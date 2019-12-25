@@ -78,14 +78,15 @@ jobs:
         zip -r release.zip ./src/City.Chain/bin/publish/
 
     - name: Release
-      uses: softprops/action-gh-release@v1
+      uses: ncipollo/release-action@v1
       with:
-        files: release.zip
+        artifacts: "release.zip"
+        allowUpdates: true
+        token: ${{ secrets.GITHUB_TOKEN }}
         draft: true
         prerelease: true
         name: "City Chain (Release ${{env.VERSION}})"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        tag: v${{env.VERSION}}
 
 # THE BUILT IN TASKS WILL CREATE NEW RELEASES ON EVERY EXECUTION... NOT USABLE.
     # - name: Release
@@ -127,3 +128,12 @@ jobs:
     #       LICENSE
     #       package.json
     #       release.zip
+
+
+
+# UNUSABLE RELEASE ACTIONS:
+# - Can't do updates to draft:
+# marvinpinto/action-automatic-releases@latest
+# actions/create-release@v1.0.0
+# actions/upload-release-asset@v1.0.1
+# softprops/action-gh-release@v1
