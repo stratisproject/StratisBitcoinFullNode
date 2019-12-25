@@ -80,11 +80,11 @@ jobs:
       run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Package (Win)
-      if: matrix.os != 'windows-latest'
+      if: matrix.os == 'windows-latest'
       run: Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\ -DestinationPath .\${{env.RELEASE_NAME}}
 
     - name: Package (Mac)
-      if: matrix.os != 'macos-latest'
+      if: matrix.os == 'macos-latest'
       run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Release
