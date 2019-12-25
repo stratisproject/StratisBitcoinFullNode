@@ -34,20 +34,21 @@ jobs:
     - name: Set Version
       id: setversion
       run: |
-        echo ::set-env name=VERSION1::$(npm run version --silent)
-        echo ::set-output name=VERSION2::$(npm run version --silent)
+        echo ::set-env name=VERSION::$(npm run version --silent)
+#        echo ::set-output name=VERSION2::$(npm run version --silent) // Kept for reference, example on how to create an output.
 
-    - name: Get Version 1
-      run: |
-        echo "$MYVERSION"
-      env:
-        MYVERSION: ${{ steps.setversion.outputs.VERSION2 }}
+    # KEPT FOR REFERENCE, SHOULD BE REMOVED EVENTUALLY.
+    # - name: Get Version 1
+    #   run: |
+    #     echo "$MYVERSION"
+    #   env:
+    #     MYVERSION: ${{ steps.setversion.outputs.VERSION2 }}
 
-    - name: Get Version 2
-      run: |
-        echo "$MYVERSION2"
-      env:
-        MYVERSION2: ${{ env.VERSION1 }}
+    # - name: Get Version 2
+    #   run: |
+    #     echo "$MYVERSION2"
+    #   env:
+    #     MYVERSION2: ${{ env.VERSION1 }}
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -67,9 +68,10 @@ jobs:
       name: "Release"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
+        automatic_release_tag: "v${{env.VERSION}}"
         prerelease: true
-        title: "Development Build"
+        draft: true
+        title: "City Chain (Release ${{env.VERSION}})"
         files: |
           LICENSE
           package.json
