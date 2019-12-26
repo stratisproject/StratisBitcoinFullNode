@@ -88,73 +88,12 @@ jobs:
       run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Release
-      uses: ncipollo/release-action@v1
+      uses: sondreb/action-release@master
       with:
-        artifacts: "${{env.RELEASE_NAME}}"
-        allowUpdates: true
         token: ${{ secrets.GITHUB_TOKEN }}
+        files: "${{env.RELEASE_NAME}}"
         draft: true
         prerelease: true
+        body: ''
         name: "City Chain (Release ${{env.VERSION}})"
-        #commit: "${{github.sha}}"
-        commit: master
         tag: v${{env.VERSION}}
-
-    # - name: Release
-    #   uses: tix-factory/release-manager@v1
-    #   with:
-    #     github_token: ${{ secrets.github_token }}
-    #     mode: uploadReleaseAsset
-    #     filePath: ./${{env.RELEASE_NAME}}
-    #     assetName: ${{env.RELEASE_NAME}}
-    #     tag: v${{env.VERSION}}
-
-# THE BUILT IN TASKS WILL CREATE NEW RELEASES ON EVERY EXECUTION... NOT USABLE.
-    # - name: Release
-    #   id: release
-    #   uses: actions/create-release@v1.0.0
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     tag_name: v${{env.VERSION}}
-    #     release_name: City Chain (Release ${{env.VERSION}})
-    #     draft: true
-    #     prerelease: true
-
-    # - name: Upload
-    #   id: upload
-    #   uses: actions/upload-release-asset@v1.0.1
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     upload_url: ${{ steps.release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-    #     asset_path: ./release.zip
-    #     asset_name: release.zip
-    #     asset_content_type: application/zip
-
-#    - name: Unit Test
-#      run: dotnet test -v=normal --no-build --filter FullyQualifiedName!~IntegrationTests --configuration ${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_PATH}}
-
-
-# CANNOT BE USED - CREATE NEW RELEASE ON EVERY BUILD
-    # - uses: "marvinpinto/action-automatic-releases@latest"
-    #   name: "Release"
-    #   with:
-    #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
-    #     automatic_release_tag: "v${{env.VERSION}}"
-    #     prerelease: true
-    #     draft: true
-    #     title: "City Chain (Release ${{env.VERSION}})"
-    #     files: |
-    #       LICENSE
-    #       package.json
-    #       release.zip
-
-
-
-# UNUSABLE RELEASE ACTIONS:
-# - Can't do updates to draft:
-# marvinpinto/action-automatic-releases@latest
-# actions/create-release@v1.0.0
-# actions/upload-release-asset@v1.0.1
-# softprops/action-gh-release@v1
