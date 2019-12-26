@@ -55,7 +55,7 @@ jobs:
 
     - name: Variables
       if: matrix.os == 'ubuntu-latest'
-      run: echo "::set-env name=RELEASE_NAME::${{env.PROJECT_NAME}}-${{env.VERSION}}-${{env.RELEASE_CONFIGURATION}}.zip"
+      run: echo "::set-env name=RELEASE_NAME::${{env.PROJECT_NAME}}-${{env.VERSION}}-${{env.RELEASE_CONFIGURATION}}.tar.gz"
 
     - name: Variables
       if: matrix.os != 'ubuntu-latest'
@@ -77,7 +77,7 @@ jobs:
 
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+      run: tar cfz ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     - name: Package (Win)
       if: matrix.os == 'windows-latest'
