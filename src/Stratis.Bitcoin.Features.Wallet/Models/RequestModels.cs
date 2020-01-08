@@ -155,6 +155,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public DateTime CreationDate { get; set; }
     }
 
+    public class WalletTransactionCountRequest : RequestModel
+    {
+        /// <summary>
+        /// The name of the wallet to query transaction count for.
+        /// </summary>
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        /// <summary>
+        /// Optional. The name of the account to query transaction count for. If no account name is specified,
+        /// the default account is used.
+        /// </summary>
+        public string AccountName { get; set; }
+    }
+
     /// <summary>
     /// A class containing the necessary parameters for a wallet history request.
     /// </summary>
@@ -198,6 +213,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public int? Take { get; set; }
 
         /// <summary>
+        /// Optional, Previous OutputTxTime, used for pagination
+        /// </summary>
+        public int? PrevOutputTxTime { get; set; }
+
+        /// <summary>
+        /// Optional, Previous PrevOutputIndex, used for pagination
+        /// </summary>
+        public int? PrevOutputIndex { get; set; }
+
+        /// <summary>
         /// An optional string that can be used to match different data in the transaction records.
         /// It is possible to match on the following: the transaction ID, the address at which funds where received,
         /// and the address to which funds where sent.
@@ -227,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// then the balance for the entire wallet (all accounts) is retrieved.
         /// </summary>         
         public string AccountName { get; set; }
-        
+
         /// <summary>
         /// For Cirrus we need to get Balances By Address
         /// </summary>
@@ -277,14 +302,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class ReceivedByAddressRequest : RequestModel
     {
-
         [Required(ErrorMessage = "An address is required.")]
         public string Address { get; set; }
     }
 
     public class WalletName : RequestModel
     {
-        
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
@@ -440,12 +463,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// </summary>
     public class SendTransactionRequest : RequestModel
     {
-        
         public SendTransactionRequest()
         {
         }
 
-        
         public SendTransactionRequest(string transactionHex)
         {
             this.Hex = transactionHex;
@@ -675,7 +696,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         public string WalletName { get; set; }
     }
-    
+
     /// <summary>
     /// A class containing the necessary parameters for a wallet stats request.
     /// </summary>
@@ -709,7 +730,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         public bool Verbose { get; set; }
     }
-    
+
     /// <summary>
     /// A class containing the necessary parameters to perform an add address book entry request.
     /// </summary>
