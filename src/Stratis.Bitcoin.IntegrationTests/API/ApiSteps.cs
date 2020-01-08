@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -186,9 +187,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             TestHelper.MineBlocks(this.firstStratisPowApiNode, this.maturity);
         }
 
-        private void a_real_transaction()
+        private async Task a_real_transaction()
         {
-            this.SendTransaction(this.BuildTransaction());
+            await this.SendTransaction(await this.BuildTransaction());
         }
 
         private void the_block_with_the_transaction_is_mined()
@@ -561,27 +562,34 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             }
         }
 
-        private void SendTransaction(IActionResult transactionResult)
+        private async Task SendTransaction(IActionResult transactionResult)
         {
             var walletTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
             this.transaction = this.firstStratisPowApiNode.FullNode.Network.CreateTransaction(walletTransactionModel.Hex);
-            this.firstStratisPowApiNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            await this.firstStratisPowApiNode.FullNode.NodeController<WalletController>()
+                .SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
-        private IActionResult BuildTransaction()
+        private async Task<IActionResult> BuildTransaction()
         {
-            IActionResult transactionResult = this.firstStratisPowApiNode.FullNode.NodeController<WalletController>()
+            IActionResult transactionResult = await this.firstStratisPowApiNode.FullNode
+                .NodeController<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = WalletAccountName,
                     AllowUnconfirmed = true,
                     ShuffleOutputs = false,
-                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = this.receiverAddress.Address, Amount = this.transferAmount.ToString() } },
+                    Recipients = new List<RecipientModel>
+                    {
+                        new RecipientModel
+                            {DestinationAddress = this.receiverAddress.Address, Amount = this.transferAmount.ToString()}
+                    },
                     FeeType = FeeType.Medium.ToString("D"),
                     Password = WalletPassword,
                     WalletName = WalletName,
                     FeeAmount = Money.Satoshis(82275).ToString() // Minimum fee
                 });
+            
             return transactionResult;
         }
     }

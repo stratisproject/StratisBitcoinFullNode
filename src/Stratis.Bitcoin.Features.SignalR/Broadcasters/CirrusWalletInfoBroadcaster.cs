@@ -1,10 +1,7 @@
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Services;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
@@ -15,15 +12,11 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     {
         public CirrusWalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
-            IWalletManager walletManager,
-            IConsensusManager consensusManager,
-            IConnectionManager connectionManager,
+            IWalletService walletService,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
-            ChainIndexer chainIndexer,
             EventsHub eventsHub)
-            : base(loggerFactory, walletManager, consensusManager, connectionManager, asyncProvider, nodeLifetime,
-                chainIndexer, eventsHub, true)
+            : base(loggerFactory, walletService, asyncProvider, nodeLifetime, eventsHub, true)
         {
         }
     }

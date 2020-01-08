@@ -81,6 +81,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Timestamp { get; set; }
 
+        [JsonProperty(PropertyName = "txOutputTime")]
+        public long TxOutputTime => Timestamp.ToUnixTimeSeconds();
+        
+        [JsonProperty(PropertyName = "txOutputIndex")]
+        public int TxOutputIndex { get; set; }
+
         /// <summary>
         /// The index of this transaction in the block in which it is contained.
         /// </summary>

@@ -335,5 +335,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Provides a default for the "force" flag when calling <see cref="AddWatchOnlyAddresses"/> or <see cref="AddWatchOnlyTransactions"/>.
         /// </summary>
         bool TestMode { get; set; }
+
+        /// <summary>
+        /// Returns the Transaction Count for the specified Wallet and Account
+        /// </summary>
+        /// <param name="walletName">The Wallet Name to Query</param>
+        /// <param name="accountName">The Account Name to Query</param>
+        /// <returns>The Transaction Count</returns>
+        int GetTransactionCount(string walletName, string accountName = null);
     }
 }

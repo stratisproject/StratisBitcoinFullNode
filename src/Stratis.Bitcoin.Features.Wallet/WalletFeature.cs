@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.Wallet.Services;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -167,7 +169,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 .DependOn<BlockStoreFeature>()
                 .DependOn<RPCFeature>()
                 .FeatureServices(services =>
-                    {
+                {
+                        services.AddSingleton<IWalletService, WalletService>();
                         services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
                         services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();

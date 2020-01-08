@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -25,12 +27,15 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             this.posMinting = posMinting;
         }
 
-        protected override IEnumerable<IClientEvent> GetMessages()
+        protected override Task<IEnumerable<IClientEvent>> GetMessages(CancellationToken cancellationToken)
         {
             if (null != this.posMinting)
             {
-                yield return new StakingInfoClientEvent(this.posMinting.GetGetStakingInfoModel());
+                return Task.FromResult<IEnumerable<IClientEvent>>(new[]
+                    {(IClientEvent) new StakingInfoClientEvent(this.posMinting.GetGetStakingInfoModel())});
             }
+
+            return Task.FromResult((IEnumerable<IClientEvent>)new IClientEvent[0]);
         }
     }
 }
