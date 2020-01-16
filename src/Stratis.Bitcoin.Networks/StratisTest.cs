@@ -142,6 +142,7 @@ namespace Stratis.Bitcoin.Networks
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), 26178), // danger cloud node
+                new NetworkAddress(IPAddress.Parse("169.1.13.216"), 26178),
             };
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
