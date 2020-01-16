@@ -135,17 +135,13 @@ namespace Stratis.Bitcoin.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
-                new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
-                new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
-                new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
+                new DNSSeedData("testnet1.stratisnetwork.com", "testnet1.stratisnetwork.com"),
+                new DNSSeedData("testnet2.stratisnetwork.com", "testnet2.stratisnetwork.com")
             };
 
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), 26178), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 26178), // beard cloud node
-                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 26178), // fassa cloud node
             };
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();

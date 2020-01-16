@@ -188,24 +188,13 @@ namespace Stratis.Bitcoin.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("mainnet1.stratisplatform.com", "mainnet1.stratisplatform.com"),
-                new DNSSeedData("mainnet2.stratisnetwork.com", "mainnet2.stratisnetwork.com"),
-                new DNSSeedData("mainnet3.stratisplatform.com", "mainnet3.stratisplatform.com"),
-                new DNSSeedData("mainnet4.stratisnetwork.com", "mainnet4.stratisnetwork.com")
+                new DNSSeedData("mainnet1.stratisnetwork.com", "mainnet1.stratisnetwork.com"),
+                new DNSSeedData("mainnet2.stratisnetwork.com", "mainnet2.stratisnetwork.com")
             };
 
             this.SeedNodes = new List<NetworkAddress>
             {
-                new NetworkAddress(IPAddress.Parse("51.140.231.125"), 16178), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 16178), // beard cloud node
-                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 16178), // fassa cloud node
-                new NetworkAddress(IPAddress.Parse("46.22.163.55"), 16178), // majic public node
-                new NetworkAddress(IPAddress.Parse("86.173.103.49"), 16178 ), // lukasz public node
-
-                new NetworkAddress(IPAddress.Parse("137.116.46.151"), 16178), // public node
-                new NetworkAddress(IPAddress.Parse("40.78.80.159"), 16178), // public node
-                new NetworkAddress(IPAddress.Parse("52.151.86.242"), 16178), // public node
-                new NetworkAddress(IPAddress.Parse("40.74.67.242"), 16178), // public node
+                new NetworkAddress(IPAddress.Parse("138.68.145.243"), 16178), // dan public node
             };
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();

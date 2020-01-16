@@ -199,9 +199,7 @@ namespace Stratis.Sidechains.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-
-                new DNSSeedData("cirrusmain1.stratisplatform.com", "cirrusmain1.stratisplatform.com")
-
+                new DNSSeedData("cirrusmain1.stratisnetwork.com", "cirrusmain1.stratisnetwork.com")
             };
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
