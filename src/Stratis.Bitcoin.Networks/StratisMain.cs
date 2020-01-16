@@ -195,6 +195,7 @@ namespace Stratis.Bitcoin.Networks
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("138.68.145.243"), 16178), // dan public node
+                new NetworkAddress(IPAddress.Parse("169.1.13.216"), 16178),
             };
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
