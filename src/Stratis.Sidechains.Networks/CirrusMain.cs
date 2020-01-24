@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA;
