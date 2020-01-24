@@ -325,7 +325,7 @@ namespace NBitcoin.Tests
 
             Assert.Equal(31, network.Checkpoints.Count);
             Assert.Equal(2, network.DNSSeeds.Count);
-            Assert.Equal(2, network.SeedNodes.Count);
+            Assert.Equal(4, network.SeedNodes.Count);
 
             Assert.Equal("StratisMain", network.Name);
             Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
