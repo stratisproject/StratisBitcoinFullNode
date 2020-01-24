@@ -202,6 +202,12 @@ namespace Stratis.Sidechains.Networks
                 new DNSSeedData("cirrusmain1.stratisnetwork.com", "cirrusmain1.stratisnetwork.com")
             };
 
+            this.SeedNodes = new List<NetworkAddress>
+            {
+                new NetworkAddress(IPAddress.Parse("213.125.242.234"), 16179),
+                new NetworkAddress(IPAddress.Parse("45.58.55.21"), 16179),
+            };
+
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
             // 16 below should be changed to TargetSpacingSeconds when we move that field.
