@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Controllers
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
         /// <summary>Specification of the network the node runs on.</summary>
-        private Network network; // Not readonly because of ValidateAddress
+        private readonly Network network; // Not readonly because of ValidateAddress
 
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
@@ -132,8 +132,10 @@ namespace Stratis.Bitcoin.Controllers
         /// protocol version, network name, coin ticker, and consensus height.
         /// </summary>
         /// <returns>A <see cref="StatusModel"/> with information about the node.</returns>
+        /// <response code="200">Returns node information</response>
         [HttpGet]
         [Route("status")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
         public IActionResult Status()
         {
             // Output has been merged with RPC's GetInfo() since they provided similar functionality.
@@ -172,7 +174,6 @@ namespace Stratis.Bitcoin.Controllers
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 var connectedPeer = new ConnectedPeerModel
@@ -206,8 +207,12 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if hash is empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if logger is not provided.</exception>
         /// <remarks>Binary serialization is not supported with this method.</remarks>
+        /// <response code="200">Returns block header</response>
+        /// <response code="400">Unexpected exception occured</response>
         [Route("getblockheader")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetBlockHeader([FromQuery] string hash, bool isJsonFormat = true)
         {
             try
@@ -247,8 +252,12 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentNullException">Thrown if fullNode, network, or chain are not available.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid<see cref="uint256"/>.</exception>
         /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
+        /// <response code="200">Returns the transaction</response>
+        /// <response code="400">Unexpected exception occured</response>
         [Route("getrawtransaction")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetRawTransactionAsync([FromQuery] string trxid, bool verbose = false)
         {
             try
@@ -295,8 +304,12 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="request">A class containing the necessary parameters for a block search request.</param>
         /// <returns>The JSON representation of the transaction.</returns>
+        /// <response code="200">Returns the transaction</response>
+        /// <response code="400">Invalid request or unexpected exception occured</response>
         [HttpPost]
         [Route("decoderawtransaction")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult DecodeRawTransaction([FromBody] DecodeRawTransactionModel request)
         {
             try
@@ -322,8 +335,12 @@ namespace Stratis.Bitcoin.Controllers
         /// <returns>Json formatted <see cref="ValidatedAddress"/> containing a boolean indicating address validity. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <exception cref="ArgumentException">Thrown if address provided is empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if network is not provided.</exception>
+        /// <response code="200">Returns validation result</response>
+        /// <response code="400">Unexpected exception occured</response>
         [Route("validateaddress")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult ValidateAddress([FromQuery] string address)
         {
             try
@@ -377,8 +394,12 @@ namespace Stratis.Bitcoin.Controllers
         /// <returns>Json formatted <see cref="GetTxOutModel"/>. <c>null</c> if no unspent outputs given parameters. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if network or chain not provided.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
+        /// <response code="200">Returns transaction output</response>
+        /// <response code="400">Unexpected exception occured</response>
         [Route("gettxout")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> GetTxOutAsync([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
         {
             try
@@ -425,9 +446,11 @@ namespace Stratis.Bitcoin.Controllers
         /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
         /// <returns><see cref="OkResult"/></returns>
+        /// <response code="200">Node was shutdown</response>
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
         public IActionResult Shutdown([FromBody] bool corsProtection = true)
         {
             // Start the node shutdown process, by calling StopApplication, which will signal to
@@ -442,8 +465,14 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="request">The request containing the loggers to modify.</param>
         /// <returns><see cref="OkResult"/></returns>
+        /// <response code="200">Log level updated</response>
+        /// <response code="400">Request is invalid or an unexpected exception occured</response>
+        /// <response code="500">Request is null</response>
         [HttpPut]
         [Route("loglevels")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult UpdateLogLevel([FromBody] LogRulesRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -496,16 +525,14 @@ namespace Stratis.Bitcoin.Controllers
         /// Get the enabled log rules.
         /// </summary>
         /// <returns>A list of log rules.</returns>
+        /// <response code="200">Returns log rules</response>
+        /// <response code="400">Unexpected exception occured</response>
         [HttpGet]
         [Route("logrules")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetLogRules()
         {
-            // Checks the request is valid.
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
             try
             {
                 var rules = new List<LogRuleModel>();
@@ -555,16 +582,14 @@ namespace Stratis.Bitcoin.Controllers
         /// Get the currently running async loops/delegates/tasks for diagnostic purposes.
         /// </summary>
         /// <returns>A list of running async loops/delegates/tasks.</returns>
+        /// <response code="200">Returns running tasks</response>
+        /// <response code="400">Unexpected exception occured</response>
         [HttpGet]
         [Route("asyncloops")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetAsyncLoops()
         {
-            // Checks the request is valid.
-            if (!this.ModelState.IsValid)
-            {
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
             try
             {
                 var loops = new List<AsyncLoopModel>();

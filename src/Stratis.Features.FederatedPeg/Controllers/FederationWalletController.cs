@@ -71,8 +71,18 @@ namespace Stratis.Features.FederatedPeg.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <summary>
+        /// Retrieves general information about the wallet
+        /// </summary>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Returns wallet information</response>
+        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.GeneralInfo)]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public IActionResult GetGeneralInfo()
         {
             try
@@ -104,8 +114,18 @@ namespace Stratis.Features.FederatedPeg.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves wallet balances
+        /// </summary>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Returns wallet balances</response>
+        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.Balance)]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public IActionResult GetBalance()
         {
             try
@@ -137,8 +157,18 @@ namespace Stratis.Features.FederatedPeg.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves withdrawal history for the wallet
+        /// </summary>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Returns wallet history</response>
+        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.History)]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public IActionResult GetHistory([FromQuery] int maxEntriesToReturn)
         {
             try
@@ -165,8 +195,13 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// This is for demo and testing use only.
         /// </summary>
         /// <param name="model">The hash of the block from which to start syncing.</param>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Syncronisation started</response>
+        /// <response code="400">Invalid request, or block not found</response>
         [HttpPost]
         [Route(FederationWalletRouteEndPoint.Sync)]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult Sync([FromBody] HashModel model)
         {
             if (!this.ModelState.IsValid)
@@ -189,9 +224,17 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// Provide the federation wallet's credentials so that it can sign transactions.
         /// </summary>
         /// <param name="request">The password of the federation wallet.</param>
-        /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Wallet enabled</response>
+        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="404">Wallet not found before timeout</response>
+        /// <response code="500">Request is null</response>
         [Route(FederationWalletRouteEndPoint.EnableFederation)]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult EnableFederation([FromBody]EnableFederationRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -229,8 +272,16 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <summary>
         /// Remove all transactions from the wallet.
         /// </summary>
+        /// <param name="request">Transactions to remove</param>
+        /// <returns>HTTP response</returns>
+        /// <response code="200">Returns removed transaction list</response>
+        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="500">Request is null</response>
         [Route(FederationWalletRouteEndPoint.RemoveTransactions)]
         [HttpDelete]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult RemoveTransactions([FromQuery]RemoveFederationTransactionsModel request)
         {
             Guard.NotNull(request, nameof(request));

@@ -41,8 +41,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to add an address book entry.</param>
         /// <returns>A JSON object containing the newly added entry.</returns>
+        /// <response code="200">The address book entry was added</response>
+        /// <response code="400">Invalid address book entry request or unexpected exception occured</response>
+        /// <response code="409">Address book entry already exists</response>
+        /// <response code="500">The request is null</response>
         [Route("address")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.Conflict)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult AddAddress([FromBody]AddressBookEntryRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -76,8 +84,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="label">The label of the entry to remove.</param>
         /// <returns>A JSON object containing the removed entry.</returns>
+        /// <response code="200">The address book entry was removed</response>
+        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="404">Address book entry not found</response>
+        /// <response code="500">The label is null or empty</response>
         [Route("address")]
         [HttpDelete]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult RemoveAddress([FromQuery]string label)
         {
             Guard.NotEmpty(label, nameof(label));
@@ -111,9 +127,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="skip">A value representing how many entries to skip before retrieving the first entry.</param>
         /// <param name="take">A value representing how many entries to retrieve.</param>
-        /// <returns>A JSON object containing the address book.</returns>
+        /// <returns>A JSON object containing the address book</returns>
+        /// <response code="200">Returns the address book</response>
+        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="404">Address book was not found</response>
         [Route("")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
         public IActionResult GetAddressBook([FromQuery]int? skip, int? take)
         {
             try

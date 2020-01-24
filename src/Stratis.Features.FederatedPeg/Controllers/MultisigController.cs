@@ -43,8 +43,14 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <param name="request">An object containing the parameters used to build a transaction.</param>
         /// <returns>A JSON object including the transaction ID, the hex used to execute
         /// the transaction, and the transaction fee.</returns>
+        /// <response code="200">Returns transaction details</response>
+        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="500">Request is null</response>
         [Route("build-transaction")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult BuildTransaction([FromBody] BuildMultisigTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
