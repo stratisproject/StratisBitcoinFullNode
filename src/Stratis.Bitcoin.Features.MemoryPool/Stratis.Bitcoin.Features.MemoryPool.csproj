@@ -15,10 +15,9 @@
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <Version>3.0.6.0-beta</Version>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
-    <StartupObject />
     <Authors>Stratis Group Ltd.</Authors>
   </PropertyGroup>
   <ItemGroup>
