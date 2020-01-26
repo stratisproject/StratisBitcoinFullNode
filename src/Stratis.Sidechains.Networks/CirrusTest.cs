@@ -168,8 +168,7 @@ namespace Stratis.Sidechains.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("cirrustest1.stratisplatform.com", "cirrustest1.stratisplatform.com")
-
+                new DNSSeedData("cirrustest1.stratisnetwork.com", "cirrustest1.stratisnetwork.com")
             };
 
             this.SeedNodes = new List<NetworkAddress>();
