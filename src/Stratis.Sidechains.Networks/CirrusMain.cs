@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
@@ -193,9 +195,13 @@ namespace Stratis.Sidechains.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
+                new DNSSeedData("cirrusmain1.stratisnetwork.com", "cirrusmain1.stratisnetwork.com")
+            };
 
-                new DNSSeedData("cirrusmain1.stratisplatform.com", "cirrusmain1.stratisplatform.com")
-
+            this.SeedNodes = new List<NetworkAddress>
+            {
+                new NetworkAddress(IPAddress.Parse("213.125.242.234"), 16179),
+                new NetworkAddress(IPAddress.Parse("45.58.55.21"), 16179),
             };
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
