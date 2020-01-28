@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     /// </summary>
     public class ColdStakingBroadcaster : ClientBroadcasterBase
     {
-        private readonly ColdStakingService coldStakingService;
+        private readonly IColdStakingService coldStakingService;
         private readonly IWalletService walletService;
         private string currentWalletName;
 
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             INodeLifetime nodeLifetime,
             IAsyncProvider asyncProvider,
             IWalletService walletService,
-            ColdStakingService coldStakingService,
+            IColdStakingService coldStakingService,
             EventsHub eventsHub)
             : base(eventsHub, loggerFactory, nodeLifetime, asyncProvider)
         {
