@@ -1,6 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.ColdStaking.Models;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.ColdStaking.Services
 {
@@ -9,12 +11,21 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Services
         private readonly ColdStakingManager coldStakingManager;
 
         public ColdStakingService(
-            ColdStakingManager coldStakingManager)
+            IWalletManager walletManager)
         {
-            this.coldStakingManager = coldStakingManager;
+            if (walletManager is ColdStakingManager walletManagerAsColdStakingManager)
+            {
+                this.coldStakingManager = walletManagerAsColdStakingManager;
+            }
+            else
+            {
+                throw new NotSupportedException(
+                    "ColdStakingService expects IWalletManager to be of type ColdStakingManager only");
+            }
         }
 
-        public async Task<GetColdStakingInfoResponse> GetColdStakingInfo(string walletName, CancellationToken cancellationToken)
+        public async Task<GetColdStakingInfoResponse> GetColdStakingInfo(string walletName,
+            CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
