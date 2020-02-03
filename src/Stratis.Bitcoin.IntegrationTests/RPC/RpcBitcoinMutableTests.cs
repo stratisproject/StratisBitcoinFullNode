@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
+    // TODO: These tests all need to run against SBFN too
     /// <summary>
     /// These tests are for RPC tests that require modifying the chain/nodes.
     /// Setup of the chain or nodes can be done in each test.
@@ -139,6 +140,24 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 FundRawTransactionResponse funded = node.CreateRPCClient().FundRawTransaction(tx);
                 Transaction signed = node.CreateRPCClient().SignRawTransaction(funded.Transaction);
                 node.CreateRPCClient().SendRawTransaction(signed);
+            }
+        }
+
+        [Fact]
+        public void CanGenerateToAddress()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateBitcoinCoreNode(version: BitcoinCoreVersion15).Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                var privateKey = new Key();
+
+                uint256[] blockHash = rpcClient.GenerateToAddress(1, privateKey.ScriptPubKey.GetDestinationAddress(rpcClient.Network));
+                Block block = rpcClient.GetBlock(blockHash[0]);
+
+                Assert.Equal(privateKey.ScriptPubKey, block.Transactions[0].Outputs[0].ScriptPubKey);
             }
         }
 
