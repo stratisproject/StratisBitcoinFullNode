@@ -33,7 +33,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// Returns the connected peers with some information
         /// </summary>
         /// <response code="200">Returns connected peers information</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
@@ -67,7 +67,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <returns>The Diagnostic Feature status</returns>
         /// <response code="200">Returns the status</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
@@ -92,7 +92,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// <param name="connectedOnly">if set to <c>true</c> returns statistics related to connected peers only.</param>
         /// <returns>List of peer statistics</returns>
         /// <response code="200">Returns connected peers statistics</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
@@ -121,7 +121,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <returns>Operation result.</returns>
         /// <response code="200">Peer statistics collection started</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]
@@ -151,7 +151,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <returns>Operation result.</returns>
         /// <response code="200">Peer statistics collection stopped</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.BadRequest)]

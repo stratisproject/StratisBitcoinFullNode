@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// </summary>
         /// <returns>All staking info details as per the GetStakingInfoModel.</returns>
         /// <response code="200">Returns staking info</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         /// <response code="405">Consensus is not PoS</response>
         [Route("getstakinginfo")]
         [HttpGet]
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="request">The name and password of the wallet to stake.</param>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         /// <response code="200">Staking has started</response>
-        /// <response code="400">An exception occured</response>
+        /// <response code="400">An exception occurred</response>
         /// <response code="405">Consensus is not PoS</response>
         /// <response code="500">Request is null</response>
         [Route("startstaking")]
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// </remarks>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         /// <response code="200">Staking has stopped</response>
-        /// <response code="400">An exception occured</response>
+        /// <response code="400">An exception occurred</response>
         /// <response code="405">Consensus is not PoS</response>
         [Route("stopstaking")]
         [HttpPost]

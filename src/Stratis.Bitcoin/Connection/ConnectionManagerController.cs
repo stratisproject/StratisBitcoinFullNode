@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Connection
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
         /// <response code="200">The node was added</response>
-        /// <response code="400">An exception occured</response>
+        /// <response code="400">An exception occurred</response>
         [Route("api/[controller]/addnode")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Connection
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>Json formatted <see cref="List{PeerNodeModel}"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <response code="200">Returns peer information list</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/getpeerinfo")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]

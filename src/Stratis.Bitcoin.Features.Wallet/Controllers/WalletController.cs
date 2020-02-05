@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="wordCount">The number of words in the mnemonic. The options are: 12,15,18,21 or 24. Defaults to 12.</param>
         /// <returns>A JSON object containing the generated mnemonic.</returns>
         /// <response code="200">Returns mnemonic</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("mnemonic")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">The object containing the parameters used to sign a message.</param>
         /// <returns>A JSON object containing the generated signature.</returns>
         /// <response code="200">Returns signature</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("signmessage")]
         [HttpPost]
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">The object containing the parameters verify a signature.</param>
         /// <returns>A JSON object containing the result of the verification.</returns>
         /// <response code="200">Returns verification result</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("verifymessage")]
         [HttpPost]
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to load an existing wallet</param>
         /// <response code="200">Wallet loaded</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="403">Incorrect password</response>
         /// <response code="404">Wallet not found</response>
         /// <response code="500">Request is null</response>
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to recover a wallet.</param>
         /// <returns>A value of Ok if the wallet was successfully recovered.</returns>
         /// <response code="200">Wallet recovered</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="404">Wallet not found</response>
         /// <response code="409">Wallet already exists</response>
         /// <response code="500">Request is null</response>
@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to recover a wallet using its extended public key.</param>
         /// <returns>A value of Ok if the wallet was successfully recovered.</returns>
         /// <response code="200">Wallet recovered</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="404">Wallet not found</response>
         /// <response code="409">Wallet already exists</response>
         /// <response code="500">Request is null</response>
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">The name of the wallet to get the information for.</param>
         /// <returns>A JSON object containing the wallet information.</returns>
         /// <response code="200">Returns wallet information</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("general-info")]
         [HttpGet]
@@ -482,7 +482,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to retrieve a wallet's history.</param>
         /// <returns>A JSON object containing the wallet history.</returns>
         /// <response code="200">Returns wallet history</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("history")]
         [HttpGet]
@@ -696,7 +696,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to retrieve a wallet's balance.</param>
         /// <returns>A JSON object containing the wallet balance.</returns>
         /// <response code="200">Returns wallet balances</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("balance")]
         [HttpGet]
@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// at a specific wallet address.</param>
         /// <returns>A JSON object containing the balance, fee, and an address for the balance.</returns>
         /// <response code="200">Returns wallet address balances</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("received-by-address")]
         [HttpGet]
@@ -807,7 +807,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the maximum spendable balance for an account
         /// along with the fee required to spend it.</returns>
         /// <response code="200">Returns spendable balance</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("maxbalance")]
         [HttpGet]
@@ -848,7 +848,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// transactions for an account.</param>
         /// <returns>A JSON object containing the spendable transactions for an account.</returns>
         /// <response code="200">Returns spendable transactions</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("spendable-transactions")]
         [HttpGet]
@@ -899,7 +899,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// for a specific transaction.</param>
         /// <returns>The estimated fee for the transaction.</returns>
         /// <response code="200">Returns fee estimate</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("estimate-txfee")]
         [HttpPost]
@@ -955,7 +955,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object including the transaction ID, the hex used to execute
         /// the transaction, and the transaction fee.</returns>
         /// <response code="200">Returns transaction information</response>
-        /// <response code="400">Invalid request, account not found, change address not found, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, account not found, change address not found, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("build-transaction")]
         [HttpPost]
@@ -1048,7 +1048,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the necessary parameters used to a send transaction request.</param>
         /// <returns>A JSON object containing information about the sent transaction.</returns>
         /// <response code="200">Returns transaction details</response>
-        /// <response code="400">Invalid request, cannot broadcast transaction, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, cannot broadcast transaction, or unexpected exception occurred</response>
         /// <response code="403">No connected peers</response>
         /// <response code="500">Request is null</response>
         [Route("send-transaction")]
@@ -1119,7 +1119,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the wallet folder path and
         /// the names of the files found within the folder.</returns>
         /// <response code="200">Returns wallet files</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("files")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -1159,7 +1159,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing the name of the new account or an existing account
         /// containing no transactions.</returns>
         /// <response code="200">Returns account name</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="403">Wallet is watch-only</response>
         /// <response code="500">Request is null</response>
         [Route("account")]
@@ -1201,7 +1201,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the necessary parameters to list the accounts for a wallet.</param>
         /// <returns>A JSON object containing a list of accounts for the specified wallet.</returns>
         /// <response code="200">Returns account names</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("accounts")]
         [HttpGet]
@@ -1238,7 +1238,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// unused address for a wallet account.</param>
         /// <returns>A JSON object containing the last created and unused address (in Base58 format).</returns>
         /// <response code="200">Returns address</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("unusedaddress")]
         [HttpGet]
@@ -1276,7 +1276,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// unused addresses for a wallet account.</param>
         /// <returns>A JSON object containing the required amount of unused addresses (in Base58 format).</returns>
         /// <response code="200">Returns address list</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null or cannot be parsed</response>
         [Route("unusedaddresses")]
         [HttpGet]
@@ -1313,7 +1313,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// all addresses for a wallet account.</param>
         /// <returns>A JSON object containing all addresses for a wallet account (in Base58 format).</returns>
         /// <response code="200">Returns address information list</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("addresses")]
         [HttpGet]
@@ -1380,7 +1380,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A JSON object containing all removed transactions identified by their
         /// transaction ID and creation time.</returns>
         /// <response code="200">Returns transaction list</response>
-        /// <response code="400">Invalid request, or an exception occured</response>
+        /// <response code="400">Invalid request, or an exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("remove-transactions")]
         [HttpDelete]
@@ -1457,7 +1457,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// the extended public key for a wallet account.</param>
         /// <returns>A JSON object containing the extended public key for a wallet account.</returns>
         /// <response code="200">Returns extended public key</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("extpubkey")]
         [HttpGet]
@@ -1550,7 +1550,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">Parameters to request wallet stats</param>
         /// <returns>Stats about the wallet</returns>
         /// <response code="200">Returns wallet stats</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("wallet-stats")]
         [HttpGet]
@@ -1614,7 +1614,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         /// <summary>Creates requested amount of UTXOs each of equal value.</summary>
         /// <response code="200">Returns transaction details</response>
-        /// <response code="400">Invalid request, cannot broadcast transaction, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, cannot broadcast transaction, or unexpected exception occurred</response>
         /// <response code="403">No connected peers</response>
         /// <response code="500">Request is null</response>
         [HttpPost]
@@ -1669,7 +1669,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         /// <summary>Splits and distributes UTXOs across wallet addresses</summary>
         /// <response code="200">Returns distribution details</response>
-        /// <response code="400">Invalid request, requested transactions exceeds number of UTXOs, cannot broadcast transaction, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, requested transactions exceeds number of UTXOs, cannot broadcast transaction, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [HttpPost]
         [Route("distribute-utxos")]

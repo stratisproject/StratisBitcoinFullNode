@@ -44,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <returns>A JSON object including the transaction ID, the hex used to execute
         /// the transaction, and the transaction fee.</returns>
         /// <response code="200">Returns transaction details</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("build-transaction")]
         [HttpPost]

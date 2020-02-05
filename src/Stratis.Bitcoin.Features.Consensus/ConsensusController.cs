@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <see cref="ThresholdStateModel"/> objects - one per deployment.
         /// Returns an <see cref="ErrorResult"/> if the method fails.</returns>
         /// <response code="200">Returns the list of deployment flags</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/deploymentflags")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the consensus tip. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <response code="200">Returns the block hash</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/getbestblockhash")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. <c>Null</c> if block not found. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <response code="200">Returns the block hash</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/getblockhash")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]

@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
         /// <returns>Http OK if the request succeeded.</returns>
         /// <example>/api/notifications/sync?from=1155695</example>
         /// <example>/api/notifications/sync?from=000000002f7105530e69b80f9295d3bc3046cd7d8643a2fb3aaaa23f90c82c77</example>
-        /// <response code="200">Syncronisation started</response>
+        /// <response code="200">Synchronisation started</response>
         /// <response code="400">Height or hash not supplied, or not found</response>
         [HttpGet]
         [Route("sync")]

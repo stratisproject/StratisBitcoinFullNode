@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>Active federation members</returns>
         /// <response code="200">Returns the active members</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("fedmembers")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>Active polls</returns>
         /// <response code="200">Returns the active polls</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("pendingpolls")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>Finished polls</returns>
         /// <response code="200">Returns the finished polls</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("finishedpolls")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>List of whitelisted hashes</returns>
         /// <response code="200">Returns the hashes</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("whitelistedhashes")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>The HTTP response</returns>
         /// <response code="200">Voted to add hash to whitelist</response>
-        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occured</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
         /// <response code="500">The request is null</response>
         [Route("schedulevote-whitelisthash")]
         [HttpPost]
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>The HTTP response</returns>
         /// <response code="200">Voted to remove hash from whitelist</response>
-        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occured</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
         /// <response code="500">The request is null</response>
         [Route("schedulevote-removehash")]
         [HttpPost]
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         /// <returns>Scheduled voting data</returns>
         /// <response code="200">Returns the voting data</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("scheduledvotes")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]

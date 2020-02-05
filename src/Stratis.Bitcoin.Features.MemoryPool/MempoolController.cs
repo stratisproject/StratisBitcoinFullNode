@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <returns>Json formatted <see cref="List{uint256}"/> containing the memory pool contents. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <response code="200">Returns memory pool transactions</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/getrawmempool")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]

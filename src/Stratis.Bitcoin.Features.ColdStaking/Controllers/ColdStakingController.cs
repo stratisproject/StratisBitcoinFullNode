@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// parameters  required to obtain cold staking information.</param>
         /// <returns>A <see cref="GetColdStakingInfoResponse"/> object containing the cold staking information.</returns>
         /// <response code="200">Returns wallet cold staking info</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("cold-staking-info")]
         [HttpGet]
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// required for creating the cold staking account.</param>
         /// <returns>A <see cref="CreateColdStakingAccountResponse>"/> object containing the account name.</returns>
         /// <response code="200">Returns newly created account info</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("cold-staking-account")]
         [HttpPost]
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// required for generating the cold staking address.</param>
         /// <returns>A <see cref="GetColdStakingAddressResponse>"/> object containing the cold staking address.</returns>
         /// <response code="200">Returns cold staking address response</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("cold-staking-address")]
         [HttpGet]
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <returns>A <see cref="SetupColdStakingResponse"/> object containing the hex representation of the transaction.</returns>
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
         /// <response code="200">Returns setup transaction response</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("setup-cold-staking")]
         [HttpPost]
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <returns>A <see cref="ColdStakingWithdrawalResponse"/> object containing the hex representation of the transaction.</returns>
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
         /// <response code="200">Returns withdrawal transaction response</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("cold-staking-withdrawal")]
         [HttpPost]

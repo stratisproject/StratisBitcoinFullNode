@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Controllers
         private readonly IGetUnspentTransaction getUnspentTransaction;
 
         /// <summary>Specification of the network the node runs on.</summary>
-        private readonly Network network; // Not readonly because of ValidateAddress
+        private readonly Network network;
 
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentNullException">Thrown if logger is not provided.</exception>
         /// <remarks>Binary serialization is not supported with this method.</remarks>
         /// <response code="200">Returns block header</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("getblockheader")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid<see cref="uint256"/>.</exception>
         /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
         /// <response code="200">Returns the transaction</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("getrawtransaction")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="request">A class containing the necessary parameters for a block search request.</param>
         /// <returns>The JSON representation of the transaction.</returns>
         /// <response code="200">Returns the transaction</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         [HttpPost]
         [Route("decoderawtransaction")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if address provided is empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if network is not provided.</exception>
         /// <response code="200">Returns validation result</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("validateaddress")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentNullException">Thrown if network or chain not provided.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
         /// <response code="200">Returns transaction output</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("gettxout")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -466,7 +466,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="request">The request containing the loggers to modify.</param>
         /// <returns><see cref="OkResult"/></returns>
         /// <response code="200">Log level updated</response>
-        /// <response code="400">Request is invalid or an unexpected exception occured</response>
+        /// <response code="400">Request is invalid or an unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [HttpPut]
         [Route("loglevels")]
@@ -526,7 +526,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>A list of log rules.</returns>
         /// <response code="200">Returns log rules</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [Route("logrules")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -583,7 +583,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>A list of running async loops/delegates/tasks.</returns>
         /// <response code="200">Returns running tasks</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
         [Route("asyncloops")]
         [ProducesResponseType((int)HttpStatusCode.OK)]

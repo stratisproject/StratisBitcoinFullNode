@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// 
         /// <returns>A smart contract account address to use for the wallet.</returns>
         /// <response code="200">Returns account addresses</response>
-        /// <response code="400">Wallet name not provided or unexpected exception occured</response>
+        /// <response code="400">Wallet name not provided or unexpected exception occurred</response>
         [Route("account-addresses")]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <param name="address">The address to retrieve the history for.</param>
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         /// <response code="200">Returns transaction history</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route("history")]
         [HttpGet]
@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <returns>A model of the transaction which the Broadcast Manager broadcasts. The result of the transaction broadcast is not returned,
         /// and you should check for a transaction receipt to see if it was successful.</returns>
         /// <response code="200">Returns the broadcast transaction</response>
-        /// <response code="400">Invalid request, failed to broadcast transaction or unexpected exception occured</response>
+        /// <response code="400">Invalid request, failed to broadcast transaction or unexpected exception occurred</response>
         /// <response code="500">Request is null, or no peers are connected</response>
         [Route("send-transaction")]
         [HttpPost]

@@ -93,7 +93,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// </summary>
         /// <returns>A <see cref="FederationGatewayInfoModel"/> with information about the federation.</returns>
         /// <response code="200">Returns federation info</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route(FederationGatewayRouteEndPoint.GetInfo)]
         [HttpGet]
         [ProducesResponseType((int)HttpStatusCode.OK)]

@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="body">A JObject containing the name of the method to process.</param>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
         /// <response code="200">Returns method response</response>
-        /// <response code="400">An exception occured</response>
+        /// <response code="400">An exception occurred</response>
         /// <response code="405">RPC is disabled</response>
         /// <response code="500">Body is null</response>
         [Route("callbyname")]
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <returns>A JSON result that lists the RPC methods.</returns>
         /// <response code="200">Returns available methods</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         /// <response code="405">RPC is disabled</response>
         [Route("listmethods")]
         [HttpGet]

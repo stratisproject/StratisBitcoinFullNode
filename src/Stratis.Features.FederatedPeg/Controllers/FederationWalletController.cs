@@ -76,7 +76,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// </summary>
         /// <returns>HTTP response</returns>
         /// <response code="200">Returns wallet information</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.GeneralInfo)]
         [HttpGet]
@@ -119,7 +119,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// </summary>
         /// <returns>HTTP response</returns>
         /// <response code="200">Returns wallet balances</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.Balance)]
         [HttpGet]
@@ -162,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// </summary>
         /// <returns>HTTP response</returns>
         /// <response code="200">Returns wallet history</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         /// <response code="404">Wallet does not exist</response>
         [Route(FederationWalletRouteEndPoint.History)]
         [HttpGet]
@@ -226,7 +226,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <param name="request">The password of the federation wallet.</param>
         /// <returns>HTTP response</returns>
         /// <response code="200">Wallet enabled</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="404">Wallet not found before timeout</response>
         /// <response code="500">Request is null</response>
         [Route(FederationWalletRouteEndPoint.EnableFederation)]
@@ -275,7 +275,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <param name="request">Transactions to remove</param>
         /// <returns>HTTP response</returns>
         /// <response code="200">Returns removed transaction list</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="500">Request is null</response>
         [Route(FederationWalletRouteEndPoint.RemoveTransactions)]
         [HttpDelete]

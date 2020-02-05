@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <remarks>It is possible that less than the required number of blocks will be mined because the generating function only
         /// tries all possible header nonces values.</remarks>
         /// <response code="200">Returns the generated block hashes</response>
-        /// <response code="400">Invalid request, or unexpected exception occured</response>
+        /// <response code="400">Invalid request, or unexpected exception occurred</response>
         /// <response code="403">Must request to mine one or more blocks</response>
         /// <response code="405">Mining not allowed for PoS</response>
         /// <response code="500">Request is null</response>
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
         /// <response code="200">Mining stopped</response>
-        /// <response code="400">Unexpected exception occured</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("stopmining")]
         [HttpPost]
         [ProducesResponseType((int)HttpStatusCode.OK)]

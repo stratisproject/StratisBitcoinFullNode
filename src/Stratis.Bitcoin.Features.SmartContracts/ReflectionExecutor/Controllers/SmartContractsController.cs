@@ -443,7 +443,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// 
         /// <returns>The build transaction hex.</returns>
         /// <response code="200">Returns transaction response</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         [Route("build-transaction")]
         [HttpPost]
         [ProducesResponseType((int)HttpStatusCode.OK)]
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the parameters used to build the the fee estimation transaction.</param>
         /// <returns>The estimated fee for the transaction.</returns>
         /// <response code="200">Returns estimated fee</response>
-        /// <response code="400">Invalid request or unexpected exception occured</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
         [Route("estimate-fee")]
         [HttpPost]
         [ProducesResponseType((int)HttpStatusCode.OK)]

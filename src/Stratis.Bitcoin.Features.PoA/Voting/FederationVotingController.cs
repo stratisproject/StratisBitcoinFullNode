@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <param name="request">Request containing member public key</param>
         /// <returns>The HTTP response</returns>
         /// <response code="200">Voted to add member</response>
-        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occured</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
         /// <response code="500">The request is null</response>
         [Route("schedulevote-addfedmember")]
         [HttpPost]
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <param name="request">Request containing member public key</param>
         /// <returns>The HTTP response</returns>
         /// <response code="200">Voted to kick member</response>
-        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occured</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
         /// <response code="500">The request is null</response>
         [Route("schedulevote-kickfedmember")]
         [HttpPost]
