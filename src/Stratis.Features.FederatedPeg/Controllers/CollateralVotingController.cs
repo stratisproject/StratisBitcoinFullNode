@@ -63,7 +63,10 @@ namespace Stratis.Features.FederatedPeg.Controllers
             {
                 var key = new PubKey(request.PubKeyHex);
 
-                IFederationMember federationMember = new CollateralFederationMember(key, new Money(request.CollateralAmountSatoshis), request.CollateralMainchainAddress);
+                if (FederationVotingController.IsMultisigMember(this.network, key))
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Multisig members can't be voted on", string.Empty);
+
+                IFederationMember federationMember = new CollateralFederationMember(key, false, new Money(request.CollateralAmountSatoshis), request.CollateralMainchainAddress);
 
                 byte[] fedMemberBytes = (this.network.Consensus.ConsensusFactory as PoAConsensusFactory).SerializeFederationMember(federationMember);
 

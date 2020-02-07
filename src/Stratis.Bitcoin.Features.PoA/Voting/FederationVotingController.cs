@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             return this.VoteAddKickFedMember(request, false);
         }
 
+        public static bool IsMultisigMember(Network network, PubKey pubKey)
+        {
+            var options = (PoAConsensusOptions)network.Consensus.Options;
+            return options.GenesisFederationMembers.Select(m => (CollateralFederationMember)m).Any(m => m.PubKey == pubKey && m.IsMultisigMember);
+        }
+
         private IActionResult VoteAddKickFedMember(HexPubKeyModel request, bool addMember)
         {
             Guard.NotNull(request, nameof(request));
@@ -57,6 +64,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             try
             {
                 var key = new PubKey(request.PubKeyHex);
+
+                if (IsMultisigMember(this.network, key))
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Multisig members can't be voted on", string.Empty);
 
                 IFederationMember federationMember = new FederationMember(key);
                 byte[] fedMemberBytes = (this.network.Consensus.ConsensusFactory as PoAConsensusFactory).SerializeFederationMember(federationMember);
