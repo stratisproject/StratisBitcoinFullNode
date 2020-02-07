@@ -50,9 +50,6 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // TODO remove this line when multisig recreation is implemented.
-            return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Disabled in current version.", string.Empty);
-
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
