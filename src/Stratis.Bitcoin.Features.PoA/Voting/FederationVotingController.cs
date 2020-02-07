@@ -48,7 +48,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         public static bool IsMultisigMember(Network network, PubKey pubKey)
         {
             var options = (PoAConsensusOptions)network.Consensus.Options;
-            return options.GenesisFederationMembers.Select(m => (CollateralFederationMember)m).Any(m => m.PubKey == pubKey && m.IsMultisigMember);
+            return options.GenesisFederationMembers
+                .Where(m => m is CollateralFederationMember cm && cm.IsMultisigMember)
+                .Any(m => m.PubKey == pubKey);
         }
 
         private IActionResult VoteAddKickFedMember(HexPubKeyModel request, bool addMember)
