@@ -65,11 +65,15 @@ namespace Stratis.Bitcoin.Features.PoA
     /// <summary>Class that contains data that defines a federation member on federated peg sidechain.</summary>
     public class CollateralFederationMember : FederationMember
     {
-        public CollateralFederationMember(PubKey pubKey, Money collateralAmount, string collateralMainchainAddress) : base(pubKey)
+        public CollateralFederationMember(PubKey pubKey, bool isMultiSigMember, Money collateralAmount, string collateralMainchainAddress) : base(pubKey)
         {
+            this.IsMultisigMember = isMultiSigMember;
             this.CollateralAmount = collateralAmount;
             this.CollateralMainchainAddress = collateralMainchainAddress;
         }
+
+        /// <summary>Set if this is a multisig member.</summary>
+        public bool IsMultisigMember { get; set; }
 
         /// <summary>Amount that federation member has to have on mainchain.</summary>
         public Money CollateralAmount { get; set; }
@@ -101,7 +105,7 @@ namespace Stratis.Bitcoin.Features.PoA
             if (((object)a == null) || ((object)b == null))
                 return false;
 
-            return (a.PubKey == b.PubKey) && (a.CollateralAmount == b.CollateralAmount) && (a.CollateralMainchainAddress == b.CollateralMainchainAddress);
+            return (a.PubKey == b.PubKey) && (a.IsMultisigMember == b.IsMultisigMember) && (a.CollateralAmount == b.CollateralAmount) && (a.CollateralMainchainAddress == b.CollateralMainchainAddress);
         }
 
         public static bool operator !=(CollateralFederationMember a, CollateralFederationMember b)
