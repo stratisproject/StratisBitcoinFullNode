@@ -214,11 +214,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
 
-            var peer = this.peerAddressManager.FindPeer(clientLocalEndPoint);
-            if (peer != null && peer.IsBanned(this.dateTimeProvider.GetUtcNow()))
+            var peers = this.peerAddressManager.FindPeersByIp(clientLocalEndPoint);
+            var bannedPeer = peers.FirstOrDefault(p => p.IsBanned(this.dateTimeProvider.GetUtcNow()));
+            if (bannedPeer != null)
             {
                 this.logger.LogTrace("(-)[PEER_BANNED]:false");
-                return (false, $"Inbound Refused: Peer {peer.Endpoint} is banned until {peer.BanUntil}.");
+                return (false, $"Inbound Refused: Peer {clientLocalEndPoint} is banned until {bannedPeer.BanUntil}.");
             }
 
             if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
