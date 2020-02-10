@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -164,6 +165,34 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 TestHelper.Connect(node1, node2);
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().NotBeEmpty();
+            }
+        }
+
+        [Fact]
+        public void Node_Gets_Banned_Subsequent_Connections_DoesNot_Affect_InbounfCount()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-5-node1").Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-5-node2").Start();
+
+                TestHelper.Connect(node1, node2);
+
+                var service = node1.FullNode.NodeService<IPeerBanning>();
+                service.BanAndDisconnectPeer(node2.Endpoint);
+
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2) == false);
+
+                TestHelper.ConnectNoCheck(node2, node1);
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                TestHelper.ConnectNoCheck(node2, node1);
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                TestHelper.ConnectNoCheck(node2, node1);
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                TestHelper.ConnectNoCheck(node2, node1);
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                TestHelper.ConnectNoCheck(node2, node1);
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
             }
         }
 
