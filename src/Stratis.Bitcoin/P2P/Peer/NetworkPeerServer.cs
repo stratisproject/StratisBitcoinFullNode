@@ -212,14 +212,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private (bool successful, string reason) AllowClientConnection(TcpClient tcpClient)
         {
-            var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
-            var peers = this.peerAddressManager.FindPeersByIp(clientLocalEndPoint);
+            var peers = this.peerAddressManager.FindPeersByIp(clientRemoteEndPoint);
             var bannedPeer = peers.FirstOrDefault(p => p.IsBanned(this.dateTimeProvider.GetUtcNow()));
             if (bannedPeer != null)
             {
                 this.logger.LogTrace("(-)[PEER_BANNED]:false");
-                return (false, $"Inbound Refused: Peer {clientLocalEndPoint} is banned until {bannedPeer.BanUntil}.");
+                return (false, $"Inbound Refused: Peer {clientRemoteEndPoint} is banned until {bannedPeer.BanUntil}.");
             }
 
             if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Inbound Accepted: IBD Complete.");
             }
 
-            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+            var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
 
             bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
