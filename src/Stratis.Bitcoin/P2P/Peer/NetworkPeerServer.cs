@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly CancellationTokenSource serverCancel;
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
-        private readonly NetworkPeerDisposer networkPeerDisposer;
+        public NetworkPeerDisposer NetworkPeerDisposer { get; private set; }
 
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.signals = asyncProvider.Signals;
             this.networkPeerFactory = networkPeerFactory;
-            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
+            this.NetworkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
             this.peerAddressManager = peerAddressManager;
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogDebug("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    INetworkPeer connectedPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
+                    INetworkPeer connectedPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.NetworkPeerDisposer);
                     this.signals.Publish(new PeerConnected(connectedPeer.Inbound, connectedPeer.PeerEndPoint));
                 }
             }
@@ -184,10 +184,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogDebug("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
 
-            if (this.networkPeerDisposer.ConnectedPeersCount > 0)
-                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.networkPeerDisposer.ConnectedPeersCount);
+            if (this.NetworkPeerDisposer.ConnectedPeersCount > 0)
+                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.NetworkPeerDisposer.ConnectedPeersCount);
 
-            this.networkPeerDisposer.Dispose();
+            this.NetworkPeerDisposer.Dispose();
         }
 
         /// <summary>
@@ -218,10 +218,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (false, $"Inbound Refused: Peer {peer.Endpoint} is banned until {peer.BanUntil}.");
             }
 
-            if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
+            if (this.NetworkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
-                return (false, $"Inbound Refused: Max Inbound Connection Threshold Reached, inbounds: {this.networkPeerDisposer.ConnectedInboundPeersCount}");
+                return (false, $"Inbound Refused: Max Inbound Connection Threshold Reached, inbounds: {this.NetworkPeerDisposer.ConnectedInboundPeersCount}");
             }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
