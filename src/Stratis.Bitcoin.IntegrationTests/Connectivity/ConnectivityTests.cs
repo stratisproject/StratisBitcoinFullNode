@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
                 // Inbound peer count should still be 0.
                 var server = node1.FullNode.ConnectionManager.Servers.First();
-                Assert.True(server.NetworkPeerDisposer.ConnectedInboundPeersCount == 0);
+                Assert.True(server.ConnectedInboundPeersCount == 0);
             }
         }
 
