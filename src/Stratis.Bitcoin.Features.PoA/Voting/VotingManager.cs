@@ -28,6 +28,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly INodeStats nodeStats;
 
+        private readonly Network network;
+
         private readonly ILogger logger;
 
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
@@ -52,7 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private bool isInitialized;
 
         public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, ISlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
-            INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo)
+            INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo, Network network)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
             this.slotsManager = Guard.NotNull(slotsManager, nameof(slotsManager));
@@ -66,6 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.scheduledVotingData = new List<VotingData>();
             this.pollsRepository = new PollsRepository(dataFolder, loggerFactory, dBreezeSerializer);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.network = network;
 
             this.isInitialized = false;
         }
@@ -220,6 +223,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData data in votingDataList)
                 {
+                    if (this.network.Consensus.ConsensusFactory is PoAConsensusFactory poaConsensusFactory)
+                    {
+                        IFederationMember member = poaConsensusFactory.DeserializeFederationMember(data.Data);
+                        
+                        // Ignore votes on multisig-members.
+                        if (FederationVotingController.IsMultisigMember(this.network, member.PubKey))
+                            continue;
+                    }
+
                     Poll poll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsPending);
 
                     if (poll == null)
