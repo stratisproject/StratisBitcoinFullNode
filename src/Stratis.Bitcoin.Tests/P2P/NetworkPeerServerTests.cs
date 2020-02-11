@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Moq;
@@ -7,9 +8,11 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -51,9 +54,20 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var asyncProvider = this.CreateAsyncProvider();
 
+            var peerAddressManager = new Mock<IPeerAddressManager>();
+            peerAddressManager.Setup(pam => pam.FindPeersByIp(It.IsAny<IPEndPoint>())).Returns(new List<PeerAddress>());
+
             var networkPeerServer = new NetworkPeerServer(this.Network,
-                endpointAddNode, endpointAddNode, ProtocolVersion.PROTOCOL_VERSION, this.extendedLoggerFactory,
-                networkPeerFactory.Object, initialBlockDownloadState.Object, connectionManagerSettings, asyncProvider);
+                endpointAddNode,
+                endpointAddNode,
+                ProtocolVersion.PROTOCOL_VERSION,
+                this.extendedLoggerFactory,
+                networkPeerFactory.Object,
+                initialBlockDownloadState.Object,
+                connectionManagerSettings,
+                asyncProvider,
+                peerAddressManager.Object,
+                DateTimeProvider.Default);
 
             // Mimic external client
             const int portNumber = 80;

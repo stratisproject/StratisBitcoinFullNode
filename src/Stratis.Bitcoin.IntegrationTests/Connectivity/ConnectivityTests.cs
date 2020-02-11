@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -272,6 +273,37 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 TestHelper.DisconnectAll(node1, node2);
             }
         }
+
+        [Fact]
+        public void Node_Gets_Banned_Subsequent_Connections_DoesNot_Affect_InboundCount()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-10-node1").Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-10-node2").Start();
+
+                TestHelper.Connect(node1, node2);
+
+                // node1 bans node2
+                var service = node1.FullNode.NodeService<IPeerBanning>();
+                service.BanAndDisconnectPeer(node2.Endpoint);
+
+                // Ensure the node is disconnected.
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2) == false);
+
+                // Try and connect to the node that banned me 10 times.
+                for (int i = 0; i < 10; i++)
+                {
+                    TestHelper.ConnectNoCheck(node2, node1);
+                    Task.Delay(TimeSpan.FromSeconds(1)).GetAwaiter().GetResult();
+                }
+
+                // Inbound peer count should still be 0.
+                var server = node1.FullNode.ConnectionManager.Servers.First();
+                Assert.True(server.ConnectedInboundPeersCount == 0);
+            }
+        }
+
 
         private CoreNode BanNode(CoreNode sourceNode, CoreNode nodeToBan)
         {
