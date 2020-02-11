@@ -313,6 +313,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData votingData in votingDataList)
                 {
+                    if (this.network.Consensus.ConsensusFactory is PoAConsensusFactory poaConsensusFactory)
+                    {
+                        IFederationMember member = poaConsensusFactory.DeserializeFederationMember(votingData.Data);
+
+                        // Ignore votes on multisig-members.
+                        if (FederationVotingController.IsMultisigMember(this.network, member.PubKey))
+                            continue;
+                    }
+
                     // If the poll is pending, that's the one we want. There should be maximum 1 of these.
                     Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending);
 
