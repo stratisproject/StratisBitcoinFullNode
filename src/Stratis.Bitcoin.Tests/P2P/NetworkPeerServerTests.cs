@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Moq;
@@ -53,7 +54,8 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var asyncProvider = this.CreateAsyncProvider();
 
-            var peerAddressManager = new Mock<IPeerAddressManager>().Object;
+            var peerAddressManager = new Mock<IPeerAddressManager>();
+            peerAddressManager.Setup(pam => pam.FindPeersByIp(It.IsAny<IPEndPoint>())).Returns(new List<PeerAddress>());
 
             var networkPeerServer = new NetworkPeerServer(this.Network,
                 endpointAddNode,
@@ -64,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 initialBlockDownloadState.Object,
                 connectionManagerSettings,
                 asyncProvider,
-                peerAddressManager,
+                peerAddressManager.Object,
                 DateTimeProvider.Default);
 
             // Mimic external client
