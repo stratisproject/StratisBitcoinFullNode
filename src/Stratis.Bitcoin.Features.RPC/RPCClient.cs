@@ -1454,5 +1454,22 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             return GenerateAsync(nBlocks).GetAwaiter().GetResult();
         }
+
+        public async Task<uint256[]> GenerateToAddressAsync(int nBlocks, BitcoinAddress address)
+        {
+            if (nBlocks < 0)
+                throw new ArgumentOutOfRangeException(nameof(nBlocks));
+            if (address == null)
+                throw new ArgumentNullException(nameof(address));
+
+            var result = (JArray)(await SendCommandAsync(RPCOperations.generatetoaddress, nBlocks, address.ToString()).ConfigureAwait(false)).Result;
+
+            return result.Select(r => new uint256(r.Value<string>())).ToArray();
+        }
+
+        public uint256[] GenerateToAddress(int nBlocks, BitcoinAddress address)
+        {
+            return GenerateToAddressAsync(nBlocks, address).GetAwaiter().GetResult();
+        }
     }
 }
