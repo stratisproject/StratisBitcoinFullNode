@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanSerializeAndDeserializeFederationMember()
         {
-            var federationMember = new CollateralFederationMember(new Key().PubKey, new Money(999), "addr1");
+            var federationMember = new CollateralFederationMember(new Key().PubKey, false, new Money(999), "addr1");
 
             byte[] serializedBytes = this.factory.SerializeFederationMember(federationMember);
 

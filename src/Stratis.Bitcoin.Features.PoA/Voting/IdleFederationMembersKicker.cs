@@ -128,7 +128,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 uint inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
 
-                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
+                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember && 
+                    !FederationVotingController.IsMultisigMember(this.network, fedMemberToActiveTime.Key))
                 {
                     IFederationMember memberToKick = this.federationManager.GetFederationMembers().SingleOrDefault(x => x.PubKey == fedMemberToActiveTime.Key);
 

@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var votingData = new VotingData()
             {
                 Key = VoteKey.AddFederationMember,
-                Data = RandomUtils.GetBytes(20)
+                Data = (new Key()).PubKey.ToBytes()
             };
 
             int votesRequired = (this.federationManager.GetFederationMembers().Count / 2) + 1;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var votingData = new VotingData()
             {
                 Key = VoteKey.AddFederationMember,
-                Data = RandomUtils.GetBytes(20)
+                Data = (new Key()).PubKey.ToBytes()
             };
 
             int votesRequired = (this.federationManager.GetFederationMembers().Count / 2) + 1;
