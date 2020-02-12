@@ -83,13 +83,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
             else
             {
-                this.logger.LogDebug("No saved data found. Initializing federation data with genesis timestamps.");
+                this.logger.LogDebug("No saved data found. Initializing federation data with current timestamp.");
 
                 this.fedPubKeysByLastActiveTime = new Dictionary<PubKey, uint>();
 
-                // Initialize with 0.
+                // Initialize with current timestamp. If we were to initialise with 0, then everyone would be wrong instantly!
                 foreach (IFederationMember federationMember in this.federationManager.GetFederationMembers())
-                    this.fedPubKeysByLastActiveTime.Add(federationMember.PubKey, 0);
+                    this.fedPubKeysByLastActiveTime.Add(federationMember.PubKey, (uint) this.timeProvider.GetAdjustedTimeAsUnixTimestamp());
 
                 this.SaveMembersByLastActiveTime();
             }
@@ -126,17 +126,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             foreach (KeyValuePair<PubKey, uint> fedMemberToActiveTime in this.fedPubKeysByLastActiveTime)
             {
-                uint inactiveForSeconds;
-
-                if (fedMemberToActiveTime.Value == 0)
-                {
-                    // Fed member was never active, count from first block after genesis.
-                    inactiveForSeconds = tip.Header.Time - blockConnectedData.ConnectedBlock.ChainedHeader.GetAncestor(1).Header.Time;
-                }
-                else
-                {
-                    inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
-                }
+                uint inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
 
                 if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
                 {
