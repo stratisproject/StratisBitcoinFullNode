@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly NodeSettings settings;
 
-        private readonly PoANetwork network;
+        protected readonly PoANetwork network;
 
         private readonly ISignals signals;
 

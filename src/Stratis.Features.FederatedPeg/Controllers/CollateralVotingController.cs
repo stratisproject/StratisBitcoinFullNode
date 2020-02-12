@@ -50,9 +50,6 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // TODO remove this line when multisig recreation is implemented.
-            return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Disabled in current version.", string.Empty);
-
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
@@ -63,7 +60,10 @@ namespace Stratis.Features.FederatedPeg.Controllers
             {
                 var key = new PubKey(request.PubKeyHex);
 
-                IFederationMember federationMember = new CollateralFederationMember(key, new Money(request.CollateralAmountSatoshis), request.CollateralMainchainAddress);
+                if (FederationVotingController.IsMultisigMember(this.network, key))
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Multisig members can't be voted on", string.Empty);
+
+                IFederationMember federationMember = new CollateralFederationMember(key, false, new Money(request.CollateralAmountSatoshis), request.CollateralMainchainAddress);
 
                 byte[] fedMemberBytes = (this.network.Consensus.ConsensusFactory as PoAConsensusFactory).SerializeFederationMember(federationMember);
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -41,6 +42,22 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             );
 
             this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
+        }
+    }
+
+    public class TestPoACollateralNetwork : TestPoANetwork
+    {
+        public TestPoACollateralNetwork() : base()
+        {
+            // Upgrade genesis members to CollateralFederationMember.
+            var options = (PoAConsensusOptions)this.Consensus.Options;
+            var members = options.GenesisFederationMembers
+                .Select(m => new CollateralFederationMember(m.PubKey, true, new Money(0), "")).ToList();
+            options.GenesisFederationMembers.Clear();
+            foreach (IFederationMember member in members)
+                options.GenesisFederationMembers.Add(member);
+
+            this.Name = "PoaCollateralMain";
         }
     }
 }
