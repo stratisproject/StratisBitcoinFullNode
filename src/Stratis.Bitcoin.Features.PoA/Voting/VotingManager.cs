@@ -187,6 +187,20 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        private bool IsVotingOnMultisigMember(VotingData votingData)
+        {
+            if (votingData.Key != VoteKey.AddFederationMember && votingData.Key != VoteKey.KickFederationMember)
+                return false;
+
+            if (!(this.network.Consensus.ConsensusFactory is PoAConsensusFactory poaConsensusFactory))
+                return false;
+
+            IFederationMember member = poaConsensusFactory.DeserializeFederationMember(votingData.Data);
+
+            // Ignore votes on multisig-members.
+            return FederationVotingController.IsMultisigMember(this.network, member.PubKey);
+        }
+
         private void OnBlockConnected(BlockConnected blockConnected)
         {
             ChainedHeaderBlock chBlock = blockConnected.ConnectedBlock;
@@ -223,14 +237,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData data in votingDataList)
                 {
-                    if (this.network.Consensus.ConsensusFactory is PoAConsensusFactory poaConsensusFactory)
-                    {
-                        IFederationMember member = poaConsensusFactory.DeserializeFederationMember(data.Data);
-                        
-                        // Ignore votes on multisig-members.
-                        if (FederationVotingController.IsMultisigMember(this.network, member.PubKey))
-                            continue;
-                    }
+                    if (this.IsVotingOnMultisigMember(data))
+                        continue;
 
                     Poll poll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsPending);
 
@@ -313,14 +321,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData votingData in votingDataList)
                 {
-                    if (this.network.Consensus.ConsensusFactory is PoAConsensusFactory poaConsensusFactory)
-                    {
-                        IFederationMember member = poaConsensusFactory.DeserializeFederationMember(votingData.Data);
-
-                        // Ignore votes on multisig-members.
-                        if (FederationVotingController.IsMultisigMember(this.network, member.PubKey))
-                            continue;
-                    }
+                    if (this.IsVotingOnMultisigMember(votingData))
+                        continue;
 
                     // If the poll is pending, that's the one we want. There should be maximum 1 of these.
                     Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending);
