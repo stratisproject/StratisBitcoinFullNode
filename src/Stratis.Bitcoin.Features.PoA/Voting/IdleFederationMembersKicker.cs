@@ -135,11 +135,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     byte[] federationMemberBytes = this.consensusFactory.SerializeFederationMember(memberToKick);
 
-                    List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
-
-                    bool alreadyKicking = finishedPolls.Any(x => !x.IsExecuted &&
-                         x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
-                         x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
+                    bool alreadyKicking = this.AlreadyVotingFor(federationMemberBytes);
 
                     if (!alreadyKicking)
                     {
@@ -148,7 +144,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.votingManager.ScheduleVote(new VotingData()
                         {
                             Key = VoteKey.KickFederationMember,
-                            Data = fedMemberToActiveTime.Key.ToBytes()
+                            Data = federationMemberBytes
                         });
                     }
                     else
@@ -157,6 +153,45 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Tells us whether we have already voted to boot a federation member.
+        /// </summary>
+        private bool AlreadyVotingFor(byte[] federationMemberBytes)
+        {
+            List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
+
+            if(finishedPolls.Any(x => !x.IsExecuted &&
+                 x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                 x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex())))
+            {
+                // We've already voted in a finished poll.
+                return true;
+            }
+
+            List<Poll> pendingPolls = this.votingManager.GetPendingPolls();
+
+            if (pendingPolls.Any(x => x.VotingData.Key == VoteKey.KickFederationMember &&
+                                       x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                                       x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey
+                                           .PubKey.ToHex())))
+            {
+                // We've already voted in a pending poll.
+                return true;
+            }
+
+
+            List<VotingData> scheduledVotes = this.votingManager.GetScheduledVotes();
+
+            if (scheduledVotes.Any(x =>
+                x.Key == VoteKey.KickFederationMember && x.Data.SequenceEqual(federationMemberBytes)))
+            {
+                // We have the vote queued to be put out next time we mine a block.
+                return true;
+            }
+
+            return false;
         }
 
         private void SaveMembersByLastActiveTime()
