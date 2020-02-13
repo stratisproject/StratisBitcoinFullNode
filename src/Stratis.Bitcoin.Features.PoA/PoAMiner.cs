@@ -322,13 +322,14 @@ namespace Stratis.Bitcoin.Features.PoA
                 return;
             }
 
+            this.logger.LogDebug("Add voting data for {0} scheduled votes.", scheduledVotes.Count);
+
             var votingData = new List<byte>(VotingDataEncoder.VotingOutputPrefixBytes);
 
             byte[] encodedVotingData = this.votingDataEncoder.Encode(scheduledVotes);
             votingData.AddRange(encodedVotingData);
 
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(votingData.ToArray()));
-
             blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
         }
 
