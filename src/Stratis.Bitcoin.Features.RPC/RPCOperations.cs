@@ -19,6 +19,7 @@
         getgenerate,
         setgenerate,
         generate,
+        generatetoaddress,
         getnetworkhashps,
         gethashespersec,
         getmininginfo,
