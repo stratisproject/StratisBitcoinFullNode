@@ -23,8 +23,6 @@ namespace Stratis.Features.Collateral
 
         private readonly IDateTimeProvider dateTime;
 
-        private readonly CollateralHeightCommitmentEncoder encoder;
-
         private readonly Network network;
 
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
@@ -34,7 +32,6 @@ namespace Stratis.Features.Collateral
             ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
         {
             this.network = network;
-            this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
@@ -53,7 +50,15 @@ namespace Stratis.Features.Collateral
 
             IFederationMember federationMember = this.slotsManager.GetFederationMemberForTimestamp(context.ValidationContext.BlockToValidate.Header.Time);
 
-            byte[] rawCommitmentData = this.encoder.ExtractRawCommitmentData(context.ValidationContext.BlockToValidate.Transactions.First());
+            var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
+
+            // Log each transaction for debug purposes.
+            foreach (Transaction transaction in context.ValidationContext.BlockToValidate.Transactions)
+            {
+                this.Logger.LogDebug(transaction.ToString(this.network));
+            }
+
+            byte[] rawCommitmentData = commitmentHeightEncoder.ExtractRawCommitmentData(context.ValidationContext.BlockToValidate.Transactions.First());
 
             if (rawCommitmentData == null)
             {
@@ -63,7 +68,7 @@ namespace Stratis.Features.Collateral
                 PoAConsensusErrors.InvalidCollateralAmountNoCommitment.Throw();
             }
 
-            int commitmentHeight = this.encoder.Decode(rawCommitmentData);
+            int commitmentHeight = commitmentHeightEncoder.Decode(rawCommitmentData);
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
             // TODO: Both this and CollateralPoAMiner are using this chain's MaxReorg instead of the Counter chain's MaxReorg. Beware: fixing requires fork.
