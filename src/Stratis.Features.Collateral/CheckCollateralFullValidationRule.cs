@@ -55,7 +55,7 @@ namespace Stratis.Features.Collateral
             // Log each transaction for debug purposes.
             foreach (Transaction transaction in context.ValidationContext.BlockToValidate.Transactions)
             {
-                this.Logger.LogDebug(transaction.ToString());
+                this.Logger.LogDebug(transaction.ToString(this.network));
             }
 
             byte[] rawCommitmentData = commitmentHeightEncoder.ExtractRawCommitmentData(context.ValidationContext.BlockToValidate.Transactions.First());
