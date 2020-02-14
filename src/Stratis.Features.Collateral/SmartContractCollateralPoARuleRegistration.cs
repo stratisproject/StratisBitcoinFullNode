@@ -1,17 +1,19 @@
 ﻿using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using TracerAttributes;
 
 namespace Stratis.Features.Collateral
 {
-    public class SmartContractCollateralPoARuleRegistration : SmartContractPoARuleRegistration
+    public sealed class SmartContractCollateralPoARuleRegistration : SmartContractPoARuleRegistration
     {
-        public SmartContractCollateralPoARuleRegistration() : base()
+        private readonly bool isMiner;
+
+        public SmartContractCollateralPoARuleRegistration(bool isMiner)
         {
+            this.isMiner = isMiner;
         }
 
         [NoTrace]
@@ -30,12 +32,14 @@ namespace Stratis.Features.Collateral
                 base.RegisterRules(services);
             }
 
-            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralFullValidationRule));
+            // On a collateral aware network the commitment height should always be checked.
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralCommitmentHeightRule));
 
-            // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
-            // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
-            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
-            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
+            // Only if the node is a miner will the full set of collateral checks be done.
+            if (this.isMiner)
+                services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralFullValidationRule));
+
+            base.AddSaveCoinViewAsLastRule(services);
         }
     }
 }

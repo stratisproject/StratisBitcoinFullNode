@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public class SidechainFederationNodeRunner : NodeRunner
     {
-        private bool testingFederation;
+        private readonly bool testingFederation;
 
         private readonly IDateTimeProvider timeProvider;
 
@@ -49,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .SetCounterChainNetwork(this.counterChainNetwork)
                 .UseFederatedPegPoAMining()
                 .AddFederatedPeg()
-                .CheckForPoAMembersCollateral()
+                .CheckForPoAMembersCollateral(true)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
@@ -70,7 +70,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 builder.UseTestFedPegBlockDefinition();
             }
 
-            this.FullNode = (FullNode) builder.Build();
+            this.FullNode = (FullNode)builder.Build();
         }
     }
 }

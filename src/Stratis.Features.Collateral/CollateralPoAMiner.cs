@@ -80,7 +80,7 @@ namespace Stratis.Features.Collateral
             }
 
             // Add height commitment.
-            byte[] encodedHeight = this.encoder.EncodeWithPrefix(commitmentHeight);
+            byte[] encodedHeight = this.encoder.EncodeCommitmentHeight(commitmentHeight);
             this.logger.LogDebug("Adding commitment data at height {0}.", commitmentHeight);
 
             var heightCommitmentScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
@@ -101,7 +101,9 @@ namespace Stratis.Features.Collateral
         }
 
         /// <summary>Converts <paramref name="height"/> to a byte array which has a prefix of <see cref="HeightCommitmentOutputPrefixBytes"/>.</summary>
-        public byte[] EncodeWithPrefix(int height)
+        /// <param name="height">That height at which the block was mined.</param>
+        /// <returns>The encoded height in bytes.</returns>
+        public byte[] EncodeCommitmentHeight(int height)
         {
             var bytes = new List<byte>(HeightCommitmentOutputPrefixBytes);
 
@@ -110,10 +112,10 @@ namespace Stratis.Features.Collateral
             return bytes.ToArray();
         }
 
-        /// <summary>Provides commitment data from transaction's coinbase height commitment output.</summary>
+        /// <summary>Extracts the height commitment data from a transaction's coinbase <see cref="TxOut"/>.</summary>
         /// <param name="coinbaseTx">The transaction that should contain the height commitment data.</param>
-        /// <returns>Commitment script or <c>null</c> if commitment script wasn't found.</returns>
-        public byte[] ExtractRawCommitmentData(Transaction coinbaseTx)
+        /// <returns>The commitment height, <c>null</c> if not found.</returns>
+        public int? DecodeCommitmentHeight(Transaction coinbaseTx)
         {
             IEnumerable<Script> opReturnOutputs = coinbaseTx.Outputs.Where(x => (x.ScriptPubKey.Length > 0) && (x.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)).Select(x => x.ScriptPubKey);
 
@@ -142,14 +144,10 @@ namespace Stratis.Features.Collateral
                 break;
             }
 
-            return commitmentData;
-        }
+            if (commitmentData != null)
+                return BitConverter.ToInt32(commitmentData);
 
-        public int Decode(byte[] rawData)
-        {
-            int height = BitConverter.ToInt32(rawData);
-
-            return height;
+            return null;
         }
     }
 }

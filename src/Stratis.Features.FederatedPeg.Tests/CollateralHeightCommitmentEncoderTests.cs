@@ -27,15 +27,13 @@ namespace Stratis.Features.FederatedPeg.Tests
             {
                 int randomValue = this.r.Next();
 
-                byte[] encodedWithPrefix = this.encoder.EncodeWithPrefix(randomValue);
+                byte[] encodedWithPrefix = this.encoder.EncodeCommitmentHeight(randomValue);
 
                 var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedWithPrefix));
                 var tx = new Transaction();
                 tx.AddOutput(Money.Zero, votingOutputScript);
 
-                byte[] rawData = this.encoder.ExtractRawCommitmentData(tx);
-
-                int decodedValue = this.encoder.Decode(rawData);
+                int? decodedValue = this.encoder.DecodeCommitmentHeight(tx);
 
                 Assert.Equal(randomValue, decodedValue);
             }
