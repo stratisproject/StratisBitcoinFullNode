@@ -174,8 +174,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             if (pendingPolls.Any(x => x.VotingData.Key == VoteKey.KickFederationMember &&
                                        x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
-                                       x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey
-                                           .PubKey.ToHex())))
+                                       x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex())))
             {
                 // We've already voted in a pending poll.
                 return true;
@@ -184,8 +183,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             List<VotingData> scheduledVotes = this.votingManager.GetScheduledVotes();
 
-            if (scheduledVotes.Any(x =>
-                x.Key == VoteKey.KickFederationMember && x.Data.SequenceEqual(federationMemberBytes)))
+            if (scheduledVotes.Any(x => x.Key == VoteKey.KickFederationMember && x.Data.SequenceEqual(federationMemberBytes)))
             {
                 // We have the vote queued to be put out next time we mine a block.
                 return true;
