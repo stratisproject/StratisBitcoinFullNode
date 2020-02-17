@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                                 // Add incoming fund transaction details.
                                 var receivedItem = new TransactionItemModel
                                 {
-                                    Type = TransactionItemType.Received,
+                                    Type = (transaction.IsCoinStake != null && transaction.IsCoinStake.Value) ? TransactionItemType.Staked : TransactionItemType.Received,
                                     ToAddress = address.Address,
                                     Amount = transaction.Amount,
                                     Id = transaction.Id,
