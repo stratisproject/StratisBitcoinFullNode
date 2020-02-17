@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Features.Collateral
 {
@@ -12,27 +11,11 @@ namespace Stratis.Features.Collateral
     /// <para>
     /// Blocks that are found to have this data missing data will have the peer that served the header, banned.
     /// </para>
-    /// <para>
-    /// This rule will be skipped in IBD as the blocks would have already passed consensus validation.
-    /// </para>
     /// </summary>
     public sealed class CheckCollateralCommitmentHeightRule : FullValidationConsensusRule
     {
-        private readonly IInitialBlockDownloadState ibdState;
-
-        public CheckCollateralCommitmentHeightRule(IInitialBlockDownloadState ibdState)
-        {
-            this.ibdState = ibdState;
-        }
-
         public override Task RunAsync(RuleContext context)
         {
-            if (this.ibdState.IsInitialBlockDownload())
-            {
-                this.Logger.LogTrace("(-)[SKIPPED_IN_IBD]");
-                return Task.CompletedTask;
-            }
-
             var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
 
             int? commitmentHeight = commitmentHeightEncoder.DecodeCommitmentHeight(context.ValidationContext.BlockToValidate.Transactions.First());
