@@ -14,6 +14,8 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -627,6 +629,62 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
                 (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart) + maxBalanceResponse.MaxSpendableAmount);
+            }
+        }
+
+        [Fact]
+        public async Task HistoryWithStakingTransactionsAsync()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a node.
+                CoreNode node = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+
+                // Act.
+                // Get the transaction history.
+                WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletHistoryModel>();
+
+                // Make sure that the history is in the expected initial state.
+                // All the blocks thus far have been mined, and so all of them should be regarded as Received.
+                history.AccountsHistoryModel.First().TransactionsHistory.Count.Should().Be(150);
+                history.AccountsHistoryModel.First().TransactionsHistory.All(a => a.Type == TransactionItemType.Received);
+
+                TransactionItemModel mostRecentTx = history.AccountsHistoryModel.First().TransactionsHistory.First();
+
+                int startHeight = node.GetTip().Height;
+
+                // Start staking on the node.
+                var minter = node.FullNode.NodeService<IPosMinting>();
+                minter.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
+
+                TestBase.WaitLoop(() =>
+                {
+                    if (node.GetTip().Height > startHeight)
+                        return true;
+
+                    return false;
+                });
+
+                history = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletHistoryModel>();
+
+                // Assert.
+                // The history after the last mined transaction should all be of type Staked.
+                // Transactions are arranged in reverse order, so we loop through it sequentially.
+                foreach (TransactionItemModel tx in history.AccountsHistoryModel.First().TransactionsHistory)
+                {
+                    if (tx.Id == mostRecentTx.Id)
+                        break;
+
+                    Assert.Equal(TransactionItemType.Staked, tx.Type);
+                    Assert.Equal(Money.Coins(1.0m), tx.Amount);
+                }
             }
         }
 
