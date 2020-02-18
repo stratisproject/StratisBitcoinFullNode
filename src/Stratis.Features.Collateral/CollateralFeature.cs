@@ -38,20 +38,23 @@ namespace Stratis.Features.Collateral
     /// </summary>
     public static class FullNodeBuilderCollateralFeatureExtension
     {
-        public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder, bool isMiner)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<CollateralFeature>()
-                    .DependOn<CounterChainFeature>()
-                    .DependOn<PoAFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
-                        services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                new SmartContractCollateralPoARuleRegistration(isMiner).RegisterRules(fullNodeBuilder.Services);
 
-                        new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
-                    });
+                if (isMiner)
+                {
+                    features.AddFeature<CollateralFeature>()
+                        .DependOn<CounterChainFeature>()
+                        .DependOn<PoAFeature>()
+                        .FeatureServices(services =>
+                        {
+                            services.AddSingleton<IFederationManager, CollateralFederationManager>();
+                            services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                        });
+                }
             });
 
             return fullNodeBuilder;

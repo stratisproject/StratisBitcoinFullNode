@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .SetCounterChainNetwork(this.counterChainNetwork)
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractCollateralPoAMining()
-                .CheckForPoAMembersCollateral()
+                .CheckForPoAMembersCollateral(true)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

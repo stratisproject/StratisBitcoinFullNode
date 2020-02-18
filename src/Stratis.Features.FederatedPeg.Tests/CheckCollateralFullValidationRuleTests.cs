@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Collateral;
@@ -43,15 +46,36 @@ namespace Stratis.Features.FederatedPeg.Tests
             Block block = this.ruleContext.ValidationContext.BlockToValidate;
             block.AddTransaction(new Transaction());
 
-            CollateralHeightCommitmentEncoder encoder = new CollateralHeightCommitmentEncoder();
+            var loggerFactory = new ExtendedLoggerFactory();
+            ILogger logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            byte[] encodedHeight = encoder.EncodeWithPrefix(1000);
+            var votingDataEncoder = new VotingDataEncoder(loggerFactory);
+            var votes = new List<VotingData>
+            {
+                new VotingData()
+                {
+                    Key = VoteKey.WhitelistHash,
+                    Data = new uint256(0).ToBytes()
+                }
+            };
+            byte[] encodedVotingData = votingDataEncoder.Encode(votes);
 
-            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
+            var votingData = new List<byte>(VotingDataEncoder.VotingOutputPrefixBytes);
+            votingData.AddRange(encodedVotingData);
+
+            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(votingData.ToArray()));
             block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
 
-            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
-            this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
+            var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(logger);
+            byte[] encodedHeight = commitmentHeightEncoder.EncodeCommitmentHeight(1000);
+            var commitmentHeightData = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
+            block.Transactions[0].AddOutput(Money.Zero, commitmentHeightData);
+
+            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork())
+            {
+                Logger = logger
+            };
+
             this.rule.Initialize();
         }
 
