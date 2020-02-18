@@ -912,6 +912,175 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public async Task GetHistoryWithUnspentCoinStakeAsync()
+        {
+            const int numberOfCoinStakeInputs = 1;
+            const string walletName = "myWallet";
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+
+            for (int i = 0; i < numberOfCoinStakeInputs; i++)
+            {
+                TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256((ulong)i + 1),
+                    new Money(500000), 1, creationTime: DateTimeOffset.FromUnixTimeSeconds(i));
+                address.Transactions.Add(transaction);
+            }
+
+            TransactionData coinStake = WalletTestsHelpers.CreateTransaction(
+                new uint256((ulong)numberOfCoinStakeInputs + 1),
+                address.Transactions.Sum(x => x.Amount) + Money.Coins(1), 2,
+                creationTime: DateTimeOffset.FromUnixTimeSeconds(numberOfCoinStakeInputs));
+            coinStake.IsCoinStake = true;
+
+            foreach (var spentTransaction in address.Transactions)
+            {
+                spentTransaction.SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = coinStake.BlockHeight,
+                    TransactionId = coinStake.Id,
+                    CreationTime = coinStake.CreationTime,
+                    IsCoinStake = true
+                };
+            }
+
+            address.Transactions.Add(coinStake);
+
+            var addresses = new List<HdAddress> { address };
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            HdAccount account = wallet.AddNewAccount((ExtPubKey)null);
+
+            account.ExternalAddresses.Add(address);
+
+            List<FlatHistory> flat = addresses
+                .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+            var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
+            var mockWalletManager = this.ConfigureMock<IWalletManager>();
+
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
+                .Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
+
+            var controller = GetWalletController();
+
+            IActionResult result = await controller.GetHistory(new WalletHistoryRequest
+            {
+                WalletName = walletName
+            });
+
+            var viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletHistoryModel;
+
+            Assert.NotNull(model);
+            Assert.Single(model.AccountsHistoryModel);
+
+            AccountHistoryModel historyModel = model.AccountsHistoryModel.ElementAt(0);
+
+            // We should have 2 entries. The most recent is our stake. The other 1 is a receive.
+            Assert.Equal(numberOfCoinStakeInputs + 1, historyModel.TransactionsHistory.Count);
+            TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
+
+            Assert.Equal(TransactionItemType.Staked, resultingTransactionModel.Type);
+            Assert.Equal(Money.Coins(1), resultingTransactionModel.Amount);
+
+            for (int i = 1; i <= numberOfCoinStakeInputs; i++)
+            {
+                TransactionItemModel receive = historyModel.TransactionsHistory.ElementAt(i);
+                Assert.Equal(TransactionItemType.Received, receive.Type);
+            }
+        }
+
+        [Fact]
+        public async Task GetHistoryWithSpentCoinStakeAsync()
+        {
+            const string walletName = "myWallet";
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+
+            TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(0),
+                new Money(500000), 1, creationTime: DateTimeOffset.FromUnixTimeSeconds(0));
+
+            address.Transactions.Add(transaction);
+
+            TransactionData coinStake = WalletTestsHelpers.CreateTransaction(
+            new uint256(1),
+            address.Transactions.Sum(x => x.Amount) + Money.Coins(1), 2,
+            creationTime: DateTimeOffset.FromUnixTimeSeconds(1));
+            coinStake.IsCoinStake = true;
+
+            transaction.SpendingDetails = new SpendingDetails
+            {
+                BlockHeight = coinStake.BlockHeight,
+                TransactionId = coinStake.Id,
+                CreationTime = coinStake.CreationTime,
+                IsCoinStake = true
+            };
+
+            address.Transactions.Add(coinStake);
+
+            TransactionData spendingTx = WalletTestsHelpers.CreateTransaction(
+                new uint256(2),
+                coinStake.Amount - Money.Coins(0.1m), 3,
+                creationTime: DateTimeOffset.FromUnixTimeSeconds(2));
+
+            coinStake.SpendingDetails = new SpendingDetails()
+            {
+                BlockHeight = spendingTx.BlockHeight,
+                TransactionId = spendingTx.Id,
+                CreationTime = spendingTx.CreationTime,
+                Payments =  new List<PaymentDetails>() { new PaymentDetails() { Amount = Money.Coins(1.0m), DestinationAddress = "xyz", DestinationScriptPubKey = new Key().ScriptPubKey, OutputIndex = 1 } }
+            };
+
+            address.Transactions.Add(spendingTx);
+
+            var addresses = new List<HdAddress> { address };
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            HdAccount account = wallet.AddNewAccount((ExtPubKey)null);
+
+            account.ExternalAddresses.Add(address);
+
+            List<FlatHistory> flat = addresses
+                .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+            var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
+            var mockWalletManager = this.ConfigureMock<IWalletManager>();
+
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount))
+                .Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
+
+            var controller = GetWalletController();
+
+            IActionResult result = await controller.GetHistory(new WalletHistoryRequest
+            {
+                WalletName = walletName
+            });
+
+            var viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletHistoryModel;
+
+            Assert.NotNull(model);
+            Assert.Single(model.AccountsHistoryModel);
+
+            AccountHistoryModel historyModel = model.AccountsHistoryModel.ElementAt(0);
+
+            // We should have 3 entries. The most recent is the spending transaction that spends the stake to an address not in the wallet.
+            // Next is the stake itself.
+            // The last is a receive.
+            Assert.Equal(3, historyModel.TransactionsHistory.Count);
+            TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
+
+            Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
+            //Assert.Equal(Money.Coins(1), resultingTransactionModel.Amount);
+
+            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
+
+            Assert.Equal(TransactionItemType.Staked, resultingTransactionModel.Type);
+            Assert.Equal(Money.Coins(1), resultingTransactionModel.Amount);
+
+            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(2);
+            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
+        }
+
+        [Fact]
         public async Task GetHistoryWithValidModelWithTransactionSpendingDetailsReturnsWalletHistoryModel()
         {
             string walletName = "myWallet";
