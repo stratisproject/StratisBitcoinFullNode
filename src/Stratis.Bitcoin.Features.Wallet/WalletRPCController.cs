@@ -132,6 +132,74 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        [ActionName("fundrawtransaction")]
+        [ActionDescription("Add inputs to a transaction until it has enough in value to meet its out value. Note that signing is performed separately.")]
+        public async Task<FundRawTransactionResponse> FundRawTransactionAsync(string rawHex, FundRawTransactionOptions options)
+        {
+            try
+            {
+                Transaction rawTx = this.Network.CreateTransaction(rawHex);
+
+                // TODO: Compute this from the feeRate in the options
+                Money feeAmount = Money.Coins(0.01m);
+
+                WalletAccountReference account = this.GetWalletAccountReference();
+
+                IEnumerable<UnspentOutputReference> unspents = this.walletManager.GetSpendableTransactionsInWallet(account.WalletName);
+
+                var totalFunded = new Money(0);
+
+                foreach (var unspent in unspents)
+                {
+                    if (totalFunded < (rawTx.TotalOut + feeAmount))
+                    {
+                        rawTx.Inputs.Add(new TxIn()
+                        {
+                            PrevOut = unspent.ToOutPoint()
+                        });
+
+                        // Need to accurately account for how much funding is assigned to the inputs so that change can be correctly calculated later.
+                        totalFunded += unspent.Transaction.Amount;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (totalFunded < (rawTx.TotalOut + feeAmount))
+                    throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, "Insufficient unspent funds");
+
+                var change = totalFunded - rawTx.TotalOut - feeAmount;
+
+                if (change < 0)
+                    throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, "Change amount cannot be negative");
+
+                Script changeAddress = options.ChangeAddress != null ? options.ChangeAddress.ScriptPubKey : this.walletManager.GetUnusedChangeAddress(account).ScriptPubKey;
+
+                rawTx.Outputs.Add(new TxOut()
+                {
+                    Value = change,
+                    ScriptPubKey = changeAddress
+                });
+
+                return new FundRawTransactionResponse()
+                {
+                    ChangePos = (rawTx.Outputs.Count - 1),
+                    Fee = feeAmount,
+                    Transaction = rawTx
+                };
+            }
+            catch (SecurityException)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
+            }
+            catch (WalletException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
+            }
+        }
+
         /// <summary>
         /// Broadcasts a raw transaction from hex to local node and network.
         /// </summary>

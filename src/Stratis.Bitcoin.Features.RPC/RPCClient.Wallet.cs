@@ -216,9 +216,12 @@ namespace Stratis.Bitcoin.Features.RPC
         // NBitcoin internally put a bit in the version number to make difference between transaction without input and transaction with witness.
         private string ToHex(Transaction tx)
         {
+            // TODO: Review this logic for correctness on the Stratis networks
             // if there is inputs, then it can't be confusing
-            if (tx.Inputs.Any())
-                return tx.ToHex();
+            //if (tx.Inputs.Any())
+            //    return tx.ToHex();
+
+            return tx.ToHex();
 
             // if there is, do this ACK so that NBitcoin does not change the version number
             return Encoders.Hex.EncodeData(tx.ToBytes(version: NBitcoin.Protocol.ProtocolVersion.WITNESS_VERSION - 1));
