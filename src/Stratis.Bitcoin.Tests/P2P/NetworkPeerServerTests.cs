@@ -73,8 +73,16 @@ namespace Stratis.Bitcoin.Tests.P2P
             const int portNumber = 80;
             var client = new TcpClient("www.stratisplatform.com", portNumber);
 
+            string ip = string.Empty;
             var ipandport = client.Client.RemoteEndPoint.ToString();
-            var ip = ipandport.Replace(ipandport.Substring(ipandport.IndexOf(':')), "");
+            if (client.Client.RemoteEndPoint.AddressFamily == AddressFamily.InterNetwork)
+            {
+                ip = ipandport.Replace(ipandport.Substring(ipandport.IndexOf(':')), "");
+            }
+            else
+            {
+                ip = ipandport.Substring(1, ipandport.LastIndexOf(']') - 1);
+            }
 
             var endpointDiscovered = new IPEndPoint(IPAddress.Parse(ip), portNumber);
 

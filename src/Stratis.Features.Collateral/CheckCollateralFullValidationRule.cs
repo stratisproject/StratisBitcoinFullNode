@@ -13,7 +13,7 @@ namespace Stratis.Features.Collateral
 {
     /// <summary>Ensures that collateral requirement on counterpart chain is fulfilled for the federation member that produced a block.</summary>
     /// <remarks>Ignored in IBD.</remarks>
-    public class CheckCollateralFullValidationRule : FullValidationConsensusRule
+    public sealed class CheckCollateralFullValidationRule : FullValidationConsensusRule
     {
         private readonly IInitialBlockDownloadState ibdState;
 
@@ -23,18 +23,18 @@ namespace Stratis.Features.Collateral
 
         private readonly IDateTimeProvider dateTime;
 
-        private readonly CollateralHeightCommitmentEncoder encoder;
-
         private readonly Network network;
 
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
         private readonly int collateralCheckBanDurationSeconds;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
-            ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState,
+            ICollateralChecker collateralChecker,
+            ISlotsManager slotsManager,
+            IDateTimeProvider dateTime,
+            Network network)
         {
             this.network = network;
-            this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
@@ -53,21 +53,24 @@ namespace Stratis.Features.Collateral
 
             IFederationMember federationMember = this.slotsManager.GetFederationMemberForTimestamp(context.ValidationContext.BlockToValidate.Header.Time);
 
-            byte[] rawCommitmentData = this.encoder.ExtractRawCommitmentData(context.ValidationContext.BlockToValidate.Transactions.First());
-
-            if (rawCommitmentData == null)
+            // Log each transaction for debug purposes.
+            foreach (Transaction transaction in context.ValidationContext.BlockToValidate.Transactions)
             {
-                // Every PoA miner on sidechain network is enforced to include commitment data to the blocks mined.
-                // Not having a commitment always should result in a permanent ban of the block.
-                this.Logger.LogTrace("(-)[NO_COMMITMENT_FOUND]");
-                PoAConsensusErrors.InvalidCollateralAmountNoCommitment.Throw();
+                this.Logger.LogDebug(transaction.ToString(this.network));
             }
 
-            int commitmentHeight = this.encoder.Decode(rawCommitmentData);
-            this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
+            var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
+            int? commitmentHeight = commitmentHeightEncoder.DecodeCommitmentHeight(context.ValidationContext.BlockToValidate.Transactions.First());
+            if (commitmentHeight == null)
+            {
+                // We return here as it is CheckCollateralCommitmentHeightRule's responsibility to perform this check.
+                this.Logger.LogTrace("(-)SKIPPED_AS_COLLATERAL_COMMITMENT_HEIGHT_MISSING]");
+                return Task.CompletedTask;
+            }
+
+            this.Logger.LogDebug("Collateral commitment height is: {0}.", commitmentHeight);
 
             // TODO: Both this and CollateralPoAMiner are using this chain's MaxReorg instead of the Counter chain's MaxReorg. Beware: fixing requires fork.
-
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
             int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
 
@@ -79,13 +82,13 @@ namespace Stratis.Features.Collateral
                 // sufficiently old.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
 
-                this.Logger.LogDebug("commitmentHeight is {0}, counterChainHeight is {1}.", commitmentHeight, counterChainHeight);
+                this.Logger.LogDebug("CommitmentHeight is {0}, counterChainHeight is {1}.", commitmentHeight, counterChainHeight);
 
                 this.Logger.LogTrace("(-)[COMMITMENT_TOO_NEW]");
                 PoAConsensusErrors.InvalidCollateralAmountCommitmentTooNew.Throw();
             }
 
-            if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight))
+            if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight.Value))
             {
                 // By setting rejectUntil we avoid banning a peer that provided a block.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
