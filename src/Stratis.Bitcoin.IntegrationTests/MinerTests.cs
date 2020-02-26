@@ -867,7 +867,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
                 var entry = broadcaster.GetTransaction(trx.GetHash());
 
-                Assert.Equal(State.ToBroadcast, entry.State);
+                Assert.Equal(TransactionBroadcastState.ToBroadcast, entry.TransactionBroadcastState);
 
                 Assert.NotNull(stratisMiner.FullNode.MempoolManager().GetTransaction(trx.GetHash()).Result);
 

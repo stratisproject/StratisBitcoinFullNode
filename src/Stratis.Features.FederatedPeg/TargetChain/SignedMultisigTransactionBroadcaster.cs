@@ -88,7 +88,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(@event.Transfer.PartialTransaction.GetHash());
 
-            if (transactionBroadCastEntry?.State == State.CantBroadcast && !CrossChainTransferStore.IsMempoolErrorRecoverable(transactionBroadCastEntry.MempoolError))
+            if (transactionBroadCastEntry?.TransactionBroadcastState == TransactionBroadcastState.CantBroadcast && !CrossChainTransferStore.IsMempoolErrorRecoverable(transactionBroadCastEntry.MempoolError))
             {
                 this.logger.LogWarning("Deposit ID '{0}' rejected due to '{1}'.", @event.Transfer.DepositTransactionId, transactionBroadCastEntry.ErrorMessage);
                 this.store.RejectTransfer(@event.Transfer);

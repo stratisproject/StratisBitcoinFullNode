@@ -1761,7 +1761,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockBroadcasterManager = new Mock<IBroadcasterManager>();
 
-            mockBroadcasterManager.Setup(m => m.GetTransaction(It.IsAny<uint256>())).Returns(new TransactionBroadcastEntry(this.Network.CreateTransaction(transactionHex), State.Broadcasted, null));
+            mockBroadcasterManager.Setup(m => m.GetTransaction(It.IsAny<uint256>())).Returns(new TransactionBroadcastEntry(this.Network.CreateTransaction(transactionHex), TransactionBroadcastState.Broadcasted, null));
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             var peers = new List<INetworkPeer>();

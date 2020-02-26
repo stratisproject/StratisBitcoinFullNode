@@ -1,6 +1,6 @@
 ﻿namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
-    public enum State
+    public enum TransactionBroadcastState
     {
         CantBroadcast,
         ToBroadcast,

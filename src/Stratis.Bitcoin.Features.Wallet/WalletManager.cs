@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (string.IsNullOrEmpty(transactionEntry.ErrorMessage))
             {
-                this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
+                this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.TransactionBroadcastState == TransactionBroadcastState.Propagated);
             }
             else
             {
