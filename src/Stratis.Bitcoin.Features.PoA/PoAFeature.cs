@@ -164,15 +164,20 @@ namespace Stratis.Bitcoin.Features.PoA
                 typeof(PoAHeaderDifficultyRule),
                 typeof(PoAHeaderSignatureRule)
             })
+            {
+                if (!services.Any(s => s.ImplementationType == ruleType))
                     services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
+            }
 
             foreach (Type ruleType in new List<Type>()
             {
                 typeof(BlockMerkleRootRule),
                 typeof(PoAIntegritySignatureRule)
             })
-                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
-
+            {
+                if (!services.Any(s => s.ImplementationType == ruleType))
+                    services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
+            }
 
             foreach (Type ruleType in new List<Type>()
             {
@@ -190,7 +195,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 typeof(PoAVotingCoinbaseOutputFormatRule),
             })
-                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
+            {
+                if (!services.Any(s => s.ImplementationType == ruleType))
+                    services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
+            }
 
             foreach (Type ruleType in new List<Type>()
             {
@@ -202,7 +210,10 @@ namespace Stratis.Bitcoin.Features.PoA
                 typeof(PoACoinviewRule),
                 typeof(SaveCoinviewRule)
             })
-                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+            {
+                if (!services.Any(s => s.ImplementationType == ruleType))
+                    services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+            }
         }
     }
 
