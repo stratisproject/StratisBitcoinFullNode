@@ -96,9 +96,7 @@ namespace Stratis.CirrusMinerD
             return node;
         }
 
-        /// <summary>
-        /// Returns a standard Stratis node. Just like StratisD.
-        /// </summary>
+        /// <summary> Returns a standard Stratis node. Just like StratisD.</summary>
         private static IFullNode GetStratisNode(string[] args)
         {
             // TODO: Hardcode -addressindex for better user experience
