@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
 
         /// <summary>Retrieves a transaction with provided hash from the collection of transactions to broadcast.</summary>
-        /// <param name="transactionHash">Hash of a transaction to retrieve.</param>
+        /// <param name="transactionHash">Hash of the transaction to retrieve.</param>
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
