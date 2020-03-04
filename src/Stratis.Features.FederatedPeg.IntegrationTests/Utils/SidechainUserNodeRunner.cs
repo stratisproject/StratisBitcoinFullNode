@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -11,14 +12,15 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public class SidechainUserNodeRunner : NodeRunner
     {
-
         private readonly IDateTimeProvider timeProvider;
 
         public SidechainUserNodeRunner(string dataDir, string agent, Network network, IDateTimeProvider dateTimeProvider)
@@ -32,7 +34,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
+            IFullNodeBuilder builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
                 .AddSmartContracts(options =>
@@ -48,8 +50,12 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .MockIBD()
                 .AddRPC()
                 .ReplaceTimeProvider(this.timeProvider)
-                .AddFastMiningCapability()
-                .Build();
+                .AddFastMiningCapability();
+
+            builder.RemoveImplementation<PeerConnectorDiscovery>();
+            builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
+
+            this.FullNode = (FullNode)builder.Build();
         }
     }
 }
