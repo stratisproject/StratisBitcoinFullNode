@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Inbound Accepted: Whitelisted endpoint connected during IBD.");
             }
 
-            this.logger.LogInformation("Node '{0}' is not whitelisted via endpoint '{1}' during initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
+            this.logger.LogInformation("Node '{0}' is not whitelisted via endpoint '{1}' and node is in initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
 
             return (false, "Inbound Refused: Non Whitelisted endpoint connected during IBD.");
         }
