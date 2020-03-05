@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -7,6 +8,7 @@ using Flurl;
 using Flurl.Http;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
@@ -224,6 +226,24 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             // We only want one consensus rule engine. Others can sneak in and will break the periodic log.
             IEnumerable<IConsensusRuleEngine> consensusRuleEngines = node.FullNode.NodeService<IEnumerable<IConsensusRuleEngine>>();
             Assert.Single(consensusRuleEngines);
+
+            // Assert rule composition.
+            // There should be one of each type.
+            IEnumerable<IHeaderValidationConsensusRule> headerValidationRules = node.FullNode.NodeService<IEnumerable<IHeaderValidationConsensusRule>>();
+            IEnumerable<IGrouping<Type, IHeaderValidationConsensusRule>> groupedHeaderRules = headerValidationRules.GroupBy(r => r.GetType());
+            Assert.DoesNotContain(groupedHeaderRules, g => g.Count() > 1);
+
+            IEnumerable<IPartialValidationConsensusRule> partialValidationRules = node.FullNode.NodeService<IEnumerable<IPartialValidationConsensusRule>>();
+            IEnumerable<IGrouping<Type, IPartialValidationConsensusRule>> groupedPartialRules = partialValidationRules.GroupBy(r => r.GetType());
+            Assert.DoesNotContain(groupedPartialRules, g => g.Count() > 1);
+
+            IEnumerable<IIntegrityValidationConsensusRule> integrityValidationRules = node.FullNode.NodeService<IEnumerable<IIntegrityValidationConsensusRule>>();
+            IEnumerable<IGrouping<Type, IIntegrityValidationConsensusRule>> groupedIntegrityRules = integrityValidationRules.GroupBy(r => r.GetType());
+            Assert.DoesNotContain(groupedIntegrityRules, g => g.Count() > 1);
+
+            IEnumerable<IFullValidationConsensusRule> fullValidationRules = node.FullNode.NodeService<IEnumerable<IFullValidationConsensusRule>>();
+            IEnumerable<IGrouping<Type, IFullValidationConsensusRule>> groupedFullRules = fullValidationRules.GroupBy(r => r.GetType());
+            Assert.DoesNotContain(groupedFullRules, g => g.Count() > 1);
         }
     }
 

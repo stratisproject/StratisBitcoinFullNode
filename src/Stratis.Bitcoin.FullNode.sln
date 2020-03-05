@@ -73,6 +73,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\.travis.yml = ..\.travis.yml
 		..\appveyor.yml = ..\appveyor.yml
 		..\build.sh = ..\build.sh
+		global.json = global.json
 		..\PushNuget.ps1 = ..\PushNuget.ps1
 		..\PushSCNuget.ps1 = ..\PushSCNuget.ps1
 	EndProjectSection
@@ -168,7 +169,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.Diagnostic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FodyNlogAdapter", "FodyNlogAdapter\FodyNlogAdapter.csproj", "{2576847F-BFFC-4F0A-B883-28F2E38FEC7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Features.Collateral", "Stratis.Features.Collateral\Stratis.Features.Collateral.csproj", "{AFEA4601-7938-44D2-A295-DBA022069F5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.Collateral", "Stratis.Features.Collateral\Stratis.Features.Collateral.csproj", "{AFEA4601-7938-44D2-A295-DBA022069F5B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -503,7 +504,6 @@ Global
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251} = {7FFED910-450B-4D6E-9085-6E5A6731D72A}
 		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
-        {53209209-7239-4FEB-BE8D-B2DF6145BBDA} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{2576847F-BFFC-4F0A-B883-28F2E38FEC7F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{AFEA4601-7938-44D2-A295-DBA022069F5B} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 	EndGlobalSection

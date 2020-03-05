@@ -22,13 +22,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             // TODO: Do what the rest of the FN code did and move the rule registration to the network class.
             new PoAConsensusRulesRegistration().RegisterRules(services);
 
-            services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
+            if (!services.Any(s => s.ImplementationType == typeof(SmartContractFormatLogic)))
+                services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
 
-            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(AllowedScriptTypeRule));
+            if (!services.Any(s => s.ImplementationType == typeof(AllowedScriptTypeRule)))
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(AllowedScriptTypeRule));
 
-            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(ContractTransactionPartialValidationRule));
+            if (!services.Any(s => s.ImplementationType == typeof(ContractTransactionPartialValidationRule)))
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(ContractTransactionPartialValidationRule));
 
-            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(ContractTransactionFullValidationRule));
+            if (!services.Any(s => s.ImplementationType == typeof(ContractTransactionFullValidationRule)))
+                services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(ContractTransactionFullValidationRule));
 
             // Add SC-specific full rules BEFORE the coinviewrule
             foreach (Type ruleType in new List<Type>()
@@ -39,7 +43,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 typeof(P2PKHNotContractRule)
             })
             {
-                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+                if (!services.Any(s => s.ImplementationType == ruleType))
+                    services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
             }
 
             // Remove the base POA coinview rule.

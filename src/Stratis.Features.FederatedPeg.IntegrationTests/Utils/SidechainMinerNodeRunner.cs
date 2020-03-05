@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -12,7 +13,9 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Collateral;
 using Stratis.Features.Collateral.CounterChain;
@@ -60,6 +63,9 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .MockIBD()
                 .ReplaceTimeProvider(this.timeProvider)
                 .AddFastMiningCapability();
+
+            builder.RemoveImplementation<PeerConnectorDiscovery>();
+            builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
 
             this.FullNode = (FullNode)builder.Build();
         }
