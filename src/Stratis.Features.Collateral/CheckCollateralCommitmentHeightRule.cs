@@ -16,6 +16,10 @@ namespace Stratis.Features.Collateral
     {
         public override Task RunAsync(RuleContext context)
         {
+            // The genesis block won't contain any commitment data.
+            if (context.ValidationContext.ChainedHeaderToValidate.Height == 0)
+                return Task.CompletedTask;
+
             var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
 
             int? commitmentHeight = commitmentHeightEncoder.DecodeCommitmentHeight(context.ValidationContext.BlockToValidate.Transactions.First());
