@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
                 if (txEntry != null)
                 {
-                    this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Propagated);
+                    this.broadcasterManager.AddOrUpdate(txEntry.Transaction, TransactionBroadcastState.Propagated);
                 }
             }
         }
@@ -107,12 +107,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             foreach (InventoryVector inv in getDataPayload.Inventory.Where(x => x.Type == InventoryType.MSG_TX))
             {
                 TransactionBroadcastEntry txEntry = this.broadcasterManager.GetTransaction(inv.Hash);
-                if ((txEntry != null) && (txEntry.State != State.CantBroadcast))
+                if ((txEntry != null) && (txEntry.TransactionBroadcastState != TransactionBroadcastState.CantBroadcast))
                 {
                     await peer.SendMessageAsync(new TxPayload(txEntry.Transaction)).ConfigureAwait(false);
-                    if (txEntry.State == State.ToBroadcast)
+                    if (txEntry.TransactionBroadcastState == TransactionBroadcastState.ToBroadcast)
                     {
-                        this.broadcasterManager.AddOrUpdate(txEntry.Transaction, State.Broadcasted);
+                        this.broadcasterManager.AddOrUpdate(txEntry.Transaction, TransactionBroadcastState.Broadcasted);
                     }
                 }
             }

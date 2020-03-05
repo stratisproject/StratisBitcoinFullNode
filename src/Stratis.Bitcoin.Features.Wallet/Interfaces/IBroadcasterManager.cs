@@ -14,6 +14,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 
         TransactionBroadcastEntry GetTransaction(uint256 transactionHash);
 
-        void AddOrUpdate(Transaction transaction, State state, MempoolError mempoolError = null);
+        void AddOrUpdate(Transaction transaction, TransactionBroadcastState transactionBroadcastState, MempoolError mempoolError = null);
     }
 }
