@@ -87,9 +87,6 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -110,6 +107,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
         private Action<IPEndPoint, Payload> onSendingMessage;
 
+        private IPeerAddressManager peerAddressManager;
+
         /// <summary>
         /// Initializes a new instance of the factory.
         /// </summary>
@@ -127,7 +126,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             ISelfEndpointTracker selfEndpointTracker,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConnectionManagerSettings connectionManagerSettings,
-            IAsyncProvider asyncProvider)
+            IAsyncProvider asyncProvider,
+            IPeerAddressManager peerAddressManager)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -138,11 +138,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.loggerFactory = loggerFactory;
             this.payloadProvider = payloadProvider;
             this.selfEndpointTracker = selfEndpointTracker;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lastClientId = 0;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
             this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
+            this.peerAddressManager = peerAddressManager;
         }
 
         /// <inheritdoc/>
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(localEndPoint, nameof(localEndPoint));
             Guard.NotNull(externalEndPoint, nameof(externalEndPoint));
 
-            return new NetworkPeerServer(this.network, localEndPoint, externalEndPoint, version, this.loggerFactory, this, this.initialBlockDownloadState, this.connectionManagerSettings, this.asyncProvider);
+            return new NetworkPeerServer(this.network, localEndPoint, externalEndPoint, version, this.loggerFactory, this, this.initialBlockDownloadState, this.connectionManagerSettings, this.asyncProvider, this.peerAddressManager, this.dateTimeProvider);
         }
 
         /// <inheritdoc/>
