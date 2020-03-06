@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class ChainBuilder
+    public sealed class ChainBuilder
     {
         private Network network;
 
