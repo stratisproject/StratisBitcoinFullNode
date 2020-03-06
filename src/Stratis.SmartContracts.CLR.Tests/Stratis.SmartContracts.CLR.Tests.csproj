@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
-    <RuntimeFrameworkVersion>3.0.0</RuntimeFrameworkVersion>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="bin\Debug\netcoreapp3.0\Packages\netcoreapp3.0\System.Runtime.dll" />
+    <None Include="bin\Debug\netcoreapp3.1\Packages\netcoreapp3.1\System.Runtime.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -146,7 +146,7 @@
     <None Update="Packages\4.0.0-TEST\Stratis.SmartContracts.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Packages\netcoreapp3.0\System.Runtime.dll">
+    <None Update="Packages\netcoreapp3.1\System.Runtime.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
