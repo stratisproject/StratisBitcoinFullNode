@@ -800,6 +800,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
+        public IEnumerable<Wallet> GetWallets()
+        {
+            return this.Wallets.ToArray();
+        }
+
         /// <inheritdoc />
         public IEnumerable<HdAccount> GetAccounts(string walletName)
         {
@@ -812,6 +817,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 res = wallet.GetAccounts().ToArray();
             }
+
+            return res;
+        }
+
+        public IEnumerable<HdAccount> GetAllAccounts()
+        {
+            HdAccount[] res = null;
+            lock (this.lockObject)
+            {
+                res = this.Wallets.SelectMany(w => w.GetAccounts()).ToArray();
+            }
+
             return res;
         }
 

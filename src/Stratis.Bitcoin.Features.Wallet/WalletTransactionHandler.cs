@@ -73,10 +73,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // TODO: Improve this as we already have secrets when running a retry iteration.
                     this.AddSecrets(context, coinsSpent);
                     context.TransactionBuilder.SignTransactionInPlace(transaction);
-                }
 
-                if (context.TransactionBuilder.Verify(transaction, out errors))
+                    // We can only verify the built transaction if signing was requested, otherwise it will be missing signatures and verification will fail.
+                    if (context.TransactionBuilder.Verify(transaction, out errors))
+                        return transaction;
+                }
+                else
+                {
+                    // We don't really know at this stage whether the fees are sufficient, as we do not know what size the signatures will be.
                     return transaction;
+                }
 
                 // Retry only if error is of type 'FeeTooLowPolicyError'
                 if (!errors.Any(e => e is FeeTooLowPolicyError)) break;

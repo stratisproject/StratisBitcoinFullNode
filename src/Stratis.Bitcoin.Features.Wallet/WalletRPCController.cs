@@ -105,9 +105,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Sends money to an address. Requires wallet to be unlocked using walletpassphrase.")]
         public async Task<uint256> SendToAddressAsync(BitcoinAddress address, decimal amount, string commentTx, string commentDest)
         {
-            WalletAccountReference account = this.GetWalletAccountReference();
-
-            TransactionBuildContext context = new TransactionBuildContext(this.FullNode.Network)
+            var context = new TransactionBuildContext(this.FullNode.Network)
             {
                 AccountReference = this.GetWalletAccountReference(),
                 Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
@@ -134,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         [ActionName("fundrawtransaction")]
         [ActionDescription("Add inputs to a transaction until it has enough in value to meet its out value. Note that signing is performed separately.")]
-        public async Task<FundRawTransactionResponse> FundRawTransactionAsync(string rawHex, FundRawTransactionOptions options)
+        public async Task<FundRawTransactionResponse> FundRawTransactionAsync(string rawHex, FundRawTransactionOptions options = null)
         {
             try
             {
@@ -145,49 +143,93 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 WalletAccountReference account = this.GetWalletAccountReference();
 
-                IEnumerable<UnspentOutputReference> unspents = this.walletManager.GetSpendableTransactionsInWallet(account.WalletName);
+                HdAddress changeAddress = null;
 
-                var totalFunded = new Money(0);
-
-                foreach (var unspent in unspents)
+                try
                 {
-                    if (totalFunded < (rawTx.TotalOut + feeAmount))
-                    {
-                        rawTx.Inputs.Add(new TxIn()
-                        {
-                            PrevOut = unspent.ToOutPoint()
-                        });
-
-                        // Need to accurately account for how much funding is assigned to the inputs so that change can be correctly calculated later.
-                        totalFunded += unspent.Transaction.Amount;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    changeAddress = this.walletManager.GetAllAccounts().SelectMany(a => a.GetCombinedAddresses()).FirstOrDefault(a => a.Address == options?.ChangeAddress.ToString());
+                }
+                catch (Exception)
+                {
+                    changeAddress = this.walletManager.GetUnusedChangeAddress(account);
                 }
 
-                if (totalFunded < (rawTx.TotalOut + feeAmount))
-                    throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, "Insufficient unspent funds");
-
-                var change = totalFunded - rawTx.TotalOut - feeAmount;
-
-                if (change < 0)
-                    throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, "Change amount cannot be negative");
-
-                Script changeAddress = options.ChangeAddress != null ? options.ChangeAddress.ScriptPubKey : this.walletManager.GetUnusedChangeAddress(account).ScriptPubKey;
-
-                rawTx.Outputs.Add(new TxOut()
+                var context = new TransactionBuildContext(this.Network)
                 {
-                    Value = change,
-                    ScriptPubKey = changeAddress
-                });
-
+                    AccountReference = account,
+                    ChangeAddress = changeAddress,
+                    OverrideFeeRate = options?.FeeRate,
+                  
+                    MinConfirmations = 0,
+                    Sign = false
+                };
+                
+                this.walletTransactionHandler.FundTransaction(context, rawTx);
+                
                 return new FundRawTransactionResponse()
                 {
+                    // TODO: Retrieve the change position correctly
                     ChangePos = (rawTx.Outputs.Count - 1),
                     Fee = feeAmount,
                     Transaction = rawTx
+                };
+            }
+            catch (SecurityException)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
+            }
+            catch (WalletException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
+            }
+        }
+
+        /// <summary>
+        /// Sign inputs for raw transaction.
+        /// Needed private keys need to be within the wallet's current gap limit.
+        /// </summary>
+        /// <param name="rawHex">The raw (unsigned) transaction in hex format.</param>
+        /// <returns>The hex format of the transaction once it has been signed.</returns>
+        [ActionName("signrawtransaction")]
+        [ActionDescription("Sign inputs for raw transaction. Requires all affected wallets to be unlocked using walletpassphrase.")]
+        public async Task<SignRawTransactionResponse> SignRawTransactionAsync(string rawHex)
+        {
+            try
+            {
+                Transaction rawTx = this.Network.CreateTransaction(rawHex);
+
+                // We essentially need to locate the needed private keys from within the wallet and sign with them.
+
+                var builder = new TransactionBuilder(this.Network);
+                var coins = new List<Coin>();
+                var signingKeys = new List<ISecret>();
+
+                // TODO: Add a cache to speed up the case where multiple inputs are controlled by the same private key?
+                foreach (var input in rawTx.Inputs.ToArray())
+                {
+                    // We need to know which wallet it was that we found the correct UTXO inside, as an account maintains no reference to its parent wallet.
+                    foreach (Wallet wallet in this.walletManager.GetWallets())
+                    {
+                        foreach (var unspent in wallet.GetAllUnspentTransactions(this.ChainIndexer.Height).Where(a => (a.Transaction.Id == input.PrevOut.Hash && a.Transaction.Index == input.PrevOut.N)))
+                        {
+                            coins.Add(new Coin(unspent.Transaction.Id, (uint) unspent.Transaction.Index, unspent.Transaction.Amount, unspent.Transaction.ScriptPubKey));
+
+                            ExtKey seedExtKey = this.walletManager.GetExtKey(new WalletAccountReference() { AccountName = unspent.Account.Name, WalletName = wallet.Name });
+                            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(unspent.Address.HdPath));
+                            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
+                            signingKeys.Add(addressPrivateKey);
+                        }
+                    }
+                }
+
+                builder.AddCoins(coins);
+                builder.AddKeys(signingKeys.ToArray());
+                builder.SignTransactionInPlace(rawTx);
+
+                return new SignRawTransactionResponse()
+                {
+                    Transaction = rawTx,
+                    Complete = true
                 };
             }
             catch (SecurityException)

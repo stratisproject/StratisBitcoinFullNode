@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             bool enforcementHeightReached = this.ChainIndexer.Height >= enforceMinProtocolVersionAtBlockHeight;
             if (enforcementEnabled && !enforcementApplied && enforcementHeightReached)
             {
-                this.Logger.LogDebug("Changing the minumum supported protocol version from {0} to {1}.", this.NodeSettings.MinProtocolVersion, this.Network.Consensus.Options.EnforcedMinProtocolVersion);
+                this.Logger.LogDebug("Changing the minimum supported protocol version from {0} to {1}.", this.NodeSettings.MinProtocolVersion, this.Network.Consensus.Options.EnforcedMinProtocolVersion);
                 this.NodeSettings.MinProtocolVersion = this.Network.Consensus.Options.EnforcedMinProtocolVersion;
             }
 
