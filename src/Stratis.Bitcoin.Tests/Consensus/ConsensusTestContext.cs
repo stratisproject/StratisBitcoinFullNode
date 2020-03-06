@@ -123,14 +123,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
                   this.ConsensusSettings,
                   this.hashStore);
 
+            this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
+
             this.networkPeerFactory = new NetworkPeerFactory(this.Network,
                 this.dateTimeProvider,
                 this.loggerFactory, new PayloadProvider().DiscoverPayloads(),
                 this.selfEndpointTracker,
                 this.ibd.Object,
-                new ConnectionManagerSettings(this.nodeSettings), this.asyncProvider);
+                new ConnectionManagerSettings(this.nodeSettings),
+                this.asyncProvider,
+                this.peerAddressManager);
 
-            this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
             var peerDiscovery = new PeerDiscovery(this.asyncProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
 
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,

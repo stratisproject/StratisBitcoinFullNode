@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.Collateral;
 using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Sidechains.Networks;
 
@@ -76,7 +77,8 @@ namespace Stratis.CirrusDnsD
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractPoAConsensus()
-                .UseSmartContractPoAMining()
+                .UseSmartContractPoAMining() // TODO: this needs to be refactored and removed as it does not make sense to call this for non-mining nodes.
+                .CheckForPoAMembersCollateral(false) // This is a non-mining node so we will only check the commitment height data and not do the full set of collateral checks.
                 .UseSmartContractWallet()
                 .AddSQLiteWalletRepository()
                 .UseApi()

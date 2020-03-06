@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.PoA
         // Collateral related errors.
         public static ConsensusError InvalidCollateralAmount => new ConsensusError("invalid-collateral-amount", "collateral requirement is not fulfilled");
 
-        public static ConsensusError InvalidCollateralAmountNoCommitment => new ConsensusError("collateral-commitment-not-found", "collateral commitment not found");
+        public static ConsensusError CollateralCommitmentHeightMissing => new ConsensusError("collateral-commitment-height-missing", "collateral commitment height missing");
 
         public static ConsensusError InvalidCollateralAmountCommitmentTooNew => new ConsensusError("collateral-commitment-too-new", "collateral commitment too new");
     }

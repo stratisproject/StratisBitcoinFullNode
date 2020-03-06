@@ -49,6 +49,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
+        /// <summary> The number connected inbound peers that the disposer has to dispose of.</summary>
+        public int? ConnectedInboundPeersCount { get { return this.networkPeerDisposer?.ConnectedInboundPeersCount; } }
+
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
 
@@ -57,6 +60,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         private readonly ConnectionManagerSettings connectionManagerSettings;
+
+        private readonly IPeerAddressManager peerAddressManager;
+
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Used to publish application events.</summary>
         private readonly ISignals signals;
@@ -80,7 +87,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             INetworkPeerFactory networkPeerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConnectionManagerSettings connectionManagerSettings,
-            IAsyncProvider asyncProvider)
+            IAsyncProvider asyncProvider,
+            IPeerAddressManager peerAddressManager,
+            IDateTimeProvider dateTimeProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.signals = asyncProvider.Signals;
@@ -88,6 +97,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
+            this.peerAddressManager = peerAddressManager;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -144,7 +155,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (!successful)
                     {
                         this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, reason));
-                        this.logger.LogDebug("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
+                        this.logger.LogInformation("Connection from client '{0}' was rejected and will be closed, reason: {1}", tcpClient.Client.RemoteEndPoint, reason);
                         tcpClient.Close();
                         continue;
                     }
@@ -177,7 +188,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask.Wait();
 
             if (this.networkPeerDisposer.ConnectedPeersCount > 0)
-                this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.networkPeerDisposer.ConnectedPeersCount);
+                this.logger.LogInformation("Waiting for {0} connected clients to dispose...", this.networkPeerDisposer.ConnectedPeersCount);
 
             this.networkPeerDisposer.Dispose();
         }
@@ -201,10 +212,20 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private (bool successful, string reason) AllowClientConnection(TcpClient tcpClient)
         {
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+
+            var peers = this.peerAddressManager.FindPeersByIp(clientRemoteEndPoint);
+            var bannedPeer = peers.FirstOrDefault(p => p.IsBanned(this.dateTimeProvider.GetUtcNow()));
+            if (bannedPeer != null)
+            {
+                this.logger.LogTrace("(-)[PEER_BANNED]:false");
+                return (false, $"Inbound Refused: Peer {clientRemoteEndPoint} is banned until {bannedPeer.BanUntil}.");
+            }
+
             if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
-                return (false, "Inbound Refused: Max Connection Threshold Reached.");
+                return (false, $"Inbound Refused: Max Inbound Connection Threshold Reached, inbounds: {this.networkPeerDisposer.ConnectedInboundPeersCount}");
             }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
@@ -214,7 +235,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
-            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
             bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
@@ -224,7 +244,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Inbound Accepted: Whitelisted endpoint connected during IBD.");
             }
 
-            this.logger.LogDebug("Node '{0}' is not whitelisted via endpoint '{1}' during initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
+            this.logger.LogInformation("Node '{0}' is not whitelisted via endpoint '{1}' during initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
 
             return (false, "Inbound Refused: Non Whitelisted endpoint connected during IBD.");
         }

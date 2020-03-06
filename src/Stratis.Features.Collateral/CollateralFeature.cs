@@ -39,23 +39,30 @@ namespace Stratis.Features.Collateral
     public static class FullNodeBuilderCollateralFeatureExtension
     {
         // Both Cirrus Peg and Cirrus Miner calls this.
-        public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder, bool isMiner)
         {
-            // Inject the CheckCollateralFullValidationRule as the first Full Validation Rule.
-            // This is still a bit hacky and we need to properly review the dependencies again between the different side chain nodes.
-            fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralFullValidationRule));
+            // This rule always executes between all Cirrus nodes.
+            fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralCommitmentHeightRule));
 
-            fullNodeBuilder.ConfigureFeature(features =>
+            // Only configure this if the Cirrus node is a miner (CirrusPegD and CirrusMinerD)
+            if (isMiner)
             {
-                features.AddFeature<CollateralFeature>()
-                    .DependOn<CounterChainFeature>()
-                    .DependOn<PoAFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
-                        services.AddSingleton<ICollateralChecker, CollateralChecker>();
-                    });
-            });
+                // Inject the CheckCollateralFullValidationRule as the first Full Validation Rule.
+                // This is still a bit hacky and we need to properly review the dependencies again between the different side chain nodes.
+                fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralFullValidationRule));
+
+                fullNodeBuilder.ConfigureFeature(features =>
+                {
+                    features.AddFeature<CollateralFeature>()
+                        .DependOn<CounterChainFeature>()
+                        .DependOn<PoAFeature>()
+                        .FeatureServices(services =>
+                        {
+                            services.AddSingleton<IFederationManager, CollateralFederationManager>();
+                            services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                        });
+                });
+            }
 
             return fullNodeBuilder;
         }

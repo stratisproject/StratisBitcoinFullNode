@@ -34,10 +34,10 @@ namespace Stratis.Features.Collateral
             PoABlockHeaderValidator poaHeaderValidator, IFederationManager federationManager, IIntegrityValidator integrityValidator, IWalletManager walletManager,
             INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, ICollateralChecker collateralChecker, IAsyncProvider asyncProvider)
             : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager, connectionManager,
-            poaHeaderValidator, federationManager, integrityValidator, walletManager,nodeStats, votingManager, poAMinerSettings, asyncProvider)
+            poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager, poAMinerSettings, asyncProvider)
         {
             this.collateralChecker = collateralChecker;
-            this.encoder = new CollateralHeightCommitmentEncoder();
+            this.encoder = new CollateralHeightCommitmentEncoder(this.logger);
         }
 
         /// <inheritdoc />
@@ -80,20 +80,29 @@ namespace Stratis.Features.Collateral
             }
 
             // Add height commitment.
-            byte[] encodedHeight = this.encoder.EncodeWithPrefix(commitmentHeight);
+            byte[] encodedHeight = this.encoder.EncodeCommitmentHeight(commitmentHeight);
 
-            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
-            blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
+            var heightCommitmentScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
+            blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, heightCommitmentScript);
         }
     }
 
-    public class CollateralHeightCommitmentEncoder
+    public sealed class CollateralHeightCommitmentEncoder
     {
         /// <summary>Prefix used to identify OP_RETURN output with mainchain consensus height commitment.</summary>
         public static readonly byte[] HeightCommitmentOutputPrefixBytes = { 121, 13, 6, 253 };
 
+        private readonly ILogger logger;
+
+        public CollateralHeightCommitmentEncoder(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
         /// <summary>Converts <paramref name="height"/> to a byte array which has a prefix of <see cref="HeightCommitmentOutputPrefixBytes"/>.</summary>
-        public byte[] EncodeWithPrefix(int height)
+        /// <param name="height">That height at which the block was mined.</param>
+        /// <returns>The encoded height in bytes.</returns>
+        public byte[] EncodeCommitmentHeight(int height)
         {
             var bytes = new List<byte>(HeightCommitmentOutputPrefixBytes);
 
@@ -102,13 +111,16 @@ namespace Stratis.Features.Collateral
             return bytes.ToArray();
         }
 
-        /// <summary>Provides commitment data from transaction's coinbase height commitment output.</summary>
-        /// <returns>Commitment script or <c>null</c> if commitment script wasn't found.</returns>
-        public byte[] ExtractRawCommitmentData(Transaction tx)
+        /// <summary>Extracts the height commitment data from a transaction's coinbase <see cref="TxOut"/>.</summary>
+        /// <param name="coinbaseTx">The transaction that should contain the height commitment data.</param>
+        /// <returns>The commitment height, <c>null</c> if not found.</returns>
+        public int? DecodeCommitmentHeight(Transaction coinbaseTx)
         {
-            IEnumerable<Script> opReturnOutputs = tx.Outputs.Where(x => (x.ScriptPubKey.Length > 0) && (x.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)).Select(x => x.ScriptPubKey);
+            IEnumerable<Script> opReturnOutputs = coinbaseTx.Outputs.Where(x => (x.ScriptPubKey.Length > 0) && (x.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)).Select(x => x.ScriptPubKey);
 
             byte[] commitmentData = null;
+
+            this.logger.LogDebug("Transaction contains {0} OP_RETURN outputs.", opReturnOutputs.Count());
 
             foreach (Script script in opReturnOutputs)
             {
@@ -122,20 +134,19 @@ namespace Stratis.Features.Collateral
                 bool correctPrefix = data.Take(HeightCommitmentOutputPrefixBytes.Length).SequenceEqual(HeightCommitmentOutputPrefixBytes);
 
                 if (!correctPrefix)
+                {
+                    this.logger.LogDebug("Push data contains incorrect prefix for height commitment.");
                     continue;
+                }
 
                 commitmentData = data.Skip(HeightCommitmentOutputPrefixBytes.Length).ToArray();
                 break;
             }
 
-            return commitmentData;
-        }
+            if (commitmentData != null)
+                return BitConverter.ToInt32(commitmentData);
 
-        public int Decode(byte[] rawData)
-        {
-            int height = BitConverter.ToInt32(rawData);
-
-            return height;
+            return null;
         }
     }
 }

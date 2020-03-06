@@ -35,6 +35,7 @@
 	  <PackageReference Include="AspNetCore.Http.Extensions" Version="1.0.1" />
 	  <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
     <PackageReference Include="NSubstitute" Version="3.1.0" />
   </ItemGroup>
 

@@ -34,7 +34,6 @@ namespace Stratis.Features.Collateral
             ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
         {
             this.network = network;
-            this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
@@ -53,17 +52,15 @@ namespace Stratis.Features.Collateral
 
             IFederationMember federationMember = this.slotsManager.GetFederationMemberForTimestamp(context.ValidationContext.BlockToValidate.Header.Time);
 
-            byte[] rawCommitmentData = this.encoder.ExtractRawCommitmentData(context.ValidationContext.BlockToValidate.Transactions.First());
-
-            if (rawCommitmentData == null)
+            var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
+            int? commitmentHeight = commitmentHeightEncoder.DecodeCommitmentHeight(context.ValidationContext.BlockToValidate.Transactions.First());
+            if (commitmentHeight == null)
             {
-                // Every PoA miner on sidechain network is enforced to include commitment data to the blocks mined.
-                // Not having a commitment always should result in a permanent ban of the block.
-                this.Logger.LogTrace("(-)[NO_COMMITMENT_FOUND]");
-                PoAConsensusErrors.InvalidCollateralAmountNoCommitment.Throw();
+                // We return here as it is CheckCollateralCommitmentHeightRule's responsibility to perform this check.
+                this.Logger.LogTrace("(-)SKIPPED_AS_COLLATERAL_COMMITMENT_HEIGHT_MISSING]");
+                return Task.CompletedTask;
             }
 
-            int commitmentHeight = this.encoder.Decode(rawCommitmentData);
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
             // TODO: Both this and CollateralPoAMiner are using this chain's MaxReorg instead of the Counter chain's MaxReorg. Beware: fixing requires fork.
@@ -85,7 +82,7 @@ namespace Stratis.Features.Collateral
                 PoAConsensusErrors.InvalidCollateralAmountCommitmentTooNew.Throw();
             }
 
-            if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight))
+            if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight.Value))
             {
                 // By setting rejectUntil we avoid banning a peer that provided a block.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
