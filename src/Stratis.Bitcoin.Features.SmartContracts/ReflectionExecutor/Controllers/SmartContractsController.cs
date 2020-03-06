@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
-            if (transactionBroadCastEntry?.State == Features.Wallet.Broadcasting.State.CantBroadcast)
+            if (transactionBroadCastEntry?.TransactionBroadcastState == Features.Wallet.Broadcasting.TransactionBroadcastState.CantBroadcast)
             {
                 this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
@@ -544,7 +544,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
-            if (transactionBroadCastEntry?.State == Features.Wallet.Broadcasting.State.CantBroadcast)
+            if (transactionBroadCastEntry?.TransactionBroadcastState == Features.Wallet.Broadcasting.TransactionBroadcastState.CantBroadcast)
             {
                 this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");

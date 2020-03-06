@@ -33,27 +33,31 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             this.TransactionStateChanged?.Invoke(this, entry);
         }
 
+        /// <summary>Transactions to broadcast.</summary>
         private ConcurrentHashSet<TransactionBroadcastEntry> Broadcasts { get; }
 
+        /// <summary>Retrieves a transaction with provided hash from the collection of transactions to broadcast.</summary>
+        /// <param name="transactionHash">Hash of the transaction to retrieve.</param>
         public TransactionBroadcastEntry GetTransaction(uint256 transactionHash)
         {
             TransactionBroadcastEntry txEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transactionHash);
             return txEntry ?? null;
         }
 
-        public void AddOrUpdate(Transaction transaction, State state, MempoolError mempoolError = null)
+        /// <summary>Adds or updates a transaction from the collection of transactions to broadcast.</summary>
+        public void AddOrUpdate(Transaction transaction, TransactionBroadcastState transactionBroadcastState, MempoolError mempoolError = null)
         {
             TransactionBroadcastEntry broadcastEntry = this.Broadcasts.FirstOrDefault(x => x.Transaction.GetHash() == transaction.GetHash());
 
             if (broadcastEntry == null)
             {
-                broadcastEntry = new TransactionBroadcastEntry(transaction, state, mempoolError);
+                broadcastEntry = new TransactionBroadcastEntry(transaction, transactionBroadcastState, mempoolError);
                 this.Broadcasts.Add(broadcastEntry);
                 this.OnTransactionStateChanged(broadcastEntry);
             }
-            else if (broadcastEntry.State != state)
+            else if (broadcastEntry.TransactionBroadcastState != transactionBroadcastState)
             {
-                broadcastEntry.State = state;
+                broadcastEntry.TransactionBroadcastState = transactionBroadcastState;
                 this.OnTransactionStateChanged(broadcastEntry);
             }
         }
@@ -67,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <param name="peers">Peers to whom we will propagate the transaction.</param>
         protected async Task PropagateTransactionToPeersAsync(Transaction transaction, List<INetworkPeer> peers)
         {
-            this.AddOrUpdate(transaction, State.ToBroadcast);
+            this.AddOrUpdate(transaction, TransactionBroadcastState.ToBroadcast);
 
             var invPayload = new InvPayload(transaction);
 
@@ -83,10 +87,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             }
         }
 
+        /// <summary>Checks if transaction was propagated to any peers on the network.</summary>
         protected bool IsPropagated(Transaction transaction)
         {
             TransactionBroadcastEntry broadcastEntry = this.GetTransaction(transaction.GetHash());
-            return (broadcastEntry != null) && (broadcastEntry.State == State.Propagated);
+            return (broadcastEntry != null) && (broadcastEntry.TransactionBroadcastState == TransactionBroadcastState.Propagated);
         }
     }
 }

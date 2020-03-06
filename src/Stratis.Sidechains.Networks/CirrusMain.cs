@@ -127,7 +127,7 @@ namespace Stratis.Sidechains.Networks
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
                 votingEnabled: true,
-                autoKickIdleMembers: false
+                autoKickIdleMembers: true
             )
             {
                 EnforceMinProtocolVersionAtBlockHeight = 384675, // setting the value to zero makes the functionality inactive
