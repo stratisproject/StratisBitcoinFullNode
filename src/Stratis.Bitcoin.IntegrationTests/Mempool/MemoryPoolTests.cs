@@ -150,53 +150,53 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                     tx.AddInput(new TxIn(new OutPoint(randHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money(1 * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
 
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTx(i, tx);
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx);
                 }
 
-                Assert.Equal(50, stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count);
+                Assert.Equal(50, stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count);
 
                 // ... and 50 that depend on other orphans:
                 for (ulong i = 0; i < 50; i++)
                 {
-                    MempoolOrphans.OrphanTx txPrev = stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().ElementAt(rand.Next(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count));
+                    MempoolOrphans.OrphanTx txPrev = stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().ElementAt(rand.Next(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count));
 
                     Transaction tx = stratisNode.FullNode.Network.CreateTransaction();
                     tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money((1 + i + 100) * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTx(i, tx);
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx);
                 }
 
-                Assert.Equal(100, stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count);
+                Assert.Equal(100, stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count);
 
                 // This really-big orphan should be ignored:
                 for (ulong i = 0; i < 10; i++)
                 {
-                    MempoolOrphans.OrphanTx txPrev = stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().ElementAt(rand.Next(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count));
+                    MempoolOrphans.OrphanTx txPrev = stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().ElementAt(rand.Next(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count));
                     Transaction tx = stratisNode.FullNode.Network.CreateTransaction();
                     tx.AddOutput(new TxOut(new Money(1 * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
                     foreach (int index in Enumerable.Range(0, 2777))
                         tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), index), new Script(OpcodeType.OP_1)));
 
-                    Assert.False(stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTx(i, tx));
+                    Assert.False(stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx).GetAwaiter().GetResult());
                 }
 
-                Assert.Equal(100, stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count);
+                Assert.Equal(100, stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count);
 
                 // Test EraseOrphansFor:
                 for (ulong i = 0; i < 3; i++)
                 {
-                    int sizeBefore = stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count;
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().EraseOrphansFor(i);
-                    Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count < sizeBefore);
+                    int sizeBefore = stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count;
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().EraseOrphansForAsync(i);
+                    Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count < sizeBefore);
                 }
 
                 // Test LimitOrphanTxSize() function:
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(40);
-                Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count <= 40);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(10);
-                Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Count <= 10);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSize(0);
-                Assert.True(!stratisNode.FullNode.NodeService<MempoolOrphans>().OrphansList().Any());
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(40);
+                Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count <= 40);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(10);
+                Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count <= 10);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(0);
+                Assert.True(!stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Any());
             }
         }
 
@@ -227,10 +227,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // broadcast the orphan
                 stratisNodeSync.Broadcast(txOrphan);
-                TestBase.WaitLoop(() => stratisNodeSync.FullNode.NodeService<MempoolOrphans>().OrphansList().Count == 1);
+                TestBase.WaitLoop(() => stratisNodeSync.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count == 1);
                 // broadcast the parent
                 stratisNodeSync.Broadcast(tx);
-                TestBase.WaitLoop(() => stratisNodeSync.FullNode.NodeService<MempoolOrphans>().OrphansList().Count == 0);
+                TestBase.WaitLoop(() => stratisNodeSync.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count == 0);
                 // wait for orphan to get in the pool
                 TestBase.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 2);
             }

@@ -403,7 +403,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else if (state.MissingInputs)
             {
-                this.orphans.ProcessesOrphansMissingInputs(peer, trx);
+                this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx);
             }
             else
             {
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
                 if (!trx.HasWitness && !state.CorruptionPossible)
                 {
-                    this.orphans.AddToRecentRejects(trxHash);
+                    this.orphans.AddToRecentRejectsAsync(trxHash);
                 }
 
                 // Always relay transactions received from whitelisted peers, even

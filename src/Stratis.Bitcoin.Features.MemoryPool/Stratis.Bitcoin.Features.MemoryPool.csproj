@@ -22,6 +22,7 @@
     <Authors>Stratis Group Ltd.</Authors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Cleary.AsyncExtensions" Version="4.9.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />

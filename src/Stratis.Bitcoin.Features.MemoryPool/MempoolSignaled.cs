@@ -100,10 +100,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return this.mempoolLock.WriteAsync(() =>
             {
                 this.memPool.RemoveForBlock(block.Transactions, blockHeight);
-                this.mempoolOrphans.RemoveForBlock(block.Transactions);
+                this.mempoolOrphans.RemoveForBlockAsync(block.Transactions);
 
                 this.validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
-                this.validator.PerformanceCounter.SetMempoolOrphanSize(this.mempoolOrphans.OrphansCount());
+                this.validator.PerformanceCounter.SetMempoolOrphanSize(this.mempoolOrphans.GetOrphansCountAsync());
                 this.validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
         }
