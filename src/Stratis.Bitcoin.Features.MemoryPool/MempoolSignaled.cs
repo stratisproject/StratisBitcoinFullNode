@@ -97,17 +97,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //if (this.IsInitialBlockDownload)
             //  return Task.CompletedTask;
 
-            return this.mempoolLock.WriteAsync(() =>
+            return this.mempoolLock.WriteAsync(async () =>
             {
                 this.memPool.RemoveForBlock(block.Transactions, blockHeight);
-                this.mempoolOrphans.RemoveForBlockAsync(block.Transactions);
+                await this.mempoolOrphans.RemoveForBlockAsync(block.Transactions).ConfigureAwait(false);
 
                 this.validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
-                this.validator.PerformanceCounter.SetMempoolOrphanSize(this.mempoolOrphans.GetOrphansCountAsync());
+                this.validator.PerformanceCounter.SetMempoolOrphanSize(await this.mempoolOrphans.GetOrphansCountAsync().ConfigureAwait(false));
                 this.validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
         }
-
         /// <summary>
         /// Announces blocks on all connected nodes memory pool behaviors every five seconds.
         /// </summary>

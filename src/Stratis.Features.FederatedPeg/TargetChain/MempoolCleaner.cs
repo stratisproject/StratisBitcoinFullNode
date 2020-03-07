@@ -108,7 +108,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private async Task CleanMempoolAsync()
         {
-            List<Transaction> transactionsToCheck = this.mempoolOrphans.GetOrphansListAsync().Select(i => i.Tx).ToList();
+            List<Transaction> transactionsToCheck = (await this.mempoolOrphans.GetOrphansListAsync().ConfigureAwait(false)).Select(i => i.Tx).ToList();
 
             if (transactionsToCheck.Count == 0)
                 return;
@@ -126,7 +126,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (transactionsToRemove.Count > 0)
             {
-                this.mempoolOrphans.RemoveForBlockAsync(transactionsToRemove);
+                await this.mempoolOrphans.RemoveForBlockAsync(transactionsToRemove).ConfigureAwait(false);
 
                 this.logger.LogDebug("Removed {0} transactions from mempool", transactionsToRemove.Count);
             }

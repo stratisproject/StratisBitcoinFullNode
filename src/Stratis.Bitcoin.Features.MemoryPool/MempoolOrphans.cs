@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             // witness-stripped transactions, as they can have been malleated.
                             // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
 
-                            this.AddToRecentRejectsAsync(orphanHash);
+                            await this.AddToRecentRejectsAsync(orphanHash).ConfigureAwait(false);
                          }
                     }
 

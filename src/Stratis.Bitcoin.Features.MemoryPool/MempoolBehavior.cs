@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogDebug("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
             var state = new MempoolValidationState(true);
-            if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
+            if (!await this.orphans.AlreadyHaveAsync(trxHash).ConfigureAwait(false) && await this.validator.AcceptToMemoryPool(state, trx).ConfigureAwait(false))
             {
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
@@ -399,11 +399,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, peer.RemoteSocketEndpoint, mmsize, memdyn / 1000);
 
-                await this.orphans.ProcessesOrphansAsync(this, trx);
+                await this.orphans.ProcessesOrphansAsync(this, trx).ConfigureAwait(false);
             }
             else if (state.MissingInputs)
             {
-                this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx);
+                await this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx).ConfigureAwait(false);
             }
             else
             {
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
                 if (!trx.HasWitness && !state.CorruptionPossible)
                 {
-                    this.orphans.AddToRecentRejectsAsync(trxHash);
+                    await this.orphans.AddToRecentRejectsAsync(trxHash).ConfigureAwait(false);
                 }
 
                 // Always relay transactions received from whitelisted peers, even

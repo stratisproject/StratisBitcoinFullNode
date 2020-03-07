@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                     tx.AddInput(new TxIn(new OutPoint(randHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money(1 * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
 
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx);
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx).GetAwaiter().GetResult();
                 }
 
                 Assert.Equal(50, stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count);
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                     Transaction tx = stratisNode.FullNode.Network.CreateTransaction();
                     tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money((1 + i + 100) * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx);
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().AddOrphanTxAsync(i, tx).GetAwaiter().GetResult();
                 }
 
                 Assert.Equal(100, stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count);
@@ -186,16 +186,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 for (ulong i = 0; i < 3; i++)
                 {
                     int sizeBefore = stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count;
-                    stratisNode.FullNode.NodeService<MempoolOrphans>().EraseOrphansForAsync(i);
+                    stratisNode.FullNode.NodeService<MempoolOrphans>().EraseOrphansForAsync(i).GetAwaiter().GetResult();
                     Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count < sizeBefore);
                 }
 
                 // Test LimitOrphanTxSize() function:
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(40);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(40).GetAwaiter().GetResult();
                 Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count <= 40);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(10);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(10).GetAwaiter().GetResult();
                 Assert.True(stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Count <= 10);
-                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(0);
+                stratisNode.FullNode.NodeService<MempoolOrphans>().LimitOrphanTxSizeAsync(0).GetAwaiter().GetResult();
                 Assert.True(!stratisNode.FullNode.NodeService<MempoolOrphans>().GetOrphansListAsync().GetAwaiter().GetResult().Any());
             }
         }
