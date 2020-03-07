@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public long FeeDelta { get; set; }
     }
 
-;
-
     /// <summary>
     /// Memory pool of pending transactions.
     /// </summary>
@@ -138,12 +136,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Number of transactions updated.</summary>
         private int nTransactionsUpdated;
 
-        /// <summary>
-        ///  Sum of all mempool tx's virtual sizes.
-        ///  Differs from serialized Transaction size since witness data is discounted. Defined in BIP 141.
-        /// </summary>
-        private long totalTxSize;
-
         /// <summary>Sum of dynamic memory usage of all the map elements (NOT the maps themselves).</summary>
         private long cachedInnerUsage;
 
@@ -223,7 +215,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mapLinks.Clear();
             this.MapTx.Clear();
             this.MapNextTx.Clear();
-            this.totalTxSize = 0;
             this.cachedInnerUsage = 0;
             this.lastRollingFeeUpdate = this.TimeProvider.GetTime();
             this.blockSinceLastRollingFeeBump = false;
@@ -314,7 +305,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             string dummy;
             this.CalculateMemPoolAncestors(entry, setAncestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy);
             bool returnVal = this.AddUnchecked(hash, entry, setAncestors, validFeeEstimate);
-            
+
             return returnVal;
         }
 
@@ -368,7 +359,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.UpdateEntryForAncestors(entry, setAncestors);
 
             this.nTransactionsUpdated++;
-            this.totalTxSize += entry.GetTxSize();
 
             this.MinerPolicyEstimator.ProcessTransaction(entry, validFeeEstimate);
 
@@ -448,7 +438,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
             Guard.Assert(it != null);
-            
+
             return it.Children;
         }
 
@@ -579,7 +569,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -593,7 +583,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return false;
                 }
             }
-            
+
             return true;
         }
 
@@ -671,7 +661,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CalculateDescendants(removeit, stage);
             }
             this.RemoveStaged(stage, false);
-            
+
             return stage.Count;
         }
 
@@ -700,7 +690,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //else
             //  vTxHashes.clear();
 
-            this.totalTxSize -= entry.GetTxSize();
             this.cachedInnerUsage -= entry.DynamicMemoryUsage();
             this.cachedInnerUsage -= this.mapLinks[entry]?.Parents?.Sum(p => p.DynamicMemoryUsage()) ?? 0 + this.mapLinks[entry]?.Children?.Sum(p => p.DynamicMemoryUsage()) ?? 0;
             this.mapLinks.Remove(entry);
@@ -878,7 +867,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="hash">Transaction hash.</param>
         private void ClearPrioritisation(uint256 hash)
-        { 
+        {
             //LOCK(cs);
             this.mapDeltas.Remove(hash);
         }
@@ -1126,7 +1115,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 /// Gets the hash code for the transaction hash.
                 /// </summary>
                 /// <param name="obj">Transaction hash.</param>
-                /// <returns></returns>
                 public int GetHashCode(uint256 obj)
                 {
                     // todo: need to compare with the c++ implementation
