@@ -65,10 +65,6 @@ namespace Stratis.StratisD
                             (Broadcaster: typeof(WalletInfoBroadcaster), ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
                                 {
                                     BroadcastFrequencySeconds = 5
-                                }),
-                            (Broadcaster: typeof(ColdStakingBroadcaster), ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
-                                {
-                                    BroadcastFrequencySeconds = 5
                                 })
                         };
                     });

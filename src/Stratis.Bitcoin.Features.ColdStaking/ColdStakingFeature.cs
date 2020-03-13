@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.ColdStaking.Services;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -250,8 +249,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                     services.AddSingleton<ScriptAddressReader>();
                     services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), typeof(ColdStakingDestinationReader), ServiceLifetime.Singleton));
-
-                    services.AddSingleton<IColdStakingService, ColdStakingService>();
                 });
             });
 
