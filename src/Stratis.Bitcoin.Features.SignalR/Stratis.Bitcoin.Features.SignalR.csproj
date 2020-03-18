@@ -7,7 +7,7 @@
     
     <ItemGroup>
         <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
-        <PackageReference Include="Microsoft.AspNetCore.App"/>
+        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.12" />
     </ItemGroup>
     
     <ItemGroup>
