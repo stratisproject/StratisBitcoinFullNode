@@ -403,7 +403,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else if (state.MissingInputs)
             {
-                await this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx).ConfigureAwait(false);
+                await this.orphans.ProcessesOrphansMissingInputsAsync(peer, trx).ConfigureAwait(false); 
             }
             else
             {
