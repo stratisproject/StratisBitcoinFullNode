@@ -34,7 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ibdMock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
             this.slotsManagerMock
                 .Setup(x => x.GetFederationMemberForTimestamp(It.IsAny<uint>(), null))
-                .Returns(new CollateralFederationMember(new Key().PubKey, new Money(1), "addr1"));
+                .Returns(new CollateralFederationMember(new Key().PubKey, false, new Money(1), "addr1"));
 
             this.ruleContext = new RuleContext(new ValidationContext(), DateTimeOffset.Now);
             this.ruleContext.ValidationContext.BlockToValidate = new Block(new BlockHeader() { Time = 5234 });

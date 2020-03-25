@@ -81,7 +81,7 @@ namespace Stratis.Sidechains.Networks
             var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
 
             foreach (PubKey pubKey in federationPubKeys)
-                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, new Money(0), null));
+                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, true, new Money(0), null));
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
@@ -92,7 +92,7 @@ namespace Stratis.Sidechains.Networks
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
                 votingEnabled: true,
-                autoKickIdleMembers: false
+                autoKickIdleMembers: true
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

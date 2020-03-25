@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -63,7 +64,9 @@ namespace Stratis.Features.Collateral
 
             foreach (CollateralFederationMemberModel fedMemberModel in fedMemberModels)
             {
-                federation.Add(new CollateralFederationMember(new PubKey(fedMemberModel.PubKeyHex), new Money(fedMemberModel.CollateralAmountSatoshis),
+                PubKey pubKey = new PubKey(fedMemberModel.PubKeyHex);
+                bool isMultisigMember = FederationVotingController.IsMultisigMember(this.network, pubKey);
+                federation.Add(new CollateralFederationMember(pubKey, isMultisigMember, new Money(fedMemberModel.CollateralAmountSatoshis),
                     fedMemberModel.CollateralMainchainAddress));
             }
 

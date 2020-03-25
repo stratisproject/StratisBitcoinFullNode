@@ -594,7 +594,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             var addresses = new Dictionary<string, decimal>();
             try
             {
-                // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
+                // Outputs addresses are key-value pairs of address, amount. Translate to Receipient list.
                 addresses = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson);
             }
             catch (JsonSerializationException ex)
@@ -689,7 +689,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Gets the first account from the "default" wallet if it specified, otherwise returns the first available account in the existing wallets.
+        /// Gets the first account from the "default" wallet if it specified,
+        /// otherwise returns the first available account in the existing wallets.
         /// </summary>
         /// <returns>Reference to the default wallet account, or the first available if no default wallet is specified.</returns>
         private WalletAccountReference GetWalletAccountReference()
@@ -707,7 +708,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
 
-            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+            HdAccount account = this.walletManager.GetAccounts(walletName).First();
             return new WalletAccountReference(walletName, account.Name);
         }
     }

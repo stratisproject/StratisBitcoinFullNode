@@ -83,13 +83,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
             else
             {
-                this.logger.LogDebug("No saved data found. Initializing federation data with genesis timestamps.");
+                this.logger.LogDebug("No saved data found. Initializing federation data with current timestamp.");
 
                 this.fedPubKeysByLastActiveTime = new Dictionary<PubKey, uint>();
 
-                // Initialize with 0.
+                // Initialize with current timestamp. If we were to initialise with 0, then everyone would be wrong instantly!
                 foreach (IFederationMember federationMember in this.federationManager.GetFederationMembers())
-                    this.fedPubKeysByLastActiveTime.Add(federationMember.PubKey, 0);
+                    this.fedPubKeysByLastActiveTime.Add(federationMember.PubKey, (uint) this.timeProvider.GetAdjustedTimeAsUnixTimestamp());
 
                 this.SaveMembersByLastActiveTime();
             }
@@ -126,29 +126,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             foreach (KeyValuePair<PubKey, uint> fedMemberToActiveTime in this.fedPubKeysByLastActiveTime)
             {
-                uint inactiveForSeconds;
+                uint inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
 
-                if (fedMemberToActiveTime.Value == 0)
-                {
-                    // Fed member was never active, count from first block after genesis.
-                    inactiveForSeconds = tip.Header.Time - blockConnectedData.ConnectedBlock.ChainedHeader.GetAncestor(1).Header.Time;
-                }
-                else
-                {
-                    inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
-                }
-
-                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
+                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember && 
+                    !FederationVotingController.IsMultisigMember(this.network, fedMemberToActiveTime.Key))
                 {
                     IFederationMember memberToKick = this.federationManager.GetFederationMembers().SingleOrDefault(x => x.PubKey == fedMemberToActiveTime.Key);
 
                     byte[] federationMemberBytes = this.consensusFactory.SerializeFederationMember(memberToKick);
 
-                    List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
-
-                    bool alreadyKicking = finishedPolls.Any(x => !x.IsExecuted &&
-                         x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
-                         x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
+                    bool alreadyKicking = this.AlreadyVotingFor(federationMemberBytes);
 
                     if (!alreadyKicking)
                     {
@@ -157,7 +144,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.votingManager.ScheduleVote(new VotingData()
                         {
                             Key = VoteKey.KickFederationMember,
-                            Data = fedMemberToActiveTime.Key.ToBytes()
+                            Data = federationMemberBytes
                         });
                     }
                     else
@@ -166,6 +153,43 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Tells us whether we have already voted to boot a federation member.
+        /// </summary>
+        private bool AlreadyVotingFor(byte[] federationMemberBytes)
+        {
+            List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
+
+            if(finishedPolls.Any(x => !x.IsExecuted &&
+                 x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                 x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex())))
+            {
+                // We've already voted in a finished poll.
+                return true;
+            }
+
+            List<Poll> pendingPolls = this.votingManager.GetPendingPolls();
+
+            if (pendingPolls.Any(x => x.VotingData.Key == VoteKey.KickFederationMember &&
+                                       x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                                       x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex())))
+            {
+                // We've already voted in a pending poll.
+                return true;
+            }
+
+
+            List<VotingData> scheduledVotes = this.votingManager.GetScheduledVotes();
+
+            if (scheduledVotes.Any(x => x.Key == VoteKey.KickFederationMember && x.Data.SequenceEqual(federationMemberBytes)))
+            {
+                // We have the vote queued to be put out next time we mine a block.
+                return true;
+            }
+
+            return false;
         }
 
         private void SaveMembersByLastActiveTime()

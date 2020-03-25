@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.PoA
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             CollateralFederationMemberModel model = Serializer.ToObject<CollateralFederationMemberModel>(json);
 
-            var member = new CollateralFederationMember(new PubKey(model.PubKeyHex), new Money(model.CollateralAmountSatoshis), model.CollateralMainchainAddress);
+            var member = new CollateralFederationMember(new PubKey(model.PubKeyHex), false, new Money(model.CollateralAmountSatoshis), model.CollateralMainchainAddress);
 
             return member;
         }
@@ -24,6 +25,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
             if (member == null)
                 throw new ArgumentException($"Member of type: '{nameof(CollateralFederationMember)}' should be provided.");
+
+            Guard.Assert(!member.IsMultisigMember);
 
             var model = new CollateralFederationMemberModel()
             {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -14,6 +15,8 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         public TestPoANetwork()
         {
+            this.Name = "PoATest";
+
             this.FederationKey1 = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
             this.FederationKey2 = new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey;
             this.FederationKey3 = new Mnemonic("high neither night category fly wasp inner kitchen phone current skate hair").DeriveExtKey().PrivateKey;
@@ -41,6 +44,22 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             );
 
             this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
+        }
+    }
+
+    public class TestPoACollateralNetwork : TestPoANetwork
+    {
+        public TestPoACollateralNetwork() : base()
+        {
+            // Upgrade genesis members to CollateralFederationMember.
+            var options = (PoAConsensusOptions)this.Consensus.Options;
+            var members = options.GenesisFederationMembers
+                .Select(m => new CollateralFederationMember(m.PubKey, true, new Money(0), "")).ToList();
+            options.GenesisFederationMembers.Clear();
+            foreach (IFederationMember member in members)
+                options.GenesisFederationMembers.Add(member);
+
+            this.Name = "PoaCollateralMain";
         }
     }
 }

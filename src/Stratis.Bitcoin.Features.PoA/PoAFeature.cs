@@ -96,10 +96,13 @@ namespace Stratis.Bitcoin.Features.PoA
 
             if (options.VotingEnabled)
             {
-                this.votingManager.Initialize();
-
+                // If we are kicking members, we need to initialize this component before the VotingManager.
+                // The VotingManager may tally votes and execute federation changes, but the IdleKicker needs to know who the current block is from.
+                // The IdleKicker can much more easily find out who the block is from if it receives the block first.
                 if (options.AutoKickIdleMembers)
                     this.idleFederationMembersKicker.Initialize();
+
+                this.votingManager.Initialize();
             }
 
             this.miner.InitializeMining();
