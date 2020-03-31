@@ -168,6 +168,9 @@
     <Compile Update="SmartContracts\TransferTestPos.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="UnrestrictedSmartContracts\HitAnApiContract.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
   </ItemGroup>
   
   <ItemGroup>
