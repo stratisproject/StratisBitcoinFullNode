@@ -19,14 +19,14 @@ namespace Stratis.SmartContracts.CLR.Validation
             .TypeDefValidator(new ConstructorParamValidator(), t => t.IsContractType())
             .TypeDefValidator(new InheritsSmartContractValidator(), t => t.IsContractType())
             .TypeDefValidator(new FieldDefinitionValidator(), t => t.IsContractType())
-            .NestedTypeDefValidator(new TypeHasMethodsValidator())
-            .NestedTypeDefValidator(new TypeHasNestedTypesValidator())
-            .NestedTypeDefValidator(new NestedTypeIsValueTypeValidator())
+            //.NestedTypeDefValidator(new TypeHasMethodsValidator())
+            //.NestedTypeDefValidator(new TypeHasNestedTypesValidator())
+            //.NestedTypeDefValidator(new NestedTypeIsValueTypeValidator())
             .MethodDefValidator(new TryCatchValidator())
             .MethodDefValidator(new MethodParamValidator())
             .MethodDefValidator(new GenericMethodValidator())
             .MethodDefValidator(new PInvokeValidator())
-            .InstructionValidator(new MultiDimensionalArrayValidator())
-            .InstructionValidator(new NewObjValidator());
+            .InstructionValidator(new MultiDimensionalArrayValidator());
+            // .InstructionValidator(new NewObjValidator());
     }
 }
