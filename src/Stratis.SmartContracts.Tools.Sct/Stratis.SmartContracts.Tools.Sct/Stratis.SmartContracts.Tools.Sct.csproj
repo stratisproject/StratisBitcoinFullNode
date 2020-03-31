@@ -9,8 +9,6 @@
   <ItemGroup>
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.2.0" />
     <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
-    <PackageReference Include="Stratis.SmartContracts.Core" Version="0.0.2-beta" />
-    <PackageReference Include="Stratis.SmartContracts.Networks" Version="0.0.1-beta" />
   </ItemGroup>
 
   <ItemGroup>
