@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             IServiceCollection services = options.Services;
 
             // Validator
-            services.AddSingleton<ISmartContractValidator, SmartContractValidator>();
+            services.AddSingleton<ISmartContractValidator, SmartContractFormatValidator>();
 
             // Executor et al.
             services.AddSingleton<IContractRefundProcessor, ContractRefundProcessor>();
