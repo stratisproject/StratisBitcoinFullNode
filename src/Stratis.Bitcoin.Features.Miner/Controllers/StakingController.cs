@@ -56,14 +56,20 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Get staking info from the miner.
         /// </summary>
         /// <returns>All staking info details as per the GetStakingInfoModel.</returns>
+        /// <response code="200">Returns staking info</response>
+        /// <response code="400">Unexpected exception occurred</response>
+        /// <response code="405">Consensus is not PoS</response>
         [Route("getstakinginfo")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.MethodNotAllowed)]
         public IActionResult GetStakingInfo()
         {
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available if not Proof of Stake");
 
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
@@ -81,8 +87,16 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// </summary>
         /// <param name="request">The name and password of the wallet to stake.</param>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
+        /// <response code="200">Staking has started</response>
+        /// <response code="400">An exception occurred</response>
+        /// <response code="405">Consensus is not PoS</response>
+        /// <response code="500">Request is null</response>
         [Route("startstaking")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.MethodNotAllowed)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -90,16 +104,16 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available if not Proof of Stake");
 
                 if (!this.ModelState.IsValid)
                 {
                     IEnumerable<string> errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
-                
+
                 Wallet.Wallet wallet = this.walletManager.GetWallet(request.Name);
-                
+
                 // Check the password
                 try
                 {
@@ -109,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 {
                     throw new SecurityException(ex.Message);
                 }
-            
+
                 this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(request.Name, request.Password);
 
                 return this.Ok();
@@ -129,14 +143,20 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
+        /// <response code="200">Staking has stopped</response>
+        /// <response code="400">An exception occurred</response>
+        /// <response code="405">Consensus is not PoS</response>
         [Route("stopstaking")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.MethodNotAllowed)]
         public IActionResult StopStaking([FromBody] bool corsProtection = true)
         {
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available if not Proof of Stake");
 
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
                 return this.Ok();

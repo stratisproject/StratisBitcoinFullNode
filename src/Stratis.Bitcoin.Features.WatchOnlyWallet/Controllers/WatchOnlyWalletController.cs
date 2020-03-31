@@ -33,8 +33,14 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// </summary>
         /// <example>Request URL: /api/watchonlywallet/watch?address=mpK6g... </example>
         /// <param name="address">The base58 address to add to the watch list.</param>
+        /// <response code="200">Address added</response>
+        /// <response code="400">Address not provided</response>
+        /// <response code="409">An exception occurred</response>
         [Route("watch")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.Conflict)]
         public IActionResult Watch([FromBody]string address)
         {
             // Checks the request is valid.
@@ -59,7 +65,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// </summary>
         /// <example>Request URL: /api/watchonlywallet </example>
         /// <returns>The watch-only wallet or a collection of errors, if any.</returns>
+        /// <response code="200">Returns watched addresses and their transactions</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetWatchOnlyWallet()
         {
             try

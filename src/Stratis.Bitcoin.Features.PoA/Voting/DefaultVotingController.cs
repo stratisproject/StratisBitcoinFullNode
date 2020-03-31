@@ -40,8 +40,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <summary>
+        /// Retrieves a list of active federation members.
+        /// </summary>
+        /// <returns>Active federation members</returns>
+        /// <response code="200">Returns the active members</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("fedmembers")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetFederationMembers()
         {
             try
@@ -57,8 +65,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>
+        /// Retrieves a list of active polls.
+        /// </summary>
+        /// <returns>Active polls</returns>
+        /// <response code="200">Returns the active polls</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("pendingpolls")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetPendingPolls()
         {
             try
@@ -76,8 +92,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>
+        /// Retrieves a list of finished polls.
+        /// </summary>
+        /// <returns>Finished polls</returns>
+        /// <response code="200">Returns the finished polls</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("finishedpolls")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetFinishedPolls()
         {
             try
@@ -95,8 +119,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>
+        /// Retrieves a list of whitelisted hashes.
+        /// </summary>
+        /// <returns>List of whitelisted hashes</returns>
+        /// <response code="200">Returns the hashes</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("whitelistedhashes")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetWhitelistedHashes()
         {
             try
@@ -112,15 +144,35 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>
+        /// Votes to add a hash to the whitelist.
+        /// </summary>
+        /// <returns>The HTTP response</returns>
+        /// <response code="200">Voted to add hash to whitelist</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
+        /// <response code="500">The request is null</response>
         [Route("schedulevote-whitelisthash")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteWhitelistHash([FromBody]HashModel request)
         {
             return this.VoteWhitelistRemoveHashMember(request, true);
         }
 
+        /// <summary>
+        /// Votes to remove a hash from the whitelist.
+        /// </summary>
+        /// <returns>The HTTP response</returns>
+        /// <response code="200">Voted to remove hash from whitelist</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
+        /// <response code="500">The request is null</response>
         [Route("schedulevote-removehash")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteRemoveHash([FromBody]HashModel request)
         {
             return this.VoteWhitelistRemoveHashMember(request, false);
@@ -155,8 +207,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>
+        /// Retrieves the scheduled voting data.
+        /// </summary>
+        /// <returns>Scheduled voting data</returns>
+        /// <response code="200">Returns the voting data</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("scheduledvotes")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetScheduledVotes()
         {
             try
