@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollVotedInFavorBlockData.Hash == newFinalizedHash).ToList())
+                foreach (Poll poll in this.polls.Where(x => !x.IsPending).ToList())
                 {
                     this.logger.LogDebug("Applying poll '{0}'.", poll);
                     this.pollResultExecutor.ApplyChange(poll.VotingData);
