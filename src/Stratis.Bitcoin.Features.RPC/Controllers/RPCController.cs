@@ -92,8 +92,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <param name="body">A JObject containing the name of the method to process.</param>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
+        /// <response code="200">Returns method response</response>
+        /// <response code="400">An exception occurred</response>
+        /// <response code="405">RPC is disabled</response>
+        /// <response code="500">Body is null</response>
         [Route("callbyname")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.MethodNotAllowed)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult CallByName([FromBody]JObject body)
         {
             Guard.NotNull(body, nameof(body));
@@ -153,8 +161,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Lists the available Remote Procedural Call methods on this node.
         /// </summary>
         /// <returns>A JSON result that lists the RPC methods.</returns>
+        /// <response code="200">Returns available methods</response>
+        /// <response code="400">Unexpected exception occurred</response>
+        /// <response code="405">RPC is disabled</response>
         [Route("listmethods")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.MethodNotAllowed)]
         public IActionResult ListMethods()
         {
             try

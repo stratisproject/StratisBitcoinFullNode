@@ -78,8 +78,12 @@ namespace Stratis.Bitcoin.Connection
         /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted exception if fails.</returns>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
+        /// <response code="200">The node was added</response>
+        /// <response code="400">An exception occurred</response>
         [Route("api/[controller]/addnode")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult AddNodeAPI([FromQuery] string endpoint, string command)
         {
             try
@@ -99,7 +103,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// RPC implementation of "getpeerinfo".
         /// </summary>
-        /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
+        /// <see href="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
         /// <returns>List of connected peer nodes as <see cref="PeerNodeModel"/>.</returns>
         [ActionName("getpeerinfo")]
         [ApiExplorerSettings(IgnoreApi = true)]
@@ -150,11 +154,15 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// Gets information about this node.
         /// </summary>
-        /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
+        /// <see href="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
-        /// <returns>Json formatted <see cref="List{T}<see cref="PeerNodeModel"/>"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <returns>Json formatted <see cref="List{PeerNodeModel}"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <response code="200">Returns peer information list</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("api/[controller]/getpeerinfo")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetPeerInfoAPI()
         {
             try
