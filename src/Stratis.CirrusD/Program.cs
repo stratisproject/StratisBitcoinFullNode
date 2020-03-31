@@ -59,7 +59,6 @@ namespace Stratis.CirrusD
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
-                    options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining() // TODO: this needs to be refactored and removed as it does not make sense to call this for non-mining nodes.
