@@ -30,17 +30,26 @@ namespace Stratis.SmartContracts.IntegrationTests
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("UnrestrictedSmartContracts/HitAnApiContract.cs");
             Assert.True(compilationResult.Success);
 
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            var receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.True(receipt.Success);
+
             const string apiUrl = "http://google.com";
 
             string[] parameters = new string[]
             {
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, apiUrl),
             };
-            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
+
+            BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction("CallApi", receipt.NewContractAddress, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
 
-            var receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            var callReceipt = this.node1.GetReceipt(callResponse.TransactionId.ToString());
+            Assert.True(callReceipt.Success);
         }
     }
 }

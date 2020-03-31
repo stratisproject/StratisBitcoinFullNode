@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.CLR.Validation
             .MethodDefValidator(new MethodParamValidator())
             .MethodDefValidator(new GenericMethodValidator())
             .MethodDefValidator(new PInvokeValidator())
-            .InstructionValidator(new MultiDimensionalArrayValidator())
-            .InstructionValidator(new NewObjValidator());
+            .InstructionValidator(new MultiDimensionalArrayValidator());
+            // .InstructionValidator(new NewObjValidator());
     }
 }
