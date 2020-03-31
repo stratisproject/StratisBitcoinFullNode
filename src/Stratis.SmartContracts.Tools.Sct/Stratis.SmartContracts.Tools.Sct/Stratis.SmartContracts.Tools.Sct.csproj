@@ -9,8 +9,6 @@
   <ItemGroup>
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.2.0" />
     <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
-    <PackageReference Include="Stratis.SmartContracts.Core" Version="0.0.2-beta" />
-    <PackageReference Include="Stratis.SmartContracts.Networks" Version="0.0.1-beta" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +25,12 @@
 
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Stratis.SmartContracts.CLR.Validation\Stratis.SmartContracts.CLR.Validation.csproj" />
+    <ProjectReference Include="..\..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
+    <ProjectReference Include="..\..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
   </ItemGroup>
 
 </Project>
