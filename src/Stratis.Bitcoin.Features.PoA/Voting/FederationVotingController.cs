@@ -30,15 +30,37 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <summary>
+        /// Votes to add a federation member.
+        /// </summary>
+        /// <param name="request">Request containing member public key</param>
+        /// <returns>The HTTP response</returns>
+        /// <response code="200">Voted to add member</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
+        /// <response code="500">The request is null</response>
         [Route("schedulevote-addfedmember")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteAddFedMember([FromBody]HexPubKeyModel request)
         {
             return this.VoteAddKickFedMember(request, true);
         }
 
+        /// <summary>
+        /// Votes to kick a federation member.
+        /// </summary>
+        /// <param name="request">Request containing member public key</param>
+        /// <returns>The HTTP response</returns>
+        /// <response code="200">Voted to kick member</response>
+        /// <response code="400">Invalid request, node is not a federation member, or an unexpected exception occurred</response>
+        /// <response code="500">The request is null</response>
         [Route("schedulevote-kickfedmember")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteKickFedMember([FromBody]HexPubKeyModel request)
         {
             return this.VoteAddKickFedMember(request, false);
