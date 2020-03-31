@@ -34,8 +34,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
             Console.WriteLine("Smart Contract Validator");
             Console.WriteLine();
 
-            var determinismValidator = new SctDeterminismValidator();
-            var formatValidator = new SmartContractFormatValidator();
+            var formatValidator = new ExpandedFormatPolicyValidator();
             var warningValidator = new SmartContractWarningValidator();
 
             var reportData = new List<ValidationReportData>();
@@ -103,7 +102,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                         .Errors
                         .Select(e => new ValidationError { Message = e.Message }));
 
-                SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(moduleDefinition);
+                SmartContractValidationResult determinismValidationResult = new SmartContractValidationResult(Enumerable.Empty<ValidationResult>());
 
                 validationData.DeterminismValid = determinismValidationResult.IsValid;
 

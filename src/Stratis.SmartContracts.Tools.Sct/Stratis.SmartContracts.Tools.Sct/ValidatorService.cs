@@ -44,8 +44,8 @@ namespace Stratis.SmartContracts.Tools.Sct
                 console.WriteLine("No constructor exists with the provided parameters.");
             }
 
-            validationServiceResult.DeterminismValidationResult = new SctDeterminismValidator().Validate(moduleDefinition);
-            validationServiceResult.FormatValidationResult = new SmartContractFormatValidator().Validate(moduleDefinition.ModuleDefinition);
+            validationServiceResult.DeterminismValidationResult = new SmartContractValidationResult(Enumerable.Empty<ValidationResult>());
+            validationServiceResult.FormatValidationResult = new ExpandedFormatPolicyValidator().Validate(moduleDefinition.ModuleDefinition);
             if (!validationServiceResult.DeterminismValidationResult.IsValid || !validationServiceResult.FormatValidationResult.IsValid)
                 console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
 
