@@ -75,7 +75,6 @@ namespace Stratis.SmartContracts.CLR.Compilation
                     deterministic: true)
                 );
 
-
             using (var dllStream = new MemoryStream())
             {
                 EmitResult emitResult = compilation.Emit(dllStream);
