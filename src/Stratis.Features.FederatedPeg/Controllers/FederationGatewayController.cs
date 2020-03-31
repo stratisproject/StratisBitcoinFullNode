@@ -58,8 +58,14 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// </summary>
         /// <param name="blockRequest">Last known block height and the maximum number of blocks to send.</param>
         /// <returns><see cref="IActionResult"/>OK on success.</returns>
+        /// <response code="200">Returns blocks deposits</response>
+        /// <response code="400">Invalid request or blocks are not mature</response>
+        /// <response code="500">Request is null</response>
         [Route(FederationGatewayRouteEndPoint.GetMaturedBlockDeposits)]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult GetMaturedBlockDeposits([FromBody] MaturedBlockRequestModel blockRequest)
         {
             Guard.NotNull(blockRequest, nameof(blockRequest));
@@ -86,8 +92,12 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// Gets some info on the state of the federation.
         /// </summary>
         /// <returns>A <see cref="FederationGatewayInfoModel"/> with information about the federation.</returns>
+        /// <response code="200">Returns federation info</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route(FederationGatewayRouteEndPoint.GetInfo)]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetInfo()
         {
             try

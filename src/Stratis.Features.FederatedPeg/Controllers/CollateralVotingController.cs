@@ -32,15 +32,23 @@ namespace Stratis.Features.FederatedPeg.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <response code="400">Not yet implemented</response>
+        /// <response code="500">Request is null</response>
         [Route("schedulevote-addfedmember")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteAddFedMember([FromBody]CollateralFederationMemberModel request)
         {
             return this.VoteAddKickFedMember(request, true);
         }
 
+        /// <response code="400">Not yet implemented</response>
+        /// <response code="500">Request is null</response>
         [Route("schedulevote-kickfedmember")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult VoteKickFedMember([FromBody]CollateralFederationMemberModel request)
         {
             return this.VoteAddKickFedMember(request, false);
