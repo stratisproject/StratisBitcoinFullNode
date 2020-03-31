@@ -32,7 +32,11 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// <summary>
         /// Returns the connected peers with some information
         /// </summary>
+        /// <response code="200">Returns connected peers information</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetConnectedPeersInfo()
         {
             try
@@ -62,7 +66,11 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// Gets the Diagnostic Feature status.
         /// </summary>
         /// <returns>The Diagnostic Feature status</returns>
+        /// <response code="200">Returns the status</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetStatus()
         {
             try
@@ -83,7 +91,11 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <param name="connectedOnly">if set to <c>true</c> returns statistics related to connected peers only.</param>
         /// <returns>List of peer statistics</returns>
+        /// <response code="200">Returns connected peers statistics</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public ActionResult<List<PeerStatisticsModel>> GetPeerStatistics(bool connectedOnly)
         {
             try
@@ -108,7 +120,11 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// Starts collecting peers statistics.
         /// </summary>
         /// <returns>Operation result.</returns>
+        /// <response code="200">Peer statistics collection started</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult StartCollectingPeerStatistics()
         {
             try
@@ -134,7 +150,11 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// Stopping a running peer statistic collecotr doesn't clear obtained results.
         /// </summary>
         /// <returns>Operation result.</returns>
+        /// <response code="200">Peer statistics collection stopped</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult StopCollectingPeerStatistics()
         {
             try

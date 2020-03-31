@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,8 +18,24 @@ namespace Stratis.Bitcoin.Features.Api
     /// </remarks>
     public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
     {
-        private const string ApiXmlFilename = "Stratis.Bitcoin.Api.xml";
-        private const string WalletXmlFilename = "Stratis.Bitcoin.LightWallet.xml";
+        private static readonly string[] ApiXmlDocuments = new string[]
+        {
+            "Stratis.Bitcoin.xml",
+            "Stratis.Bitcoin.Features.BlockStore.xml",
+            "Stratis.Bitcoin.Features.ColdStaking.xml",
+            "Stratis.Bitcoin.Features.Consensus.xml",
+            "Stratis.Bitcoin.Features.PoA.xml",
+            "Stratis.Bitcoin.Features.MemoryPool.xml",
+            "Stratis.Bitcoin.Features.Miner.xml",
+            "Stratis.Bitcoin.Features.Notifications.xml",
+            "Stratis.Bitcoin.Features.RPC.xml",
+            "Stratis.Bitcoin.Features.SignalR.xml",
+            "Stratis.Bitcoin.Features.SmartContracts.xml",
+            "Stratis.Bitcoin.Features.Wallet.xml",
+            "Stratis.Bitcoin.Features.WatchOnlyWallet.xml",
+            "Stratis.Features.Diagnostic.xml",
+            "Stratis.Features.FederatedPeg.xml"
+        };
 
         private readonly IApiVersionDescriptionProvider provider;
 
@@ -40,19 +57,14 @@ namespace Stratis.Bitcoin.Features.Api
                 options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
             }
 
-            //Set the comments path for the swagger json and ui.
+            // Includes XML comments in Swagger documentation 
             string basePath = PlatformServices.Default.Application.ApplicationBasePath;
-            string apiXmlPath = Path.Combine(basePath, ApiXmlFilename);
-            string walletXmlPath = Path.Combine(basePath, WalletXmlFilename);
-
-            if (File.Exists(apiXmlPath))
+            foreach (string xmlPath in ApiXmlDocuments.Select(xmlDocument => Path.Combine(basePath, xmlDocument)))
             {
-                options.IncludeXmlComments(apiXmlPath);
-            }
-
-            if (File.Exists(walletXmlPath))
-            {
-                options.IncludeXmlComments(walletXmlPath);
+                if (File.Exists(xmlPath))
+                {
+                    options.IncludeXmlComments(xmlPath);
+                }
             }
 
             options.DescribeAllEnumsAsStrings();

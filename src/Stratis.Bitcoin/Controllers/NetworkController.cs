@@ -50,8 +50,12 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="viewModel">The model that represents the peer to disconnect.</param>
         /// <returns><see cref="OkResult"/></returns>
+        /// <response code="200">Peer disconnected</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("disconnect")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult DisconnectPeer([FromBody] DisconnectPeerViewModel viewModel)
         {
             try
@@ -78,8 +82,12 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="viewModel">The model that represents the peer to add or remove from the banned list.</param>
         /// <returns><see cref="OkResult"/></returns>
+        /// <response code="200">Ban status updated</response>
+        /// <response code="400">An exception occurred</response>
         [Route("setban")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult SetBan([FromBody] SetBanPeerViewModel viewModel)
         {
             try
@@ -117,8 +125,16 @@ namespace Stratis.Bitcoin.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a list of all banned peers.
+        /// </summary>
+        /// <returns>List of banned peers</returns>
+        /// <response code="200">Returns banned peers</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("getbans")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult GetBans()
         {
             try
@@ -139,11 +155,15 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
         /// <remarks>
-        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// <seealso href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
         /// <returns><see cref="OkResult"/></returns>
+        /// <response code="200">Bans cleared</response>
+        /// <response code="400">Unexpected exception occurred</response>
         [Route("clearbanned")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
         public IActionResult ClearBannedPeers([FromBody] bool corsProtection = true)
         {
             try
