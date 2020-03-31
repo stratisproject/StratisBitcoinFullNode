@@ -1,55 +1,28 @@
-﻿using System.Linq;
-using System.Reflection;
-using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.CLR.Validation;
+﻿using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.Tools.Sct.Validation;
+using System.Linq;
+using System.Reflection;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
-    public sealed class ValidatorService
+    /// <summary>
+    /// Provides a quick validation that the contract is being built and invoked correctly.
+    /// Separate from <see cref="Validator"/> because Validator will give detailed
+    /// information about why a contract is invalid.
+    /// </summary>
+    public static class ValidatorService
     {
-        public ValidationServiceResult Validate(string fileName, string source, IConsole console, string[] parameters)
+        public static ValidationServiceResult Validate(string fileName, ContractCompilationResult compilationResult, IConsole console, string[] parameters)
         {
             var validationServiceResult = new ValidationServiceResult();
 
-            CompileContract(source, console, validationServiceResult);
-            ValidateContract(fileName, console, parameters, validationServiceResult);
-
-            return validationServiceResult;
-        }
-
-        private static void BuildModuleDefinition(IConsole console, ValidationServiceResult validationServiceResult, out byte[] compilation, out IContractModuleDefinition moduleDefinition)
-        {
-            console.WriteLine("Building ModuleDefinition...");
-
-            compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
-            console.WriteLine("ModuleDefinition built successfully.");
-
-            console.WriteLine();
-        }
-
-        private static void CompileContract(string source, IConsole console, ValidationServiceResult validationServiceResult)
-        {
-            console.WriteLine($"Compiling...");
-            validationServiceResult.CompilationResult = ContractCompiler.Compile(source);
-            if (!validationServiceResult.CompilationResult.Success)
-                console.WriteLine("Compilation failed!");
-            else
-                console.WriteLine($"Compilation OK");
-
-            console.WriteLine();
-        }
-
-        private static void ValidateContract(string fileName, IConsole console, string[] parameters, ValidationServiceResult validationServiceResult)
-        {
-            byte[] compilation;
-            IContractModuleDefinition moduleDefinition;
-
-            BuildModuleDefinition(console, validationServiceResult, out compilation, out moduleDefinition);
+            byte[] compilation = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = BuildModuleDefinition(console, compilation);
 
             console.WriteLine($"Validating file {fileName}...");
 
@@ -77,6 +50,17 @@ namespace Stratis.SmartContracts.Tools.Sct
                 console.WriteLine("Smart Contract failed validation. Run validate [FILE] for more info.");
 
             console.WriteLine();
+
+            return validationServiceResult;
+        }
+
+        private static IContractModuleDefinition BuildModuleDefinition(IConsole console, byte[] compilation)
+        {
+            console.WriteLine("Building ModuleDefinition...");
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
+            console.WriteLine("ModuleDefinition built successfully.");
+            console.WriteLine();
+            return moduleDefinition;
         }
     }
 

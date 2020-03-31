@@ -1,6 +1,6 @@
 ﻿using McMaster.Extensions.CommandLineUtils;
+using Stratis.SmartContracts.CLR.Compilation;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -67,31 +67,16 @@ namespace Stratis.SmartContracts.Tools.Sct.Deployment
             console.WriteLine("Smart Contract Deployer");
             console.WriteLine();
 
-            if (!File.Exists(this.InputFile))
+            ContractCompilationResult result = CompilationLoader.CompileFromFileOrDirectoryName(this.InputFile, console);
+
+            // Check if the file was found.
+            if (result == null)
             {
-                console.WriteLine($"{this.InputFile} does not exist");
                 return 1;
             }
 
-            string source;
+            ValidationServiceResult validationResult = ValidatorService.Validate(this.InputFile, result, console, this.Params);
 
-            console.WriteLine($"Reading {this.InputFile}");
-
-            using (var sr = new StreamReader(File.OpenRead(this.InputFile)))
-            {
-                source = sr.ReadToEnd();
-            }
-
-            console.WriteLine($"Read {this.InputFile} OK");
-            console.WriteLine();
-
-            if (string.IsNullOrWhiteSpace(source))
-            {
-                console.WriteLine($"Empty file at {this.InputFile}");
-                return 1;
-            }
-
-            ValidationServiceResult validationResult = new ValidatorService().Validate(this.InputFile, source, console, this.Params);
             if (!validationResult.Success)
                 return 1;
             else
