@@ -771,6 +771,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         {
             await Task.Run(() =>
             {
+                while (this.chainIndexer.Height < 3)
+                {
+                    Task.Delay(1000).Wait();
+                }
+
                 try
                 {
                     this.walletManager.LoadWallet(request.Password, request.Name);
