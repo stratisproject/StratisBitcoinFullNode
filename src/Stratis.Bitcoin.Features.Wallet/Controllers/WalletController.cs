@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -238,6 +239,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult Load([FromBody]WalletLoadRequest request)
         {
             Guard.NotNull(request, nameof(request));
+
+            while (this.chainIndexer.Height < 3)
+            {
+                Task.Delay(1000).Wait();
+            }
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
