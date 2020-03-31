@@ -1,0 +1,41 @@
+version: "3.7"
+
+services: 
+    node_1:
+        hostname: node_1
+        container_name: node_1
+        image: stratisgroupltd/blockchaincovid19:latest
+        ports:
+            - 127.0.0.1:16179:16179 # P2P
+            - 127.0.0.1:16175:16175 # RPC
+            - 127.0.0.1:37223:37223 # API
+            - 127.0.0.1:38823:38823 # SignalR
+        environment:
+            Instance: 1
+    node_2:
+        depends_on: 
+            - node_1
+        hostname: node_2
+        container_name: node_2
+        image: stratisgroupltd/blockchaincovid19:latest
+        ports:
+            - 127.0.0.1:16180:16179 # P2P
+            - 127.0.0.1:16176:16175 # RPC
+            - 127.0.0.1:37224:37223 # API
+            - 127.0.0.1:38824:38823 # SignalR
+        environment:
+            Instance: 2
+    node_3:
+        depends_on: 
+            - node_1
+            - node_2
+        hostname: node_3
+        container_name: node_3
+        image: stratisgroupltd/blockchaincovid19:latest
+        ports:
+            - 127.0.0.1:16181:16179 # P2P
+            - 127.0.0.1:16177:16175 # RPC
+            - 127.0.0.1:37225:37223 # API
+            - 127.0.0.1:38825:38823 # SignalR
+        environment:
+            Instance: 3
