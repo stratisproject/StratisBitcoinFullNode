@@ -12,6 +12,9 @@
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="3.0.1" />
     <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="4.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="4.0.1" />
     <PackageReference Include="Tracer.Fody" Version="3.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -24,6 +27,12 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Swashbuckle.AspNetCore.SwaggerUI">
+      <HintPath>..\..\..\..\..\..\.nuget\packages\swashbuckle.aspnetcore.swaggerui\4.0.1\lib\netstandard2.0\Swashbuckle.AspNetCore.SwaggerUI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
