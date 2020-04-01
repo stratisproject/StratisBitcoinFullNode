@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.CLR.Loader
         /// <returns></returns>
         public Type DeployedType { get; }
 
-        private Type GetDeployedType()
+        public Type GetDeployedType()
         {
             List<Type> contractTypes = this.Assembly.ExportedTypes.Where(IsContractType).ToList();
 
@@ -99,6 +99,34 @@ namespace Stratis.SmartContracts.CLR.Loader
             return (Observer) this.GetObserverType()?
                 .GetField(ObserverInstanceRewriter.InjectedPropertyName, BindingFlags.NonPublic | BindingFlags.Static)?
                 .GetValue(null);
+        }
+
+        /// <summary>
+        /// Gets the public methods defined by the contract, ignoring property getters/setters.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<MethodInfo> GetPublicMethods()
+        {
+            Type deployedType = this.GetDeployedType();
+
+            if (deployedType == null)
+                return new List<MethodInfo>();
+
+            return deployedType
+                .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) // Get only the methods declared on the contract type
+                .Where(m => !m.IsSpecialName); // Ignore property setters/getters
+        }
+
+        public IEnumerable<PropertyInfo> GetPublicGetterProperties()
+        {
+            Type deployedType = this.GetDeployedType();
+
+            if (deployedType == null)
+                return new List<PropertyInfo>();
+
+            return deployedType
+                .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.GetGetMethod() != null);
         }
     }
 }
