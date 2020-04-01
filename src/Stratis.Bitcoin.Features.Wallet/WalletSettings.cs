@@ -34,6 +34,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public string DefaultWalletPassword { get; set; }
 
+        public string DefaultWalletMnemonic { get; set; }
+
         /// <summary>
         /// A value indicating whether the wallet being run is the light wallet or the full wallet.
         /// </summary>
@@ -41,6 +43,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>Size of the buffer of unused addresses maintained in an account.</summary>
         public int UnusedAddressesBuffer { get; set; }
+
+        public string PoAMiningKey { get; set; }
 
         /// <summary>
         /// Initializes an instance of the object from the node configuration.

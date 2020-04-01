@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA.Events;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -53,6 +54,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly ISignals signals;
 
+        private readonly WalletSettings walletSettings;
+
         /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
         protected const string federationMembersDbKey = "fedmemberskeys";
 
@@ -63,12 +66,13 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
         protected readonly object locker;
 
-        public FederationManagerBase(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
+        public FederationManagerBase(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals, WalletSettings walletSettings)
         {
             this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.network = Guard.NotNull(network as PoANetwork, nameof(network));
             this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
             this.signals = Guard.NotNull(signals, nameof(signals));
+            this.walletSettings = Guard.NotNull(walletSettings, nameof(walletSettings));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.locker = new object();
@@ -93,7 +97,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Count, Environment.NewLine + string.Join(Environment.NewLine, this.federationMembers));
 
             // Load key.
-            Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
+            Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey(this.walletSettings.PoAMiningKey);
 
             this.CurrentFederationKey = key;
             this.SetIsFederationMember();
@@ -188,8 +192,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
     public class FederationManager : FederationManagerBase
     {
-        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
-            :base(nodeSettings, network, loggerFactory, keyValueRepo, signals)
+        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals, WalletSettings walletSettings)
+            : base(nodeSettings, network, loggerFactory, keyValueRepo, signals, walletSettings)
         {
         }
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -12,8 +13,8 @@ namespace Stratis.Features.Collateral
 {
     public class CollateralFederationManager : FederationManagerBase
     {
-        public CollateralFederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
-            : base(nodeSettings, network, loggerFactory, keyValueRepo, signals)
+        public CollateralFederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals, WalletSettings walletSettings)
+            : base(nodeSettings, network, loggerFactory, keyValueRepo, signals, walletSettings)
         {
         }
 
