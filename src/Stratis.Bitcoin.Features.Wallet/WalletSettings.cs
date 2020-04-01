@@ -61,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
             this.DefaultWalletName = config.GetOrDefault<string>("defaultwalletname", null, this.logger);
+            this.DefaultWalletMnemonic = config.GetOrDefault<string>("defaultwalletmnemonic", null, this.logger);
+            this.PoAMiningKey = config.GetOrDefault<string>("poaminingkey", null, this.logger);
 
             if (!string.IsNullOrEmpty(this.DefaultWalletName))
             {
