@@ -300,6 +300,11 @@ namespace Stratis.SmartContracts.CLR
                 return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
             }
 
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.TimedOut)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
+            }
+
             return VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, invocationResult.ErrorMessage);
         }
 
