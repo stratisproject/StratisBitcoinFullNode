@@ -42,7 +42,7 @@ namespace Stratis.Features.Collateral
         public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder, bool isMiner)
         {
             // This rule always executes between all Cirrus nodes.
-            fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralCommitmentHeightRule));
+            //fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralCommitmentHeightRule));
 
             // Only configure this if the Cirrus node is a miner (CirrusPegD and CirrusMinerD)
             if (isMiner)
