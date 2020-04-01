@@ -495,14 +495,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         {
             return await Task.Run(() =>
             {
-                if (!this.connectionManager.ConnectedPeers.Any())
-                {
-                    this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-
-                    throw new FeatureException(HttpStatusCode.Forbidden,
-                        "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-                }
-
                 Transaction transaction = this.network.CreateTransaction(request.Hex);
 
                 var model = new WalletSendTransactionModel
