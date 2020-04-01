@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.logger.LogInformation("Default wallet is enabled, creating wallet...");
 
-                    var mnemonic = new Mnemonic("basic exotic crack drink left judge tourist giggle muscle unique horn body");
+                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
                     this.CreateWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, string.Empty, mnemonic);
                 }
 
