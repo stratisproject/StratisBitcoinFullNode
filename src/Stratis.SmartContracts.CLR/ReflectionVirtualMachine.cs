@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.CLR
         private int timeOutMs = DefaultTimeOutMs;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
-        public const int DefaultTimeOutMs = 5000;
+        public const int DefaultTimeOutMs = 10*1000; // 10 sec
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
