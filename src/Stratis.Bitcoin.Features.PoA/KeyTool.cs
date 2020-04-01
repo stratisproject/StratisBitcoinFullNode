@@ -60,8 +60,7 @@ namespace Stratis.Bitcoin.Features.PoA
             string path = this.GetPrivateKeySavePath();
 
             if (!File.Exists(path))
-                return new Mnemonic("basic exotic crack drink left judge tourist giggle muscle unique horn body")
-                    .DeriveExtKey().PrivateKey;
+                return null;
 
             using (FileStream readStream = File.OpenRead(path))
             {
