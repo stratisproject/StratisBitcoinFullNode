@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -28,6 +29,7 @@ namespace Stratis.SmartContracts.CLR
         private readonly IContractAssemblyCache assemblyCache;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
+        public const int DefaultTimeOutMs = 5000;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
@@ -156,7 +158,11 @@ namespace Stratis.SmartContracts.CLR
             assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
             // Invoke the constructor of the provided contract code
-            IContractInvocationResult invocationResult = contract.InvokeConstructor(parameters);
+            Result<IContractInvocationResult> timeOutResult = TimeOut(() => contract.InvokeConstructor(parameters), DefaultTimeOutMs);
+
+            IContractInvocationResult invocationResult = timeOutResult.IsSuccess
+                ? timeOutResult.Value
+                : ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.TimedOut, new Exception(timeOutResult.Error));
 
             // Always reset the observer, even if the previous was null.
             assemblyPackage.Assembly.SetObserver(previousObserver);
@@ -248,7 +254,11 @@ namespace Stratis.SmartContracts.CLR
             // Set new Observer and load and execute.
             assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
-            IContractInvocationResult invocationResult = contract.Invoke(methodCall);
+            Result<IContractInvocationResult> timeOutResult = TimeOut(() => contract.Invoke(methodCall), DefaultTimeOutMs);
+
+            IContractInvocationResult invocationResult = timeOutResult.IsSuccess
+                ? timeOutResult.Value
+                : ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.TimedOut, new Exception(timeOutResult.Error));
 
             // Always reset the observer, even if the previous was null.
             assemblyPackage.Assembly.SetObserver(previousObserver);
@@ -357,6 +367,15 @@ namespace Stratis.SmartContracts.CLR
 
                 return Result.Fail<ContractByteCode>("Exception occurred while serializing module");
             }
+        }
+
+        private static Result<T> TimeOut<T>(Func<T> func, int timeout)
+        {
+            var executeTask = Task.Run(func);
+            
+            return executeTask.Wait(timeout)
+                ? Result.Ok(executeTask.Result)
+                : Result.Fail<T>("Execution timed out");
         }
 
         internal void LogExecutionContext(IBlock block, IMessage message, uint160 contractAddress)

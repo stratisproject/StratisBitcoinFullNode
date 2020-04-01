@@ -11,6 +11,7 @@
         MethodThrewException,
         OutOfGas,
         OverMemoryLimit,
-        Exception
+        Exception,
+        TimedOut
     }
 }
