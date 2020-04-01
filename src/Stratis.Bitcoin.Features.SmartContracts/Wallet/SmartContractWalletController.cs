@@ -56,15 +56,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.smartContractTransactionService = smartContractTransactionService;
         }
 
-        private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
-        {
-            return this.walletManager
-                .GetSpendableTransactionsInWallet(walletName)
-                .GroupBy(x => x.Address)
-                .Where(grouping => grouping.Sum(x => x.Transaction.GetUnspentAmount(true)) > 0)
-                .Select(grouping => grouping.Key);
-        }
-
         /// <summary>
         /// Gets a smart contract account address.
         /// This is a single address to use for all smart contract interactions.
@@ -100,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             try
             {
-                IEnumerable<string> addresses = this.GetAccountAddressesWithBalance(walletName)
+                IEnumerable<string> addresses = this.walletManager.GetAccountAddressesWithBalance(walletName)
                     .Select(a => a.Address);
 
                 if (!addresses.Any())

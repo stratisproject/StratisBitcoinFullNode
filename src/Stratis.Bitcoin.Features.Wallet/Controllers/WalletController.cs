@@ -122,6 +122,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public async Task<IActionResult> Load([FromBody] WalletLoadRequest request,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            while (this.chainIndexer.Height < 3)
+            {
+                Task.Delay(1000).Wait();
+            }
+
             return await this.Execute(request, cancellationToken, async (req, token) =>
             {
                 await this.walletService.LoadWallet(req, token);
