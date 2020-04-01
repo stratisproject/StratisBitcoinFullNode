@@ -139,12 +139,6 @@ namespace Stratis.Bitcoin.P2P
 
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
         {
-            if (this.ConnectionManager.ConnectedPeers == null)
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]:false");
-                return false;
-            }
-
             byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
 
             foreach (INetworkPeer endPoint in this.ConnectionManager.ConnectedPeers.ToList())
