@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Key key = this.tool.GeneratePrivateKey();
 
             this.tool.SavePrivateKey(key);
-            Key loadedKey = this.tool.LoadPrivateKey();
+            Key loadedKey = this.tool.LoadPrivateKey(null);
 
             Assert.Equal(loadedKey.PubKey, key.PubKey);
 

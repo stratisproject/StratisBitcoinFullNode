@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network.Consensus.ConsensusFactory));
 
             var settings = new NodeSettings(network, args: new string[] { $"-datadir={dir}" });
-            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals);
+            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals, null);
             federationManager.Initialize();
 
             return federationManager;
