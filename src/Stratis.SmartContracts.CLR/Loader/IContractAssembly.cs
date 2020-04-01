@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Stratis.SmartContracts.RuntimeObserver;
 
@@ -15,5 +16,11 @@ namespace Stratis.SmartContracts.CLR.Loader
         bool SetObserver(Observer observer);
 
         Observer GetObserver();
+        
+        Type GetDeployedType();
+
+        IEnumerable<MethodInfo> GetPublicMethods();
+
+        IEnumerable<PropertyInfo> GetPublicGetterProperties();
     }
 }
