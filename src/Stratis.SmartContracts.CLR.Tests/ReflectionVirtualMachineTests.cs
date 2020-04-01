@@ -291,6 +291,33 @@ public class Contract : SmartContract
             Assert.False(result.IsSuccess);
             Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
+
+        [Fact]
+        public void VM_ExecuteContract_TimeOut()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
+            byte[] codeHash = HashHelper.Keccak256(contractExecutionCode);
+
+            var methodParameters = new object[] { (ulong)5 };
+            var executionContext = new ExecutionContext(new Observer(this.gasMeter, new MemoryMeter(100_000)));
+
+            this.vm.SetTimeOut(0);
+            VmExecutionResult result = this.vm.Create(this.state, this.contractState, executionContext, contractExecutionCode, methodParameters);
+
+            CachedAssemblyPackage cachedAssembly = this.context.ContractCache.Retrieve(new uint256(codeHash));
+
+            // Check that it's been cached, even though we ran out of gas.
+            Assert.NotNull(cachedAssembly);
+
+            // Check that the observer has been reset.
+            Assert.Null(cachedAssembly.Assembly.GetObserver());
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(VmExecutionErrorKind.OutOfResources, result.Error.ErrorKind);
+        }
     }
 
     public class TestPersistenceStrategy : IPersistenceStrategy
