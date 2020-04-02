@@ -3,6 +3,7 @@
       <TargetFramework>netcoreapp2.1</TargetFramework>
       <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
       <Version>3.0.8.0</Version>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     
     <ItemGroup>
