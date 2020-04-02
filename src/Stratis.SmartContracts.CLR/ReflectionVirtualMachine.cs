@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -26,8 +27,10 @@ namespace Stratis.SmartContracts.CLR
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         private readonly IContractAssemblyCache assemblyCache;
+        private int timeOutMs = DefaultTimeOutMs;
         public const int VmVersion = 1;
         public const long MemoryUnitLimit = 100_000;
+        public const int DefaultTimeOutMs = 10*1000; // 10 sec
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
@@ -151,15 +154,25 @@ namespace Stratis.SmartContracts.CLR
             // Set the code and the Type before the method is invoked
             repository.SetCode(contract.Address, contractCode);
             repository.SetContractType(contract.Address, typeToInstantiate);
+            
+            Result<IContractInvocationResult> timeOutResult = TimeOut(() =>
+            {
+                // IMPORTANT Must set thread-static observer within this function body as it could be run on a separate thread.
+                // Set Observer and load and execute.
+                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
-            // Set Observer and load and execute.
-            assemblyPackage.Assembly.SetObserver(executionContext.Observer);
+                // Invoke the constructor of the provided contract code
+                IContractInvocationResult result = contract.InvokeConstructor(parameters);
 
-            // Invoke the constructor of the provided contract code
-            IContractInvocationResult invocationResult = contract.InvokeConstructor(parameters);
+                // Always reset the observer, even if the previous was null.
+                assemblyPackage.Assembly.SetObserver(previousObserver);
 
-            // Always reset the observer, even if the previous was null.
-            assemblyPackage.Assembly.SetObserver(previousObserver);
+                return result;
+            }, this.timeOutMs);
+
+            IContractInvocationResult invocationResult = timeOutResult.IsSuccess
+                ? timeOutResult.Value
+                : ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.TimedOut, new Exception(timeOutResult.Error));
 
             if (!invocationResult.IsSuccess)
             {
@@ -245,13 +258,23 @@ namespace Stratis.SmartContracts.CLR
 
             this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
-            // Set new Observer and load and execute.
-            assemblyPackage.Assembly.SetObserver(executionContext.Observer);
+            Result<IContractInvocationResult> timeOutResult = TimeOut(() =>
+            {
+                // IMPORTANT Must set thread-static observer within this function body as it could be run on a separate thread.
+                // Set Observer and load and execute.
+                assemblyPackage.Assembly.SetObserver(executionContext.Observer);
 
-            IContractInvocationResult invocationResult = contract.Invoke(methodCall);
+                IContractInvocationResult result = contract.Invoke(methodCall);
 
-            // Always reset the observer, even if the previous was null.
-            assemblyPackage.Assembly.SetObserver(previousObserver);
+                // Always reset the observer, even if the previous was null.
+                assemblyPackage.Assembly.SetObserver(previousObserver);
+
+                return result;
+            }, this.timeOutMs);
+
+            IContractInvocationResult invocationResult = timeOutResult.IsSuccess
+                ? timeOutResult.Value
+                : ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.TimedOut, new Exception(timeOutResult.Error));
 
             if (!invocationResult.IsSuccess)
             {
@@ -273,6 +296,11 @@ namespace Stratis.SmartContracts.CLR
             }
 
             if (invocationResult.InvocationErrorType == ContractInvocationErrorType.OverMemoryLimit)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
+            }
+
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.TimedOut)
             {
                 return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
             }
@@ -359,6 +387,15 @@ namespace Stratis.SmartContracts.CLR
             }
         }
 
+        private static Result<T> TimeOut<T>(Func<T> func, int timeout)
+        {
+            var executeTask = Task.Run(func);
+            
+            return executeTask.Wait(timeout)
+                ? Result.Ok(executeTask.Result)
+                : Result.Fail<T>("Execution timed out");
+        }
+
         internal void LogExecutionContext(IBlock block, IMessage message, uint160 contractAddress)
         {
             var builder = new StringBuilder();
@@ -367,6 +404,11 @@ namespace Stratis.SmartContracts.CLR
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress()));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
             this.logger.LogDebug("{0}", builder.ToString());
+        }
+
+        public void SetTimeOut(int i)
+        {
+            this.timeOutMs = i;
         }
     }
 }
