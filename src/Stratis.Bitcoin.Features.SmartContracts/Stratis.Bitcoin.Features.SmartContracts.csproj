@@ -29,7 +29,6 @@
     <ProjectReference Include="..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
   </ItemGroup>
 
-<<<<<<< HEAD
   <ItemGroup>
     <Reference Include="Swashbuckle.AspNetCore.SwaggerUI">
       <HintPath>..\..\..\..\..\..\.nuget\packages\swashbuckle.aspnetcore.swaggerui\4.0.1\lib\netstandard2.0\Swashbuckle.AspNetCore.SwaggerUI.dll</HintPath>
@@ -37,6 +36,3 @@
   </ItemGroup>
 
 </Project>
-=======
-</Project>
->>>>>>> 25718fd8e... Fix controller conflicts
