@@ -221,6 +221,8 @@ namespace Stratis.SmartContracts.CLR.Compilation
 "System.Xml.XmlSerializer",
 "System.Xml.XPath",
 "System.Xml.XPath.XDocument",
+"Newtonsoft.Json",
+"netstandard"
 //"ucrtbase",
 //"WindowsBase",
         };

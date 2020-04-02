@@ -51,5 +51,31 @@ namespace Stratis.SmartContracts.IntegrationTests
             var callReceipt = this.node1.GetReceipt(callResponse.TransactionId.ToString());
             Assert.True(callReceipt.Success);
         }
+
+        [Fact]
+        public void CallJsonApi()
+        {
+            // Ensure fixture is funded.
+            this.mockChain.MineBlocks(1);
+
+            decimal amount = 25;
+
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("UnrestrictedSmartContracts/HitAnApiContract.cs");
+            Assert.True(compilationResult.Success);
+
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            var receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.True(receipt.Success);
+
+            BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction("CallJsonApi", receipt.NewContractAddress, amount);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            var callReceipt = this.node1.GetReceipt(callResponse.TransactionId.ToString());
+            Assert.True(callReceipt.Success);
+        }
     }
 }
