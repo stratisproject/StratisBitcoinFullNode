@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// </summary>
         /// <param name="n">The index of the output.</param>
         /// <param name="txout">A <see cref="TxOut"/></param>
-        /// <param name="network">The network where the transaction occured.</param>
+        /// <param name="network">The network where the transaction occurred.</param>
         public Vout(int n, TxOut txout, Network network)
         {
             this.N = n;

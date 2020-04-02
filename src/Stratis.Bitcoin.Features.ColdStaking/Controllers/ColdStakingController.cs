@@ -47,8 +47,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="GetColdStakingInfoRequest"/> object containing the
         /// parameters  required to obtain cold staking information.</param>
         /// <returns>A <see cref="GetColdStakingInfoResponse"/> object containing the cold staking information.</returns>
+        /// <response code="200">Returns wallet cold staking info</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
+        /// <response code="500">Request is null</response>
         [Route("cold-staking-info")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult GetColdStakingInfo([FromQuery]GetColdStakingInfoRequest request)
         {
             Guard.NotNull(request, nameof(request));
@@ -85,12 +91,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="CreateColdStakingAccountRequest"/> object containing the parameters
         /// required for creating the cold staking account.</param>
         /// <returns>A <see cref="CreateColdStakingAccountResponse>"/> object containing the account name.</returns>
+        /// <response code="200">Returns newly created account info</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
+        /// <response code="500">Request is null</response>
         [Route("cold-staking-account")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult CreateColdStakingAccount([FromBody]CreateColdStakingAccountRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            
+
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -124,12 +136,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="GetColdStakingAddressRequest"/> object containing the parameters
         /// required for generating the cold staking address.</param>
         /// <returns>A <see cref="GetColdStakingAddressResponse>"/> object containing the cold staking address.</returns>
+        /// <response code="200">Returns cold staking address response</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
+        /// <response code="500">Request is null</response>
         [Route("cold-staking-address")]
         [HttpGet]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult GetColdStakingAddress([FromQuery]GetColdStakingAddressRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            
+
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -166,12 +184,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="SetupColdStakingRequest"/> object containing the cold staking setup parameters.</param>
         /// <returns>A <see cref="SetupColdStakingResponse"/> object containing the hex representation of the transaction.</returns>
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
+        /// <response code="200">Returns setup transaction response</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
+        /// <response code="500">Request is null</response>
         [Route("setup-cold-staking")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult SetupColdStaking([FromBody]SetupColdStakingRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            
+
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -211,12 +235,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="ColdStakingWithdrawalRequest"/> object containing the cold staking withdrawal parameters.</param>
         /// <returns>A <see cref="ColdStakingWithdrawalResponse"/> object containing the hex representation of the transaction.</returns>
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
+        /// <response code="200">Returns withdrawal transaction response</response>
+        /// <response code="400">Invalid request or unexpected exception occurred</response>
+        /// <response code="500">Request is null</response>
         [Route("cold-staking-withdrawal")]
         [HttpPost]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult ColdStakingWithdrawal([FromBody]ColdStakingWithdrawalRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            
+
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
