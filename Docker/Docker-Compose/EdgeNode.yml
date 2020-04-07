@@ -5,7 +5,7 @@ services:
         hostname: node_1
         container_name: node_1
         image: stratisgroupltd/blockchaincovid19:latest
-        command: -edge
+        command: -dlt
         ports:
             - 127.0.0.1:16179:16179 # P2P
             - 127.0.0.1:16175:16175 # RPC
