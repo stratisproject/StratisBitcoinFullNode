@@ -1,10 +1,10 @@
 # Start the network
 To start the network:  
-`docker-compose -f EdgeNode.yml up`
+`docker-compose -f DltNode.yml up`
 
 # Stop the network
-The network coud be stopped by pressing Ctrl+c or by executing the following command:  
-`docker-compose -f EdgeNode.yml up`
+The network could be stopped by pressing Ctrl+c or by executing the following command:  
+`docker-compose -f DltNode.yml down`
 
 # Update
 In order to update to the latest version update the image with the following command:  
@@ -12,4 +12,4 @@ In order to update to the latest version update the image with the following com
 
 # Clean the state
 Docker compose retains state of the network. In order to reset and start all over again execute the following command:  
-`docker-compose -f EdgeNode.yml rm`
+`docker-compose -f DltNode.yml rm`
