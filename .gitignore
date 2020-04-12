@@ -263,3 +263,5 @@ src/.idea/.idea.Stratis.Bitcoin.FullNode/.idea/
 .DS_Store
 
 *.iml
+
+!/src/Stratis.SmartContracts.Tools.Sct/Stratis.SmartContracts.Tools.Sct/Build/
