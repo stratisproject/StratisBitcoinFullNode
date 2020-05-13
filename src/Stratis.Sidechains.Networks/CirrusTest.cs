@@ -175,6 +175,8 @@ namespace Stratis.Sidechains.Networks
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
+            this.CollateralCommitmentActivationHeight = 25810;
+
             // 16 below should be changed to TargetSpacingSeconds when we move that field.
             Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0000af9ab2c8660481328d0444cf167dfd31f24ca2dbba8e5e963a2434cffa93"));
