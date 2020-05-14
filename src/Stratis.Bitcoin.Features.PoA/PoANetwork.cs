@@ -30,6 +30,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public PoAConsensusOptions ConsensusOptions => this.Consensus.Options as PoAConsensusOptions;
 
+        /// <summary>
+        /// This is the height at which collateral commitment height data was committed to blocks.
+        /// </summary>
+        public int CollateralCommitmentActivationHeight { get; set; }
+
         public PoANetwork()
         {
             // The message start string is designed to be unlikely to occur in normal data.

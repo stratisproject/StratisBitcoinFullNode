@@ -20,6 +20,10 @@ namespace Stratis.Features.Collateral
             if (context.ValidationContext.ChainedHeaderToValidate.Height == 0)
                 return Task.CompletedTask;
 
+            // If the network's CollateralCommitmentActivationHeight is set then check that the current height is less than than that.
+            if (context.ValidationContext.ChainedHeaderToValidate.Height < (this.Parent.Network as PoANetwork).CollateralCommitmentActivationHeight)
+                return Task.CompletedTask;
+
             var commitmentHeightEncoder = new CollateralHeightCommitmentEncoder(this.Logger);
 
             int? commitmentHeight = commitmentHeightEncoder.DecodeCommitmentHeight(context.ValidationContext.BlockToValidate.Transactions.First());
