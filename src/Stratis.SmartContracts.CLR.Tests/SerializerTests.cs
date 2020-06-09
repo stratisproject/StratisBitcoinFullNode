@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -256,11 +257,13 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void SingleByteStringSerializesCorrectly()
         {
-            string test = "1";
+            const string test = "1";
 
-            byte[] bytes = this.serializer.Serialize(test);
+            var testSerializer = new Serializer(new ContractPrimitiveSerializer(new SmartContractsPoARegTest()));
 
-            string ret = this.serializer.ToString(bytes);
+            byte[] bytes = testSerializer.Serialize(test);
+
+            string ret = testSerializer.ToString(bytes);
 
             Assert.Equal(test, ret);
         }

@@ -177,7 +177,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public string ToString(byte[] val)
         {
-            if (val == null || val.Length < sizeof(char))
+            if (val == null || val.Length == 0)
                 return string.Empty;
 
             (bool success, string result) = this.TryDeserializeValue<string>(val);
@@ -187,7 +187,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public char ToChar(byte[] val)
         {
-            if (val == null || val.Length == 0)
+            if (val == null || val.Length < sizeof(char))
                 return default(char);
 
             (bool success, char result) = this.TryDeserializeValue<char>(val);
