@@ -252,5 +252,17 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractPrimitiveSerializer.Verify<object>(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
             Assert.Equal(default(Example), deserialized);
         }
+
+        [Fact]
+        public void SingleByteStringSerializesCorrectly()
+        {
+            string test = "1";
+
+            byte[] bytes = this.serializer.Serialize(test);
+
+            string ret = this.serializer.ToString(bytes);
+
+            Assert.Equal(test, ret);
+        }
     }
 }
