@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -251,6 +252,20 @@ namespace Stratis.SmartContracts.CLR.Tests
             // The contract primitive serializer should not be called.
             this.contractPrimitiveSerializer.Verify<object>(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
             Assert.Equal(default(Example), deserialized);
+        }
+
+        [Fact]
+        public void SingleByteStringSerializesCorrectly()
+        {
+            const string test = "1";
+
+            var testSerializer = new Serializer(new ContractPrimitiveSerializer(new SmartContractsPoARegTest()));
+
+            byte[] bytes = testSerializer.Serialize(test);
+
+            string ret = testSerializer.ToString(bytes);
+
+            Assert.Equal(test, ret);
         }
     }
 }
