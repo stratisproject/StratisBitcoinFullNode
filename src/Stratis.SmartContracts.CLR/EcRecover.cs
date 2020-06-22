@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.CLR
     public static class EcRecover
     {
         // TODO: Not sure what this is yet.
-        private const int RecId = 0;
+        private const int RecId = 1;
 
         public static ECDSASignature SignMessage(Key privateKey, byte[] message)
         {
