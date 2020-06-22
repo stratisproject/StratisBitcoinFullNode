@@ -25,13 +25,15 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             Key privateKey = new Key();
             Address address = privateKey.PubKey.GetAddress(this.network).ToString().ToAddress(this.network);
-
             byte[] message = new byte[] { 0x69, 0x76, 0xAA };
 
+            // Sign a message
             ECDSASignature offChainSignature = EcRecover.SignMessage(privateKey, message);
 
+            // Get the address out of the signature
             Address recoveredAddress = EcRecover.GetAddressFromSignatureAndMessage(offChainSignature.ToDER(), message, this.network);
 
+            // Check that the address matches that generated from the private key.
             Assert.Equal(address, recoveredAddress);
         }
 
