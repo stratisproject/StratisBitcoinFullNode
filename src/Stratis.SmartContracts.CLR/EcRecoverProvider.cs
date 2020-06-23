@@ -9,30 +9,37 @@ namespace Stratis.SmartContracts.CLR
     ///
     /// This is static for now but when we know more about how we are going to use it we will adjust as necessary.
     /// </summary>
-    public static class EcRecover
+    public class EcRecoverProvider : IEcRecoverProvider
     {
         // TODO: Not sure what this is yet.
         private const int RecId = 1;
 
-        public static ECDSASignature SignMessage(Key privateKey, byte[] message)
+        private readonly Network network;
+
+        public EcRecoverProvider(Network network)
         {
-            uint256 hashedUint256 = GetUint256FromMessage(message);
-            return privateKey.Sign(hashedUint256);
+            this.network = network;
         }
 
-        public static Address GetAddressFromSignatureAndMessage(byte[] signature, byte[] message, Network network)
+        private static uint256 GetUint256FromMessage(byte[] message)
+        {
+            return new uint256(HashHelper.Keccak256(message));
+        }
+
+        public Address GetSigner(byte[] message, byte[] signature)
         {
             // TODO: Error handling for incorrect signature format etc.
 
             uint256 hashedUint256 = GetUint256FromMessage(message);
             ECDSASignature loadedSignature = new ECDSASignature(signature);
             PubKey pubKey = ECKeyUtils.RecoverFromSignature(RecId, loadedSignature, hashedUint256, true);
-            return pubKey.GetAddress(network).ToString().ToAddress(network);
+            return pubKey.GetAddress(this.network).ToString().ToAddress(this.network);
         }
 
-        private static uint256 GetUint256FromMessage(byte[] message)
+        public static ECDSASignature SignMessage(Key privateKey, byte[] message)
         {
-            return new uint256(HashHelper.Keccak256(message));
+            uint256 hashedUint256 = GetUint256FromMessage(message);
+            return privateKey.Sign(hashedUint256);
         }
     }
 }

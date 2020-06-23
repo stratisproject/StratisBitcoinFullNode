@@ -9,13 +9,17 @@ namespace Stratis.SmartContracts.CLR
     {
         private readonly ISerializer serializer;
 
+        private readonly IEcRecoverProvider ecRecoverProvider;
+
         public SmartContractStateFactory(IContractPrimitiveSerializer primitiveSerializer,
             IInternalExecutorFactory internalTransactionExecutorFactory,
-            ISerializer serializer)
+            ISerializer serializer,
+            IEcRecoverProvider ecRecoverProvider)
         {
             this.serializer = serializer;
             this.PrimitiveSerializer = primitiveSerializer;
             this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
+            this.ecRecoverProvider = ecRecoverProvider;
         }
 
         public IContractPrimitiveSerializer PrimitiveSerializer { get; }
@@ -44,7 +48,8 @@ namespace Stratis.SmartContracts.CLR
                 contractLogger,
                 this.InternalTransactionExecutorFactory.Create(gasMeter, state),
                 new InternalHashHelper(),
-                () => state.GetBalance(address));
+                () => state.GetBalance(address),
+                this.ecRecoverProvider);
 
             return contractState;
         }
