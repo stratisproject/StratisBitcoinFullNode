@@ -153,6 +153,26 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return res;
         }
 
+        public FetchCoinsResponse FetchAllCoins()
+        {
+            FetchCoinsResponse res = null;
+            using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
+            {
+                transaction.SynchronizeTables("BlockHash", "Coins");
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                var result = transaction.SelectForward<byte[], byte[]>("Coins");
+
+                List<UnspentOutputs> deserializedResult = result.Select(x => new UnspentOutputs(uint256.One, this.dBreezeSerializer.Deserialize<Coins>(x.Value))).ToList();
+
+                res = new FetchCoinsResponse(deserializedResult.ToArray(), uint256.One);
+            }
+
+
+
+            return res;
+        }
+
         /// <summary>
         /// Obtains a block header hash of the coinview's current tip.
         /// </summary>

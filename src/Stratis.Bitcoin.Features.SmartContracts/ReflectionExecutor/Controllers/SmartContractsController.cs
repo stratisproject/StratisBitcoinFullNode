@@ -11,13 +11,13 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
@@ -29,6 +29,7 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -56,6 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ILocalExecutor localExecutor;
         private readonly ISmartContractTransactionService smartContractTransactionService;
         private readonly IConnectionManager connectionManager;
+        private readonly DBreezeCoinView coinDb;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
@@ -70,7 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IReceiptRepository receiptRepository,
             ILocalExecutor localExecutor,
             ISmartContractTransactionService smartContractTransactionService,
-            IConnectionManager connectionManager)
+            IConnectionManager connectionManager,
+            DBreezeCoinView coinDb)
         {
             this.stateRoot = stateRoot;
             this.contractDecompiler = contractDecompiler;
@@ -86,6 +89,57 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.localExecutor = localExecutor;
             this.smartContractTransactionService = smartContractTransactionService;
             this.connectionManager = connectionManager;
+            this.coinDb = coinDb;
+        }
+
+        [Route("get-balances")]
+        [HttpGet]
+        public IActionResult GetBalancesOverValue(decimal value)
+        {
+            FetchCoinsResponse outputs = this.coinDb.FetchAllCoins();
+
+            List<IGrouping<Script, TxOut>> allAddresses = outputs.UnspentOutputs
+                .Where(x=> x?.Outputs != null)
+                .SelectMany(x => x.Outputs)
+                .Where(x=> x?.Value != null && x.ScriptPubKey != null)
+                .GroupBy(x => x.ScriptPubKey).ToList();
+
+            List<string> ret = new List<string>();
+
+            // Note this is only going to get P2PK and P2PKH addresses. 
+            // They are the only addresses that can receive tokens anyhow.
+
+            foreach (IGrouping<Script, TxOut> outputGrouping in allAddresses)
+            {
+                if (outputGrouping.Sum(x => x.Value) > Money.Coins(value))
+                {
+                    GetSenderResult result = this.GetAddressFromScript(outputGrouping.Key);
+
+                    if (result.Success)
+                        ret.Add(result.Sender.ToBase58Address(this.network));
+                }
+            }
+
+            return Json(ret);
+        }
+
+        private GetSenderResult GetAddressFromScript(Script script)
+        {
+            // Borrowed from SenderRetreiver
+            PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
+
+            if (payToPubKey != null)
+            {
+                var address = new uint160(payToPubKey.Hash.ToBytes());
+                return GetSenderResult.CreateSuccess(address);
+            }
+
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
+            {
+                var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+                return GetSenderResult.CreateSuccess(address);
+            }
+            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }
 
         /// <summary>
