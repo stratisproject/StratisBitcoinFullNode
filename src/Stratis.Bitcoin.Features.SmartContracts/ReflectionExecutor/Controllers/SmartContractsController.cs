@@ -92,34 +92,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.coinDb = coinDb;
         }
 
-        //[Route("get-balances")]
-        //[HttpGet]
-        //public IActionResult GetBalancesOverValue(decimal value)
-        //{
-        //    FetchCoinsResponse outputs = this.coinDb.FetchAllCoins();
-
-        //    List<IGrouping<Script, TxOut>> allAddresses = outputs.UnspentOutputs
-        //        .Where(x=> x?.Outputs != null)
-        //        .SelectMany(x => x.Outputs)
-        //        .Where(x=> x?.Value != null && x.ScriptPubKey != null)
-        //        .GroupBy(x => x.ScriptPubKey).ToList();
-
-        //    List<string> ret = new List<string>();
-
-        //    // Note this is only going to get P2PK and P2PKH addresses. 
-        //    // They are the only addresses that can receive tokens anyhow.
-
-        //    foreach (IGrouping<Script, TxOut> outputGrouping in allAddresses)
-        //    {
-        //        if (outputGrouping.Sum(x => x.Value) > Money.Coins(value))
-        //        {
-        //            GetSenderResult result = this.GetAddressFromScript(outputGrouping.Key);
-
-        //            if (result.Success)
-        //                ret.Add(result.Sender.ToBase58Address(this.network));
-        //        }
-        //    }
-
         //    return Json(ret);
         //}
 
@@ -143,12 +115,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         //}
 
         private HashSet<OutPoint> allUnspentOutputs;
+        private Dictionary<uint256, Transaction> transactions;
 
         [Route("get-balances")]
         [HttpGet]
         public IActionResult GetBalances(int blockHeight)
         {
+            const decimal amountToCheck = 100m;
+            Money thresholdBalance = Money.Coins(amountToCheck);
+
             this.allUnspentOutputs = new HashSet<OutPoint>();
+            this.transactions = new Dictionary<uint256, Transaction>();
             const int batchSize = 1000;
             IEnumerable<ChainedHeader> allBlockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
 
@@ -158,11 +135,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 List<ChainedHeader> headers = allBlockHeaders.Skip(i * batchSize).Take(batchSize).ToList();
 
-                var blocks = this.blockStore.GetBlocks(headers.Select(x => x.HashBlock).ToList());
+                List<Block> blocks = this.blockStore.GetBlocks(headers.Select(x => x.HashBlock).ToList());
 
                 foreach (Block block in blocks)
                 {
-                    this.ProcessBlock(block);
+                    this.AdjustCoinviewForBlock(block);
                     totalBlocksCounted += 1;
 
                     // We have reached the blockheight asked for
@@ -170,16 +147,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                         break;
                 }
 
-                // We have seen every block up to the tip
+                // We have seen every block up to the tip or our blockheight
                 if (headers.Count < batchSize || totalBlocksCounted >= blockHeight)
+                    break;
+            }
 
-            break;
+            IEnumerable<TxOut> txOuts = this.allUnspentOutputs.Select(x => this.transactions[x.Hash].Outputs[x.N]);
+            IEnumerable<IGrouping<Script, TxOut>> groupedTxOuts = txOuts.GroupBy(x => x.ScriptPubKey);
+
+            List<IGrouping<Script,TxOut>> thresholdAccounts = new List<IGrouping<Script, TxOut>>();
+
+            foreach (IGrouping<Script, TxOut> grouping in groupedTxOuts)
+            {
+                if (grouping.Sum(x => x.Value) >= thresholdBalance)
+                {
+                    thresholdAccounts.Add(grouping);
+                }
             }
 
             throw new NotImplementedException();
         }
 
-        private void ProcessBlock(Block block)
+        private void AdjustCoinviewForBlock(Block block)
         {
             foreach (var tx in block.Transactions)
             {
@@ -189,7 +178,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     TxOut output = tx.Outputs[i];
 
                     if (output.Value > 0)
+                    {
                         this.allUnspentOutputs.Add(new OutPoint(tx, i));
+                        this.transactions[tx.GetHash()] = tx;
+                    }
                 }
 
                 // Spend inputs
@@ -199,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     {
                         if (!this.allUnspentOutputs.Remove(txIn.PrevOut))
                         {
-                            Console.WriteLine("Output wasn't found?");
+                            throw new Exception("Couldn't find output to spend.");
                         }
                     }
                 }
