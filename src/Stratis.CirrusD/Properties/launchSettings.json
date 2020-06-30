@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.CirrusD": {
+      "commandName": "Project",
+      "commandLineArgs": "-txindex"
+    }
+  }
+}
