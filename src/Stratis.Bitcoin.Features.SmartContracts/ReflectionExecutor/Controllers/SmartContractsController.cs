@@ -29,7 +29,7 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
+using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -92,54 +92,86 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.coinDb = coinDb;
         }
 
+        private HashSet<OutPoint> allUnspentOutputs;
+        private Dictionary<uint256, Transaction> transactions;
+
         [Route("get-balances")]
         [HttpGet]
-        public IActionResult GetBalancesOverValue(decimal value)
+        public IActionResult GetAddressesWithBalanceAtHeight(decimal balance, int blockHeight)
         {
-            FetchCoinsResponse outputs = this.coinDb.FetchAllCoins();
+            this.allUnspentOutputs = new HashSet<OutPoint>();
+            this.transactions = new Dictionary<uint256, Transaction>();
 
-            List<IGrouping<Script, TxOut>> allAddresses = outputs.UnspentOutputs
-                .Where(x=> x?.Outputs != null)
-                .SelectMany(x => x.Outputs)
-                .Where(x=> x?.Value != null && x.ScriptPubKey != null)
-                .GroupBy(x => x.ScriptPubKey).ToList();
+            const int batchSize = 1000;
 
-            List<string> ret = new List<string>();
+            IEnumerable<ChainedHeader> allBlockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
 
-            // Note this is only going to get P2PK and P2PKH addresses. 
-            // They are the only addresses that can receive tokens anyhow.
-
-            foreach (IGrouping<Script, TxOut> outputGrouping in allAddresses)
+            for (int i = 0; i < 10_000; i++) // Upper bound is irrelevant here - will exit via break.
             {
-                if (outputGrouping.Sum(x => x.Value) > Money.Coins(value))
-                {
-                    GetSenderResult result = this.GetAddressFromScript(outputGrouping.Key);
+                List<ChainedHeader> headers = allBlockHeaders.Skip(i * batchSize).Take(batchSize).ToList();
+                List<Block> blocks = this.blockStore.GetBlocks(headers.Select(x => x.HashBlock).ToList());
 
-                    if (result.Success)
-                        ret.Add(result.Sender.ToBase58Address(this.network));
+                for (int j = 0; j < blocks.Count; j++)
+                {
+                    ChainedHeader header = headers[j];
+                    Block block = blocks[j];
+
+                    // We've analysed all blocks up to our desired height.
+                    if (header.Height == blockHeight + 1)
+                        break;
+
+                    this.RecordTransactionsFromBlock(block);
                 }
+
+                // We made it all the way to the tip.
+                if (headers.Count < batchSize) 
+                    break;
             }
 
-            return Json(ret);
+            // Now we have all the unspent transactions. Group them by Scripts
+
+            List<TxOut> allOutputs = new List<TxOut>();
+
+            foreach (OutPoint outpoint in this.allUnspentOutputs)
+            {
+                Transaction tx = this.transactions[outpoint.Hash];
+                TxOut txOut = tx.Outputs[outpoint.N];
+                allOutputs.Add(txOut);
+            }
+
+            IEnumerable<IGrouping<Script, TxOut>> groupedByScript = allOutputs.GroupBy(x => x.ScriptPubKey);
+
+            throw new NotImplementedException();
         }
 
-        private GetSenderResult GetAddressFromScript(Script script)
+        private void RecordTransactionsFromBlock(Block block)
         {
-            // Borrowed from SenderRetreiver
-            PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
-
-            if (payToPubKey != null)
+            foreach (Transaction tx in block.Transactions)
             {
-                var address = new uint160(payToPubKey.Hash.ToBytes());
-                return GetSenderResult.CreateSuccess(address);
-            }
+                // Add outputs 
+                for (int i = 0; i < tx.Outputs.Count; i++)
+                {
+                    TxOut output = tx.Outputs[i];
 
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
-            {
-                var address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
-                return GetSenderResult.CreateSuccess(address);
+                    if (output.Value > 0)
+                    {
+                        this.allUnspentOutputs.Add(new OutPoint(tx, i));
+                        this.transactions[tx.GetHash()] = tx;
+                    }
+                }
+
+                // Spend inputs
+                if (!tx.IsCoinBase)
+                {
+                    foreach (TxIn txIn in tx.Inputs)
+                    {
+                        if (!this.allUnspentOutputs.Remove(txIn.PrevOut))
+                        {
+                            Console.WriteLine("Output wasn't found?");
+                        }
+                    }
+                }
             }
-            return GetSenderResult.CreateFailure("Addresses can only be retrieved from Pay to Pub Key or Pay to Pub Key Hash");
         }
 
         /// <summary>
