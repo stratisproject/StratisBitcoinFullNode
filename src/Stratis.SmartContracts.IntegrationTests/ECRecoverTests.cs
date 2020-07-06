@@ -10,10 +10,12 @@ namespace Stratis.SmartContracts.IntegrationTests
     public class ECRecoverTests
     {
         private readonly Network network;
+        private readonly EcRecoverProvider ecRecover;
 
         public ECRecoverTests()
         {
             this.network = new SmartContractsPoARegTest();
+            this.ecRecover = new EcRecoverProvider(this.network);
         }
 
         // 2 things to test: 
@@ -28,10 +30,10 @@ namespace Stratis.SmartContracts.IntegrationTests
             byte[] message = new byte[] { 0x69, 0x76, 0xAA };
 
             // Sign a message
-            ECDSASignature offChainSignature = EcRecover.SignMessage(privateKey, message);
+            ECDSASignature offChainSignature = EcRecoverProvider.SignMessage(privateKey, message);
 
             // Get the address out of the signature
-            Address recoveredAddress = EcRecover.GetAddressFromSignatureAndMessage(offChainSignature.ToDER(), message, this.network);
+            Address recoveredAddress = this.ecRecover.GetSigner(offChainSignature.ToDER(), message);
 
             // Check that the address matches that generated from the private key.
             Assert.Equal(address, recoveredAddress);
