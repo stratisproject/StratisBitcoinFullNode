@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             ECDSASignature offChainSignature = EcRecoverProvider.SignMessage(privateKey, message);
 
             // Get the address out of the signature
-            Address recoveredAddress = this.ecRecover.GetSigner(offChainSignature.ToDER(), message);
+            Address recoveredAddress = this.ecRecover.GetSigner(message, offChainSignature.ToDER());
 
             // Check that the address matches that generated from the private key.
             Assert.Equal(address, recoveredAddress);
