@@ -51,12 +51,11 @@ namespace FederationSetup
             Console.WriteLine($"New {theChain} multisig address: " + newMultisigAddress);
 
             // Create dummy inputs to avoid errors when constructing FederatedPegSettings.
-            var dummyArgs = new Dictionary<string, string>();
-            dummyArgs[FederatedPegSettings.FederationIpsParam] = oldMultisigParams.PubKeys.Select(p => "0.0.0.0".ToIPEndPoint(nodeSettings.Network.DefaultPort)).ToString();
+            var extraArgs = new Dictionary<string, string>();
+            extraArgs[FederatedPegSettings.FederationIpsParam] = oldMultisigParams.PubKeys.Select(p => "0.0.0.0".ToIPEndPoint(nodeSettings.Network.DefaultPort)).Join(",");
             var privateKey = Key.Parse(wallet.EncryptedSeed, password, network);
-            dummyArgs[FederatedPegSettings.PublicKeyParam] = $"pubkey={privateKey.PubKey}";
-
-            (new TextFileConfiguration(dummyArgs.Select(i => $"{i.Key}={i.Value}").ToArray())).MergeInto(nodeSettings.ConfigReader);
+            extraArgs[FederatedPegSettings.PublicKeyParam] = privateKey.PubKey.ToHex(network);
+            (new TextFileConfiguration(extraArgs.Select(i => $"{i.Key}={i.Value}").ToArray())).MergeInto(nodeSettings.ConfigReader);
 
             var dBreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
             var blockStore = new BlockRepository(network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, dBreezeSerializer);
@@ -70,10 +69,10 @@ namespace FederationSetup
             var nodeLifetime = new NodeLifetime();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             var federatedPegSettings = new FederatedPegSettings(nodeSettings);
-            OpReturnDataReader opReturnDataReader = new OpReturnDataReader(nodeSettings.LoggerFactory, new CounterChainNetworkWrapper(counterChainNetwork));
+            var opReturnDataReader = new OpReturnDataReader(nodeSettings.LoggerFactory, new CounterChainNetworkWrapper(counterChainNetwork));
             var walletFeePolicy = new WalletFeePolicy(nodeSettings);
 
-            FederationWalletManager walletManager = new FederationWalletManager(nodeSettings.LoggerFactory, network, chainIndexer, nodeSettings.DataFolder, walletFeePolicy,
+            var walletManager = new FederationWalletManager(nodeSettings.LoggerFactory, network, chainIndexer, nodeSettings.DataFolder, walletFeePolicy,
                 new AsyncProvider(nodeSettings.LoggerFactory, new Signals(nodeSettings.LoggerFactory, new DefaultSubscriptionErrorHandler(nodeSettings.LoggerFactory)), nodeLifetime), nodeLifetime,
                 dateTimeProvider, federatedPegSettings, new WithdrawalExtractor(nodeSettings.LoggerFactory, federatedPegSettings, opReturnDataReader, network), blockStore);
 
@@ -83,22 +82,24 @@ namespace FederationSetup
             if (!walletManager.IsFederationWalletActive())
                 throw new ArgumentException($"Could not activate the federation wallet on {network}.");
 
-            IEnumerable<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coins = walletManager.GetSpendableTransactionsInWallet();
+            // Determine the fee.
+            var context = new Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext(Array.Empty<Stratis.Features.FederatedPeg.Wallet.Recipient>().ToList(), password) {
+                IsConsolidatingTransaction = true,
+                IgnoreVerify = true
+            };
+            (List<Coin> coins, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> _) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
             if (!coins.Any())
                 throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
+            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coins.Count());
 
             var recipients = new List<Stratis.Features.FederatedPeg.Wallet.Recipient>();
             recipients.Add(new Stratis.Features.FederatedPeg.Wallet.Recipient()
             {
-                 Amount = coins.Sum(c => c.Transaction.Amount),
-                 ScriptPubKey = redeemScript
+                Amount = coins.Sum(c => c.Amount) - fee,
+                ScriptPubKey = redeemScript
             });
 
             var federationWalletTransactionHandler = new FederationWalletTransactionHandler(nodeSettings.LoggerFactory, walletManager, walletFeePolicy, network, federatedPegSettings);
-            var context = new Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext(recipients)
-            {
-                SelectedInputs = coins.Select(c => c.ToOutPoint()).ToList() 
-            };
 
             Transaction tx = federationWalletTransactionHandler.BuildTransaction(context);
 

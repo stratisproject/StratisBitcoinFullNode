@@ -370,11 +370,13 @@ namespace FederationSetup
 
             Console.WriteLine($"Creating funds recovery transaction for {sideChain.Name}.");
             Transaction sideChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, newRedeemScript, password);
-            Console.WriteLine("Sidechain Funds recovery transaction: " + sideChainTx.ToHex(sideChain));
+            Console.WriteLine("Sidechain funds recovery transaction: " + sideChainTx.ToHex(sideChain));
+            Console.WriteLine("Sidechain funds recovery signature " + sideChainTx.Inputs[0].ScriptSig.ToHex());
 
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
             Transaction mainChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password);
-            Console.WriteLine("Mainchain Funds recovery transaction: " + sideChainTx.ToHex(sideChain));
+            Console.WriteLine("Mainchain Funds recovery transaction: " + mainChainTx.ToHex(sideChain));
+            Console.WriteLine("Mainchain funds recovery signature: " + mainChainTx.Inputs[0].ScriptSig.ToHex());
         }
     }
 }
