@@ -332,23 +332,25 @@ namespace FederationSetup
             return ConfigReader.GetOrDefault<string>("datadir", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
         }
 
-        private static Script GetRedeemScriptFromArguments(bool old)
+        private static string GetPasswordFromArguments()
         {
-            string argName = old ? "oldredeem" : "newredeem";
-            string redeemScript = ConfigReader.GetOrDefault<string>(argName, null);
+            return ConfigReader.GetOrDefault<string>("password", null);
+        }
 
-            if (string.IsNullOrEmpty(redeemScript))
-                throw new ArgumentException($"Please specify the {(old ? "old" : "new")} redeem script.");
+        private static Script GetRedeemScriptFromArguments()
+        {
+            string[] pubkeys = GetFederatedPublicKeysFromArguments();
+            int quorum = GetQuorumFromArguments();
 
             try
             {
-                Script script = new Script(redeemScript);
+                Script script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pubkeys.Select(p => new PubKey(p)).ToArray());
 
                 return script;
             }
             catch (Exception)
             {
-                throw new ArgumentException($"Please specify a valid {(old ? "old" : "new")} redeem script.");
+                throw new ArgumentException($"Please specify a valid comma-separated list of public keys.");
             }
         }
 
@@ -356,62 +358,22 @@ namespace FederationSetup
         {
             ConfigReader = new TextFileConfiguration(args);
 
-            ConfirmArguments(ConfigReader, "network", "datadir", "oldredeem", "newredeem");
+            // datadir = Directory of old federation.
+            ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password");
 
-            Script newRedeemScript = GetRedeemScriptFromArguments(false);
-            Script oldRedeemScript = GetRedeemScriptFromArguments(true);
+            Script newRedeemScript = GetRedeemScriptFromArguments();
+            string password = GetPasswordFromArguments();
 
             string dataDirPath = GetDataDirFromArguments();
-            Key privateKey;
-
-            try
-            {
-                var tool = new KeyTool(dataDirPath);
-                privateKey = tool.LoadPrivateKey();
-            }
-            catch (Exception)
-            {
-                throw new ArgumentException($"Private key file not found in '{dataDirPath}'.");
-            }
-
-            // The old redeem script must contains my public key in order for me to contribute signatures.
-            PayToMultiSigTemplateParameters oldParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(oldRedeemScript);
-            if (!oldParams.PubKeys.Any(pubKey => pubKey == privateKey.PubKey))
-                throw new ArgumentException("Only members of the old federation can provide signatures to recover the multisig funds.");
-
-            // Verify the validity of the new script.
-            PayToMultiSigTemplateParameters newParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(oldRedeemScript);
-
-            if (newParams.SignatureCount > newParams.PubKeys.Length)
-                throw new ArgumentException("The quorum of the new script has to be smaller than the number of members within the federation.");
-
-            if (newParams.SignatureCount < newParams.PubKeys.Length / 2)
-                throw new ArgumentException("The quorum of the new script has to be greater than half of the members within the federation.");
 
             (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
 
-            BitcoinAddress oldSidechainMultisigAddress = oldRedeemScript.Hash.GetAddress(sideChain);
-            Console.WriteLine("Old Sidechan P2SH: " + oldSidechainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("Old Sidechain Multisig address: " + oldSidechainMultisigAddress);
-
-            BitcoinAddress newSidechainMultisigAddress = newRedeemScript.Hash.GetAddress(sideChain);
-            Console.WriteLine("New Sidechan P2SH: " + newSidechainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("New Sidechain Multisig address: " + newSidechainMultisigAddress);
-
             Console.WriteLine($"Creating funds recovery transaction for {sideChain.Name}.");
-            Transaction sideChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(sideChain, mainChain, dataDirPath, oldRedeemScript, newRedeemScript);
+            Transaction sideChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, newRedeemScript, password);
             Console.WriteLine("Sidechain Funds recovery transaction: " + sideChainTx.ToHex(sideChain));
 
-            BitcoinAddress oldMainchainMultisigAddress = oldRedeemScript.Hash.GetAddress(mainChain);
-            Console.WriteLine("Old Mainchain P2SH: " + oldMainchainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("Old Mainchain Multisig address: " + oldMainchainMultisigAddress);
-
-            BitcoinAddress newMainchainMultisigAddress = newRedeemScript.Hash.GetAddress(mainChain);
-            Console.WriteLine("New Mainchain P2SH: " + newMainchainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("New Mainchain Multisig address: " + newMainchainMultisigAddress);
-
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
-            Transaction mainChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(sideChain, mainChain, dataDirPath, oldRedeemScript, newRedeemScript);
+            Transaction mainChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password);
             Console.WriteLine("Mainchain Funds recovery transaction: " + sideChainTx.ToHex(sideChain));
         }
     }
