@@ -46,7 +46,7 @@ namespace FederationSetup
             Console.WriteLine($"New {this.Network} P2SH: " + this.newMultisigAddress.ScriptPubKey);
             Console.WriteLine($"New {this.Network} multisig address: " + this.newMultisigAddress);
 
-            Console.WriteLine($"The transaction has been writtent to the data directory.");
+            Console.WriteLine($"The transaction has been written to the data directory.");
             Console.WriteLine($"Amount of moving funds: {this.tx.Outputs.Sum(o => o.Value.ToDecimal(MoneyUnit.BTC))}.");
         }
 
@@ -192,10 +192,12 @@ namespace FederationSetup
                 sigCount++;
             }
 
+            Console.WriteLine($"{sigCount} of {multisigParams.SignatureCount} signatures collected for {network.Name}.");
+
             if (sigCount >= multisigParams.SignatureCount)
             { 
                 // Write the transaction to file.
-                File.WriteAllText(Path.Combine(dataDirPath, $"{network.Name}Recovery.txt"), model.tx.ToHex(network));
+                File.WriteAllText(Path.Combine(dataDirPath, $"{(txTime > DateTime.Now ? "Preliminary ":"")}{network.Name}Recovery.txt"), model.tx.ToHex(network));
             }
 
             return model;
