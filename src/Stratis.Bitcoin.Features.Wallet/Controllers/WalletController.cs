@@ -732,7 +732,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         SpendableAmount = balance.SpendableAmount,
                         Addresses = account.GetCombinedAddresses().Select(address =>
                         {
-                            (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                            (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances(account.IsNormalAccount());
                             return new AddressModel
                             {
                                 Address = address.Address,
@@ -1341,7 +1341,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     Addresses = account.GetCombinedAddresses().Select(address =>
                     {
-                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances(account.IsNormalAccount());
 
                         return new AddressModel
                         {
@@ -1420,19 +1420,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 }
 
                 // If the user chose to resync the wallet after removing transactions.
-                if (result.Any() && request.ReSync)
+                if (request.ReSync)
                 {
-                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
-                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
+                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+
+                    // Initiate the scan one day ahead of wallet creation.
+                    // If the creation time is DateTime.MinValue, don't remove one day as that throws exception.
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(wallet.CreationTime.DateTime != DateTime.MinValue ? wallet.CreationTime.DateTime.AddDays(-1) : wallet.CreationTime.DateTime));
 
                     // Update the wallet and save it to the file system.
-                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                     wallet.SetLastBlockDetails(chainedHeader);
                     this.walletManager.SaveWallet(wallet);
 
-                    // Start the syncing process from the block before the earliest transaction was seen.
-                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1);
+                    // Start the sync from the day before the wallet was created.
+                    this.walletSyncManager.SyncFromHeight(chainedHeader.Height);
                 }
 
                 IEnumerable<RemovedTransactionModel> model = result.Select(r => new RemovedTransactionModel

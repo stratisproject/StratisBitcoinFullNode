@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
@@ -95,6 +96,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
 
+        private readonly ISignals signals;
+
         public uint256 WalletTipHash { get; set; }
         public int WalletTipHeight { get; set; }
 
@@ -118,6 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
+            ISignals signals = null,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -142,6 +146,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
+            this.signals = signals;
             this.broadcasterManager = broadcasterManager;
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
@@ -686,12 +691,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(account, nameof(account));
             FlatHistory[] items;
+
             lock (this.lockObject)
             {
                 // Get transactions contained in the account.
-                items = account.GetCombinedAddresses()
-                    .Where(a => a.Transactions.Any())
-                    .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+                var query = account.GetCombinedAddresses().Where(a => a.Transactions.Any());
+
+                if (account.IsNormalAccount())
+                {
+                    // When the account is a normal one, we want to filter out all cold stake UTXOs.
+                    items = query.SelectMany(s => s.Transactions.Where(t => t.IsColdCoinStake == null || t.IsColdCoinStake == false).Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+                }
+                else
+                {
+                    items = query.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+                }
             }
 
             return new AccountHistory { Account = account, History = items };
@@ -731,7 +745,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
 
                     // Get the total balances.
-                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances(account.IsNormalAccount());
 
                     balances.Add(new AccountBalance
                     {
@@ -766,7 +780,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     hdAddress = wallet.GetAllAddresses().FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
-                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances();
+                    // When this query to get balance on specific address, we will exclude the cold staking UTXOs.
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances(true);
 
                     Money spendableAmount = wallet
                         .GetAllSpendableTransactions(this.ChainIndexer.Tip.Height)
@@ -1097,6 +1112,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                     foundSendingTrx = true;
                     this.logger.LogDebug("Transaction '{0}' contained funds sent by the user's wallet(s).", hash);
+
+                    if (this.signals != null)
+                    {
+                        this.signals.Publish(new Events.TransactionFound(transaction));
+                    }
                 }
             }
 
@@ -1119,6 +1139,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             uint256 transactionHash = transaction.GetHash();
 
+            // Get the ColdStaking script template if available.
+            Dictionary<string, ScriptTemplate> templates = this.GetValidStakingTemplates();
+            ScriptTemplate coldStakingTemplate = templates.ContainsKey("ColdStaking") ? templates["ColdStaking"] : null;
+
             // Get the collection of transactions to add to.
             Script script = utxo.ScriptPubKey;
             this.scriptToAddressLookup.TryGetValue(script, out HdAddress address);
@@ -1137,6 +1161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Amount = amount,
                     IsCoinBase = transaction.IsCoinBase == false ? (bool?)null : true,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
+                    IsColdCoinStake = (coldStakingTemplate != null && coldStakingTemplate.CheckScriptPubKey(script)) == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
                     BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
@@ -1737,7 +1762,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAccount> accounts = wallet.GetAccounts();
+                IEnumerable<HdAccount> accounts = wallet.GetAccounts(Wallet.AllAccounts);
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
