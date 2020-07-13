@@ -169,7 +169,7 @@ namespace FederationSetup
                 Transaction incomingPartialTransaction = network.CreateTransaction(File.ReadAllText(fileName));
 
                 // Don't merge with self.
-                if (incomingPartialTransaction.GetHash() == model.tx.GetHash())
+                if (incomingPartialTransaction.GetHash() == oldTransaction.GetHash())
                     continue;
 
                 // Transaction times must match.
