@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using NBitcoin;
@@ -354,12 +355,29 @@ namespace FederationSetup
             }
         }
 
+        private static DateTime GetTransactionTimeFromArguments()
+        {
+            string strTime = ConfigReader.GetOrDefault<string>("txtime", null);
+
+            if (strTime == null)
+                throw new ArgumentException("Please enter a transaction time.");
+
+            try
+            {
+                return DateTime.Parse(strTime, null, System.Globalization.DateTimeStyles.None);
+            }
+            catch (Exception)
+            {
+                throw new ArgumentException("Please enter a valid transaction time.");
+            }
+        }
+
         private static void HandleSwitchGenerateFundsRecoveryTransaction(string[] args)
         {
             ConfigReader = new TextFileConfiguration(args);
 
             // datadir = Directory of old federation.
-            ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password");
+            ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password", "txtime");
 
             Script newRedeemScript = GetRedeemScriptFromArguments();
             string password = GetPasswordFromArguments();
@@ -368,15 +386,15 @@ namespace FederationSetup
 
             (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
 
+            DateTime txTime = GetTransactionTimeFromArguments();
+
             Console.WriteLine($"Creating funds recovery transaction for {sideChain.Name}.");
-            Transaction sideChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, newRedeemScript, password);
-            Console.WriteLine("Sidechain funds recovery transaction: " + sideChainTx.ToHex(sideChain));
-            Console.WriteLine("Sidechain funds recovery signature " + sideChainTx.Inputs[0].ScriptSig.ToHex());
+            FundsRecoveryTransactionModel sideChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, newRedeemScript, password, txTime);
+            sideChainInfo.DisplayInfo();
 
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
-            Transaction mainChainTx = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password);
-            Console.WriteLine("Mainchain Funds recovery transaction: " + mainChainTx.ToHex(sideChain));
-            Console.WriteLine("Mainchain funds recovery signature: " + mainChainTx.Inputs[0].ScriptSig.ToHex());
+            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password, txTime);
+            mainChainInfo.DisplayInfo();
         }
     }
 }
