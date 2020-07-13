@@ -46,8 +46,8 @@ namespace FederationSetup
             Console.WriteLine($"New {this.Network} P2SH: " + this.newMultisigAddress.ScriptPubKey);
             Console.WriteLine($"New {this.Network} multisig address: " + this.newMultisigAddress);
 
-            //Console.WriteLine($"{this.ChainType} funds recovery transaction: " + this.tx.ToHex(this.Network));
-            Console.WriteLine($"{this.ChainType} funds recovery signature " + this.Signature());
+            Console.WriteLine($"The transaction has been writtent to the data directory.");
+            Console.WriteLine($"Amount of moving funds: {this.tx.Outputs.Sum(o => o.Value.ToDecimal(MoneyUnit.BTC))}.");
         }
 
         public string Signature()
@@ -130,22 +130,26 @@ namespace FederationSetup
                 IsConsolidatingTransaction = true,
                 IgnoreVerify = true
             };
-            (List<Coin> coins, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> _) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
-            if (!coins.Any())
+            (_, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
+            if (!coinRefs.Any())
                 throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
-            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coins.Count());
+            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coinRefs.Count());
+
+            // Exclude coins (deposits) beyond the transaction (switch-over) time!
+            context.SelectedInputs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).Select(r => r.ToOutPoint()).ToList();
 
             // Single output?
             var recipients = new List<Stratis.Features.FederatedPeg.Wallet.Recipient>();
             recipients.Add(new Stratis.Features.FederatedPeg.Wallet.Recipient()
             {
-                Amount = coins.Sum(c => c.Amount) - fee,
+                Amount = coinRefs.Sum(r => r.Transaction.Amount) - fee,
                 ScriptPubKey = redeemScript
             });
 
             var federationWalletTransactionHandler = new FederationWalletTransactionHandler(nodeSettings.LoggerFactory, walletManager, walletFeePolicy, network, federatedPegSettings);
 
             context.Time = (uint?)(new DateTimeOffset(txTime)).ToUnixTimeSeconds();
+            context.AllowOtherInputs = false;
 
             model.tx = federationWalletTransactionHandler.BuildTransaction(context);
 
