@@ -47,7 +47,7 @@ namespace FederationSetup
             builder.AppendLine("              fedpubkeys: Federation members' public keys. Up to fifteen members."); // // fed admin will do -m and number (3 qurom + the public keys for the signing of transactions)
             builder.AppendLine("              Example:    m -network=testnet -quorum=2 -fedpubkeys=PublicKey1,PublicKey2,PublicKey3,PublicKey4,PublicKey5");
             builder.AppendLine("r       Creates a transaction to move the multisig funds to a new federation. The transaction is stored in a (.hex) file in the data directory together with similar files obtained from other nodes.");
-            builder.AppendLine("        args: [-network=<network>] [-datadir=<datadir>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
+            builder.AppendLine("        args: [-network=<network>] [-datadir=<datadir>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>] [-password=<password>] [-txtime=<txtime>]");
             builder.AppendLine("              network:    mainnet, testnet or regtest.");
             builder.AppendLine("              datadir:    optional arg, old federation directory where private key is saved.");
             builder.AppendLine("              quorum:     The minimum number of new federation members needed to sign transactions.");
