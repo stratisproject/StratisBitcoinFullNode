@@ -125,7 +125,7 @@ namespace FederationSetup
             if (!walletManager.IsFederationWalletActive())
                 throw new ArgumentException($"Could not activate the federation wallet on {network}.");
 
-            // Determine the fee.
+            // Gets all coins despite passing an empty list of receipients and amounts.
             var context = new Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext(Array.Empty<Stratis.Features.FederatedPeg.Wallet.Recipient>().ToList(), password) {
                 IsConsolidatingTransaction = true,
                 IgnoreVerify = true
@@ -133,34 +133,38 @@ namespace FederationSetup
             (_, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
 
             // Exclude coins (deposits) beyond the transaction (switch-over) time!
-            context.SelectedInputs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).Select(r => r.ToOutPoint()).ToList();
-            if (!context.SelectedInputs.Any())
+            coinRefs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).ToList();
+            if (!coinRefs.Any())
                 throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
-            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(context.SelectedInputs.Count());
 
-            // Single output?
+            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coinRefs.Count());
+
+            var builder = new TransactionBuilder(network);
+            builder.AddKeys(privateKey);
+            builder.AddCoins(coinRefs.Select(c => ScriptCoin.Create(network, c.Transaction.Id, (uint)c.Transaction.Index, c.Transaction.Amount, c.Transaction.ScriptPubKey, oldRedeemScript)));
+
+            // Split the coins into multiple outputs.
+            Money amount = coinRefs.Sum(r => r.Transaction.Amount) - fee;
+            const int numberOfSplits = 10;
+            Money splitAmount = new Money((long)amount / numberOfSplits);
             var recipients = new List<Stratis.Features.FederatedPeg.Wallet.Recipient>();
-            recipients.Add(new Stratis.Features.FederatedPeg.Wallet.Recipient()
+            for (int i = 0; i < numberOfSplits; i++)
             {
-                Amount = coinRefs.Sum(r => r.Transaction.Amount) - fee,
-                ScriptPubKey = redeemScript
-            });
+                Money sendAmount = (i != (numberOfSplits - 1)) ? splitAmount : amount - splitAmount * (numberOfSplits - 1);
 
-            var federationWalletTransactionHandler = new FederationWalletTransactionHandler(nodeSettings.LoggerFactory, walletManager, walletFeePolicy, network, federatedPegSettings);
+                builder.Send(redeemScript.PaymentScript, sendAmount);
+            }
 
-            context.Time = (uint?)(new DateTimeOffset(txTime)).ToUnixTimeSeconds();
-            context.AllowOtherInputs = false;
+            builder.SetChange(redeemScript.PaymentScript);
+            builder.SetTimeStamp((uint)(new DateTimeOffset(txTime)).ToUnixTimeSeconds());
+            builder.CoinSelector = new DeterministicCoinSelector();
+            builder.SendFees(fee);
 
-            model.tx = federationWalletTransactionHandler.BuildTransaction(context);
+            model.tx = builder.BuildTransaction(true);
 
             File.WriteAllText(Path.Combine(dataDirPath, $"{network.Name}_{model.PubKey.ToHex(network).Substring(0, 8)}.hex"), model.tx.ToHex(network));
 
-            // Stop the wallet manager to release the database folder.
-            nodeLifetime.StopApplication();
-            walletManager.Stop();
-
             // Merge our transaction with other transactions which have been placed in the data folder.
-            var builder = new TransactionBuilder(network);
             Transaction oldTransaction = model.tx;
             string namePattern = $"{network.Name}_*.hex";
             int sigCount = 1;
@@ -173,7 +177,7 @@ namespace FederationSetup
                     continue;
 
                 // Transaction times must match.
-                if (incomingPartialTransaction.Time != model.tx.Time)
+                if (incomingPartialTransaction is PosTransaction && incomingPartialTransaction.Time != model.tx.Time)
                 {
                     Console.WriteLine($"The locally generated transaction is time-stamped differently from the transaction contained in '{fileName}'. The imported signature can't be used.");
                     continue;
@@ -195,10 +199,19 @@ namespace FederationSetup
             Console.WriteLine($"{sigCount} of {multisigParams.SignatureCount} signatures collected for {network.Name}.");
 
             if (sigCount >= multisigParams.SignatureCount)
-            { 
-                // Write the transaction to file.
-                File.WriteAllText(Path.Combine(dataDirPath, $"{(txTime > DateTime.Now ? "Preliminary ":"")}{network.Name}Recovery.txt"), model.tx.ToHex(network));
+            {
+                if (builder.Verify(model.tx))
+                {
+                    // Write the transaction to file.
+                    File.WriteAllText(Path.Combine(dataDirPath, $"{(txTime > DateTime.Now ? "Preliminary " : "")}{network.Name}Recovery.txt"), model.tx.ToHex(network));
+                }
+                else
+                    Console.WriteLine("Could not verify the transaction.");
             }
+
+            // Stop the wallet manager to release the database folder.
+            nodeLifetime.StopApplication();
+            walletManager.Stop();
 
             return model;
         }
