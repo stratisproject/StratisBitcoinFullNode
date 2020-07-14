@@ -155,7 +155,6 @@ namespace FederationSetup
                 builder.Send(redeemScript.PaymentScript, sendAmount);
             }
 
-            builder.SetChange(redeemScript.PaymentScript);
             builder.SetTimeStamp((uint)(new DateTimeOffset(txTime)).ToUnixTimeSeconds());
             builder.CoinSelector = new DeterministicCoinSelector();
             builder.SendFees(fee);
