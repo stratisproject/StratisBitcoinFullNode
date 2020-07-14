@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             MvcJsonOptions options = GetMVCOptions(serviceProvider);
             Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
-            app.UseMiddleware(typeof(RPCMiddleware), authorizedAccess, rpcSettings.RPCContentType);
+            app.UseMiddleware(typeof(RPCMiddleware), authorizedAccess);
             app.UseRPC();
         }
 
