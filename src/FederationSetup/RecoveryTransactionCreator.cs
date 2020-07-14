@@ -131,12 +131,12 @@ namespace FederationSetup
                 IgnoreVerify = true
             };
             (_, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
-            if (!coinRefs.Any())
-                throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
-            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coinRefs.Count());
 
             // Exclude coins (deposits) beyond the transaction (switch-over) time!
             context.SelectedInputs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).Select(r => r.ToOutPoint()).ToList();
+            if (!context.SelectedInputs.Any())
+                throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
+            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(context.SelectedInputs.Count());
 
             // Single output?
             var recipients = new List<Stratis.Features.FederatedPeg.Wallet.Recipient>();
