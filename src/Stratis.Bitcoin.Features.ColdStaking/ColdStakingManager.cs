@@ -80,7 +80,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             IScriptAddressReader scriptAddressReader,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
-            ISignals signals = null,
             IBroadcasterManager broadcasterManager = null) : base(
                 loggerFactory,
                 network,
@@ -92,7 +91,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nodeLifeTime,
                 dateTimeProvider,
                 scriptAddressReader,
-                signals,
                 broadcasterManager
                 )
         {

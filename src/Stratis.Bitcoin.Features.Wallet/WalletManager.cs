@@ -95,9 +95,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
-
-        private readonly ISignals signals;
-
+        
         public uint256 WalletTipHash { get; set; }
         public int WalletTipHeight { get; set; }
 
@@ -121,7 +119,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
-            ISignals signals = null,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -146,7 +143,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
-            this.signals = signals;
             this.broadcasterManager = broadcasterManager;
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
@@ -1112,11 +1108,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                     foundSendingTrx = true;
                     this.logger.LogDebug("Transaction '{0}' contained funds sent by the user's wallet(s).", hash);
-
-                    if (this.signals != null)
-                    {
-                        this.signals.Publish(new Events.TransactionFound(transaction));
-                    }
                 }
             }
 
