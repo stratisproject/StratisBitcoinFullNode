@@ -130,7 +130,9 @@ namespace FederationSetup
                 IsConsolidatingTransaction = true,
                 IgnoreVerify = true
             };
-            (_, List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs) = FederationWalletTransactionHandler.DetermineCoins(walletManager, network, context, federatedPegSettings);
+
+            // Retrieves the unspent outputs in deterministic order.
+            List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs = walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
 
             // Exclude coins (deposits) beyond the transaction (switch-over) time!
             coinRefs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).ToList();
