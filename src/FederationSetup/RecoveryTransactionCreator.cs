@@ -125,14 +125,8 @@ namespace FederationSetup
             if (!walletManager.IsFederationWalletActive())
                 throw new ArgumentException($"Could not activate the federation wallet on {network}.");
 
-            // Gets all coins despite passing an empty list of receipients and amounts.
-            var context = new Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext(Array.Empty<Stratis.Features.FederatedPeg.Wallet.Recipient>().ToList(), password) {
-                IsConsolidatingTransaction = true,
-                IgnoreVerify = true
-            };
-
             // Retrieves the unspent outputs in deterministic order.
-            List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs = walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
+            List<Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference> coinRefs = walletManager.GetSpendableTransactionsInWallet().ToList();
 
             // Exclude coins (deposits) beyond the transaction (switch-over) time!
             coinRefs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).ToList();
