@@ -53,10 +53,11 @@ namespace Stratis.Bitcoin.Utilities
         internal JsonSerializerSettings GetSerializationSettings()
         {
             // get default Json serializer settings
-            var settings = new JsonSerializerSettings();
-
-            settings.NullValueHandling = this.SerializeNullValues ? NullValueHandling.Include : NullValueHandling.Ignore;
-
+            var settings = new JsonSerializerSettings
+            {
+                NullValueHandling = this.SerializeNullValues ? NullValueHandling.Include : NullValueHandling.Ignore
+            };
+            
             return settings;
         }
     }
@@ -188,7 +189,7 @@ namespace Stratis.Bitcoin.Utilities
             string filePath = Path.Combine(this.FolderPath, fileName);
 
             if (!File.Exists(filePath))
-                throw new FileNotFoundException($"No wallet file found at {filePath}");
+                throw new FileNotFoundException($"No file found at {filePath}");
 
             return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
         }
