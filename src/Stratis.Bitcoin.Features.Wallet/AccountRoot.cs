@@ -93,6 +93,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public IEnumerable<HdAccount> GetAccounts(Func<HdAccount, bool> accountFilter = null)
         {
+            if (accountFilter == null)
+                accountFilter = Wallet.NormalAccounts;
+
             var accounts = (this.walletRepository == null) ? this.accounts : this.walletRepository.GetAccounts(this.AccountRoot.Wallet);
 
             if (accountFilter != null)

@@ -256,6 +256,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 Index = 0,
                 IsCoinBase = false,
                 IsCoinStake = false,
+                IsColdCoinStake = false,
                 IsPropagated = true,
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = address.ScriptPubKey
@@ -562,7 +563,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             // This will add a secondary account to our wallet.
             Transaction trx2 = this.AddSpendableColdstakingTransactionToWallet(wallet1);
 
-            // THis will add a cold staking transaction to the secondary normal account address. This simulates activation of cold staking onto any normal address.
+            // This will add a cold staking transaction to the secondary normal account address. This simulates activation of cold staking onto any normal address.
             Transaction trx3 = this.AddSpendableColdstakingTransactionToNormalWallet(wallet1);
 
             var accounts = wallet1.GetAccounts(Wallet.Wallet.AllAccounts).ToArray();
@@ -574,7 +575,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Single(wallet1.GetAccounts().ToArray()); // Defaults to NormalAccounts
             Assert.Single(wallet1.GetAccounts(Wallet.Wallet.NormalAccounts).ToArray());
 
-            // Verify that we actually have an cold staking activation UTXO in the wallet of 202 coins.
+            // Verify that we actually have a cold staking activation UTXO in the wallet of 202 coins.
             // This should normally not be returned by the GetAllTransactions, and should never be included in balance calculations.
             Assert.True(accounts[0].ExternalAddresses.ToArray()[1].Transactions.ToArray()[0].IsColdCoinStake);
             Assert.Equal(new Money(202, MoneyUnit.BTC), accounts[0].ExternalAddresses.ToArray()[1].Transactions.ToArray()[0].Amount);
@@ -726,6 +727,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 Index = 0,
                 IsCoinBase = false,
                 IsCoinStake = false,
+                IsColdCoinStake = true,
                 IsPropagated = true,
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = scriptPubKey
@@ -857,6 +859,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = script ? scriptPubKey.WitHash.ScriptPubKey : scriptPubKey,
             });
+
+            // TODO: IsColdCoinStake seems to immediately revert to false here. Need to investigate how? Similarly, IsPropagated is null
 
             return transaction;
         }

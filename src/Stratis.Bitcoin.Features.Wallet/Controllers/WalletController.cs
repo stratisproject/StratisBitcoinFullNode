@@ -1192,6 +1192,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 if (account == null)
                     throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
 
+                // This only runs on one account at a time, so there is no need to make a distinction between normal and cold staking accounts.
                 var accRef = new WalletAccountReference(request.WalletName, request.AccountName);
 
                 var unusedNonChange = this.walletManager.GetUnusedAddresses(accRef, false)
