@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Wallet;
@@ -58,6 +59,23 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, TransactionCollection transactionCollection)
         {
+            var addressScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
+
+            // Making the actual cold staking script template available here for checking will be quite messy, so just bring in the relevant check.
+            byte[] bytes = addressScriptPubKey.ToBytes(true);
+            bool isColdStaking = ((bytes.Length == 51)
+                                  && (bytes[0] == (byte) 0x76) // OP_DUP
+                                  && (bytes[1] == (byte) 0xa9) // OP_HASH160
+                                  && (bytes[2] == (byte) 0x7b) // OP_ROT
+                                  && (bytes[3] == (byte) 0x63) // OP_IF
+                                  && (bytes[4] == (byte) 0xb9) // OP_CHECKCOLDSTAKEVERIFY
+                                  && (bytes[5] == 0x14)
+                                  && (bytes[26] == (byte) 0x67) // OP_ELSE
+                                  && (bytes[27] == 0x14)
+                                  && (bytes[48] == (byte) 0x68) // OP_ENDIF
+                                  && (bytes[49] == (byte) 0x88) // OP_EQUALVERIFY
+                                  && (bytes[50] == (byte) 0xac)); // OP_CHECKSIG
+
             var res = new TransactionData()
             {
                 Amount = new Money(transactionData.Value),
@@ -69,6 +87,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // These two are always updated and used in tandem so we update them from a single source value.
                 IsCoinBase = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex == 0,
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex != 0,
+                IsColdCoinStake = isColdStaking,
                 // IsPropagated  // Not used currently.
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
                 AddressScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),

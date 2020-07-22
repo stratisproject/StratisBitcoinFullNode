@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                             Addresses = this.includeAddressBalances
                                 ? account.GetCombinedAddresses().Select(address =>
                                 {
-                                    (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                                    (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances(account.IsNormalAccount());
                                     return new AddressModel
                                     {
                                         Address = address.Address,

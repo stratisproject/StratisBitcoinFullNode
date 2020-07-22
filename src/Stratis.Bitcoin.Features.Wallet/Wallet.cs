@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Filter for identifying normal wallet accounts.</summary>
         public static Func<HdAccount, bool> NormalAccounts = a => a.Index < SpecialPurposeAccountIndexesStart;
 
+        /// <summary>Filter for all wallet accounts.</summary>
+        public static Func<HdAccount, bool> AllAccounts = a => true;
+
         [JsonIgnore]
         public IWalletRepository WalletRepository { get; private set;}
 
@@ -170,8 +173,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets all the transactions in the wallet.
         /// </summary>
         /// <returns>A list of all the transactions in the wallet.</returns>
-        public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null)
+        public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null, Func<HdAccount, bool> accountFilter = null)
         {
+            if (accountFilter == null)
+                accountFilter = AllAccounts;
+
             /*
             if (this.WalletRepository != null)
             {
@@ -188,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else */
             {
-                List<HdAccount> accounts = this.GetAccounts().ToList();
+                List<HdAccount> accounts = this.GetAccounts(accountFilter).ToList();
 
                 foreach (TransactionData txData in accounts.SelectMany(x => x.ExternalAddresses)
                     .SelectMany(x => x.Transactions)
