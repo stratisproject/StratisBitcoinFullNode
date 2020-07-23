@@ -200,6 +200,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     .SelectMany(x => x.Transactions)
                     .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
                 {
+                    // We still need to filter out coldstaking transactions from 'normal' accounts.
+                    if (accountFilter == NormalAccounts && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value == true)
+                    {
+                        continue;
+                    }
+
                     yield return txData;
                 }
 
@@ -207,6 +213,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     .SelectMany(x => x.Transactions)
                     .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
                 {
+                    // We still need to filter out coldstaking transactions from 'normal' accounts.
+                    if (accountFilter == NormalAccounts && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value == true)
+                    {
+                        continue;
+                    }
+
                     yield return txData;
                 }
             }
