@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null, Func<HdAccount, bool> accountFilter = null)
         {
             if (accountFilter == null)
-                accountFilter = AllAccounts;
+                accountFilter = NormalAccounts;
 
             /*
             if (this.WalletRepository != null)

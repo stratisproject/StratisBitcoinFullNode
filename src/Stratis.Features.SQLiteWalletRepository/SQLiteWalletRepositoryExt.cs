@@ -59,10 +59,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, TransactionCollection transactionCollection)
         {
-            var addressScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
-
+            // We need to examine the entire scriptPubKey of the transaction output in question in order to determine if it is a coldstaking output.
+            var scriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript));
+            
             // Making the actual cold staking script template available here for checking will be quite messy, so just bring in the relevant check.
-            byte[] bytes = addressScriptPubKey.ToBytes(true);
+            byte[] bytes = scriptPubKey.ToBytes(true);
             bool isColdStaking = ((bytes.Length == 51)
                                   && (bytes[0] == (byte) 0x76) // OP_DUP
                                   && (bytes[1] == (byte) 0xa9) // OP_HASH160

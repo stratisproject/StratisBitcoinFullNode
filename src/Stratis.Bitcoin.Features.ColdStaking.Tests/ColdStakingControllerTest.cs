@@ -860,8 +860,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 ScriptPubKey = script ? scriptPubKey.WitHash.ScriptPubKey : scriptPubKey,
             });
 
-            // TODO: IsColdCoinStake seems to immediately revert to false here. Need to investigate how? Similarly, IsPropagated is null
-
             return transaction;
         }
 
