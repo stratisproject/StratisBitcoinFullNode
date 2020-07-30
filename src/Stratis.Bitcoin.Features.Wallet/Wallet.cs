@@ -196,30 +196,38 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 List<HdAccount> accounts = this.GetAccounts(accountFilter).ToList();
 
-                foreach (TransactionData txData in accounts.SelectMany(x => x.ExternalAddresses)
-                    .SelectMany(x => x.Transactions)
-                    .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                foreach (HdAccount account in accounts)
                 {
-                    // We still need to filter out coldstaking transactions from 'normal' accounts.
-                    if (accountFilter == NormalAccounts && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value == true)
+                    foreach (HdAddress address in account.ExternalAddresses)
                     {
-                        continue;
-                    }
+                        foreach (TransactionData txData in address.Transactions.Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                        {
+                            // We still need to filter out coldstaking transactions from 'normal' accounts.
+                            if (account.IsNormalAccount() && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value)
+                            {
+                                continue;
+                            }
 
-                    yield return txData;
+                            yield return txData;
+                        }
+                    }
                 }
 
-                foreach (TransactionData txData in accounts.SelectMany(x => x.InternalAddresses)
-                    .SelectMany(x => x.Transactions)
-                    .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                foreach (HdAccount account in accounts)
                 {
-                    // We still need to filter out coldstaking transactions from 'normal' accounts.
-                    if (accountFilter == NormalAccounts && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value == true)
+                    foreach (HdAddress address in account.InternalAddresses)
                     {
-                        continue;
-                    }
+                        foreach (TransactionData txData in address.Transactions.Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                        {
+                            // We still need to filter out coldstaking transactions from 'normal' accounts.
+                            if (account.IsNormalAccount() && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value)
+                            {
+                                continue;
+                            }
 
-                    yield return txData;
+                            yield return txData;
+                        }
+                    }
                 }
             }
         }
@@ -402,6 +410,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A collection of spendable outputs.</returns>
         public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(int currentChainHeight, int confirmations = 0, Func<HdAccount, bool> accountFilter = null)
         {
+            if (accountFilter == null)
+                accountFilter = NormalAccounts;
+
             IEnumerable<HdAccount> accounts = this.GetAccounts(accountFilter);
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));

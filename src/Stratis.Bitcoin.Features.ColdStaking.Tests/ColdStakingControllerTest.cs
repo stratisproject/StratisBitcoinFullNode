@@ -594,12 +594,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(new Money(303, MoneyUnit.BTC), balance2.ConfirmedAmount);
 
             // Verify balance on special account.
-            // Verify balance on normal account
             var balance3 = accounts[1].GetBalances(true);
             var balance4 = accounts[1].GetBalances(false);
 
-            // The only transaction that exists in the cold staking wallet, is a normal one, and should be returned for both balance queries.
-            Assert.Equal(new Money(101, MoneyUnit.BTC), balance3.ConfirmedAmount);
+            // The only transaction that exists in the cold staking account is itself a cold staking utxo. So if we exclude it we expect zero.
+            Assert.Equal(new Money(0, MoneyUnit.BTC), balance3.ConfirmedAmount);
             Assert.Equal(new Money(101, MoneyUnit.BTC), balance4.ConfirmedAmount);
         }
 
@@ -704,11 +703,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private Transaction AddSpendableColdstakingTransactionToWallet(Wallet.Wallet wallet)
         {
             // Get first unused cold staking address.
-            this.coldStakingManager.GetOrCreateColdStakingAccount(wallet.Name, true, walletPassword);
+            HdAccount account = this.coldStakingManager.GetOrCreateColdStakingAccount(wallet.Name, true, walletPassword);
             HdAddress address = this.coldStakingManager.GetFirstUnusedColdStakingAddress(wallet.Name, true);
 
             TxDestination hotPubKey = BitcoinAddress.Create(hotWalletAddress1, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
-            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress2, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
+            // We can't use the hardcoded cold wallet address here, because we don't know for sure that this is the first account added to the wallet.
+            // If it is not, the derived addresses will be using a different index and will therefore all be different.
+            TxDestination coldPubKey = BitcoinAddress.Create(account.ExternalAddresses.First().Address, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
 
             var scriptPubKey = new Script(OpcodeType.OP_DUP, OpcodeType.OP_HASH160, OpcodeType.OP_ROT, OpcodeType.OP_IF,
                 OpcodeType.OP_CHECKCOLDSTAKEVERIFY, Op.GetPushOp(hotPubKey.ToBytes()), OpcodeType.OP_ELSE, Op.GetPushOp(coldPubKey.ToBytes()),

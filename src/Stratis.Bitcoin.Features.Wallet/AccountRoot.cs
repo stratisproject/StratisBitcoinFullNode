@@ -96,12 +96,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (accountFilter == null)
                 accountFilter = Wallet.NormalAccounts;
 
-            var accounts = (this.walletRepository == null) ? this.accounts : this.walletRepository.GetAccounts(this.AccountRoot.Wallet);
+            var repoAccounts = (this.walletRepository == null) ? this.accounts : this.walletRepository.GetAccounts(this.AccountRoot.Wallet);
 
             if (accountFilter != null)
-                accounts = accounts.Where(accountFilter);
+                repoAccounts = repoAccounts.Where(accountFilter);
 
-            foreach (HdAccount account in accounts)
+            foreach (HdAccount account in repoAccounts)
             {
                 account.WalletAccounts = this;
 

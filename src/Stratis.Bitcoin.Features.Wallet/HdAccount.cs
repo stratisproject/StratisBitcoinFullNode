@@ -307,8 +307,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (excludeColdStakeUtxo)
             {
-                long confirmed = allTransactions.Sum(t => t.GetUnspentAmount(true));
-                long total = allTransactions.Sum(t => t.GetUnspentAmount(false));
+                long confirmed = allTransactions.Where(a => !a.IsColdCoinStake.HasValue || !a.IsColdCoinStake.Value).Sum(t => t.GetUnspentAmount(true));
+                long total = allTransactions.Where(a => !a.IsColdCoinStake.HasValue || !a.IsColdCoinStake.Value).Sum(t => t.GetUnspentAmount(false));
 
                 return (confirmed, total - confirmed);
             }
