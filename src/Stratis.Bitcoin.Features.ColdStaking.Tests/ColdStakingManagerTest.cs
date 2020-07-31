@@ -154,22 +154,24 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
 
             // Verify that the transaction has been recorded in the cold wallet.
-            Assert.Single(coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions);
-            TransactionData destinationColdAddressResult = coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            var coldAccounts = coldWallet.GetAccounts(Wallet.Wallet.AllAccounts);
+            Assert.Single(coldAccounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions);
+            TransactionData destinationColdAddressResult = coldAccounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(0);
             Assert.Equal(transaction.GetHash(), destinationColdAddressResult.Id);
             Assert.Equal(transaction.Outputs[1].Value, destinationColdAddressResult.Amount);
             Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationColdAddressResult.ScriptPubKey);
 
             // Verify that the transaction has been recorded in the hot wallet.
-            Assert.Single(hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions);
-            TransactionData destinationHotAddressResult = hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            var hotAccounts = hotWallet.GetAccounts(Wallet.Wallet.AllAccounts);
+            Assert.Single(hotAccounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions);
+            TransactionData destinationHotAddressResult = hotAccounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(0);
             Assert.Equal(transaction.GetHash(), destinationHotAddressResult.Id);
             Assert.Equal(transaction.Outputs[1].Value, destinationHotAddressResult.Amount);
             Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationHotAddressResult.ScriptPubKey);
 
             // Will spend from the cold stake address and send the change back to the same address.
             Money balance = walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(coldWallet.Name, coldWalletAccount.Name), 0).Sum(x => x.Transaction.Amount);
-            var coldStakeAddress = coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            var coldStakeAddress = coldWallet.GetAccounts(Wallet.Wallet.AllAccounts).ElementAt(0).ExternalAddresses.ElementAt(0);
             Transaction withdrawalTransaction = this.CreateColdStakingWithdrawalTransaction(coldWallet, "password", coldStakeAddress,
                 withdrawalPubKey, ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(destinationColdPubKey.Hash, destinationHotPubKey.Hash),
                 new Money(750), new Money(263));
@@ -186,16 +188,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(withdrawalTransaction.Outputs[1].ScriptPubKey, withdrawalAddressResult.ScriptPubKey);
 
             // Verify that the transaction has been recorded in the cold wallet.
-            Assert.Equal(2, coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
-            TransactionData coldAddressResult = coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions
+            Assert.Equal(2, coldWallet.GetAccounts(Wallet.Wallet.AllAccounts).ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
+            TransactionData coldAddressResult = coldWallet.GetAccounts(Wallet.Wallet.AllAccounts).ElementAt(0).ExternalAddresses.ElementAt(0).Transactions
                 .Where(t => t.Id == withdrawalTransaction.GetHash()).First();
             Assert.Equal(withdrawalTransaction.GetHash(), coldAddressResult.Id);
             Assert.Equal(withdrawalTransaction.Outputs[0].Value, coldAddressResult.Amount);
             Assert.Equal(withdrawalTransaction.Outputs[0].ScriptPubKey, coldAddressResult.ScriptPubKey);
 
             // Verify that the transaction has been recorded in the hot wallet.
-            Assert.Equal(2, hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
-            TransactionData hotAddressResult = hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions
+            Assert.Equal(2, hotWallet.GetAccounts(Wallet.Wallet.AllAccounts).ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
+            TransactionData hotAddressResult = hotWallet.GetAccounts(Wallet.Wallet.AllAccounts).ElementAt(0).ExternalAddresses.ElementAt(0).Transactions
                 .Where(t => t.Id == withdrawalTransaction.GetHash()).First();
             Assert.Equal(withdrawalTransaction.GetHash(), hotAddressResult.Id);
             Assert.Equal(withdrawalTransaction.Outputs[0].Value, hotAddressResult.Amount);
