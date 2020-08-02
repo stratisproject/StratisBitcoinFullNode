@@ -41,6 +41,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool? IsCoinStake { get; set; }
 
         /// <summary>
+        /// A value indicating whether this is a coldstake transaction or not.
+        /// </summary>
+        [JsonProperty(PropertyName = "isColdCoinStake", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsColdCoinStake { get; set; }
+
+        /// <summary>
         /// The index of this scriptPubKey in the transaction it is contained.
         /// </summary>
         /// <remarks>

@@ -497,7 +497,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     foreach (HdAccount hdAccount in wallet.GetAccounts())
                     {
                         // Get the total balances.
-                        (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances();
+                        (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances(hdAccount.IsNormalAccount());
 
                         int walletHeight = (int)wallet.AccountsRoot.First().LastBlockSyncedHeight;
 

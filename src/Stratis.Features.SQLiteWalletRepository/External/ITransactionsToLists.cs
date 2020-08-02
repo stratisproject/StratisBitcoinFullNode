@@ -143,6 +143,10 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                                 }
                             }
 
+                            // TODO: This is a bit of a conundrum - by recording a coldstaking output as having a value, we cause all the effects that the filtration at the higher
+                            // layers is intended to prevent. So it would be a lot simpler if we could just set the output value to 0 here if it is a coldstaking script. But that
+                            // will most likely have unintended consequences on areas of the code that do expect the outputs to have a value, such as staking.
+
                             // Record outputs received by our wallets.
                             this.RecordReceipt(block, pubKeyScript, txOut, tx.IsCoinBase | tx.IsCoinStake, blockTime ?? tx.Time, txId, i, containsAddress && address.AddressType == 1);
 

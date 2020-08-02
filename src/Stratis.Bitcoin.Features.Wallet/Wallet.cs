@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Filter for identifying normal wallet accounts.</summary>
         public static Func<HdAccount, bool> NormalAccounts = a => a.Index < SpecialPurposeAccountIndexesStart;
 
+        /// <summary>Filter for all wallet accounts.</summary>
+        public static Func<HdAccount, bool> AllAccounts = a => true;
+
         [JsonIgnore]
         public IWalletRepository WalletRepository { get; private set;}
 
@@ -170,8 +173,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets all the transactions in the wallet.
         /// </summary>
         /// <returns>A list of all the transactions in the wallet.</returns>
-        public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null)
+        public IEnumerable<TransactionData> GetAllTransactions(DateTimeOffset? transactionTime = null, uint256 spendingTransactionId = null, Func<HdAccount, bool> accountFilter = null)
         {
+            if (accountFilter == null)
+                accountFilter = NormalAccounts;
+
             /*
             if (this.WalletRepository != null)
             {
@@ -188,20 +194,40 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else */
             {
-                List<HdAccount> accounts = this.GetAccounts().ToList();
+                List<HdAccount> accounts = this.GetAccounts(accountFilter).ToList();
 
-                foreach (TransactionData txData in accounts.SelectMany(x => x.ExternalAddresses)
-                    .SelectMany(x => x.Transactions)
-                    .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                foreach (HdAccount account in accounts)
                 {
-                    yield return txData;
+                    foreach (HdAddress address in account.ExternalAddresses)
+                    {
+                        foreach (TransactionData txData in address.Transactions.Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                        {
+                            // We still need to filter out coldstaking transactions from 'normal' accounts.
+                            if (account.IsNormalAccount() && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value)
+                            {
+                                continue;
+                            }
+
+                            yield return txData;
+                        }
+                    }
                 }
 
-                foreach (TransactionData txData in accounts.SelectMany(x => x.InternalAddresses)
-                    .SelectMany(x => x.Transactions)
-                    .Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                foreach (HdAccount account in accounts)
                 {
-                    yield return txData;
+                    foreach (HdAddress address in account.InternalAddresses)
+                    {
+                        foreach (TransactionData txData in address.Transactions.Where(td => spendingTransactionId == null || td.SpendingDetails?.TransactionId == spendingTransactionId))
+                        {
+                            // We still need to filter out coldstaking transactions from 'normal' accounts.
+                            if (account.IsNormalAccount() && txData.IsColdCoinStake.HasValue && txData.IsColdCoinStake.Value)
+                            {
+                                continue;
+                            }
+
+                            yield return txData;
+                        }
+                    }
                 }
             }
         }
@@ -342,14 +368,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating whether the wallet contains the specified address.</returns>
         public bool ContainsAddress(HdAddress address)
         {
-            if (!this.AccountsRoot.Any(r => r.Accounts.Any(
-                a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
-                     a.InternalAddresses.Any(i => i.Address == address.Address))))
-            {
-                return false;
-            }
+            // We don't filter out the coldstaking addresses here because we presume that if the caller wants
+            // us to sign for a coldstaking transaction, then we should be returning the affirmative.
 
-            return true;
+            foreach (AccountRoot root in this.AccountsRoot)
+                foreach (HdAccount account in root.Accounts.GetAccounts(AllAccounts))
+                    foreach (HdAddress accountAddress in account.GetCombinedAddresses())
+                        if (address.Address == accountAddress.Address)
+                            return true;
+
+            return false;
         }
 
         /// <summary>
@@ -367,10 +395,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Check if the wallet contains the address.
             if (!this.ContainsAddress(address))
             {
-                throw new WalletException("Address not found on wallet.");
+                throw new WalletException("Address not found in wallet.");
             }
 
-            // get extended private key
+            // Get extended private key
             Key privateKey = HdOperations.DecryptSeed(this.EncryptedSeed, password, this.Network);
             return HdOperations.GetExtendedPrivateKey(privateKey, this.ChainCode, address.HdPath, this.Network);
         }
@@ -384,6 +412,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A collection of spendable outputs.</returns>
         public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(int currentChainHeight, int confirmations = 0, Func<HdAccount, bool> accountFilter = null)
         {
+            if (accountFilter == null)
+                accountFilter = NormalAccounts;
+
             IEnumerable<HdAccount> accounts = this.GetAccounts(accountFilter);
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));

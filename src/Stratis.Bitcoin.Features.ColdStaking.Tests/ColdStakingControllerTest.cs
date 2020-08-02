@@ -256,6 +256,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 Index = 0,
                 IsCoinBase = false,
                 IsCoinStake = false,
+                IsColdCoinStake = false,
                 IsPropagated = true,
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = address.ScriptPubKey
@@ -546,6 +547,61 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.True(this.mempoolManager.Validator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult(), "Transaction failed mempool validation.");
         }
 
+        [Fact]
+        public void VerifyThatColdStakeTransactionCanBeFiltered()
+        {
+            this.Initialize();
+            this.CreateMempoolManager();
+
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+
+            Wallet.Wallet wallet1 = this.coldStakingManager.GetWallet(walletName1);
+
+            // This will add a normal account to our wallet.
+            Transaction trx1 = this.AddSpendableTransactionToWallet(wallet1);
+
+            // This will add a secondary account to our wallet.
+            Transaction trx2 = this.AddSpendableColdstakingTransactionToWallet(wallet1);
+
+            // This will add a cold staking transaction to the secondary normal account address. This simulates activation of cold staking onto any normal address.
+            Transaction trx3 = this.AddSpendableColdstakingTransactionToNormalWallet(wallet1);
+
+            var accounts = wallet1.GetAccounts(Wallet.Wallet.AllAccounts).ToArray();
+
+            // We should have 2 accounts in our wallet.
+            Assert.Equal(2, accounts.Length);
+
+            // But not if we use default or specify to only return normal accounts.
+            Assert.Single(wallet1.GetAccounts().ToArray()); // Defaults to NormalAccounts
+            Assert.Single(wallet1.GetAccounts(Wallet.Wallet.NormalAccounts).ToArray());
+
+            // Verify that we actually have a cold staking activation UTXO in the wallet of 202 coins.
+            // This should normally not be returned by the GetAllTransactions, and should never be included in balance calculations.
+            Assert.True(accounts[0].ExternalAddresses.ToArray()[1].Transactions.ToArray()[0].IsColdCoinStake);
+            Assert.Equal(new Money(202, MoneyUnit.BTC), accounts[0].ExternalAddresses.ToArray()[1].Transactions.ToArray()[0].Amount);
+
+            Assert.Single(wallet1.GetAllTransactions().ToArray()); // Default to NormalAccounts, should filter out cold staking (trx3) from normal wallet.
+            Assert.Single(wallet1.GetAllTransactions(accountFilter: Wallet.Wallet.NormalAccounts).ToArray());
+            Assert.Single(wallet1.GetAllSpendableTransactions(5, 0, Wallet.Wallet.NormalAccounts).ToArray()); // Default to NormalAccounts
+            Assert.Equal(2, wallet1.GetAllTransactions(accountFilter: Wallet.Wallet.AllAccounts).ToArray().Length);
+            Assert.Equal(2, wallet1.GetAllSpendableTransactions(5, 0, Wallet.Wallet.AllAccounts).ToArray().Length); // Specified AllAccounts, should include cold-staking transaction.
+
+            // Verify balance on normal account
+            var balance1 = accounts[0].GetBalances(true);
+            var balance2 = accounts[0].GetBalances(false);
+
+            Assert.Equal(new Money(101, MoneyUnit.BTC), balance1.ConfirmedAmount);
+            Assert.Equal(new Money(303, MoneyUnit.BTC), balance2.ConfirmedAmount);
+
+            // Verify balance on special account.
+            var balance3 = accounts[1].GetBalances(true);
+            var balance4 = accounts[1].GetBalances(false);
+
+            // The only transaction that exists in the cold staking account is itself a cold staking utxo. So if we exclude it we expect zero.
+            Assert.Equal(new Money(0, MoneyUnit.BTC), balance3.ConfirmedAmount);
+            Assert.Equal(new Money(101, MoneyUnit.BTC), balance4.ConfirmedAmount);
+        }
+
         /// <summary>
         /// Confirms that cold staking setup with the cold wallet will succeed if no issues (as per above test cases) are encountered.
         /// </summary>
@@ -647,11 +703,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private Transaction AddSpendableColdstakingTransactionToWallet(Wallet.Wallet wallet)
         {
             // Get first unused cold staking address.
-            this.coldStakingManager.GetOrCreateColdStakingAccount(wallet.Name, true, walletPassword);
+            HdAccount account = this.coldStakingManager.GetOrCreateColdStakingAccount(wallet.Name, true, walletPassword);
             HdAddress address = this.coldStakingManager.GetFirstUnusedColdStakingAddress(wallet.Name, true);
 
             TxDestination hotPubKey = BitcoinAddress.Create(hotWalletAddress1, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
-            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress2, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
+            // We can't use the hardcoded cold wallet address here, because we don't know for sure that this is the first account added to the wallet.
+            // If it is not, the derived addresses will be using a different index and will therefore all be different.
+            TxDestination coldPubKey = BitcoinAddress.Create(account.ExternalAddresses.First().Address, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
 
             var scriptPubKey = new Script(OpcodeType.OP_DUP, OpcodeType.OP_HASH160, OpcodeType.OP_ROT, OpcodeType.OP_IF,
                 OpcodeType.OP_CHECKCOLDSTAKEVERIFY, Op.GetPushOp(hotPubKey.ToBytes()), OpcodeType.OP_ELSE, Op.GetPushOp(coldPubKey.ToBytes()),
@@ -670,6 +728,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 Index = 0,
                 IsCoinBase = false,
                 IsCoinStake = false,
+                IsColdCoinStake = true,
                 IsPropagated = true,
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = scriptPubKey
@@ -765,6 +824,45 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.StartsWith("You can't send the money to a cold staking cold wallet account.", error.Message);
         }
 
+        /// <summary>
+        /// Adds a spendable cold staking transaction to a normal account, as oppose to dedicated special account.
+        /// </summary>
+        /// <param name="wallet">Wallet to add the transaction to.</param>
+        /// <returns>The spendable transaction that was added to the wallet.</returns>
+        private Transaction AddSpendableColdstakingTransactionToNormalWallet(Wallet.Wallet wallet, bool script = false)
+        {
+            // This will always be added to the secondary address.
+            HdAddress address = wallet.GetAllAddresses().ToArray()[1];
+
+            var transaction = this.Network.CreateTransaction();
+
+            // Use the normal wallet address here.
+            TxDestination hotPubKey = BitcoinAddress.Create(address.Address, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
+            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress2, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
+
+            var scriptPubKey = new Script(OpcodeType.OP_DUP, OpcodeType.OP_HASH160, OpcodeType.OP_ROT, OpcodeType.OP_IF,
+                OpcodeType.OP_CHECKCOLDSTAKEVERIFY, Op.GetPushOp(hotPubKey.ToBytes()), OpcodeType.OP_ELSE, Op.GetPushOp(coldPubKey.ToBytes()),
+                OpcodeType.OP_ENDIF, OpcodeType.OP_EQUALVERIFY, OpcodeType.OP_CHECKSIG);
+
+            transaction.Outputs.Add(new TxOut(Money.Coins(202), script ? scriptPubKey.WitHash.ScriptPubKey : scriptPubKey));
+
+            address.Transactions.Add(new TransactionData()
+            {
+                Hex = transaction.ToHex(this.Network),
+                Amount = transaction.Outputs[0].Value,
+                Id = transaction.GetHash(),
+                BlockHeight = 0,
+                Index = 0,
+                IsCoinBase = false,
+                IsCoinStake = false,
+                IsColdCoinStake = true,
+                IsPropagated = true,
+                BlockHash = this.Network.GenesisHash,
+                ScriptPubKey = script ? scriptPubKey.WitHash.ScriptPubKey : scriptPubKey,
+            });
+
+            return transaction;
+        }
 
         /// <summary>
         /// Confirms that trying to withdraw money from a non-existent cold staking account will raise an error.

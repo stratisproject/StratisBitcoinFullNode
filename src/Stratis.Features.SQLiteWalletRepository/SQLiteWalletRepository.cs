@@ -1175,7 +1175,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(walletContainer.Wallet.WalletId, hdAccount.Index, currentChainHeight, coinBaseMaturity ?? this.Network.Consensus.CoinbaseMaturity, confirmations))
             {
-                // TODO: This will take time and is possible not needed.
+                // TODO: This will take time and is possibly not needed.
                 /*
                 var keyPath = new KeyPath($"{transactionData.AddressType}/{transactionData.AddressIndex}");
 
@@ -1196,10 +1196,24 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 hdAddress.AddressCollection = (hdAddress.AddressType == 0) ? hdAccount.ExternalAddresses : hdAccount.InternalAddresses;
 
+                TransactionData txData = this.ToTransactionData(transactionData, hdAddress.Transactions);
+
+                // Check if this wallet is a normal purpose wallet (not cold staking, etc).
+                if (hdAccount.IsNormalAccount())
+                {
+                    bool isColdCoinStake = txData.IsColdCoinStake ?? false;
+
+                    // Skip listing the UTXO if this is a normal wallet, and the UTXO is marked as an cold coin stake.
+                    if (isColdCoinStake)
+                    {
+                        continue;
+                    }
+                }
+
                 yield return new UnspentOutputReference()
                 {
                     Account = hdAccount,
-                    Transaction = this.ToTransactionData(transactionData, hdAddress.Transactions),
+                    Transaction = txData,
                     Confirmations = tdConfirmations,
                     Address = hdAddress
                 };

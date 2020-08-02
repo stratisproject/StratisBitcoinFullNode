@@ -104,6 +104,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
         {
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
+            // TODO: This value can go negative, which is a bit ugly
             int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
 
             string strWalletId = DBParameter.Create(walletId);
