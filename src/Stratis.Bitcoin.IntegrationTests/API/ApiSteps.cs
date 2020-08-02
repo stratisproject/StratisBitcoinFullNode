@@ -440,7 +440,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getrawmempool");
             commands.Should().Contain(x => x.Command == "setwallet <walletname>");
             commands.Should().Contain(x => x.Command == "generate <blockcount>");
-            commands.Should().Contain(x => x.Command == "generatetoaddress <blockcount> <address>");
             commands.Should().Contain(x => x.Command == "stopstaking");
             commands.Should().Contain(x => x.Command == "startstaking <walletname> <walletpassword>");
             commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");

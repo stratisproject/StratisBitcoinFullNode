@@ -368,14 +368,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating whether the wallet contains the specified address.</returns>
         public bool ContainsAddress(HdAddress address)
         {
-            if (!this.AccountsRoot.Any(r => r.Accounts.Any(
-                a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
-                     a.InternalAddresses.Any(i => i.Address == address.Address))))
-            {
-                return false;
-            }
+            // We don't filter out the coldstaking addresses here because we presume that if the caller wants
+            // us to sign for a coldstaking transaction, then we should be returning the affirmative.
 
-            return true;
+            foreach (AccountRoot root in this.AccountsRoot)
+                foreach (HdAccount account in root.Accounts.GetAccounts(AllAccounts))
+                    foreach (HdAddress accountAddress in account.GetCombinedAddresses())
+                        if (address.Address == accountAddress.Address)
+                            return true;
+
+            return false;
         }
 
         /// <summary>
@@ -393,10 +395,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Check if the wallet contains the address.
             if (!this.ContainsAddress(address))
             {
-                throw new WalletException("Address not found on wallet.");
+                throw new WalletException("Address not found in wallet.");
             }
 
-            // get extended private key
+            // Get extended private key
             Key privateKey = HdOperations.DecryptSeed(this.EncryptedSeed, password, this.Network);
             return HdOperations.GetExtendedPrivateKey(privateKey, this.ChainCode, address.HdPath, this.Network);
         }
