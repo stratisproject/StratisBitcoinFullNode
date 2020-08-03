@@ -2475,8 +2475,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances(firstAccount.IsNormalAccount()).UnConfirmedAmount);
         }
 
         [Fact]
@@ -2570,8 +2570,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances(firstAccount.IsNormalAccount()).ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).UnConfirmedAmount);
         }
 
         [Fact]
@@ -2595,8 +2595,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
             }
 
-            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).UnConfirmedAmount);
         }
 
         [Fact]
@@ -2626,8 +2626,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances(firstAccount.IsNormalAccount()).ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).UnConfirmedAmount);
         }
 
         [Fact]
@@ -2657,8 +2657,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances(firstAccount.IsNormalAccount()).ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances(firstAccount.IsNormalAccount()).UnConfirmedAmount);
         }
 
         [Fact]

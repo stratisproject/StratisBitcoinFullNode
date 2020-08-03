@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(31);
+            commands.Count.Should().Be(33);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>] [<blockhash>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
@@ -436,11 +436,16 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getbestblockhash");
             commands.Should().Contain(x => x.Command == "getblockhash <height>");
             commands.Should().Contain(x => x.Command == "getrawmempool");
+            commands.Should().Contain(x => x.Command == "setwallet <walletname>");
             commands.Should().Contain(x => x.Command == "generate <blockcount>");
+            commands.Should().Contain(x => x.Command == "generatetoaddress <blockcount> <address>");
+            commands.Should().Contain(x => x.Command == "stopstaking");
             commands.Should().Contain(x => x.Command == "startstaking <walletname> <walletpassword>");
             commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");
             commands.Should().Contain(x => x.Command == "sendtoaddress <address> <amount> <commenttx> <commentdest>");
             commands.Should().Contain(x => x.Command == "getnewaddress <account> <addresstype>");
+            commands.Should().Contain(x => x.Command == "getbalance <accountname> [<minconfirmations>]");
+            commands.Should().Contain(x => x.Command == "gettransaction <txid>");
             commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "getblock <blockhash> [<verbosity>]");
@@ -448,9 +453,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");
             commands.Should().Contain(x => x.Command == "sendmany <fromaccount> <addressesjson> [<minconf>] [<comment>] [<subtractfeefromjson>] [<isreplaceable>] [<conftarget>] [<estimatemode>]");
+            commands.Should().Contain(x => x.Command == "getwalletinfo");
             commands.Should().Contain(x => x.Command == "getblockchaininfo");
             commands.Should().Contain(x => x.Command == "getnetworkinfo");
             commands.Should().Contain(x => x.Command == "listaddressgroupings");
+            // TODO: Some are missing from this list
         }
 
         private void status_information_is_returned()
