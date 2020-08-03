@@ -48,6 +48,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet related configuration.</summary>
         private readonly WalletSettings walletSettings;
 
+        /// <summary>
+        /// The wallet name set by the selectwallet method. This is static since the controller is a stateless type. This value should probably be cached by an injected service in the future.
+        /// </summary>
+        private static string CurrentWalletName;
+
         public WalletRPCController(
             IBlockStore blockStore,
             IBroadcasterManager broadcasterManager,
@@ -70,6 +75,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletSettings = walletSettings;
             this.walletTransactionHandler = walletTransactionHandler;
+        }
+
+        [ActionName("setwallet")]
+        [ActionDescription("Selects the active wallet for RPC based on the name of the wallet supplied.")]
+        public bool SetWallet(string walletname)
+        {
+            WalletRPCController.CurrentWalletName = walletname;
+            return true;
         }
 
         [ActionName("walletpassphrase")]
@@ -240,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 blockHash = blockHeight != null ? this.ChainIndexer.GetHeader(blockHeight.Value).HashBlock : null;
             }
 
-            // Get the block containing the transaction (if it has  been confirmed).
+            // Get the block containing the transaction (if it has been confirmed).
             ChainedHeaderBlock chainedHeaderBlock = null;
             if (blockHash != null)
                 this.ConsensusManager.GetOrDownloadBlocks(new List<uint256> { blockHash }, b => { chainedHeaderBlock = b; });
@@ -314,10 +327,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
+            // Get the ColdStaking script template if available.
+            Dictionary<string, ScriptTemplate> templates = this.walletManager.GetValidStakingTemplates();
+            ScriptTemplate coldStakingTemplate = templates.ContainsKey("ColdStaking") ? templates["ColdStaking"] : null;
+
             // Receive transactions details.
             foreach (TransactionData trxInWallet in receivedTransactions)
             {
+                // Skip the details if the script pub key is cold staking.
+                // TODO: Verify if we actually need this any longer, after changing the internals to recognize account type
+                if (coldStakingTemplate != null && coldStakingTemplate.CheckScriptPubKey(trxInWallet.ScriptPubKey))
+                {
+                    continue;
+                }
+
                 GetTransactionDetailsCategoryModel category;
+
                 if (isGenerated)
                 {
                     category = model.Confirmations > this.FullNode.Network.Consensus.CoinbaseMaturity ? GetTransactionDetailsCategoryModel.Generate : GetTransactionDetailsCategoryModel.Immature;
@@ -688,6 +713,43 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        [ActionName("getwalletinfo")]
+        [ActionDescription("Provides information about the wallet.")]
+        public GetWalletInfoModel GetWalletInfo()
+        {
+            var accountReference = this.GetWalletAccountReference();
+            var account = this.walletManager.GetAccounts(accountReference.WalletName)
+                .Where(i => i.Name.Equals(accountReference.AccountName))
+                .Single();
+
+            (Money confirmedAmount, Money unconfirmedAmount) = account.GetBalances(account.IsNormalAccount());
+
+            var balance = Money.Coins(GetBalance(string.Empty));
+            var immature = Money.Coins(balance.ToDecimal(MoneyUnit.BTC) - GetBalance(string.Empty, (int)this.FullNode.Network.Consensus.CoinbaseMaturity)); // Balance - Balance(AtHeight)
+
+            var model = new GetWalletInfoModel
+            {
+                Balance = balance,
+                WalletName = accountReference.WalletName + ".wallet.json",
+                WalletVersion = 1,
+                UnConfirmedBalance = unconfirmedAmount,
+                ImmatureBalance = immature
+            };
+
+            return model;
+        }
+
+        private int GetConfirmationCount(TransactionData transaction)
+        {
+            if (transaction.BlockHeight.HasValue)
+            {
+                var blockCount = this.ConsensusManager?.Tip.Height ?? -1; // TODO: This is available in FullNodeController, should refactor and reuse the logic.
+                return blockCount - transaction.BlockHeight.Value;
+            }
+
+            return -1;
+        }
+
         /// <summary>
         /// Gets the first account from the "default" wallet if it specified,
         /// otherwise returns the first available account in the existing wallets.
@@ -697,16 +759,26 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             string walletName = null;
 
-            if (this.walletSettings.IsDefaultWalletEnabled())
-                walletName = this.walletManager.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
+            if (string.IsNullOrWhiteSpace(WalletRPCController.CurrentWalletName))
+            {
+                if (this.walletSettings.IsDefaultWalletEnabled())
+                    walletName = this.walletManager.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
+                else
+                {
+                    //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+                    walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+                }
+            }
             else
             {
-                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-                walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+                // Read the wallet name from the class instance.
+                walletName = WalletRPCController.CurrentWalletName;
             }
 
             if (walletName == null)
+            {
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
+            }
 
             HdAccount account = this.walletManager.GetAccounts(walletName).First();
             return new WalletAccountReference(walletName, account.Name);

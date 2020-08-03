@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
                 ErrorModel error = errorResponse.Errors[0];
                 Assert.Equal(405, error.Status);
-                Assert.Equal("Method not available for Proof of Stake", error.Description);
+                Assert.Equal("Method not available if not Proof of Stake", error.Description);
             }
         }
     }

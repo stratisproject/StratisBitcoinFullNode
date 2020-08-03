@@ -59,7 +59,25 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public void LoadPeers()
         {
-            List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
+            List<PeerAddress> loadedPeers;
+
+            try
+            {
+                loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Error loading peers JSON, defaulting to empty list: {0}", e);
+
+                loadedPeers = new List<PeerAddress>();
+            }
+
+            if (loadedPeers == null)
+                loadedPeers = new List<PeerAddress>();
+
+            // If the loaded peers is still empty at this point, we rely on the discovery loop to find new peers to connect to.
+            // The discovery loop will only not run if -connect is used or if there are un-attempted peers left, so as long as
+            // there are seed nodes & DNS seeds available we should get something to connect to relatively rapidly.
 
             this.logger.LogDebug("{0} peers were loaded.", loadedPeers.Count);
 

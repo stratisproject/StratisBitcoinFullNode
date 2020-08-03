@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Signals;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.ColdStaking.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
