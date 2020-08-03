@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             int result = checkpoints.GetLastCheckpointHeight();
 
-            Assert.Equal(1150000, result);
+            Assert.Equal(1400000, result);
         }
 
         [Fact()]

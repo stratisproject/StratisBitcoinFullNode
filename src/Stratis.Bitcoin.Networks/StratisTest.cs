@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
-            
+
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
@@ -132,7 +132,9 @@ namespace Stratis.Bitcoin.Networks
                 { 720000, new CheckpointInfo(new uint256("0x041fb27f49f96be3a10034db0148290e9e2551b1c6196823b46521c36c69fbe2"), new uint256("0xba96e9c84c4134a2204d07e41b7738a9ae6e56c4322f443dcfe11421f1643e6e")) }, // 14-01-2019
                 { 900000, new CheckpointInfo(new uint256("0xd48702aabf727570d96bbcd8bad220427a35113efa90c3adc91ae94a4b09c6e5"), new uint256("0x31515a27d55f819131f2dc0a263f46fb63c56ec0ff129bcb0b1c13d5922a62c2")) }, // 14-01-2019
                 { 1000000, new CheckpointInfo(new uint256("0xa8775bca139bb50c16c803a64e324f83eec70e3f9b5e762265e590cc773b9930"), new uint256("0x3664cc8571bfea578cc22a2b8478148da05704226624ce203f2ea646a7339a38")) },
-                { 1150000, new CheckpointInfo(new uint256("0xca63e5cc3b023f98bfddbf7f8df8dcb3dc90f37bec79b6396823b3da77ab9a24"), new uint256("0xd0a2024250b92ba7dbc8348e6e5dd3a83a770154e6a2ca7f7280284c8a25ba18")) }
+                { 1150000, new CheckpointInfo(new uint256("0xca63e5cc3b023f98bfddbf7f8df8dcb3dc90f37bec79b6396823b3da77ab9a24"), new uint256("0xd0a2024250b92ba7dbc8348e6e5dd3a83a770154e6a2ca7f7280284c8a25ba18")) },
+                { 1245000, new CheckpointInfo(new uint256("0x759dfad85feb187710b85f07d4709a745700c220fae56755c78bc051f447f289"), new uint256("0x3d0b0e29ab715c2bd003bf2677d3646d85d2ce8f7a831e3b79d6ff783140646a")) },
+                { 1400000, new CheckpointInfo(new uint256("0xf9e99174917a68159e7218c39f100545001e2c076bdfa11c00807df0936dd59b"), new uint256("0x5c5e728b113fb39dc6a14cd92d1a7f6a821cea0ad42eaafb50bc7dec5a5efdd1")) }
              };
 
             this.DNSSeeds = new List<DNSSeedData>
