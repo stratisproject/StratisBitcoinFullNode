@@ -20,11 +20,9 @@ public class EcRecoverContract : SmartContract
             this.ThirdPartySigner = thirdPartySigner;
         }
 
-        public void CheckThirdPartySignature()
+        public bool CheckThirdPartySignature(byte[] message, byte[] signature)
         {
-            byte[] message = new byte[] { 0, 1, 2, 3 };
-            Address signerOfMessage = this.EcRecover()
+            Address signerOfMessage = this.EcRecover(message, signature);
+            return (signerOfMessage == this.ThirdPartySigner);
         }
-
-
 }
