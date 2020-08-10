@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using NBitcoin.Crypto;
+﻿using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
@@ -29,11 +27,11 @@ namespace Stratis.SmartContracts.IntegrationTests
                 byte[] message = new byte[] {0x69, 0x76, 0xAA};
 
                 // Sign a message
-                ECDSASignature offChainSignature = EcRecoverProvider.SignMessage(privateKey, message);
+                byte[] offChainSignature = EcRecoverProvider.SignMessage(privateKey, message);
 
                 var ecRecover = new EcRecoverProvider(network);
                 // Get the address out of the signature
-                Address recoveredAddress = ecRecover.GetSigner(message, offChainSignature.ToDER());
+                Address recoveredAddress = ecRecover.GetSigner(message, offChainSignature);
 
                 // Check that the address matches that generated from the private key.
                 Assert.Equal(address, recoveredAddress);
@@ -41,7 +39,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public async Task CanCallEcRecoverContractWithValidSignatureAsync()
+        public void CanCallEcRecoverContractWithValidSignatureAsync()
         {
             using (PoWMockChain chain = new PoWMockChain(2))
             {
@@ -54,7 +52,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 var privateKey = new Key();
                 string address = privateKey.PubKey.GetAddress(network).ToString();
                 byte[] message = new byte[] { 0x69, 0x76, 0xAA };
-                byte[] signature = EcRecoverProvider.SignMessage(privateKey, message).ToDER();
+                byte[] signature = EcRecoverProvider.SignMessage(privateKey, message);
 
                 // TODO: If the incorrect parameters are passed to the constructor, the contract does not get properly created ('Method does not exist on contract'), but a success response is still returned?
 
@@ -90,7 +88,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public async Task CanCallEcRecoverContractWithInvalidSignatureAsync()
+        public void CanCallEcRecoverContractWithInvalidSignatureAsync()
         {
             using (PoWMockChain chain = new PoWMockChain(2))
             {
@@ -105,7 +103,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 byte[] message = new byte[] { 0x69, 0x76, 0xAA };
                 
                 // Make the signature with a key unrelated to the third party signer for the contract.
-                byte[] signature = EcRecoverProvider.SignMessage(new Key(), message).ToDER();
+                byte[] signature = EcRecoverProvider.SignMessage(new Key(), message);
 
                 // TODO: If the incorrect parameters are passed to the constructor, the contract does not get properly created ('Method does not exist on contract'), but a success response is still returned?
 

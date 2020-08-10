@@ -11,9 +11,6 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class EcRecoverProvider : IEcRecoverProvider
     {
-        // TODO: Not sure what this is yet.
-        private const int RecId = 1;
-
         private readonly Network network;
 
         public EcRecoverProvider(Network network)
@@ -26,20 +23,33 @@ namespace Stratis.SmartContracts.CLR
             return new uint256(HashHelper.Keccak256(message));
         }
 
+        /// <summary>
+        /// Retrieves the base58 address of the signer of an ECDSA signature.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="signature">The ECDSA signature prepended with header information specifying the correct value of recId.</param>
+        /// <returns>The base58 address for the signer of a signature.</returns>
         public Address GetSigner(byte[] message, byte[] signature)
         {
             // TODO: Error handling for incorrect signature format etc.
 
             uint256 hashedUint256 = GetUint256FromMessage(message);
-            ECDSASignature loadedSignature = new ECDSASignature(signature);
-            PubKey pubKey = ECKeyUtils.RecoverFromSignature(RecId, loadedSignature, hashedUint256, true);
+            PubKey pubKey = PubKey.RecoverCompact(hashedUint256, signature);
+
             return pubKey.GetAddress(this.network).ToString().ToAddress(this.network);
         }
 
-        public static ECDSASignature SignMessage(Key privateKey, byte[] message)
+        /// <summary>
+        /// Signs a message, returning an ECDSA signature.
+        /// </summary>
+        /// <param name="privateKey">The private key used to sign the message.</param>
+        /// <param name="message">The complete message to be signed.</param>
+        /// <returns>The ECDSA signature prepended with header information specifying the correct value of recId.</returns>
+        public static byte[] SignMessage(Key privateKey, byte[] message)
         {
             uint256 hashedUint256 = GetUint256FromMessage(message);
-            return privateKey.Sign(hashedUint256);
+
+            return privateKey.SignCompact(hashedUint256);
         }
     }
 }
