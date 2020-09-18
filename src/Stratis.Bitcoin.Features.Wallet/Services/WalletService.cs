@@ -634,6 +634,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         {
             return await Task.Run(() =>
             {
+                if (request.Recipients == null)
+                {
+                    request.Recipients = new List<RecipientModel>();
+                }
+
+                if (request.Recipients.Count == 0 && (request.OpReturnAmount == null || request.OpReturnAmount == Money.Zero))
+                    throw new FeatureException(HttpStatusCode.BadRequest, "No recipients.", "Either one or both of recipients and opReturnAmount must be specified.");
+
                 var recipients = request.Recipients.Select(recipientModel => new Recipient
                 {
                     ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
