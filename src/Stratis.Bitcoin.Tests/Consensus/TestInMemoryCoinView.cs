@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <inheritdoc />
-        public uint256 Rewind()
+        public uint256 Rewind(int targetHeight)
         {
             throw new NotImplementedException();
         }

@@ -57,8 +57,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// and restoring recently spent outputs as UTXOs.
         /// </para>
         /// </summary>
+        /// <param name="targetHeight">The target height.</param>
         /// <returns>Hash of the block header which is now the tip of the rewound coinview.</returns>
-        uint256 Rewind();
+        uint256 Rewind(int targetHeight);
 
         /// <summary>
         /// Gets the rewind data by block height.

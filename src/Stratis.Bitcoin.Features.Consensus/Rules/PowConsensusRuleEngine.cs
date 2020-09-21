@@ -51,11 +51,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task<RewindState> RewindAsync()
+        public override Task<RewindState> RewindAsync(int targetHeight)
         {
             var state = new RewindState()
             {
-                BlockHash = this.UtxoSet.Rewind()
+                BlockHash = this.UtxoSet.Rewind(targetHeight)
             };
 
             return Task.FromResult(state);
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.logger.LogInformation("Rewinding coin db from {0}", consensusTipHash);
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = breezeCoinView.Rewind();
+                consensusTipHash = breezeCoinView.Rewind(chainTip.Height);
             }
         }
 

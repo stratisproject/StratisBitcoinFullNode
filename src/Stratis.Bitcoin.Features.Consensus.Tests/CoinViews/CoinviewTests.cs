@@ -120,9 +120,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             await this.ValidateCoinviewIntegrityAsync(outPoints);
 
-            for (int i = 0; i < addChangesTimes; i++)
+            var random = new Random();
+
+            while (currentHeight > 1)
             {
-                this.cachedCoinView.Rewind();
+                currentHeight = random.Next(currentHeight - 1) + 1;
+
+                this.cachedCoinView.Rewind(currentHeight);
 
                 uint256 currentTip = this.cachedCoinView.GetTipHash();
 

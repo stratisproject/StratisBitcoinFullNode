@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             throw new NotImplementedException();
         }
 
-        public override Task<RewindState> RewindAsync()
+        public override Task<RewindState> RewindAsync(int targetHeight)
         {
             throw new NotImplementedException();
         }
