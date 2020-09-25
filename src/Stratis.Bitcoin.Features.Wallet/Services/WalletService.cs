@@ -1071,7 +1071,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 try
                 {
                     var voteTransactions = new List<(string Address, OutPoint UTXO, bool Vote)>();
-                    var voteTransactions2 = new List<(string Address, OutPoint UTXO, bool Vote)>();
 
                     var accounts = this.walletManager.GetAccounts(request.WalletName);
                     var account = accounts.FirstOrDefault(a => a.Name.ToLowerInvariant() == request.AccountName);
