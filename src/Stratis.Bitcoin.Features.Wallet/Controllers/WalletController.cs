@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public async Task<IActionResult> GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.ExecuteAsAsync(new {Language = language, WordCount = wordCount},
+            return await this.ExecuteAsAsync(new { Language = language, WordCount = wordCount },
                 cancellationToken, (req, token) =>
                     // Generate the Mnemonic
-                    this.Json(new Mnemonic(language, (WordCount) wordCount).ToString()));
+                    this.Json(new Mnemonic(language, (WordCount)wordCount).ToString()));
         }
 
         /// <summary>
@@ -349,8 +349,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public async Task<IActionResult> ListWallets(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await this.ExecuteAsAsync((object) null, cancellationToken, (req, token) =>
-                this.Json(new WalletInfoModel(this.walletManager.GetWalletsNames())), false);
+            return await this.ExecuteAsAsync((object)null, cancellationToken, (req, token) =>
+               this.Json(new WalletInfoModel(this.walletManager.GetWalletsNames())), false);
         }
 
         /// <summary>
@@ -603,6 +603,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             return await this.Execute(request, cancellationToken,
                 async (req, token) => this.Json(await this.walletService.DistributeUtxos(req, token)));
+        }
+
+        /// <summary>
+        /// Builds a transaction with an op_return that includes a vote.
+        /// </summary>
+        /// <param name="request">An object containing the parameters used to build a the vote transaction.</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
+        [Route("vote")]
+        [HttpPost]
+        public async Task<IActionResult> Vote([FromBody] VoteRequest request, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await this.Execute(request, cancellationToken, async (req, token) => Json(await this.walletService.Vote(req, token)));
         }
 
         private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items,
