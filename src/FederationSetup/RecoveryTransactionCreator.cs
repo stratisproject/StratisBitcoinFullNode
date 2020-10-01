@@ -238,9 +238,9 @@ namespace FederationSetup
                     sigCount++;
                 }
 
-                Console.WriteLine($"{sigCount} of {multisigParams.SignatureCount} signatures collected for {network.Name}.");
+                Console.WriteLine($"{sigCount} of {oldMultisigParams.SignatureCount} signatures collected for {network.Name}.");
 
-                if (sigCount >= multisigParams.SignatureCount)
+                if (sigCount >= oldMultisigParams.SignatureCount)
                 {
                     if (builder.Verify(model.tx))
                     {
