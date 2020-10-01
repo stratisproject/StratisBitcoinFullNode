@@ -344,10 +344,10 @@ namespace FederationSetup
             return ConfigReader.GetOrDefault<string>("password", null);
         }
 
-        private static Script GetRedeemScriptFromArguments(bool toStrax)
+        private static Script GetRedeemScriptFromArguments(bool newFormat)
         {
             string[] pubkeys = GetFederatedPublicKeysFromArguments();
-            int quorum = toStrax ? 0 : GetQuorumFromArguments();
+            int quorum = newFormat ? 0 : GetQuorumFromArguments();
 
             try
             {
@@ -355,7 +355,7 @@ namespace FederationSetup
 
                 PubKey[] pks = pubkeys.Select(p => new PubKey(p)).ToArray();
 
-                if (toStrax)
+                if (newFormat)
                 {
                     // Determine the federation id.
                     byte[] federationId = pks[0].ToBytes();
@@ -401,12 +401,12 @@ namespace FederationSetup
             }
         }
 
-        private static void HandleSwitchGenerateFundsRecoveryTransaction(string[] args, bool toStrax = false)
+        private static void HandleSwitchGenerateFundsRecoveryTransaction(string[] args, bool newFormat = false)
         {
             ConfigReader = new TextFileConfiguration(args);
 
             // datadir = Directory of old federation.
-            if (toStrax)
+            if (newFormat)
             {
                 ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "password", "txtime");
             }
@@ -418,7 +418,7 @@ namespace FederationSetup
             PayToMultiSigTemplateParameters para = new PayToMultiSigTemplateParameters()
             {
                 PubKeys = GetFederatedPublicKeysFromArguments().Select(p => new PubKey(p)).ToArray(),
-                SignatureCount = toStrax ? 0 : GetQuorumFromArguments()
+                SignatureCount = newFormat ? 0 : GetQuorumFromArguments()
             };
 
             Script newRedeemScript = GetRedeemScriptFromArguments(true);
@@ -432,11 +432,11 @@ namespace FederationSetup
             DateTime txTime = GetTransactionTimeFromArguments();
 
             Console.WriteLine($"Creating funds recovery transaction for {sideChain.Name}.");
-            FundsRecoveryTransactionModel sideChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, para, password, txTime, toStrax);
+            FundsRecoveryTransactionModel sideChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, para, password, txTime, newFormat);
             sideChainInfo.DisplayInfo();
 
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
-            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, para, password, txTime, toStrax, true);
+            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, para, password, txTime, newFormat, true);
             mainChainInfo.DisplayInfo();
         }
     }
