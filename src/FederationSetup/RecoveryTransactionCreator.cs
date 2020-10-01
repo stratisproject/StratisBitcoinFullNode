@@ -47,7 +47,7 @@ namespace FederationSetup
             Console.WriteLine($"New {this.Network} P2SH: " + this.newMultisigAddress.ScriptPubKey);
             Console.WriteLine($"New {this.Network} multisig address: " + this.newMultisigAddress);
 
-            if (tx != null)
+            if (this.tx != null)
             {
                 Console.WriteLine($"The transaction has been written to the data directory.");
                 Console.WriteLine($"Amount of moving funds: {this.tx.Outputs.Sum(o => o.Value.ToDecimal(MoneyUnit.BTC))}.");
@@ -75,14 +75,16 @@ namespace FederationSetup
         /// <param name="network">The network that we are creating the recovery transaction for.</param>
         /// <param name="counterChainNetwork">The counterchain network.</param>
         /// <param name="dataDirPath">The root folder containing the old federation.</param>
-        /// <param name="redeemScript">The new redeem script.</param>
+        /// <param name="multisigParams">Parameters related to the new redeem script.</param>
         /// <param name="password">The password required to generate transactions using the federation wallet.</param>
         /// <param name="txTime">Any deposits beyond this UTC date will be ignored when selecting coin inputs.</param>
+        /// <param name="newFormat">Set to <c>true</c> to send the funds to a P2SH that is based on the new redeem script format.</param>
+        /// <param name="burn">Set to true to sent the funds to an OP_RETURN containing the target multisig address.</param>
         /// <returns>A funds recovery transaction that moves funds to the new redeem script.</returns>
         public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, 
-            PayToMultiSigTemplateParameters multisigParams, string password, DateTime txTime, bool toStrax = false, bool burn = false)
+            PayToMultiSigTemplateParameters multisigParams, string password, DateTime txTime, bool newFormat = false, bool burn = false)
         {
-            Script redeemScript = NewRedeemScript(multisigParams, toStrax);
+            Script redeemScript = NewRedeemScript(multisigParams, newFormat);
 
             var model = new FundsRecoveryTransactionModel() { Network = network, IsSideChain = isSideChain, RedeemScript = redeemScript };
 
