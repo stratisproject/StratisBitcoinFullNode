@@ -79,7 +79,7 @@ namespace FederationSetup
         /// <param name="password">The password required to generate transactions using the federation wallet.</param>
         /// <param name="txTime">Any deposits beyond this UTC date will be ignored when selecting coin inputs.</param>
         /// <param name="newFormat">Set to <c>true</c> to send the funds to a P2SH that is based on the new redeem script format.</param>
-        /// <param name="burn">Set to true to sent the funds to an OP_RETURN containing the target multisig address.</param>
+        /// <param name="burn">Set to <c>true</c> to sent the funds to an OP_RETURN containing the target multisig address.</param>
         /// <returns>A funds recovery transaction that moves funds to the new redeem script.</returns>
         public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, 
             PayToMultiSigTemplateParameters multisigParams, string password, DateTime txTime, bool newFormat = false, bool burn = false)
