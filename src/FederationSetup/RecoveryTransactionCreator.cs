@@ -47,8 +47,11 @@ namespace FederationSetup
             Console.WriteLine($"New {this.Network} P2SH: " + this.newMultisigAddress.ScriptPubKey);
             Console.WriteLine($"New {this.Network} multisig address: " + this.newMultisigAddress);
 
-            Console.WriteLine($"The transaction has been written to the data directory.");
-            Console.WriteLine($"Amount of moving funds: {this.tx.Outputs.Sum(o => o.Value.ToDecimal(MoneyUnit.BTC))}.");
+            if (tx != null)
+            {
+                Console.WriteLine($"The transaction has been written to the data directory.");
+                Console.WriteLine($"Amount of moving funds: {this.tx.Outputs.Sum(o => o.Value.ToDecimal(MoneyUnit.BTC))}.");
+            }
         }
 
         public string Signature()
@@ -76,17 +79,21 @@ namespace FederationSetup
         /// <param name="password">The password required to generate transactions using the federation wallet.</param>
         /// <param name="txTime">Any deposits beyond this UTC date will be ignored when selecting coin inputs.</param>
         /// <returns>A funds recovery transaction that moves funds to the new redeem script.</returns>
-        public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, Script redeemScript, string password, DateTime txTime, bool burn = false)
+        public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, 
+            PayToMultiSigTemplateParameters multisigParams, string password, DateTime txTime, bool toStrax = false, bool burn = false)
         {
+            Script redeemScript = NewRedeemScript(multisigParams, toStrax);
+
             var model = new FundsRecoveryTransactionModel() { Network = network, IsSideChain = isSideChain, RedeemScript = redeemScript };
 
-            // Get the old redeem script from the wallet file.
-            PayToMultiSigTemplateParameters multisigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript);
             string theChain = isSideChain ? "sidechain" : "mainchain";
-            var nodeSettings = new NodeSettings(network, args: new string[] { $"datadir={dataDirPath}", $"redeemscript={redeemScript}", $"-{theChain}" });
+            var nodeSettings = new NodeSettings(network, args: new string[] { $"datadir={dataDirPath}", $"-{theChain}" });
+
+            // Get the old redeem script from the wallet file.
             var walletFileStorage = new FileStorage<FederationWallet>(nodeSettings.DataFolder.WalletPath);
             FederationWallet wallet = walletFileStorage.LoadByFileName("multisig_wallet.json");
             Script oldRedeemScript = wallet.MultiSigAddress.RedeemScript;
+
             PayToMultiSigTemplateParameters oldMultisigParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(oldRedeemScript);
 
             model.oldMultisigAddress = oldRedeemScript.Hash.GetAddress(network);
@@ -97,6 +104,7 @@ namespace FederationSetup
             extraArgs[FederatedPegSettings.FederationIpsParam] = oldMultisigParams.PubKeys.Select(p => "0.0.0.0".ToIPEndPoint(nodeSettings.Network.DefaultPort)).Join(",");
             var privateKey = Key.Parse(wallet.EncryptedSeed, password, network);
             extraArgs[FederatedPegSettings.PublicKeyParam] = privateKey.PubKey.ToHex(network);
+            extraArgs[FederatedPegSettings.RedeemScriptParam] = oldRedeemScript.ToString();
             (new TextFileConfiguration(extraArgs.Select(i => $"{i.Key}={i.Value}").ToArray())).MergeInto(nodeSettings.ConfigReader);
 
             model.PubKey = privateKey.PubKey;
@@ -132,112 +140,116 @@ namespace FederationSetup
             // Exclude coins (deposits) beyond the transaction (switch-over) time!
             coinRefs = coinRefs.Where(r => r.Transaction.CreationTime < txTime).ToList();
             if (!coinRefs.Any())
-                throw new ArgumentException($"There are no coins to recover from the federation wallet on {network}.");
-
-            Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coinRefs.Count());
-
-            var builder = new TransactionBuilder(network);
-            builder.AddKeys(privateKey);
-            builder.AddCoins(coinRefs.Select(c => ScriptCoin.Create(network, c.Transaction.Id, (uint)c.Transaction.Index, c.Transaction.Amount, c.Transaction.ScriptPubKey, oldRedeemScript)));
-
-            Money amount = coinRefs.Sum(r => r.Transaction.Amount) - fee;
-
-            if (!burn)
             {
-                // Split the coins into multiple outputs.
-                const int numberOfSplits = 10;
-                Money splitAmount = new Money((long)amount / numberOfSplits);
-                Script recipient = redeemScript.PaymentScript;
-
-                for (int i = 0; i < numberOfSplits; i++)
-                {
-                    Money sendAmount = (i != (numberOfSplits - 1)) ? splitAmount : amount - splitAmount * (numberOfSplits - 1);
-
-                    builder.Send(recipient, sendAmount);
-                }
+                Console.WriteLine($"There are no coins to recover from the federation wallet on {network}.");
             }
             else
             {
-                // We don't have the STRAX network classes but we need a STRAX address.
-                // These Base58 prefixes will aid in synthesizing the required format.
-                const byte straxMainScriptAddressPrefix = 140;
-                const byte straxTestScriptAddressPrefix = 127;
-                const byte straxRegTestScriptAddressPrefix = 127;
+                Money fee = federatedPegSettings.GetWithdrawalTransactionFee(coinRefs.Count());
 
-                // We only have the prefixes for the Stratis -> Strax path.
-                Guard.Assert(network.Name.StartsWith("Stratis"));
+                var builder = new TransactionBuilder(network);
+                builder.AddKeys(privateKey);
+                builder.AddCoins(coinRefs.Select(c => ScriptCoin.Create(network, c.Transaction.Id, (uint)c.Transaction.Index, c.Transaction.Amount, c.Transaction.ScriptPubKey, oldRedeemScript)));
 
-                // Determine the required prefix determining on the type of network.
-                byte addressPrefix = straxMainScriptAddressPrefix;
-                if (network.IsRegTest())
-                    addressPrefix = straxRegTestScriptAddressPrefix;
-                else if (network.IsTest())
-                    addressPrefix = straxTestScriptAddressPrefix;
+                Money amount = coinRefs.Sum(r => r.Transaction.Amount) - fee;
 
-                // Synthesize the multisig address with a STRAX prefix.
-                byte[] temp = network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS];
-                network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { addressPrefix };
-                TxDestination txDestination = redeemScript.PaymentScript.GetDestination(network);
-                string address = txDestination.GetAddress(network).ToString();
-                network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = temp;
-
-                // Add it to the OP_RETURN.
-                byte[] bytes = Encoding.UTF8.GetBytes(address);
-                Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-                builder.Send(opReturnScript, amount);
-            }
-
-            builder.SetTimeStamp((uint)(new DateTimeOffset(txTime)).ToUnixTimeSeconds());
-            builder.CoinSelector = new DeterministicCoinSelector();
-            builder.SendFees(fee);
-
-            model.tx = builder.BuildTransaction(true);
-
-            File.WriteAllText(Path.Combine(dataDirPath, $"{network.Name}_{model.PubKey.ToHex(network).Substring(0, 8)}.hex"), model.tx.ToHex(network));
-
-            // Merge our transaction with other transactions which have been placed in the data folder.
-            Transaction oldTransaction = model.tx;
-            string namePattern = $"{network.Name}_*.hex";
-            int sigCount = 1;
-            foreach (string fileName in Directory.EnumerateFiles(dataDirPath, namePattern))
-            {
-                Transaction incomingPartialTransaction = network.CreateTransaction(File.ReadAllText(fileName));
-
-                // Don't merge with self.
-                if (incomingPartialTransaction.GetHash() == oldTransaction.GetHash())
-                    continue;
-
-                // Transaction times must match.
-                if (incomingPartialTransaction is PosTransaction && incomingPartialTransaction.Time != model.tx.Time)
+                if (!burn)
                 {
-                    Console.WriteLine($"The locally generated transaction is time-stamped differently from the transaction contained in '{fileName}'. The imported signature can't be used.");
-                    continue;
-                }
+                    // Split the coins into multiple outputs.
+                    const int numberOfSplits = 10;
+                    Money splitAmount = new Money((long)amount / numberOfSplits);
+                    Script recipient = redeemScript.PaymentScript;
 
-                // Combine signatures.
-                Transaction newTransaction = SigningUtils.CheckTemplateAndCombineSignatures(builder, model.tx, new[] { incomingPartialTransaction });
+                    for (int i = 0; i < numberOfSplits; i++)
+                    {
+                        Money sendAmount = (i != (numberOfSplits - 1)) ? splitAmount : amount - splitAmount * (numberOfSplits - 1);
 
-                if (oldTransaction.GetHash() == newTransaction.GetHash())
-                {
-                    Console.WriteLine($"The locally generated transaction is not similar to '{fileName}'. The imported signature can't be used.");
-                    continue;
-                }
-
-                model.tx = newTransaction;
-                sigCount++;
-            }
-
-            Console.WriteLine($"{sigCount} of {multisigParams.SignatureCount} signatures collected for {network.Name}.");
-
-            if (sigCount >= multisigParams.SignatureCount)
-            {
-                if (builder.Verify(model.tx))
-                {
-                    // Write the transaction to file.
-                    File.WriteAllText(Path.Combine(dataDirPath, $"{(txTime > DateTime.Now ? "Preliminary " : "")}{network.Name}Recovery.txt"), model.tx.ToHex(network));
+                        builder.Send(recipient, sendAmount);
+                    }
                 }
                 else
-                    Console.WriteLine("Could not verify the transaction.");
+                {
+                    // We don't have the STRAX network classes but we need a STRAX address.
+                    // These Base58 prefixes will aid in synthesizing the required format.
+                    const byte straxMainScriptAddressPrefix = 140;
+                    const byte straxTestScriptAddressPrefix = 127;
+                    const byte straxRegTestScriptAddressPrefix = 127;
+
+                    // We only have the prefixes for the Stratis -> Strax path.
+                    Guard.Assert(network.Name.StartsWith("Stratis"));
+
+                    // Determine the required prefix determining on the type of network.
+                    byte addressPrefix = straxMainScriptAddressPrefix;
+                    if (network.IsRegTest())
+                        addressPrefix = straxRegTestScriptAddressPrefix;
+                    else if (network.IsTest())
+                        addressPrefix = straxTestScriptAddressPrefix;
+
+                    // Synthesize the multisig address with a STRAX prefix.
+                    byte[] temp = network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS];
+                    network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { addressPrefix };
+                    TxDestination txDestination = redeemScript.PaymentScript.GetDestination(network);
+                    model.newMultisigAddress = txDestination.GetAddress(network);
+                    network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = temp;
+
+                    // Add it to the OP_RETURN.
+                    byte[] bytes = Encoding.UTF8.GetBytes(model.newMultisigAddress.ToString());
+                    Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+                    builder.Send(opReturnScript, amount);
+                }
+
+                builder.SetTimeStamp((uint)(new DateTimeOffset(txTime)).ToUnixTimeSeconds());
+                builder.CoinSelector = new DeterministicCoinSelector();
+                builder.SendFees(fee);
+
+                model.tx = builder.BuildTransaction(true);
+
+                File.WriteAllText(Path.Combine(dataDirPath, $"{network.Name}_{model.PubKey.ToHex(network).Substring(0, 8)}.hex"), model.tx.ToHex(network));
+
+                // Merge our transaction with other transactions which have been placed in the data folder.
+                Transaction oldTransaction = model.tx;
+                string namePattern = $"{network.Name}_*.hex";
+                int sigCount = 1;
+                foreach (string fileName in Directory.EnumerateFiles(dataDirPath, namePattern))
+                {
+                    Transaction incomingPartialTransaction = network.CreateTransaction(File.ReadAllText(fileName));
+
+                    // Don't merge with self.
+                    if (incomingPartialTransaction.GetHash() == oldTransaction.GetHash())
+                        continue;
+
+                    // Transaction times must match.
+                    if (incomingPartialTransaction is PosTransaction && incomingPartialTransaction.Time != model.tx.Time)
+                    {
+                        Console.WriteLine($"The locally generated transaction is time-stamped differently from the transaction contained in '{fileName}'. The imported signature can't be used.");
+                        continue;
+                    }
+
+                    // Combine signatures.
+                    Transaction newTransaction = SigningUtils.CheckTemplateAndCombineSignatures(builder, model.tx, new[] { incomingPartialTransaction });
+
+                    if (oldTransaction.GetHash() == newTransaction.GetHash())
+                    {
+                        Console.WriteLine($"The locally generated transaction is not similar to '{fileName}'. The imported signature can't be used.");
+                        continue;
+                    }
+
+                    model.tx = newTransaction;
+                    sigCount++;
+                }
+
+                Console.WriteLine($"{sigCount} of {multisigParams.SignatureCount} signatures collected for {network.Name}.");
+
+                if (sigCount >= multisigParams.SignatureCount)
+                {
+                    if (builder.Verify(model.tx))
+                    {
+                        // Write the transaction to file.
+                        File.WriteAllText(Path.Combine(dataDirPath, $"{(txTime > DateTime.Now ? "Preliminary " : "")}{network.Name}Recovery.txt"), model.tx.ToHex(network));
+                    }
+                    else
+                        Console.WriteLine("Could not verify the transaction.");
+                }
             }
 
             // Stop the wallet manager to release the database folder.
@@ -245,6 +257,34 @@ namespace FederationSetup
             walletManager.Stop();
 
             return model;
+        }
+
+        private Script NewRedeemScript(PayToMultiSigTemplateParameters para, bool toStrax)
+        {
+            Script script;
+
+            if (toStrax)
+            {
+                // Determine the federation id.
+                byte[] federationId = para.PubKeys[0].ToBytes();
+                for (int i = 1; i < para.PubKeys.Length; i++)
+                {
+                    byte[] nextFederationId = para.PubKeys[i].ToBytes();
+
+                    for (int j = 0; j < federationId.Length; j++)
+                    {
+                        federationId[j] ^= nextFederationId[j];
+                    }
+                }
+
+                script = new Script(Op.GetPushOp(federationId), OpcodeType.OP_NOP9 /* OP_FEDERATION */, OpcodeType.OP_CHECKMULTISIG);
+            }
+            else
+            {
+                script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(para.SignatureCount, para.PubKeys);
+            }
+
+            return script;
         }
     }
 }

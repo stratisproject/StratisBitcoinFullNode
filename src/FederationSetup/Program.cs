@@ -415,7 +415,13 @@ namespace FederationSetup
                 ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password", "txtime");
             }
 
-            Script newRedeemScript = GetRedeemScriptFromArguments(toStrax);
+            PayToMultiSigTemplateParameters para = new PayToMultiSigTemplateParameters()
+            {
+                PubKeys = GetFederatedPublicKeysFromArguments().Select(p => new PubKey(p)).ToArray(),
+                SignatureCount = toStrax ? 0 : GetQuorumFromArguments()
+            };
+
+            Script newRedeemScript = GetRedeemScriptFromArguments(true);
 
             string password = GetPasswordFromArguments();
 
@@ -426,11 +432,11 @@ namespace FederationSetup
             DateTime txTime = GetTransactionTimeFromArguments();
 
             Console.WriteLine($"Creating funds recovery transaction for {sideChain.Name}.");
-            FundsRecoveryTransactionModel sideChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, newRedeemScript, password, txTime);
+            FundsRecoveryTransactionModel sideChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(true, sideChain, mainChain, dataDirPath, para, password, txTime, toStrax);
             sideChainInfo.DisplayInfo();
 
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
-            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password, txTime, toStrax);
+            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, para, password, txTime, toStrax, true);
             mainChainInfo.DisplayInfo();
         }
     }
