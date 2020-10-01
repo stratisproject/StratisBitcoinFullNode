@@ -344,46 +344,6 @@ namespace FederationSetup
             return ConfigReader.GetOrDefault<string>("password", null);
         }
 
-        private static Script GetRedeemScriptFromArguments(bool newFormat)
-        {
-            string[] pubkeys = GetFederatedPublicKeysFromArguments();
-            int quorum = newFormat ? 0 : GetQuorumFromArguments();
-
-            try
-            {
-                Script script;
-
-                PubKey[] pks = pubkeys.Select(p => new PubKey(p)).ToArray();
-
-                if (newFormat)
-                {
-                    // Determine the federation id.
-                    byte[] federationId = pks[0].ToBytes();
-                    for (int i = 1; i < pks.Length; i++)
-                    {
-                        byte[] nextFederationId = pks[i].ToBytes();
-
-                        for (int j = 0; j < federationId.Length; j++)
-                        {
-                            federationId[j] ^= nextFederationId[j];
-                        }
-                    }
-
-                    script = new Script(Op.GetPushOp(federationId), OpcodeType.OP_NOP9 /* OP_FEDERATION */, OpcodeType.OP_CHECKMULTISIG);
-                }
-                else
-                {
-                    script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pks);
-                }
-
-                return script;
-            }
-            catch (Exception)
-            {
-                throw new ArgumentException($"Please specify a valid comma-separated list of public keys.");
-            }
-        }
-
         private static DateTime GetTransactionTimeFromArguments()
         {
             string strTime = ConfigReader.GetOrDefault<string>("txtime", null);
@@ -420,8 +380,6 @@ namespace FederationSetup
                 PubKeys = GetFederatedPublicKeysFromArguments().Select(p => new PubKey(p)).ToArray(),
                 SignatureCount = newFormat ? 0 : GetQuorumFromArguments()
             };
-
-            Script newRedeemScript = GetRedeemScriptFromArguments(true);
 
             string password = GetPasswordFromArguments();
 

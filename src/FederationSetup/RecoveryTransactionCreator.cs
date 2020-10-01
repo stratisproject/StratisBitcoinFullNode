@@ -259,11 +259,11 @@ namespace FederationSetup
             return model;
         }
 
-        private Script NewRedeemScript(PayToMultiSigTemplateParameters para, bool toStrax)
+        private Script NewRedeemScript(PayToMultiSigTemplateParameters para, bool newFormat)
         {
             Script script;
 
-            if (toStrax)
+            if (newFormat)
             {
                 // Determine the federation id.
                 byte[] federationId = para.PubKeys[0].ToBytes();
