@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.EntityFrameworkCore.Internal;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -75,7 +76,7 @@ namespace FederationSetup
         /// <param name="password">The password required to generate transactions using the federation wallet.</param>
         /// <param name="txTime">Any deposits beyond this UTC date will be ignored when selecting coin inputs.</param>
         /// <returns>A funds recovery transaction that moves funds to the new redeem script.</returns>
-        public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, Script redeemScript, string password, DateTime txTime)
+        public FundsRecoveryTransactionModel CreateFundsRecoveryTransaction(bool isSideChain, Network network, Network counterChainNetwork, string dataDirPath, Script redeemScript, string password, DateTime txTime, bool burn = false)
         {
             var model = new FundsRecoveryTransactionModel() { Network = network, IsSideChain = isSideChain, RedeemScript = redeemScript };
 
@@ -139,16 +140,51 @@ namespace FederationSetup
             builder.AddKeys(privateKey);
             builder.AddCoins(coinRefs.Select(c => ScriptCoin.Create(network, c.Transaction.Id, (uint)c.Transaction.Index, c.Transaction.Amount, c.Transaction.ScriptPubKey, oldRedeemScript)));
 
-            // Split the coins into multiple outputs.
             Money amount = coinRefs.Sum(r => r.Transaction.Amount) - fee;
-            const int numberOfSplits = 10;
-            Money splitAmount = new Money((long)amount / numberOfSplits);
-            var recipients = new List<Stratis.Features.FederatedPeg.Wallet.Recipient>();
-            for (int i = 0; i < numberOfSplits; i++)
-            {
-                Money sendAmount = (i != (numberOfSplits - 1)) ? splitAmount : amount - splitAmount * (numberOfSplits - 1);
 
-                builder.Send(redeemScript.PaymentScript, sendAmount);
+            if (!burn)
+            {
+                // Split the coins into multiple outputs.
+                const int numberOfSplits = 10;
+                Money splitAmount = new Money((long)amount / numberOfSplits);
+                Script recipient = redeemScript.PaymentScript;
+
+                for (int i = 0; i < numberOfSplits; i++)
+                {
+                    Money sendAmount = (i != (numberOfSplits - 1)) ? splitAmount : amount - splitAmount * (numberOfSplits - 1);
+
+                    builder.Send(recipient, sendAmount);
+                }
+            }
+            else
+            {
+                // We don't have the STRAX network classes but we need a STRAX address.
+                // These Base58 prefixes will aid in synthesizing the required format.
+                const byte straxMainScriptAddressPrefix = 140;
+                const byte straxTestScriptAddressPrefix = 127;
+                const byte straxRegTestScriptAddressPrefix = 127;
+
+                // We only have the prefixes for the Stratis -> Strax path.
+                Guard.Assert(network.Name.StartsWith("Stratis"));
+
+                // Determine the required prefix determining on the type of network.
+                byte addressPrefix = straxMainScriptAddressPrefix;
+                if (network.IsRegTest())
+                    addressPrefix = straxRegTestScriptAddressPrefix;
+                else if (network.IsTest())
+                    addressPrefix = straxTestScriptAddressPrefix;
+
+                // Synthesize the multisig address with a STRAX prefix.
+                byte[] temp = network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS];
+                network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { addressPrefix };
+                TxDestination txDestination = redeemScript.PaymentScript.GetDestination(network);
+                string address = txDestination.GetAddress(network).ToString();
+                network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = temp;
+
+                // Add it to the OP_RETURN.
+                byte[] bytes = Encoding.UTF8.GetBytes(address);
+                Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
+                builder.Send(opReturnScript, amount);
             }
 
             builder.SetTimeStamp((uint)(new DateTimeOffset(txTime)).ToUnixTimeSeconds());

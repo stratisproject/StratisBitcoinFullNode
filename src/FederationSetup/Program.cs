@@ -24,6 +24,7 @@ namespace FederationSetup
         private const string SwitchGenerateFedPublicPrivateKeys = "p";
         private const string SwitchGenerateMultiSigAddresses = "m";
         private const string SwitchGenerateRecoveryTransaction = "r";
+        private const string SwitchStraxRecoveryTransaction = "x";
         private const string SwitchMenu = "menu";
         private const string SwitchExit = "exit";
 
@@ -106,6 +107,11 @@ namespace FederationSetup
                 case SwitchGenerateRecoveryTransaction:
                 {
                     HandleSwitchGenerateFundsRecoveryTransaction(args);
+                    break;
+                }
+                case SwitchStraxRecoveryTransaction:
+                {
+                    HandleSwitchGenerateFundsRecoveryTransaction(args, true);
                     break;
                 }
             }
@@ -338,14 +344,37 @@ namespace FederationSetup
             return ConfigReader.GetOrDefault<string>("password", null);
         }
 
-        private static Script GetRedeemScriptFromArguments()
+        private static Script GetRedeemScriptFromArguments(bool toStrax)
         {
             string[] pubkeys = GetFederatedPublicKeysFromArguments();
-            int quorum = GetQuorumFromArguments();
+            int quorum = toStrax ? 0 : GetQuorumFromArguments();
 
             try
             {
-                Script script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pubkeys.Select(p => new PubKey(p)).ToArray());
+                Script script;
+
+                PubKey[] pks = pubkeys.Select(p => new PubKey(p)).ToArray();
+
+                if (toStrax)
+                {
+                    // Determine the federation id.
+                    byte[] federationId = pks[0].ToBytes();
+                    for (int i = 1; i < pks.Length; i++)
+                    {
+                        byte[] nextFederationId = pks[i].ToBytes();
+
+                        for (int j = 0; j < federationId.Length; j++)
+                        {
+                            federationId[j] ^= nextFederationId[j];
+                        }
+                    }
+
+                    script = new Script(Op.GetPushOp(federationId), OpcodeType.OP_NOP9 /* OP_FEDERATION */, OpcodeType.OP_CHECKMULTISIG);
+                }
+                else
+                {
+                    script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pks);
+                }
 
                 return script;
             }
@@ -372,14 +401,22 @@ namespace FederationSetup
             }
         }
 
-        private static void HandleSwitchGenerateFundsRecoveryTransaction(string[] args)
+        private static void HandleSwitchGenerateFundsRecoveryTransaction(string[] args, bool toStrax = false)
         {
             ConfigReader = new TextFileConfiguration(args);
 
             // datadir = Directory of old federation.
-            ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password", "txtime");
+            if (toStrax)
+            {
+                ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "password", "txtime");
+            }
+            else
+            {
+                ConfirmArguments(ConfigReader, "network", "datadir", "fedpubkeys", "quorum", "password", "txtime");
+            }
 
-            Script newRedeemScript = GetRedeemScriptFromArguments();
+            Script newRedeemScript = GetRedeemScriptFromArguments(toStrax);
+
             string password = GetPasswordFromArguments();
 
             string dataDirPath = GetDataDirFromArguments();
@@ -393,7 +430,7 @@ namespace FederationSetup
             sideChainInfo.DisplayInfo();
 
             Console.WriteLine($"Creating funds recovery transaction for {mainChain.Name}.");
-            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password, txTime);
+            FundsRecoveryTransactionModel mainChainInfo = (new RecoveryTransactionCreator()).CreateFundsRecoveryTransaction(false, mainChain, sideChain, dataDirPath, newRedeemScript, password, txTime, toStrax);
             mainChainInfo.DisplayInfo();
         }
     }
