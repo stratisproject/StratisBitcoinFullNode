@@ -163,8 +163,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return (Money.Zero, Money.Zero);
             }
 
-            // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
-            var recipients = new List<Recipient>();
             Money fee;
 
             try
@@ -176,26 +174,41 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    Recipients = recipients,
                     AccountReference = accountReference,
                 };
 
-                this.AddRecipients(context);
 
-                if (!string.IsNullOrEmpty(opReturnData))
+                if (estimateFullBalanceBurn)
                 {
+                    if (string.IsNullOrEmpty(opReturnData))
+                        throw new WalletException("A burn address is required.");
+
                     context.OpReturnData = opReturnData;
-                    if (estimateFullBalanceBurn)
-                        context.OpReturnAmount = Money.Satoshis(maxSpendableAmount).ToUnit(MoneyUnit.BTC).ToString();
-                    else
-                    {
-                        if (!string.IsNullOrEmpty(opReturnAmount))
-                            context.OpReturnAmount = Money.Parse(opReturnAmount);
-                    }
+                    context.OpReturnAmount = Money.Satoshis(maxSpendableAmount).ToUnit(MoneyUnit.BTC).ToString();
+
+                    // If we are estimating a full balance burn, we wont have any recipients.
+                    context.Recipients = new List<Recipient>();
 
                     this.AddOpReturnOutput(context);
                 }
+                else
+                {
+                    if (!string.IsNullOrEmpty(opReturnData))
+                    {
+                        context.OpReturnData = opReturnData;
 
+                        if (!string.IsNullOrEmpty(opReturnAmount))
+                            context.OpReturnAmount = Money.Parse(opReturnAmount);
+
+                        this.AddOpReturnOutput(context);
+                    }
+
+                    // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
+                    var recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList();
+                    context.Recipients = recipients;
+                }
+
+                this.AddRecipients(context);
                 this.AddCoins(context);
                 this.FindChangeAddress(context);
                 this.AddFee(context);
