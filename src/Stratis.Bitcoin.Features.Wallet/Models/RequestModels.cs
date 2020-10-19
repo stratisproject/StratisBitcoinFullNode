@@ -294,6 +294,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// as spendable.
         /// </summary> 
         public bool AllowUnconfirmed { get; set; }
+
+        /// <summary>
+        /// If we intend to include OP_RETURN data in the max balance calculation, it needs to be specified.
+        /// </summary> 
+        public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// If we intend to include an OP_RETURN amount in the max balance calculation, it needs to be specified.
+        /// </summary> 
+        public string OpReturnAmount { get; set; }
+
+        /// <summary>
+        /// Set to <c>true</c> if we wish to estimate the max balance when burning.
+        /// </summary>
+        public bool BurnFullBalance { get; set; }
     }
 
     /// <summary>

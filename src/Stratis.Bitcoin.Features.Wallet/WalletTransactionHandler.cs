@@ -70,6 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (context.Sign)
                 {
                     ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
+
                     // TODO: Improve this as we already have secrets when running a retry iteration.
                     this.AddSecrets(context, coinsSpent);
                     context.TransactionBuilder.SignTransactionInPlace(transaction);
@@ -141,7 +142,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
+        public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(
+            WalletAccountReference accountReference,
+            FeeType feeType,
+            bool allowUnconfirmed,
+            string opReturnData = null,
+            string opReturnAmount = null,
+            bool estimateFullBalanceBurn = false)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.NotEmpty(accountReference.WalletName, nameof(accountReference.WalletName));
@@ -157,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
-            List<Recipient> recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList();
+            var recipients = new List<Recipient>();
             Money fee;
 
             try
@@ -170,11 +177,27 @@ namespace Stratis.Bitcoin.Features.Wallet
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
                     Recipients = recipients,
-                    AccountReference = accountReference
+                    AccountReference = accountReference,
                 };
 
                 this.AddRecipients(context);
+
+                if (!string.IsNullOrEmpty(opReturnData))
+                {
+                    context.OpReturnData = opReturnData;
+                    if (estimateFullBalanceBurn)
+                        context.OpReturnAmount = Money.Satoshis(maxSpendableAmount).ToUnit(MoneyUnit.BTC).ToString();
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(opReturnAmount))
+                            context.OpReturnAmount = Money.Parse(opReturnAmount);
+                    }
+
+                    this.AddOpReturnOutput(context);
+                }
+
                 this.AddCoins(context);
+                this.FindChangeAddress(context);
                 this.AddFee(context);
 
                 // Throw an exception if this code is reached, as building a transaction without any funds for the fee should always throw an exception.
@@ -243,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword);
 
             var signingKeys = new HashSet<ISecret>();
-            Dictionary<OutPoint,UnspentOutputReference> outpointLookup = context.UnspentOutputs.ToDictionary(o => o.ToOutPoint(), o => o);
+            Dictionary<OutPoint, UnspentOutputReference> outpointLookup = context.UnspentOutputs.ToDictionary(o => o.ToOutPoint(), o => o);
             IEnumerable<string> uniqueHdPaths = coinsSpent.Select(s => s.Outpoint).Select(o => outpointLookup[o].Address.HdPath).Distinct();
 
             foreach (string hdPath in uniqueHdPaths)

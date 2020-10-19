@@ -812,14 +812,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request,
-            CancellationToken cancellationToken)
+        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
                 (Money maximumSpendableAmount, Money fee) = this.walletTransactionHandler.GetMaximumSpendableAmount(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    FeeParser.Parse(request.FeeType), request.AllowUnconfirmed);
+                    FeeParser.Parse(request.FeeType),
+                    request.AllowUnconfirmed,
+                    request.OpReturnData,
+                    request.OpReturnAmount,
+                    request.BurnFullBalance);
 
                 return new MaxSpendableAmountModel
                 {
