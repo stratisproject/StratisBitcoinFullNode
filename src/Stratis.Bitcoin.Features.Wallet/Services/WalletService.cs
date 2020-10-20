@@ -1073,7 +1073,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             {
                 try
                 {
-                    var voteTransactions = new List<(string Address, OutPoint UTXO, bool Vote)>();
+                    var voteTransactions = new List<(string Address, OutPoint UTXO, string Vote)>();
 
                     var accounts = this.walletManager.GetAccounts(request.WalletName);
                     var account = accounts.FirstOrDefault(a => a.Name.ToLowerInvariant() == request.AccountName);
@@ -1087,7 +1087,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     var spendables = unspentOutputs.Where(s => s.Transaction.GetUnspentAmount(true) >= Money.Coins(1)).GroupBy(s => s.Address.Address).Select(g => g.First());
 
                     foreach (var spendable in spendables)
-                        voteTransactions.Add((spendable.Address.Address, spendable.ToOutPoint(), request.Vote.Value));
+                        voteTransactions.Add((spendable.Address.Address, spendable.ToOutPoint(), request.Vote));
 
                     if (!voteTransactions.Any())
                         throw new FeatureException(HttpStatusCode.OK, "Unable to cast your vote.", $"You do not have any addresses with a balance of 1 or more STRAT to be able to vote.");
@@ -1096,7 +1096,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     {
                         this.logger.LogInformation($"Casting vote {voteTransactions.IndexOf(vote)}/{voteTransactions.Count}");
 
-                        var voteCharacter = request.Vote.Value ? 1 : 0;
+                        var voteCharacter = request.Vote;
                         var transactionRequest = new BuildTransactionRequest()
                         {
                             AccountName = request.AccountName,
