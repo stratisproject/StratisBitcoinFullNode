@@ -40,6 +40,9 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
         public List<IPAddressBlock> AllowIp { get; set; }
 
+        /// <summary>You can adjust the RPC Content Type.</summary>
+        public string RPCContentType { get; set; }
+
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
@@ -71,6 +74,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.Server = config.GetOrDefault<bool>("server", false, this.logger);
             this.RPCPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.DefaultRPCPort, this.logger);
+            this.RPCContentType = config.GetOrDefault("rpccontenttype", "application/json; charset=utf-8", this.logger);
 
             if (this.Server)
             {
