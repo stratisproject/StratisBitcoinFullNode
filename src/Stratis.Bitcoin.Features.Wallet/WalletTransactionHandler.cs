@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         throw new WalletException("A burn address is required.");
 
                     context.OpReturnData = opReturnData;
-                    context.OpReturnAmount = Money.Satoshis(maxSpendableAmount).ToUnit(MoneyUnit.BTC).ToString();
+                    context.OpReturnAmount = Money.Satoshis(maxSpendableAmount);
 
                     // If we are estimating a full balance burn, we wont have any recipients.
                     context.Recipients = new List<Recipient>();
