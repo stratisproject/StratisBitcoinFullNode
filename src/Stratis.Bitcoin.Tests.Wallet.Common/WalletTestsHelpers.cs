@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
@@ -257,7 +256,8 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 ScriptPubKey = pubKey.Hash.ScriptPubKey
             };
 
-            res.Transactions.Add(new TransactionData() {
+            res.Transactions.Add(new TransactionData()
+            {
                 Id = new uint256((ulong)addrType),
                 Index = index,
                 ScriptPubKey = pubKey.Hash.ScriptPubKey

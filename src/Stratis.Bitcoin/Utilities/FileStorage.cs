@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Utilities
             string filePath = Path.Combine(this.FolderPath, fileName);
 
             if (!File.Exists(filePath))
-                throw new FileNotFoundException($"No wallet file found at {filePath}");
+                throw new FileNotFoundException($"No file found at {filePath}");
 
             return JsonConvert.DeserializeObject<T>(File.ReadAllText(filePath));
         }
