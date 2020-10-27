@@ -162,6 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var store = new Mock<IBlockStore>();
             var chainState = new Mock<IChainState>();
             var addressIndexer = new Mock<IAddressIndexer>();
+            var utxoIndexer = new Mock<IUtxoIndexer>();
 
             ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
 
@@ -170,7 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chainState.Setup(c => c.ConsensusTip)
                 .Returns(chainIndexer.GetHeader(2));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chainIndexer, addressIndexer.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chainIndexer, addressIndexer.Object, utxoIndexer.Object);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -184,6 +185,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var store = new Mock<IBlockStore>();
             var chainState = new Mock<IChainState>();
             var addressIndexer = new Mock<IAddressIndexer>();
+            var utxoIndexer = new Mock<IUtxoIndexer>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
@@ -192,7 +194,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chain.Setup(c => c.GetHeader(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
             chain.Setup(x => x.Tip).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object, addressIndexer.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object, addressIndexer.Object, utxoIndexer.Object);
 
             return (store, controller);
         }
