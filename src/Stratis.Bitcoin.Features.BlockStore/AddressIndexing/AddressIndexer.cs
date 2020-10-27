@@ -673,7 +673,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             if (block == null)
                 return null;
 
-            // Get the UTXO snapshot as of one block lower than the last balance change, so that we are definitely able to look up the inputs of each transaction in the next block.
+            // Get the UTXO snapshot as of one block lower than the last balance change, so that we are definitely able to look up the inputs of each transaction in the subsequent block.
             ReconstructedCoinviewContext utxos = this.utxoIndexer.GetCoinviewAtHeight(lastBalanceHeight - 1);
 
             Transaction foundTransaction = null;
