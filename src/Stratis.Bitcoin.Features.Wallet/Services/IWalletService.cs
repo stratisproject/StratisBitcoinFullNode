@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Models;
 
@@ -51,5 +52,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
         Task<DistributeUtxoModel> DistributeUtxos(DistributeUtxosRequest request,
             CancellationToken cancellationToken);
+
+        Task<IActionResult> Vote(VoteRequest request, CancellationToken cancellationToken);
     }
 }

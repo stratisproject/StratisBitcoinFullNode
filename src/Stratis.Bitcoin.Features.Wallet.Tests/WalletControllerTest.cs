@@ -1758,7 +1758,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = await controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 0",
-                Recipients = new List<RecipientModel>(),
+                Recipients = new List<RecipientModel>() { new RecipientModel() { Amount = "1.0", DestinationAddress = new Key().PubKey.Hash.GetAddress(this.Network).ToString() } },
                 WalletName = walletName,
                 ChangeAddress = usedReceiveAddress.Address
             });
@@ -1794,7 +1794,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = await controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 0",
-                Recipients = new List<RecipientModel>(),
+                Recipients = new List<RecipientModel>() { new RecipientModel() { Amount = "1.0", DestinationAddress = new Key().PubKey.Hash.GetAddress(this.Network).ToString() } },
                 WalletName = walletName,
                 ChangeAddress = addressNotInWallet.Address
             });
@@ -1832,7 +1832,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = await controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 0",
-                Recipients = new List<RecipientModel>(),
+                Recipients = new List<RecipientModel>() { new RecipientModel() { Amount = "1.0", DestinationAddress = new Key().PubKey.Hash.GetAddress(this.Network).ToString() } },
                 WalletName = walletName,
                 ChangeAddress = addressNotInWallet.Address
             });
@@ -2365,7 +2365,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletTransactionHandler = this.ConfigureMock<IWalletTransactionHandler>();
             mockWalletTransactionHandler
-                .Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true))
+                .Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true, null, null, false))
                 .Returns((new Money(1000000), new Money(100)));
 
             var controller = this.GetWalletController();
@@ -2391,7 +2391,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mockWalletTransactionHandler = this.ConfigureMock<IWalletTransactionHandler>();
             mockWalletTransactionHandler
-                .Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true))
+                .Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true, null, null, false))
                 .Throws(new Exception("failure"));
 
             var controller = this.GetWalletController();
@@ -2580,7 +2580,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 this.configuredMocks.Add(typeof(TMock), value);
             }
 
-            return (TMock) this.configuredMocks[typeof(TMock)];
+            return (TMock)this.configuredMocks[typeof(TMock)];
         }
 
         private Mock<TMock> ConfigureMock<TMock>(Action<Mock<TMock>> setup = null) where TMock : class
@@ -2599,11 +2599,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             if (this.configuredMocks.ContainsKey(typeof(TMock))
                 && this.configuredMocks[typeof(TMock)] as Mock<TMock> != null)
             {
-                return ((Mock<TMock>) this.configuredMocks[typeof(TMock)]).Object;
+                return ((Mock<TMock>)this.configuredMocks[typeof(TMock)]).Object;
             }
 
             return this.configuredMocks.ContainsKey(typeof(TMock))
-                ? (TMock) this.configuredMocks[typeof(TMock)]
+                ? (TMock)this.configuredMocks[typeof(TMock)]
                 : createIfNotExists
                     ? new Mock<TMock>().Object
                     : null;

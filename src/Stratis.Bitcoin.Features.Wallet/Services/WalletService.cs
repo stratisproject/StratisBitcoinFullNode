@@ -7,6 +7,7 @@ using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder.Feature;
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             this.chainIndexer = chainIndexer;
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
-            this.coinType = (CoinType) network.Consensus.CoinType;
+            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -434,7 +435,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     .GroupBy(s => s.Transaction.Amount)
                     .OrderByDescending(sg => sg.Count())
                     .Select(sg => new UtxoAmountModel
-                        {Amount = sg.Key.ToDecimal(MoneyUnit.BTC), Count = sg.Count()})
+                    { Amount = sg.Key.ToDecimal(MoneyUnit.BTC), Count = sg.Count() })
                     .ToList();
 
                 // This is number of UTXO originating from the same transaction
@@ -444,14 +445,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     .GroupBy(sg => sg.Count())
                     .OrderByDescending(sgg => sgg.Count())
                     .Select(utxo => new UtxoPerTransactionModel
-                        {WalletInputsPerTransaction = utxo.Key, Count = utxo.Count()})
+                    { WalletInputsPerTransaction = utxo.Key, Count = utxo.Count() })
                     .ToList();
 
                 model.UtxoPerBlock = spendableTransactions
                     .GroupBy(s => s.Transaction.BlockHeight)
                     .GroupBy(sg => sg.Count())
                     .OrderByDescending(sgg => sgg.Count())
-                    .Select(utxo => new UtxoPerBlockModel {WalletInputsPerBlock = utxo.Key, Count = utxo.Count()})
+                    .Select(utxo => new UtxoPerBlockModel { WalletInputsPerBlock = utxo.Key, Count = utxo.Count() })
                     .ToList();
 
                 return model;
@@ -471,7 +472,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
                 var recipients = new List<Recipient>(request.UtxosCount);
                 for (int i = 0; i < request.UtxosCount; i++)
-                    recipients.Add(new Recipient {ScriptPubKey = address.ScriptPubKey, Amount = singleUtxoAmount});
+                    recipients.Add(new Recipient { ScriptPubKey = address.ScriptPubKey, Amount = singleUtxoAmount });
 
                 var context = new TransactionBuildContext(this.network)
                 {
@@ -480,7 +481,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                     Shuffle = true,
                     WalletPassword = request.WalletPassword,
                     Recipients = recipients,
-                    Time = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
+                    Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
                 };
 
                 Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
@@ -634,6 +635,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
         {
             return await Task.Run(() =>
             {
+                if (request.Recipients == null)
+                {
+                    request.Recipients = new List<RecipientModel>();
+                }
+
+                if (request.Recipients.Count == 0 && (request.OpReturnAmount == null || request.OpReturnAmount == Money.Zero))
+                    throw new FeatureException(HttpStatusCode.BadRequest, "No recipients.", "Either one or both of recipients and opReturnAmount must be specified.");
+
                 var recipients = request.Recipients.Select(recipientModel => new Recipient
                 {
                     ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
@@ -803,14 +812,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
             }, cancellationToken);
         }
 
-        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request,
-            CancellationToken cancellationToken)
+        public async Task<MaxSpendableAmountModel> GetMaximumSpendableBalance(WalletMaximumBalanceRequest request, CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
                 (Money maximumSpendableAmount, Money fee) = this.walletTransactionHandler.GetMaximumSpendableAmount(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    FeeParser.Parse(request.FeeType), request.AllowUnconfirmed);
+                    FeeParser.Parse(request.FeeType),
+                    request.AllowUnconfirmed,
+                    request.OpReturnData,
+                    request.OpReturnAmount,
+                    request.BurnFullBalance);
 
                 return new MaxSpendableAmountModel
                 {
@@ -921,7 +933,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
 
                 for (int i = 0; i < request.UtxosCount; i++)
                 {
-                    recipients.Add(new Recipient {ScriptPubKey = addresses[addressIndex].ScriptPubKey});
+                    recipients.Add(new Recipient { ScriptPubKey = addresses[addressIndex].ScriptPubKey });
 
                     if (request.UseUniqueAddressPerUtxo)
                         addressIndex++;
@@ -961,8 +973,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                             Shuffle = false,
                             WalletPassword = request.WalletPassword,
                             Recipients = recipients,
-                            Time = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() +
-                                   (uint) request.TimestampDifferenceBetweenTransactions,
+                            Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() +
+                                   (uint)request.TimestampDifferenceBetweenTransactions,
                             AllowOtherInputs = false,
                             SelectedInputs = inputs,
                             FeeType = FeeType.Low
@@ -981,7 +993,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                         catch (NotEnoughFundsException ex)
                         {
                             // This remains the best approach for estimating transaction fees.
-                            transactionFee = (Money) ex.Missing;
+                            transactionFee = (Money)ex.Missing;
                         }
 
                         if (transactionFee < this.network.MinTxFee)
@@ -996,8 +1008,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                             Shuffle = false,
                             WalletPassword = request.WalletPassword,
                             Recipients = recipients,
-                            Time = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() +
-                                   (uint) request.TimestampDifferenceBetweenTransactions,
+                            Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() +
+                                   (uint)request.TimestampDifferenceBetweenTransactions,
                             AllowOtherInputs = false,
                             SelectedInputs = inputs,
                             TransactionFee = transactionFee
@@ -1052,6 +1064,69 @@ namespace Stratis.Bitcoin.Features.Wallet.Services
                 }
 
                 return model;
+            }, cancellationToken);
+        }
+
+        public async Task<IActionResult> Vote(VoteRequest request, CancellationToken cancellationToken)
+        {
+            return await Task.Run(async () =>
+            {
+                try
+                {
+                    var voteTransactions = new List<(string Address, OutPoint UTXO, string Vote)>();
+
+                    var accounts = this.walletManager.GetAccounts(request.WalletName);
+                    var account = accounts.FirstOrDefault(a => a.Name.ToLowerInvariant() == request.AccountName);
+                    if (account == null)
+                        throw new FeatureException(HttpStatusCode.NotFound, "Unable to cast your vote.", $"Error: '{request.AccountName}' account does not exist.");
+
+                    IEnumerable<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), 1);
+                    if (!unspentOutputs.Any())
+                        throw new FeatureException(HttpStatusCode.NotFound, "Unable to cast your vote.", $"The wallet does not contain any spendable transactions.");
+
+                    var spendables = unspentOutputs.Where(s => s.Transaction.GetUnspentAmount(true) >= Money.Coins(1)).GroupBy(s => s.Address.Address).Select(g => g.First());
+
+                    foreach (var spendable in spendables)
+                        voteTransactions.Add((spendable.Address.Address, spendable.ToOutPoint(), request.Vote));
+
+                    if (!voteTransactions.Any())
+                        throw new FeatureException(HttpStatusCode.OK, "Unable to cast your vote.", $"You do not have any addresses with a balance of 1 or more STRAT to be able to vote.");
+
+                    foreach (var vote in voteTransactions)
+                    {
+                        this.logger.LogInformation($"Casting vote {voteTransactions.IndexOf(vote)}/{voteTransactions.Count}");
+
+                        var voteCharacter = request.Vote;
+                        var transactionRequest = new BuildTransactionRequest()
+                        {
+                            AccountName = request.AccountName,
+                            WalletName = request.WalletName,
+                            Password = request.WalletPassword,
+                            ChangeAddress = vote.Address,
+                            Outpoints = new List<OutpointRequest>() { new OutpointRequest() { Index = (int)vote.UTXO.N, TransactionId = vote.UTXO.Hash.ToString() } },
+                            OpReturnAmount = Money.Satoshis(1).ToString(),
+                            OpReturnData = $"V{voteCharacter}{vote.Address}",
+                        };
+
+                        var transaction = await BuildTransaction(transactionRequest);
+                        var sendRequest = new SendTransactionRequest(transaction.Hex);
+                        await this.SendTransaction(sendRequest, cancellationToken);
+                    }
+
+                    return new OkResult();
+                }
+                catch (FeatureException e)
+                {
+                    throw e;
+                }
+                catch (WalletException e)
+                {
+                    throw new FeatureException(HttpStatusCode.NotFound, "Unable to cast your vote.", e.Message);
+                }
+                catch (Exception e)
+                {
+                    throw new FeatureException(HttpStatusCode.Forbidden, "Unable to cast your vote.", e.Message);
+                }
             }, cancellationToken);
         }
 
