@@ -17,6 +17,7 @@ namespace AddressOwnershipTool
         {
             string walletName = null;
             string walletPassword = null;
+            string destinationAddress = null;
             
             string arg = args.FirstOrDefault(a => a.StartsWith("-name"));
             if (arg != null)
@@ -25,6 +26,10 @@ namespace AddressOwnershipTool
             arg = args.FirstOrDefault(a => a.StartsWith("-password"));
             if (arg != null)
                 walletPassword = arg.Split('=')[1];
+
+            arg = args.FirstOrDefault(a => a.StartsWith("-destination"));
+            if (arg != null)
+                destinationAddress = arg.Split('=')[1];
 
             // Whether or not to export addresses with no transactions (may only be useful for a wallet that is not properly synced).
             bool deepExport = args.Contains("-deep");
@@ -48,7 +53,7 @@ namespace AddressOwnershipTool
 
             if (wallet != null)
             {
-                SqlExport(wallet, walletPassword, deepExport);
+                SqlExport(wallet, walletPassword, destinationAddress, deepExport);
 
                 return;
             }
@@ -64,7 +69,7 @@ namespace AddressOwnershipTool
 
             if (wallet != null)
             {
-                JsonExport(wallet, walletPassword, deepExport);
+                JsonExport(wallet, walletPassword, destinationAddress, deepExport);
 
                 return;
             }
@@ -72,33 +77,33 @@ namespace AddressOwnershipTool
             Console.WriteLine($"No legacy wallet with name {walletName} was found in folder {nodeSettings.DataFolder.WalletPath}!");
         }
 
-        static void SqlExport(Wallet wallet, string walletPassword, bool deepExport = false)
+        static void SqlExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
         {
-            Console.WriteLine("Address;Signature");
+            Console.WriteLine("Address;Destination;Signature");
 
             foreach (HdAddress address in wallet.GetAllAddresses())
             {
                 if (address.Transactions.IsEmpty() && !deepExport)
                     continue;
 
-                ExportAddress(wallet, address, walletPassword);
+                ExportAddress(wallet, address, walletPassword, destinationAddress);
             }
         }
 
-        static void JsonExport(Wallet wallet, string walletPassword, bool deepExport = false)
+        static void JsonExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
         {
-            Console.WriteLine("Address;Signature");
+            Console.WriteLine("Address;Destination;Signature");
 
             foreach (HdAddress address in wallet.GetAllAddresses())
             {
                 if (address.Transactions.IsEmpty() && !deepExport)
                     continue;
 
-                ExportAddress(wallet, address, walletPassword);
+                ExportAddress(wallet, address, walletPassword, destinationAddress);
             }
         }
 
-        static void ExportAddress(Wallet wallet, HdAddress address, string walletPassword)
+        static void ExportAddress(Wallet wallet, HdAddress address, string walletPassword, string destinationAddress)
         {
             ISecret privateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address);
 
@@ -106,7 +111,7 @@ namespace AddressOwnershipTool
 
             string signature = privateKey.PrivateKey.SignMessage(message);
 
-            string export = $"{message};{signature}";
+            string export = $"{message};{destinationAddress};{signature}";
 
             Console.WriteLine(export);
         }
