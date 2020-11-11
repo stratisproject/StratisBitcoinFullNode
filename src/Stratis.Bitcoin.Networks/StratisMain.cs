@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Networks
                 { 1450000, new CheckpointInfo(new uint256("0x040bdceb331aa6adefb418ded32dccb7338fe538a8cce5303cb6eec2aa6644c7"), new uint256("0x7af96688dd0009d12619f83e0ad8adc0c1de1998ce802193fdd81b7f464d0a9e")) },
                 { 1620000, new CheckpointInfo(new uint256("0xee112d326d0fa2d0ca1009d8c00bfe4fd4a5961dd317162df21e83c80b519479"), new uint256("0xe0a85aac292b6216331d58acd9c55b104dd4769c051dfbd6d2496f19bf0e8d38")) },
                 { 1990000, new CheckpointInfo(new uint256("0x44b44958da7209a8737e08c7f89abdf4daac37cd94459245c9e93b70dd2a9051"), new uint256("0x31ce79494be089e8f09f477dc97bc12fa0af66cd0b30c8733e5d8b26fbe2e090")) },
-                { 1990000, new CheckpointInfo(new uint256("0xfe4bd9b26635584bcf29618233b287506b7922eb978e00bcaa9b38f90a59d114"), new uint256("0xe61c0aae4917ad82eb2711850606789ed7d519dd7e43db2b6dc8907f6ceb45df")) }
+                { 2000000, new CheckpointInfo(new uint256("0xfe4bd9b26635584bcf29618233b287506b7922eb978e00bcaa9b38f90a59d114"), new uint256("0xe61c0aae4917ad82eb2711850606789ed7d519dd7e43db2b6dc8907f6ceb45df")) }
 
             };
 
