@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -6,7 +7,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Features.SQLiteWalletRepository;
 
 namespace AddressOwnershipTool
@@ -15,11 +15,47 @@ namespace AddressOwnershipTool
     {
         static void Main(string[] args)
         {
+            string arg = null;
+            bool testnet;
+            string destinationAddress = null;
+
+            // Settings common between all modes
+            testnet = args.Contains("-testnet");
+
+            arg = args.FirstOrDefault(a => a.StartsWith("-destination"));
+            if (arg != null)
+                destinationAddress = arg.Split('=')[1];
+
+            if (!File.Exists(destinationAddress + ".csv"))
+            {
+                using (StreamWriter sw = File.AppendText(destinationAddress + ".csv"))
+                {
+                    sw.WriteLine("Address;Destination;Signature");
+                }
+            }
+
+            // Settings related to a stratisX wallet
+            string privKey = null;
+
+            arg = args.FirstOrDefault(a => a.StartsWith("-privkey"));
+            if (arg != null)
+            {
+                privKey = arg.Split('=')[1];
+
+                Console.WriteLine("Private key provided, assuming stratisX address ownership is required");
+
+                StratisXExport(privKey, destinationAddress, testnet);
+
+                Console.WriteLine("Finished");
+
+                return;
+            }
+
+            // Settings related to an SBFN wallet, whether sqlite or JSON
             string walletName = null;
             string walletPassword = null;
-            string destinationAddress = null;
             
-            string arg = args.FirstOrDefault(a => a.StartsWith("-name"));
+            arg = args.FirstOrDefault(a => a.StartsWith("-name"));
             if (arg != null)
                 walletName = arg.Split('=')[1];
 
@@ -27,14 +63,32 @@ namespace AddressOwnershipTool
             if (arg != null)
                 walletPassword = arg.Split('=')[1];
 
-            arg = args.FirstOrDefault(a => a.StartsWith("-destination"));
-            if (arg != null)
-                destinationAddress = arg.Split('=')[1];
-
             // Whether or not to export addresses with no transactions (may only be useful for a wallet that is not properly synced).
             bool deepExport = args.Contains("-deep");
 
-            Network network = args.Contains("-testnet") ? new StratisTest() : new StratisMain();
+            SbfnExport(walletName, walletPassword, destinationAddress, deepExport, testnet);
+
+            Console.WriteLine("Finished");
+        }
+
+        static void StratisXExport(string privKey, string destinationAddress, bool testnet = false)
+        {
+            Network network = testnet ? new StratisTest() : new StratisMain();
+
+            Key privateKey = Key.Parse(privKey, network);
+
+            string address = privateKey.PubKey.GetAddress(network).ToString();
+
+            string message = $"{address}";
+
+            string signature = privateKey.SignMessage(message);
+
+            OutputToFile(address, destinationAddress, signature);
+        }
+
+        static void SbfnExport(string walletName, string walletPassword, string destinationAddress, bool deepExport = false, bool testnet = false)
+        {
+            Network network = testnet ? new StratisTest() : new StratisMain();
             var nodeSettings = new NodeSettings(network);
 
             // First check if sqlite wallet is being used.
@@ -58,7 +112,7 @@ namespace AddressOwnershipTool
                 return;
             }
 
-            Console.WriteLine($"No SQL wallet with name {walletName} was found in folder {nodeSettings.DataDir}! Checking for legacy wallet.");
+            Console.WriteLine($"No SQL wallet with name {walletName} was found in folder {nodeSettings.DataDir}! Checking for legacy JSON wallet.");
 
             var fileStorage = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath);
 
@@ -79,11 +133,9 @@ namespace AddressOwnershipTool
 
         static void SqlExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
         {
-            Console.WriteLine("Address;Destination;Signature");
-
             foreach (HdAddress address in wallet.GetAllAddresses())
             {
-                if (address.Transactions.IsEmpty() && !deepExport)
+                if (address.Transactions.Count == 0 && !deepExport)
                     continue;
 
                 ExportAddress(wallet, address, walletPassword, destinationAddress);
@@ -92,11 +144,9 @@ namespace AddressOwnershipTool
 
         static void JsonExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
         {
-            Console.WriteLine("Address;Destination;Signature");
-
             foreach (HdAddress address in wallet.GetAllAddresses())
             {
-                if (address.Transactions.IsEmpty() && !deepExport)
+                if (address.Transactions.Count == 0 && !deepExport)
                     continue;
 
                 ExportAddress(wallet, address, walletPassword, destinationAddress);
@@ -111,9 +161,19 @@ namespace AddressOwnershipTool
 
             string signature = privateKey.PrivateKey.SignMessage(message);
 
-            string export = $"{message};{destinationAddress};{signature}";
+            OutputToFile(address.Address, destinationAddress, signature);
+        }
+
+        static void OutputToFile(string address, string destinationAddress, string signature)
+        {
+            string export = $"{address};{destinationAddress};{signature}";
 
             Console.WriteLine(export);
+
+            using (StreamWriter sw = File.AppendText(destinationAddress + ".csv"))
+            {
+                sw.WriteLine(export);
+            }
         }
     }
 }
