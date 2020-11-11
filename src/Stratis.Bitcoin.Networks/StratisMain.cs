@@ -177,7 +177,12 @@ namespace Stratis.Bitcoin.Networks
                 { 1150000, new CheckpointInfo(new uint256("0x2bdb553600592655dd50f0d2e1632e5ac3bad99a5e1864f8b8ac02f768721e17"), new uint256("0x0ae7676da03bee9c8005680058a06b8a5009fb584d84811fc29ae1aeb7665426")) }, // 13-01-2019
                 { 1344000, new CheckpointInfo(new uint256("0xb7196b5b1982bc671f4e631661c09019aaf27b85902790d3d61616c245c407be"), new uint256("0xb7af5aaeb28d6ceebe872567a835efc42b3f2fccbecf74b1e095272b560d0354")) },
                 { 1450000, new CheckpointInfo(new uint256("0x040bdceb331aa6adefb418ded32dccb7338fe538a8cce5303cb6eec2aa6644c7"), new uint256("0x7af96688dd0009d12619f83e0ad8adc0c1de1998ce802193fdd81b7f464d0a9e")) },
-                { 1620000, new CheckpointInfo(new uint256("0xee112d326d0fa2d0ca1009d8c00bfe4fd4a5961dd317162df21e83c80b519479"), new uint256("0xe0a85aac292b6216331d58acd9c55b104dd4769c051dfbd6d2496f19bf0e8d38")) }
+                { 1620000, new CheckpointInfo(new uint256("0xee112d326d0fa2d0ca1009d8c00bfe4fd4a5961dd317162df21e83c80b519479"), new uint256("0xe0a85aac292b6216331d58acd9c55b104dd4769c051dfbd6d2496f19bf0e8d38")) },
+                { 1700000, new CheckpointInfo(new uint256("0x65be2a9bfd372c0c35e03b1bd06338e84baaac984c46bf477b8abe9c5b87d667"), new uint256("0x543913934846a19b3ca8357cbb98f070af97ca4081c9d7712d2b2b54d4f03a69")) },
+                { 1800000, new CheckpointInfo(new uint256("0x6ec401f38f9f1742acc62ee0b842314605174ba23892d7bd76152b83c05c941f"), new uint256("0x4b8041cd0d9f8a803ca2744c1f1eca50d2e04bc17be5f1b159cd627ee5e30683")) },
+                { 1990000, new CheckpointInfo(new uint256("0x44b44958da7209a8737e08c7f89abdf4daac37cd94459245c9e93b70dd2a9051"), new uint256("0x31ce79494be089e8f09f477dc97bc12fa0af66cd0b30c8733e5d8b26fbe2e090")) },
+                { 2000000, new CheckpointInfo(new uint256("0xfe4bd9b26635584bcf29618233b287506b7922eb978e00bcaa9b38f90a59d114"), new uint256("0xe61c0aae4917ad82eb2711850606789ed7d519dd7e43db2b6dc8907f6ceb45df")) }
+
             };
 
             this.Bech32Encoders = new Bech32Encoder[2];
