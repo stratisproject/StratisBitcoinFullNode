@@ -323,7 +323,7 @@ namespace NBitcoin.Tests
         {
             Network network = this.stratisMain;
 
-            Assert.Equal(33, network.Checkpoints.Count);
+            Assert.Equal(37, network.Checkpoints.Count);
             Assert.Equal(2, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
 
