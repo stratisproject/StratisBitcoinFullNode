@@ -26,6 +26,8 @@ namespace AddressOwnershipTool
             if (arg != null)
                 destinationAddress = arg.Split('=')[1];
 
+            Console.WriteLine("Address;Destination;Signature");
+
             if (!File.Exists(destinationAddress + ".csv"))
             {
                 using (StreamWriter sw = File.AppendText(destinationAddress + ".csv"))
@@ -35,16 +37,23 @@ namespace AddressOwnershipTool
             }
 
             // Settings related to a stratisX wallet
-            string privKey = null;
+            string privKeyFile = null;
 
-            arg = args.FirstOrDefault(a => a.StartsWith("-privkey"));
+            arg = args.FirstOrDefault(a => a.StartsWith("-privkeyfile"));
             if (arg != null)
             {
-                privKey = arg.Split('=')[1];
+                privKeyFile = arg.Split('=')[1];
 
-                Console.WriteLine("Private key provided, assuming stratisX address ownership is required");
+                if (!File.Exists(privKeyFile))
+                {
+                    Console.WriteLine($"Unable to locate private key file {privKeyFile} for stratisX address ownership!");
 
-                StratisXExport(privKey, destinationAddress, testnet);
+                    return;
+                }
+
+                Console.WriteLine("Private key file provided, assuming stratisX address ownership is required");
+
+                StratisXExport(privKeyFile, destinationAddress, testnet);
 
                 Console.WriteLine("Finished");
 
@@ -54,7 +63,7 @@ namespace AddressOwnershipTool
             // Settings related to an SBFN wallet, whether sqlite or JSON
             string walletName = null;
             string walletPassword = null;
-            
+
             arg = args.FirstOrDefault(a => a.StartsWith("-name"));
             if (arg != null)
                 walletName = arg.Split('=')[1];
@@ -63,7 +72,7 @@ namespace AddressOwnershipTool
             if (arg != null)
                 walletPassword = arg.Split('=')[1];
 
-            // Whether or not to export addresses with no transactions (may only be useful for a wallet that is not properly synced).
+            // Whether or not to export SBFN addresses with no transactions (may only be useful for a wallet that is not properly synced).
             bool deepExport = args.Contains("-deep");
 
             SbfnExport(walletName, walletPassword, destinationAddress, deepExport, testnet);
@@ -71,19 +80,43 @@ namespace AddressOwnershipTool
             Console.WriteLine("Finished");
         }
 
-        static void StratisXExport(string privKey, string destinationAddress, bool testnet = false)
+        static void StratisXExport(string privKeyFile, string destinationAddress, bool testnet = false)
         {
             Network network = testnet ? new StratisTest() : new StratisMain();
 
-            Key privateKey = Key.Parse(privKey, network);
+            var lines = File.ReadLines(privKeyFile);
 
-            string address = privateKey.PubKey.GetAddress(network).ToString();
+            foreach (var line in lines)
+            {
+                // Skip comments
+                if (line.Trim().StartsWith("#"))
+                    continue;
 
-            string message = $"{address}";
+                // If it isn't at least long enough to contain the WIF then ignore the line
+                if (line.Trim().Length < 53)
+                    continue;
 
-            string signature = privateKey.SignMessage(message);
+                try
+                {
+                    string[] data = line.Trim().Split(" ");
 
-            OutputToFile(address, destinationAddress, signature);
+                    string privKey = data[0];
+
+                    Key privateKey = Key.Parse(privKey, network);
+
+                    string address = privateKey.PubKey.GetAddress(network).ToString();
+
+                    string message = $"{address}";
+
+                    string signature = privateKey.SignMessage(message);
+
+                    OutputToFile(address, destinationAddress, signature);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error creating signature with private key file line '{line}'");
+                }
+            }
         }
 
         static void SbfnExport(string walletName, string walletPassword, string destinationAddress, bool deepExport = false, bool testnet = false)
