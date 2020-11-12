@@ -121,7 +121,7 @@ namespace Stratis.Sidechains.Networks
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
-                maxStandardTxWeight: 100_000,
+                maxStandardTxWeight: 150_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
