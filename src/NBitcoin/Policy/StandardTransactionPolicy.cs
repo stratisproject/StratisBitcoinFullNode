@@ -54,7 +54,7 @@ namespace NBitcoin.Policy
         {
             this.network = network;
             this.ScriptVerify = NBitcoin.ScriptVerify.Standard;
-            this.MaxTransactionSize = 100000;
+            this.MaxTransactionSize = 150000;
             // TODO: replace fee params with whats in Network.
             this.MaxTxFee = new FeeRate(Money.Coins(0.1m));
             this.MinRelayTxFee = new FeeRate(Money.Satoshis(network.MinRelayTxFee));

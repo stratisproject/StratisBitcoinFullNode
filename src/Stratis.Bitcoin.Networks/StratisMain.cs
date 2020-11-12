@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Networks
             var consensusOptions = new PosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
-                maxStandardTxWeight: 100_000,
+                maxStandardTxWeight: 150_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5
             );

@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_builds_oversize_tx_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(2900);
+            Node1BuildsTransactionToSendToNode2(4500);
         }
 
         private void sending_the_transaction()
