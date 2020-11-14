@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -24,8 +25,6 @@ namespace Stratis.Bitcoin.Features.Api
 
         private readonly ApiSettings apiSettings;
 
-        private readonly ApiFeatureOptions apiFeatureOptions;
-
         private readonly ILogger logger;
 
         private IWebHost webHost;
@@ -35,14 +34,12 @@ namespace Stratis.Bitcoin.Features.Api
         public ApiFeature(
             IFullNodeBuilder fullNodeBuilder,
             FullNode fullNode,
-            ApiFeatureOptions apiFeatureOptions,
             ApiSettings apiSettings,
             ILoggerFactory loggerFactory,
             ICertificateStore certificateStore)
         {
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
-            this.apiFeatureOptions = apiFeatureOptions;
             this.apiSettings = apiSettings;
             this.certificateStore = certificateStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -117,8 +114,38 @@ namespace Stratis.Bitcoin.Features.Api
         }
     }
 
+    /// <summary>
+    /// Options for configuring the full node API feature.
+    /// </summary>
     public sealed class ApiFeatureOptions
     {
+        public ApiFeatureOptions()
+        {
+            this.Includes = new List<Type>();
+            this.Excludes = new List<Type>();
+        }
+
+        internal IList<Type> Includes { get; }
+
+        internal IList<Type> Excludes { get; }
+
+        /// <summary>
+        /// Specifies a feature to include when implicitly registering web API controllers. If none are specified, every full node feature is included.
+        /// </summary>
+        /// <typeparam name="T">The IFullNodeFeature implementation type</typeparam>
+        public void Include<T>() where T : IFullNodeFeature
+        {
+            this.Includes.Add(typeof(T));
+        }
+
+        /// <summary>
+        /// Specifies a feature to exclude when implicitly registering web API controllers.
+        /// </summary>
+        /// <typeparam name="T">The IFullNodeFeature implementation type</typeparam>
+        public void Exclude<T>() where T : IFullNodeFeature
+        {
+            this.Excludes.Add(typeof(T));
+        }
     }
 
     /// <summary>
