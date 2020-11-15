@@ -353,16 +353,16 @@ namespace AddressOwnershipTool
                     continue;
                 }
 
-                count++;
-                total += ownershipTransaction.SenderAmount;
-
                 if (!send)
                 {
+                    count++;
+                    total += ownershipTransaction.SenderAmount;
+
                     Console.WriteLine($"Simulate send of {Money.FromUnit(ownershipTransaction.SenderAmount, MoneyUnit.Satoshi)} to address {ownershipTransaction.StraxAddress}");
 
                     continue;
                 }
-
+                
                 try
                 {
                     var distributedSwapTransaction = new DistributedOwnershipTransaction(ownershipTransaction);
@@ -394,6 +394,9 @@ namespace AddressOwnershipTool
 
                     // Give some time for the transaction to begin relaying.
                     Thread.Sleep(1000);
+
+                    count++;
+                    total += ownershipTransaction.SenderAmount;
                 }
                 catch (Exception ex)
                 {

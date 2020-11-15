@@ -62,7 +62,9 @@ namespace AddressOwnershipTool
                     AccountName = accountName,
                     FeeType = "medium",
                     Password = walletPassword,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    AllowUnconfirmed = true,
+                    ShuffleOutputs = true
                 })
                 .ReceiveBytes().GetAwaiter().GetResult();
 
