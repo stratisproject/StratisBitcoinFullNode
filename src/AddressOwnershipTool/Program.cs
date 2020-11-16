@@ -1,27 +1,91 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Features.SQLiteWalletRepository;
+using NLog.Targets;
 
 namespace AddressOwnershipTool
 {
-    class Program
+    partial class Program
     {
         static void Main(string[] args)
         {
             string arg = null;
+            bool validate;
+            bool distribute;
             bool testnet;
             string destinationAddress = null;
 
             // Settings common between all modes
             testnet = args.Contains("-testnet");
 
+            validate = args.Contains("-validate");
+            if (validate)
+            {
+                arg = args.FirstOrDefault(a => a.StartsWith("-sigfolder"));
+
+                string sigFolder = arg.Split('=')[1];
+
+                if (!Directory.Exists(sigFolder))
+                {
+                    Console.WriteLine($"Could not locate directory '{sigFolder}'!");
+                    
+                    return;
+                }
+
+                var addressOwnershipService = new AddressOwnershipService(testnet);
+
+                addressOwnershipService.Validate(sigFolder);
+
+                return;
+            }
+
+            distribute = args.Contains("-distribute");
+            if (distribute)
+            {
+                // We don't need wallet credentials to simulate the send.
+                Console.WriteLine("Doing a trial run of the distribution to obtain the overall amount to be sent...");
+
+                var addressOwnershipService = new AddressOwnershipService(testnet);
+                addressOwnershipService.BuildAndSendDistributionTransactions("", "", "", false);
+
+                Console.WriteLine("Proceed with sending funds (y/n)?");
+
+                int result = Console.Read();
+                if (result != 121 && result != 89)
+                {
+                    Console.WriteLine("Exiting...");
+
+                    return;
+                }
+
+                arg = args.FirstOrDefault(a => a.StartsWith("-distributionwalletname"));
+                string distributionWalletName = arg.Split('=')[1];
+
+                arg = args.FirstOrDefault(a => a.StartsWith("-distributionwalletpassword"));
+                string distributionWalletPassword = arg.Split('=')[1];
+
+                string distributionAccountName;
+                arg = args.FirstOrDefault(a => a.StartsWith("-distributionwalletaccount"));
+                if (arg != null)
+                    distributionAccountName = arg.Split('=')[1];
+                else
+                    distributionAccountName = "account 0";
+
+                if (string.IsNullOrWhiteSpace(distributionWalletName) || string.IsNullOrWhiteSpace(distributionWalletPassword) || string.IsNullOrWhiteSpace(distributionAccountName))
+                {
+                    Console.WriteLine("Cannot proceed with sending funds without the distribution wallet credentials!");
+
+                    return;
+                }
+
+                addressOwnershipService.BuildAndSendDistributionTransactions(distributionWalletName, distributionWalletPassword, distributionAccountName, true);
+
+                return;
+            }
+
+            // If we aren't validating signatures then it is presumed that a wallet signature export is required.
+            // First check if a signature file exists already, else create one.
             arg = args.FirstOrDefault(a => a.StartsWith("-destination"));
             if (arg != null)
                 destinationAddress = arg.Split('=')[1];
@@ -36,7 +100,7 @@ namespace AddressOwnershipTool
                 }
             }
 
-            // Settings related to a stratisX wallet
+            // Settings related to a stratisX wallet export.
             string privKeyFile = null;
 
             arg = args.FirstOrDefault(a => a.StartsWith("-privkeyfile"));
@@ -53,14 +117,15 @@ namespace AddressOwnershipTool
 
                 Console.WriteLine("Private key file provided, assuming stratisX address ownership is required");
 
-                StratisXExport(privKeyFile, destinationAddress, testnet);
+                var addressOwnershipService = new AddressOwnershipService(testnet, false);
+                addressOwnershipService.StratisXExport(privKeyFile, destinationAddress);
 
                 Console.WriteLine("Finished");
 
                 return;
             }
 
-            // Settings related to an SBFN wallet, whether sqlite or JSON
+            // Settings related to an SBFN wallet, whether sqlite or JSON, or accessed via the API directly.
             string walletName = null;
             string walletPassword = null;
 
@@ -75,138 +140,51 @@ namespace AddressOwnershipTool
             // Whether or not to export SBFN addresses with no transactions (may only be useful for a wallet that is not properly synced).
             bool deepExport = args.Contains("-deep");
 
-            SbfnExport(walletName, walletPassword, destinationAddress, deepExport, testnet);
+            bool api = args.Contains("-api");
+
+            if (string.IsNullOrEmpty(walletName))
+            {
+                Console.WriteLine("No wallet name specified!");
+
+                return;
+            }
+
+            if (api)
+            {
+                throw new NotImplementedException();
+
+                Console.WriteLine("Attempting to extract address signatures from node API. The node needs to be running.");
+
+                var client = new NodeApiClient(testnet ? "http://localhost:38221/api/" : "http://localhost:37221/api/");
+
+                // Get accounts
+                List<string> accounts = client.GetAccounts(walletName);
+
+                foreach (string account in accounts)
+                {
+                    Console.WriteLine($"Querying account '{account}' from wallet '{walletName}'...'");
+
+                    // Get addresses
+                    List<string> addresses = client.GetAddresses(walletName, account);
+
+                    foreach (string address in addresses)
+                    {
+                        Console.WriteLine($"Attempting to sign message with address '{address}...'");
+
+                        string signature = client.SignMessage(walletName, walletPassword, address);
+
+                        var addressOwnershipService = new AddressOwnershipService(testnet, false);
+                        addressOwnershipService.OutputToFile(address, destinationAddress, signature);
+                    }
+                }
+            }
+            else
+            {
+                var addressOwnershipService = new AddressOwnershipService(testnet, false);
+                addressOwnershipService.SbfnExport(walletName, walletPassword, destinationAddress, deepExport);
+            }
 
             Console.WriteLine("Finished");
-        }
-
-        static void StratisXExport(string privKeyFile, string destinationAddress, bool testnet = false)
-        {
-            Network network = testnet ? new StratisTest() : new StratisMain();
-
-            var lines = File.ReadLines(privKeyFile);
-
-            foreach (var line in lines)
-            {
-                // Skip comments
-                if (line.Trim().StartsWith("#"))
-                    continue;
-
-                // If it isn't at least long enough to contain the WIF then ignore the line
-                if (line.Trim().Length < 53)
-                    continue;
-
-                try
-                {
-                    string[] data = line.Trim().Split(" ");
-
-                    string privKey = data[0];
-
-                    Key privateKey = Key.Parse(privKey, network);
-
-                    string address = privateKey.PubKey.GetAddress(network).ToString();
-
-                    string message = $"{address}";
-
-                    string signature = privateKey.SignMessage(message);
-
-                    OutputToFile(address, destinationAddress, signature);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error creating signature with private key file line '{line}'");
-                }
-            }
-        }
-
-        static void SbfnExport(string walletName, string walletPassword, string destinationAddress, bool deepExport = false, bool testnet = false)
-        {
-            Network network = testnet ? new StratisTest() : new StratisMain();
-            var nodeSettings = new NodeSettings(network);
-
-            // First check if sqlite wallet is being used.
-            var walletRepository = new SQLiteWalletRepository(nodeSettings.LoggerFactory, nodeSettings.DataFolder, nodeSettings.Network, new DateTimeProvider(), new ScriptAddressReader());
-            walletRepository.Initialize(false);
-
-            Wallet wallet = null;
-
-            try
-            {
-                wallet = walletRepository.GetWallet(walletName);
-            }
-            catch
-            {
-            }
-
-            if (wallet != null)
-            {
-                SqlExport(wallet, walletPassword, destinationAddress, deepExport);
-
-                return;
-            }
-
-            Console.WriteLine($"No SQL wallet with name {walletName} was found in folder {nodeSettings.DataDir}! Checking for legacy JSON wallet.");
-
-            var fileStorage = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath);
-
-            if (fileStorage.Exists(walletName + ".wallet.json"))
-            {
-                wallet = fileStorage.LoadByFileName(walletName + ".wallet.json");
-            }
-
-            if (wallet != null)
-            {
-                JsonExport(wallet, walletPassword, destinationAddress, deepExport);
-
-                return;
-            }
-
-            Console.WriteLine($"No legacy wallet with name {walletName} was found in folder {nodeSettings.DataFolder.WalletPath}!");
-        }
-
-        static void SqlExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
-        {
-            foreach (HdAddress address in wallet.GetAllAddresses())
-            {
-                if (address.Transactions.Count == 0 && !deepExport)
-                    continue;
-
-                ExportAddress(wallet, address, walletPassword, destinationAddress);
-            }
-        }
-
-        static void JsonExport(Wallet wallet, string walletPassword, string destinationAddress, bool deepExport = false)
-        {
-            foreach (HdAddress address in wallet.GetAllAddresses())
-            {
-                if (address.Transactions.Count == 0 && !deepExport)
-                    continue;
-
-                ExportAddress(wallet, address, walletPassword, destinationAddress);
-            }
-        }
-
-        static void ExportAddress(Wallet wallet, HdAddress address, string walletPassword, string destinationAddress)
-        {
-            ISecret privateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address);
-
-            string message = $"{address.Address}";
-
-            string signature = privateKey.PrivateKey.SignMessage(message);
-
-            OutputToFile(address.Address, destinationAddress, signature);
-        }
-
-        static void OutputToFile(string address, string destinationAddress, string signature)
-        {
-            string export = $"{address};{destinationAddress};{signature}";
-
-            Console.WriteLine(export);
-
-            using (StreamWriter sw = File.AppendText(destinationAddress + ".csv"))
-            {
-                sw.WriteLine(export);
-            }
         }
     }
 }
