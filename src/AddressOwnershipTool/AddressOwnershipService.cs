@@ -108,6 +108,7 @@ namespace AddressOwnershipTool
             var straxApiClient = new NodeApiClient($"http://localhost:{this.straxApiPort}/api");
             var stratisApiClient = new NodeApiClient($"http://localhost:{this.network.DefaultAPIPort}/api");
 
+            decimal newRecordsFundsTotal = 0;
             foreach (string file in Directory.GetFiles(sigFileFolder))
             {
                 if (!file.EndsWith(".csv"))
@@ -140,7 +141,7 @@ namespace AddressOwnershipTool
 
                         if (this.ownershipTransactions.Any(s => s.SignedAddress == address))
                         {
-                            Console.WriteLine($"Ownership already proven for address: {address}. Ignoring this signature.");
+                            //Console.WriteLine($"Ownership already proven for address: {address}. Ignoring this signature.");
 
                             continue;
                         }
@@ -150,30 +151,32 @@ namespace AddressOwnershipTool
 
                         if (pubKey.Hash.ScriptPubKey.GetDestinationAddress(this.network).ToString() != address)
                         {
-                            Console.WriteLine($"Invalid signature for address '{address}'!");
+                            //Console.WriteLine($"Invalid signature for address '{address}'!");
                         }
 
                         if (!straxApiClient.ValidateAddress(destination))
                         {
-                            Console.WriteLine($"The provided Strax address was invalid: {destination}");
+                            //Console.WriteLine($"The provided Strax address was invalid: {destination}");
 
                             continue;
                         }
 
-                        Console.WriteLine($"Validated signature for address '{address}'");
+                        //Console.WriteLine($"Validated signature for address '{address}'");
 
                         decimal balance = stratisApiClient.GetAddressBalance(address);
 
                         if (balance <= 0)
                         {
-                            Console.WriteLine($"Address {address} has a zero balance, skipping it.");
+                            //Console.WriteLine($"Address {address} has a zero balance, skipping it.");
 
                             continue;
                         }
                         else
                         {
-                            Console.WriteLine($"Address {address} has a balance of {balance}.");
+                            Console.WriteLine($"Address {address} has a balance of {Money.Satoshis(balance).ToUnit(MoneyUnit.BTC)}.");
                         }
+
+                        newRecordsFundsTotal += balance;
 
                         // We checked for an existing record already, so it is safe to add it now.
                         this.ownershipTransactions.Add(new OwnershipTransaction()
@@ -199,6 +202,7 @@ namespace AddressOwnershipTool
 
             Console.WriteLine($"There are {this.ownershipTransactions.Count} ownership transactions so far to process.");
             Console.WriteLine($"There are {Money.Satoshis(this.ownershipTransactions.Sum(s => s.SenderAmount)).ToUnit(MoneyUnit.BTC)} STRAT with ownership proved.");
+            Console.WriteLine($"Of this, {Money.Satoshis(newRecordsFundsTotal).ToUnit(MoneyUnit.BTC)} STRAT came from new records.");
         }
 
         public void StratisXExport(string privKeyFile, string destinationAddress)
@@ -348,7 +352,7 @@ namespace AddressOwnershipTool
             {
                 if (this.distributedTransactions.Any(d => d.SourceAddress == ownershipTransaction.SignedAddress))
                 {
-                    Console.WriteLine($"Already distributed: {ownershipTransaction.StraxAddress} -> {Money.Satoshis(ownershipTransaction.SenderAmount).ToUnit(MoneyUnit.BTC)} STRAT");
+                    Console.WriteLine($"Already distributed: {ownershipTransaction.SignedAddress} -> {ownershipTransaction.StraxAddress}, {Money.Satoshis(ownershipTransaction.SenderAmount).ToUnit(MoneyUnit.BTC)} STRAT");
 
                     continue;
                 }
@@ -379,7 +383,7 @@ namespace AddressOwnershipTool
                     distributedSwapTransaction.TransactionSentHash = builtTransaction.TransactionId.ToString();
 
                     if (send)
-                        Console.WriteLine($"Swap transaction built and sent to {distributedSwapTransaction.StraxAddress}:{Money.Satoshis(distributedSwapTransaction.SenderAmount).ToUnit(MoneyUnit.BTC)}");
+                        Console.WriteLine($"Swap transaction built and sent to {distributedSwapTransaction.StraxAddress}: {Money.Satoshis(distributedSwapTransaction.SenderAmount).ToUnit(MoneyUnit.BTC)}");
 
                     // Append to the file.
                     using (FileStream stream = File.Open(Path.Combine(this.ownershipFilePath, distributedTransactionsFilename), FileMode.Append))
