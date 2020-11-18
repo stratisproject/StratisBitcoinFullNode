@@ -135,7 +135,14 @@ namespace AddressOwnershipTool
 
             arg = args.FirstOrDefault(a => a.StartsWith("-password"));
             if (arg != null)
+            {
                 walletPassword = arg.Split('=')[1];
+            }
+            else
+            {
+                Console.WriteLine("Please enter wallet password to continue:");
+                walletPassword = Console.ReadLine();
+            }
 
             // Whether or not to export SBFN addresses with no transactions (may only be useful for a wallet that is not properly synced).
             bool deepExport = args.Contains("-deep");
