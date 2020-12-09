@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Text;
-using CSharpFunctionalExtensions;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts.CLR.Caching;
@@ -46,7 +45,8 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
-                () => 1000);
+                () => 1000,
+                Mock.Of<IEcRecoverProvider>());
             this.gasMeter = new GasMeter((RuntimeObserver.Gas)50_000);
         }
 

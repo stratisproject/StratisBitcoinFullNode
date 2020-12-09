@@ -177,6 +177,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
             public IBlockExecutionResultCache executionCache;
+            private IEcRecoverProvider ecRecoverProvider;
             public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
@@ -346,7 +347,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
                 this.serializer = new Serializer(this.primitiveSerializer);
-                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.internalTxExecutorFactory, this.serializer);
+                this.ecRecoverProvider = new EcRecoverProvider(this.network);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.internalTxExecutorFactory, this.serializer, this.ecRecoverProvider);
                 this.stateFactory = new StateFactory(this.smartContractStateFactory);
                 this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }

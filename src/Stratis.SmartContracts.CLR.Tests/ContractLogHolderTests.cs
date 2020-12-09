@@ -29,11 +29,11 @@ namespace Stratis.SmartContracts.CLR.Tests
             var contractAddress1 = new uint160(1);
             var contractAddress2 = new uint160(2);
 
-            var state1 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress1.ToAddress() }, null, null, null, null, null, null, null);
+            var state1 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress1.ToAddress() }, null, null, null, null, null, null, null, null);
             var log1 = new Example1("Jordan", 12345);
             var log2 = new Example1("John", 123);
 
-            var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress() }, null, null, null, null, null, null, null);
+            var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress() }, null, null, null, null, null, null, null, null);
             var log3 = new Example2("0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress(), 16, "This is a test message.");
 
             this.logHolder.Log(state1, log1);

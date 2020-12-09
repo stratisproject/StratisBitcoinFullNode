@@ -15,7 +15,8 @@ namespace Stratis.SmartContracts.CLR
             IContractLogger contractLogger,
             IInternalTransactionExecutor internalTransactionExecutor,
             IInternalHashHelper internalHashHelper,
-            Func<ulong> getBalance)
+            Func<ulong> getBalance,
+            IEcRecoverProvider ecRecoverProvider)
         {
             this.Block = block;
             this.Message = message;
@@ -25,6 +26,7 @@ namespace Stratis.SmartContracts.CLR
             this.InternalTransactionExecutor = internalTransactionExecutor;
             this.InternalHashHelper = internalHashHelper;
             this.GetBalance = getBalance;
+            this.EcRecoverProvider = ecRecoverProvider;
         }
 
         public IBlock Block { get; }
@@ -34,6 +36,7 @@ namespace Stratis.SmartContracts.CLR
         public IPersistentState PersistentState { get; }
 
         public ISerializer Serializer { get; }
+        public IEcRecoverProvider EcRecoverProvider { get; }
 
         public IContractLogger ContractLogger { get; }
 

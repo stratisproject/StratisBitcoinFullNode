@@ -115,6 +115,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractTransactionPolicy>();
                         services.AddSingleton<IStateProcessor, StateProcessor>();
                         services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
+                        services.AddSingleton<IEcRecoverProvider, EcRecoverProvider>();
                         services.AddSingleton<ILocalExecutor, LocalExecutor>();
                         services.AddSingleton<IBlockExecutionResultCache, BlockExecutionResultCache>();
 

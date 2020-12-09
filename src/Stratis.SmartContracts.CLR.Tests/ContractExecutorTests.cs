@@ -41,6 +41,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         private readonly IStateProcessor stateProcessor;
         private readonly ISmartContractStateFactory smartContractStateFactory;
         private readonly ISerializer serializer;
+        private readonly IEcRecoverProvider ecRecoverProvider;
 
         public ContractExecutorTests()
         {
@@ -61,7 +62,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader, this.contractCache);
             this.stateProcessor = new StateProcessor(this.vm, this.addressGenerator);
             this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);
-            this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.internalTxExecutorFactory, this.serializer);
+            this.ecRecoverProvider = new EcRecoverProvider(this.network);
+            this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.internalTxExecutorFactory, this.serializer, this.ecRecoverProvider);
             
             this.callDataSerializer = new CallDataSerializer(this.contractPrimitiveSerializer);
 
