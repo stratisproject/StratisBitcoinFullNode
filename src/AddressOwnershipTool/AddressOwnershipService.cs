@@ -12,6 +12,7 @@ using CsvHelper.Configuration;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
@@ -113,6 +114,8 @@ namespace AddressOwnershipTool
                 if (!file.EndsWith(".csv"))
                     continue;
 
+                var isLedger = Path.GetFileName(file).StartsWith("L-");
+
                 Console.WriteLine($"Validating signature file '{file}'...");
 
                 foreach (string line in File.ReadLines(file))
@@ -146,7 +149,7 @@ namespace AddressOwnershipTool
                         }
 
                         // The address string is the actual message in this case.
-                        var pubKey = PubKey.RecoverFromMessage(address, signature);
+                        var pubKey = isLedger ? RecoverLedgerPubKey(address, signature) : PubKey.RecoverFromMessage(address, signature);
 
                         if (pubKey.Hash.ScriptPubKey.GetDestinationAddress(this.network).ToString() != address)
                         {
@@ -199,6 +202,24 @@ namespace AddressOwnershipTool
 
             Console.WriteLine($"There are {this.ownershipTransactions.Count} ownership transactions so far to process.");
             Console.WriteLine($"There are {Money.Satoshis(this.ownershipTransactions.Sum(s => s.SenderAmount)).ToUnit(MoneyUnit.BTC)} STRAT with ownership proved.");
+        }
+
+        private PubKey RecoverLedgerPubKey(string address, string signature)
+        {
+            var specialBytes = 0x18;
+            var prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
+            var lengthBytes = BitConverter.GetBytes((char)address.Length).Take(1).ToArray();
+            var addressBytes = Encoding.UTF8.GetBytes(address);
+
+            byte[] dataBytes = new byte[1 + prefixBytes.Length + lengthBytes.Length + addressBytes.Length];
+            dataBytes[0] = (byte)specialBytes;
+            Buffer.BlockCopy(prefixBytes, 0, dataBytes, 1, prefixBytes.Length);
+            Buffer.BlockCopy(lengthBytes, 0, dataBytes, prefixBytes.Length + 1, lengthBytes.Length);
+            Buffer.BlockCopy(addressBytes, 0, dataBytes, prefixBytes.Length + lengthBytes.Length + 1, addressBytes.Length);
+
+            uint256 messageHash = NBitcoin.Crypto.Hashes.Hash256(dataBytes);
+            var recovered = PubKey.RecoverCompact(messageHash, Encoders.Base64.DecodeData(signature));
+            return recovered;
         }
 
         public void StratisXExport(string privKeyFile, string destinationAddress)

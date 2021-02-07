@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <Version>2.0.0.5</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Properties\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Hid.Net" Version="1.1.6" />
+    <PackageReference Include="NStratis" Version="4.0.0.77" />
+    <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
+    <PackageReference Include="Stratis.Bitcoin" Version="3.0.5" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.5" />
+	<PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+</Project>
