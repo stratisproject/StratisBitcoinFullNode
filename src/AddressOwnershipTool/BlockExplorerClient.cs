@@ -1,33 +1,43 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace AddressOwnershipTool
 {
     public class BlockExplorerClient
     {
-        private const string ExplorerBaseUrl = "https://stratisqbitninja2.azurewebsites.net/";
+        private const string ExplorerBaseUrl = "http://stratissnapshotapi.stratisplatrform.com/";
 
         public bool HasBalance(string address)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(ExplorerBaseUrl);
+            var stratisApiClient = new NodeApiClient($"{ExplorerBaseUrl}api");
+            var balance = stratisApiClient.GetAddressBalance(address);
 
-                HttpResponseMessage response = client.GetAsync($"balances/{address}/summary").GetAwaiter().GetResult();
+            Console.WriteLine($"Balance for {address} is {(balance / 100_000_000):N8}");
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    return false;
-                }
-
-                var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-                dynamic balanceObject = JsonConvert.DeserializeObject<dynamic>(content);
-                string balance = balanceObject.spendable.received.ToString();
-
-                return balance != "0";
-            }
+            return balance > 0;
         }
     }
+
+    public class Balance
+    {
+        [JsonProperty("address")]
+        public string Address { get; set; }
+
+        [JsonProperty("balance")]
+        public ulong Amount { get; set; }
+    }
+
+    public class ApiResponse
+    {
+        [JsonProperty("balances")]
+        public IList<Balance> Balances { get; set; }
+
+        [JsonProperty("reason")]
+        public object Reason { get; set; }
+    }
+
 }

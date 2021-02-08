@@ -127,6 +127,14 @@ namespace AddressOwnershipTool
                 {
                     await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress);
                 }
+                catch (InvalidOperationException)
+                {
+                    Console.WriteLine("Make sure your ledger device is unlocked and Stratis wallet is open.");
+                }
+                catch (LedgerWallet.LedgerWalletException)
+                {
+                    Console.WriteLine("Make sure your ledger device is unlocked and Stratis wallet is open.");
+                }
                 catch (ApplicationException ex)
                 {
                     Console.WriteLine(ex.Message);

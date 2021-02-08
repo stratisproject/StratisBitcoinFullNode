@@ -11,10 +11,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hid.Net" Version="1.1.6" />
-    <PackageReference Include="NStratis" Version="4.0.0.77" />
-    <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
-    <PackageReference Include="Stratis.Bitcoin" Version="3.0.5" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.5" />
 	<PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj" />
   </ItemGroup>
 </Project>

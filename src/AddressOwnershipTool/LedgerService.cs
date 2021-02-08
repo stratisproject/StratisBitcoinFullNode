@@ -36,6 +36,7 @@ namespace AddressOwnershipTool
                 PubKey pubKey = walletPubKey.ExtendedPublicKey.PubKey;
                 var address = walletPubKey.Address;
 
+                Console.WriteLine($"Checking balance for {address}");
                 if (!this.blockExplorerClient.HasBalance(address))
                     continue;
 
@@ -46,7 +47,7 @@ namespace AddressOwnershipTool
                 if (signature == null)
                     continue;
 
-                this.OutputToFile(address, signature, destinationAddress);
+                this.OutputToFile(address, destinationAddress, signature);
             }
         }
 
@@ -71,12 +72,8 @@ namespace AddressOwnershipTool
             // 02 - INTEGER (R)
             // <LEN>
             // 02 - INTEGER (S)
-            var foundMatch = false;
             for (int i = 0; i < 2; i++)
             {
-                if (foundMatch)
-                    break;
-
                 int recId = i;
 
                 if (resp[0] != (byte)(48 + recId))
@@ -124,7 +121,7 @@ namespace AddressOwnershipTool
                 uint256 messageHash = NBitcoin.Crypto.Hashes.Hash256(dataBytes);
                 var recovered = PubKey.RecoverCompact(messageHash, sigData);
                 var recoveredAddress = recovered.Hash.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-                foundMatch = recoveredAddress == address;
+                bool foundMatch = recoveredAddress == address;
 
                 if (foundMatch)
                     return Encoders.Base64.EncodeData(sigData);
