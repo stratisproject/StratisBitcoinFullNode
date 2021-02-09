@@ -22,7 +22,7 @@ namespace AddressOwnershipTool
             this.blockExplorerClient = new BlockExplorerClient();
         }
 
-        public async Task ExportAddressesAsync(int numberOfAddressesToScan, string destinationAddress)
+        public async Task ExportAddressesAsync(int numberOfAddressesToScan, string destinationAddress, bool ignoreBalance)
         {
             LedgerClient ledger = (await LedgerClient.GetHIDLedgersAsync()).First();
 
@@ -36,9 +36,12 @@ namespace AddressOwnershipTool
                 PubKey pubKey = walletPubKey.ExtendedPublicKey.PubKey;
                 var address = walletPubKey.Address;
 
-                Console.WriteLine($"Checking balance for {address}");
-                if (!this.blockExplorerClient.HasBalance(address))
-                    continue;
+                if (!ignoreBalance)
+                {
+                    Console.WriteLine($"Checking balance for {address}");
+                    if (!this.blockExplorerClient.HasBalance(address))
+                        continue;
+                }
 
                 await ledger.PrepareMessage(key, address);
                 var resp = await ledger.SignMessage();

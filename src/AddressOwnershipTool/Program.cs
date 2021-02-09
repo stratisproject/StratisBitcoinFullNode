@@ -16,11 +16,13 @@ namespace AddressOwnershipTool
             bool distribute;
             bool testnet;
             bool ledger;
+            bool ignoreBalance;
             string destinationAddress = null;
 
             // Settings common between all modes
             testnet = args.Contains("-testnet");
             ledger = args.Contains("-ledger");
+            ignoreBalance = args.Contains("-ignorebalance");
 
             validate = args.Contains("-validate");
             if (validate)
@@ -125,7 +127,7 @@ namespace AddressOwnershipTool
 
                 try
                 {
-                    await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress);
+                    await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress, ignoreBalance);
                 }
                 catch (InvalidOperationException)
                 {
