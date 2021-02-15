@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "AddressOwnershipTool": {
-      "commandName": "Project",
-      "commandLineArgs": "-ledger -destination=XVdomdMe9vc6GpCMVQ4N8hDNt7rLZEiQx3"
-    }
-  }
-}
