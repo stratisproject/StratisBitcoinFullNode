@@ -2,22 +2,27 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using NLog.Targets;
 
 namespace AddressOwnershipTool
 {
     partial class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             string arg = null;
             bool validate;
             bool distribute;
             bool testnet;
+            bool ledger;
+            bool ignoreBalance;
             string destinationAddress = null;
 
             // Settings common between all modes
             testnet = args.Contains("-testnet");
+            ledger = args.Contains("-ledger");
+            ignoreBalance = args.Contains("-ignorebalance");
 
             validate = args.Contains("-validate");
             if (validate)
@@ -92,12 +97,54 @@ namespace AddressOwnershipTool
 
             Console.WriteLine("Address;Destination;Signature");
 
-            if (!File.Exists(destinationAddress + ".csv"))
+            var fileName = $"{(ledger ? "L-" : string.Empty)}{destinationAddress}.csv";
+
+            if (!File.Exists(fileName))
             {
-                using (StreamWriter sw = File.AppendText(destinationAddress + ".csv"))
+                using (StreamWriter sw = File.AppendText(fileName))
                 {
                     sw.WriteLine("Address;Destination;Signature");
                 }
+            }
+
+            if (ledger)
+            {
+                var numberOfAddressesToScan = 100;
+
+                arg = args.FirstOrDefault(a => a.StartsWith("-addresscount"));
+                if (arg != null)
+                {
+                    var numberOfAddressesToScanSetting = arg.Split('=')[1];
+                    if (!int.TryParse(numberOfAddressesToScanSetting, out numberOfAddressesToScan))
+                    {
+                        Console.WriteLine($"Unable to parse '-addresscount' setting with a value of {numberOfAddressesToScanSetting}. Please use whole number.");
+
+                        return;
+                    }
+                }
+
+                var ledgerService = new LedgerService(testnet);
+
+                try
+                {
+                    await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress, ignoreBalance);
+                }
+                catch (InvalidOperationException)
+                {
+                    Console.WriteLine("Make sure your ledger device is unlocked and Stratis wallet is open.");
+                }
+                catch (LedgerWallet.LedgerWalletException)
+                {
+                    Console.WriteLine("Make sure your ledger device is unlocked and Stratis wallet is open.");
+                }
+                catch (ApplicationException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+
+                Console.WriteLine("Finished");
+
+                return;
             }
 
             // Settings related to a stratisX wallet export.
