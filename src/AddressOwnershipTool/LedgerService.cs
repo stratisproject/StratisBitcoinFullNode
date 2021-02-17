@@ -22,14 +22,16 @@ namespace AddressOwnershipTool
             this.blockExplorerClient = new BlockExplorerClient();
         }
 
-        public async Task ExportAddressesAsync(int numberOfAddressesToScan, string destinationAddress, bool ignoreBalance)
+        public async Task ExportAddressesAsync(int numberOfAddressesToScan, string destinationAddress, bool ignoreBalance, string keyPath = null)
         {
             LedgerClient ledger = (await LedgerClient.GetHIDLedgersAsync()).First();
 
+            var numberOfIterations = string.IsNullOrEmpty(keyPath) ? numberOfAddressesToScan : 1;
+    
             // m / purpose' / coin_type' / account' / change / address_index
-            for (int index = 0; index < numberOfAddressesToScan; index++)
+            for (int index = 0; index < numberOfIterations; index++)
             {
-                var key = new KeyPath($"m/44'/105'/0'/0/{index}");
+                var key = new KeyPath(string.IsNullOrEmpty(keyPath) ? $"m/44'/105'/0'/0/{index}" : keyPath);
 
                 GetWalletPubKeyResponse walletPubKey = await ledger.GetWalletPubKeyAsync(key);
 

@@ -123,11 +123,18 @@ namespace AddressOwnershipTool
                     }
                 }
 
+                arg = args.FirstOrDefault(a => a.StartsWith("-keypath"));
+                string path = null;
+                if (arg != null)
+                {
+                    path = arg.Split('=')[1];
+                }
+
                 var ledgerService = new LedgerService(testnet);
 
                 try
                 {
-                    await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress, ignoreBalance);
+                    await ledgerService.ExportAddressesAsync(numberOfAddressesToScan, destinationAddress, ignoreBalance, path);
                 }
                 catch (InvalidOperationException)
                 {
