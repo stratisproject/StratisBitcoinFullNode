@@ -47,7 +47,7 @@ namespace AddressOwnershipTool
                     AddressCheckResult addressCheckResult = await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
                     addressChecks.Add(addressCheckResult);
 
-                    if (accountIndex == maximumInactiveAddresses - 1 && addressChecks.All(a => !a.HasActivity))
+                    if (addressIndex == maximumInactiveAddresses - 1 && addressChecks.All(a => !a.HasActivity))
                     {
                         foundInactiveAccount = true;
                         break;
