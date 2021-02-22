@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,8 @@ namespace AddressOwnershipTool
 
         private readonly BlockExplorerClient blockExplorerClient;
 
+        private const int maximumInactiveAddresses = 20;
+
         public LedgerService(bool testnet)
         {
             this.network = testnet ? new StratisTest() : new StratisMain();
@@ -26,33 +29,44 @@ namespace AddressOwnershipTool
         {
             LedgerClient ledger = (await LedgerClient.GetHIDLedgersAsync()).First();
 
-            var numberOfIterations = string.IsNullOrEmpty(keyPath) ? numberOfAddressesToScan : 1;
-    
-            // m / purpose' / coin_type' / account' / change / address_index
-            for (int index = 0; index < numberOfIterations; index++)
+            if (!string.IsNullOrEmpty(keyPath))
             {
-                var key = new KeyPath(string.IsNullOrEmpty(keyPath) ? $"m/44'/105'/0'/0/{index}" : keyPath);
+                await ProcessAddressAsync(ledger, keyPath, ignoreBalance, destinationAddress);
+                return;
+            }
 
-                GetWalletPubKeyResponse walletPubKey = await ledger.GetWalletPubKeyAsync(key);
+            bool foundInactiveAccount = false;
 
-                PubKey pubKey = walletPubKey.ExtendedPublicKey.PubKey;
-                var address = walletPubKey.Address;
+            for (int accountIndex = 0; !foundInactiveAccount; accountIndex++)
+            {
+                var addressChecks = new List<AddressCheckResult>();
 
-                if (!ignoreBalance)
+                Console.WriteLine($"Checking addresses for m/44'/105'/{accountIndex}");
+
+                for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
                 {
-                    Console.WriteLine($"Checking balance for {address}");
-                    if (!this.blockExplorerClient.HasBalance(address))
-                        continue;
+                    var currentKeyPath = $"m/44'/105'/{accountIndex}'/0/{addressIndex}";
+                    
+                    AddressCheckResult addressCheckResult = await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
+                    addressChecks.Add(addressCheckResult);
+
+                    if (addressIndex == maximumInactiveAddresses - 1 && addressChecks.All(a => !a.HasActivity))
+                    {
+                        foundInactiveAccount = true;
+                        break;
+                    }
                 }
-
-                await ledger.PrepareMessage(key, address);
-                var resp = await ledger.SignMessage();
-
-                var signature = GetSignature(address, resp, pubKey);
-                if (signature == null)
+                
+                if (foundInactiveAccount)
                     continue;
 
-                this.OutputToFile(address, destinationAddress, signature);
+                // Now scan all change addresses if account was active
+                for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
+                {
+                    var currentKeyPath = $"m/44'/105'/{accountIndex}'/1/{addressIndex}";
+
+                    await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
+                }
             }
         }
 
@@ -66,6 +80,41 @@ namespace AddressOwnershipTool
             {
                 sw.WriteLine(export);
             }
+        }
+
+        private async Task<AddressCheckResult> ProcessAddressAsync(LedgerClient ledger, string keyPath, bool ignoreBalance, string destinationAddress)
+        {
+            var result = new AddressCheckResult(false, false);
+            var key = new KeyPath(keyPath);
+
+            GetWalletPubKeyResponse walletPubKey = await ledger.GetWalletPubKeyAsync(key);
+
+            PubKey pubKey = walletPubKey.ExtendedPublicKey.PubKey;
+            var address = walletPubKey.Address;
+
+            var hasActivity = this.blockExplorerClient.HasActivity(address);
+            result.HasActivity = hasActivity;
+
+            if (!ignoreBalance)
+            {
+                Console.WriteLine($"Checking balance for {address}");
+                if (!this.blockExplorerClient.HasBalance(address))
+                    return result;
+
+                Console.WriteLine($"Balance Found for {keyPath} - Please confirm transaction on your ledger device.");
+                result.HasBalance = true;
+            }
+
+            await ledger.PrepareMessage(key, address);
+            var resp = await ledger.SignMessage();
+
+            var signature = GetSignature(address, resp, pubKey);
+            if (signature == null)
+                return result;
+
+            this.OutputToFile(address, destinationAddress, signature);
+
+            return result;
         }
 
         private string GetSignature(string address, byte[] resp, PubKey pubKey)

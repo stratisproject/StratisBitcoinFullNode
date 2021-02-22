@@ -52,6 +52,21 @@ namespace AddressOwnershipTool
             return addressBalance.Balance.ToDecimal(MoneyUnit.Satoshi);
         }
 
+        public List<AddressBalanceChange> GetVerboseAddressBalance(string address)
+        {
+            VerboseAddressBalancesResult result = $"{this.baseUrl}"
+                .AppendPathSegment("Blockstore/getverboseaddressesbalances")
+                .SetQueryParam("addresses", address)
+                .GetJsonAsync<VerboseAddressBalancesResult>().GetAwaiter().GetResult();
+
+            AddressIndexerData addressBalance = result.BalancesData.FirstOrDefault();
+
+            if (addressBalance == null)
+                return new List<AddressBalanceChange>();
+
+            return addressBalance.BalanceChanges;
+        }
+
         public WalletBuildTransactionModel BuildTransaction(string walletName, string walletPassword, string accountName, List<RecipientModel> recipients)
         {
             var result = $"{this.baseUrl}"
