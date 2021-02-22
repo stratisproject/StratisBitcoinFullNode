@@ -40,12 +40,13 @@ namespace AddressOwnershipTool
             for (int accountIndex = 0; !foundInactiveAccount; accountIndex++)
             {
                 var addressChecks = new List<AddressCheckResult>();
+
+                Console.WriteLine($"Checking addresses for m/44'/105'/{accountIndex}");
+
                 for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
                 {
                     var currentKeyPath = $"m/44'/105'/{accountIndex}'/0/{addressIndex}";
-
-                    Console.WriteLine($"Checking addresses for {currentKeyPath}");
-
+                    
                     AddressCheckResult addressCheckResult = await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
                     addressChecks.Add(addressCheckResult);
 
