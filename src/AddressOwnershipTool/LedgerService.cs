@@ -44,6 +44,8 @@ namespace AddressOwnershipTool
                 {
                     var currentKeyPath = $"m/44'/105'/{accountIndex}'/0/{addressIndex}";
 
+                    Console.WriteLine($"Checking addresses for {currentKeyPath}");
+
                     AddressCheckResult addressCheckResult = await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
                     addressChecks.Add(addressCheckResult);
 
@@ -87,6 +89,7 @@ namespace AddressOwnershipTool
                 if (!this.blockExplorerClient.HasBalance(address))
                     return result;
 
+                Console.WriteLine($"Balance Found - Please confirm transaction on your ledger device.");
                 result.HasBalance = true;
             }
 
