@@ -41,7 +41,7 @@ namespace AddressOwnershipTool
             {
                 var addressChecks = new List<AddressCheckResult>();
 
-                Console.WriteLine($"Checking addresses for m/44'/105'/{accountIndex}");
+                Console.WriteLine($"Checking addresses for {accountIndex}");
 
                 for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
                 {
@@ -55,6 +55,17 @@ namespace AddressOwnershipTool
                         foundInactiveAccount = true;
                         break;
                     }
+                }
+                
+                if (foundInactiveAccount)
+                    continue;
+
+                // Now scan all change addresses if account was active
+                for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
+                {
+                    var currentKeyPath = $"m/44'/105'/{accountIndex}'/1/{addressIndex}";
+
+                    await this.ProcessAddressAsync(ledger, currentKeyPath, ignoreBalance, destinationAddress);
                 }
             }
         }
