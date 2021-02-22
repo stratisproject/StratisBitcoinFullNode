@@ -41,7 +41,7 @@ namespace AddressOwnershipTool
             {
                 var addressChecks = new List<AddressCheckResult>();
 
-                Console.WriteLine($"Checking addresses for {accountIndex}");
+                Console.WriteLine($"Checking addresses for m/44'/105'/{accountIndex}");
 
                 for (int addressIndex = 0; addressIndex < numberOfAddressesToScan; addressIndex++)
                 {
@@ -101,7 +101,7 @@ namespace AddressOwnershipTool
                 if (!this.blockExplorerClient.HasBalance(address))
                     return result;
 
-                Console.WriteLine($"Balance Found - Please confirm transaction on your ledger device.");
+                Console.WriteLine($"Balance Found for {keyPath} - Please confirm transaction on your ledger device.");
                 result.HasBalance = true;
             }
 
