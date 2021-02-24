@@ -4,9 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using Flurl;
+using Flurl.Http;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using NBitcoin.Networks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -416,6 +421,78 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 IList<ReceiptResponse> receipts = node1.GetReceipts(response.NewContractAddress, "Transfer");
                 Assert.Single(receipts);
             }
+        }
+
+        [Fact]
+        public async Task Struct_ReturnValue()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode sender = chain.Nodes[0];
+
+                // Mine some coins so we have balance
+                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
+                sender.MineBlocks(maturity + 1);
+                int spendable = GetSpendableBlocks(maturity + 1, maturity);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
+
+                // Compile file
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReturnStruct.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract
+                BuildCreateContractTransactionResponse createResponse = sender.SendCreateContractTransaction(compilationResult.Compilation, 30);
+                Assert.True(createResponse.Success);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
+                ReceiptResponse createReceipt = sender.GetReceipt(createResponse.TransactionId.ToString());
+                Assert.True(createReceipt.Success);
+
+                // Get the representation we expect to see
+                var theStruct = new ReturnStruct.TheStruct
+                {
+                    TestBool = true,
+                    TestString = "My String"
+                };
+                string jsonStruct = JsonConvert.SerializeObject(theStruct);
+
+                // Make a local call and check the result matches.
+                var localCallResult = await $"http://localhost:{sender.CoreNode.ApiPort}/api"
+                    .AppendPathSegment("SmartContracts/local-call")
+                    .PostJsonAsync(new LocalCallContractRequest
+                    {
+                        Amount = "0",
+                        ContractAddress = createResponse.NewContractAddress,
+                        GasLimit = 100_000,
+                        GasPrice = 100,
+                        MethodName = "CallMe",
+                        Sender = sender.MinerAddress.Address
+                    });
+
+                string content = await localCallResult.Content.ReadAsStringAsync();
+                JObject fullExecutionResult = JObject.Parse(content);
+                JObject jsonReturnValue = (JObject) fullExecutionResult["return"];
+
+                Assert.Equal(CleanJson(jsonStruct), CleanJson(jsonReturnValue.ToString()));
+
+                // Call contract for real
+                BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CallMe", createResponse.NewContractAddress, 0);
+                Assert.True(callResponse.Success);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
+
+                // Check the receipt
+                var receipt = sender.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.Equal(CleanJson(jsonStruct), CleanJson(receipt.ReturnValue));
+            }
+        }
+
+        private string CleanJson(string json)
+        {
+            return json.Replace("/", "")
+                .Replace(" ", "")
+                .Replace("\r\n", "")
+                .ToLower();
         }
 
         [Fact]
