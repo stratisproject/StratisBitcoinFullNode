@@ -29,13 +29,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IBroadcasterManager broadcasterManager;
 
-        private readonly IAsyncProvider asyncProvider;
-        private readonly INodeLifetime nodeLifetime;
         private readonly MempoolManager mempoolManager;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly MempoolSettings mempoolSettings;
         private readonly NodeSettings nodeSettings;
-        private readonly BlockPolicyEstimator blockPolicyEstimator;
+        private readonly BitcoinBlockPolicyEstimator blockPolicyEstimator;
         private readonly TxMempool txMempool;
         private readonly IMempoolValidator mempoolValidator;
         private readonly IMempoolPersistence mempoolPersistence;
@@ -55,8 +53,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
-            this.asyncProvider = Substitute.For<IAsyncProvider>();
-            this.nodeLifetime = Substitute.For<INodeLifetime>();
 
             this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
@@ -72,31 +68,15 @@ namespace Stratis.Features.FederatedPeg.Tests
                 MempoolExpiry = MempoolValidator.DefaultMempoolExpiry
             };
 
-            this.blockPolicyEstimator = new BlockPolicyEstimator(
-                this.mempoolSettings,
-                this.loggerFactory,
-                this.nodeSettings);
+            this.blockPolicyEstimator = new BitcoinBlockPolicyEstimator(this.loggerFactory, this.nodeSettings);
 
-            this.txMempool = new TxMempool(
-                this.dateTimeProvider,
-                this.blockPolicyEstimator,
-                this.loggerFactory,
-                this.nodeSettings);
+            this.txMempool = new TxMempool(this.dateTimeProvider, this.blockPolicyEstimator, this.loggerFactory, this.nodeSettings);
 
             this.mempoolValidator = Substitute.For<IMempoolValidator>();
             this.mempoolPersistence = Substitute.For<IMempoolPersistence>();
             this.coinView = Substitute.For<ICoinView>();
 
-            this.mempoolManager = new MempoolManager(
-                new MempoolSchedulerLock(),
-                this.txMempool,
-                this.mempoolValidator,
-                this.dateTimeProvider,
-                this.mempoolSettings,
-                this.mempoolPersistence,
-                this.coinView,
-                this.loggerFactory,
-                this.nodeSettings.Network);
+            this.mempoolManager = new MempoolManager(new MempoolSchedulerLock(), this.txMempool, this.mempoolValidator, this.dateTimeProvider, this.mempoolSettings, this.mempoolPersistence, this.coinView, this.loggerFactory, this.nodeSettings.Network);
         }
 
         [Fact]
@@ -104,13 +84,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federatedPegSettings.PublicKey.Returns(PublicKey);
 
-            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-               this.loggerFactory,
-               this.mempoolManager,
-               this.broadcasterManager,
-               this.ibdState,
-               this.federationWalletManager,
-               this.signals))
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(this.loggerFactory, this.mempoolManager, this.broadcasterManager, this.ibdState, this.federationWalletManager, this.signals))
             {
                 signedMultisigTransactionBroadcaster.Start();
 
@@ -130,13 +104,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-               this.loggerFactory,
-               this.mempoolManager,
-               this.broadcasterManager,
-               this.ibdState,
-               this.federationWalletManager,
-               this.signals))
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(this.loggerFactory, this.mempoolManager, this.broadcasterManager, this.ibdState, this.federationWalletManager, this.signals))
             {
                 signedMultisigTransactionBroadcaster.Start();
 
@@ -158,13 +126,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-               this.loggerFactory,
-               this.mempoolManager,
-               this.broadcasterManager,
-               this.ibdState,
-               this.federationWalletManager,
-               this.signals))
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(this.loggerFactory, this.mempoolManager, this.broadcasterManager, this.ibdState, this.federationWalletManager, this.signals))
             {
                 signedMultisigTransactionBroadcaster.Start();
 

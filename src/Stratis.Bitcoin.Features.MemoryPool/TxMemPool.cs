@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="blockPolicyEstimator">The block policy estimator object.</param>
         /// <param name="loggerFactory">Factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
-        public TxMempool(IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
+        public TxMempool(IDateTimeProvider dateTimeProvider, IBlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             this.MapTx = new IndexedTransactionSet();
             this.mapLinks = new TxlinksMap();
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>Gets the miner policy estimator.</summary>
-        public BlockPolicyEstimator MinerPolicyEstimator { get; }
+        public IBlockPolicyEstimator MinerPolicyEstimator { get; }
 
         /// <summary>Get the number of transactions in the memory pool.</summary>
         public long Size
@@ -280,24 +280,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.MinerPolicyEstimator.EstimateFee(nBlocks);
         }
-
-        /// <inheritdoc />
-        public FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimateSmartFee(nBlocks, this, out answerFoundAtBlocks);
-        }
-
-        /// <inheritdoc />
-        public double EstimatePriority(int nBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimatePriority(nBlocks);
-        }
-
-        /// <inheritdoc />
-        public double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks)
-        {
-            return this.MinerPolicyEstimator.EstimateSmartPriority(nBlocks, this, out answerFoundAtBlocks);
-        }
+        
 
         /// <inheritdoc />
         public void SetSanityCheck(double dFrequency = 1.0)
@@ -706,7 +689,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mapLinks.Remove(entry);
             this.MapTx.Remove(entry);
             this.nTransactionsUpdated++;
-            this.MinerPolicyEstimator.RemoveTx(hash);
+            this.MinerPolicyEstimator.RemoveTx(hash, false);
         }
 
         /// <inheritdoc />
@@ -1025,13 +1008,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public void WriteFeeEstimates(BitcoinStream stream)
+        public void WriteFeeEstimates()
         {
+            this.MinerPolicyEstimator.Write();
         }
 
         /// <inheritdoc />
-        public void ReadFeeEstimates(BitcoinStream stream)
+        public void ReadFeeEstimates()
         {
+            this.MinerPolicyEstimator.Read();
         }
 
         /// <inheritdoc />

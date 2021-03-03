@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -33,17 +34,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         private readonly FeeRate minRelayTxFee;
 
+        private readonly IBlockPolicyEstimator blockPolicyEstimator;
+
         /// <summary>
         /// Constructs a wallet fee policy.
         /// </summary>
         /// <param name="nodeSettings">Settings for the the node.</param>
-        public WalletFeePolicy(NodeSettings nodeSettings)
+        public WalletFeePolicy(NodeSettings nodeSettings, IBlockPolicyEstimator blockPolicyEstimator)
         {
             this.minTxFee = nodeSettings.MinTxFeeRate;
             this.fallbackFee = nodeSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
+            this.blockPolicyEstimator = blockPolicyEstimator;
         }
 
         /// <inheritdoc />
@@ -75,30 +79,33 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee)
         {
             Money nFeeNeeded = targetFee;
+
             // User didn't set: use -txconfirmtarget to estimate...
             if (nFeeNeeded == 0)
             {
-                int estimateFoundTarget = confirmTarget;
-
-                // TODO: the fee estimation is not ready for release for now use the fall back fee
-                //nFeeNeeded = this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
+                nFeeNeeded = this.blockPolicyEstimator.EstimateFee(confirmTarget).GetFee(txBytes);
+                
                 // ... unless we don't have enough mempool data for estimatefee, then use fallbackFee
                 if (nFeeNeeded == 0)
                     nFeeNeeded = this.fallbackFee.GetFee(txBytes);
             }
+
             // prevent user from paying a fee below minRelayTxFee or minTxFee
             nFeeNeeded = Math.Max(nFeeNeeded, this.GetRequiredFee(txBytes));
+            
             // But always obey the maximum
             if (nFeeNeeded > this.maxTxFee)
                 nFeeNeeded = this.maxTxFee;
+            
             return nFeeNeeded;
         }
 
         /// <inheritdoc />
         public FeeRate GetFeeRate(int confirmTarget)
         {
-            //this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
-            return this.fallbackFee;
+            FeeRate feeRate = this.blockPolicyEstimator.EstimateFee(confirmTarget);
+            
+            return feeRate.FeePerK > 0 ? feeRate : this.fallbackFee;
         }
     }
 }
