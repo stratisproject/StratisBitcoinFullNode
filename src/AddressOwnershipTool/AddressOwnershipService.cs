@@ -30,6 +30,7 @@ namespace AddressOwnershipTool
         private const string ownershipFilename = "ownership.csv";
         private const decimal splitThreshold = 10_000m * 100_000_000m; // In stratoshi
         private const decimal splitCount = 10;
+        private const decimal minumumBalanceToAcceptInSats = 5460;
 
         private readonly Network network;
         private readonly string ownershipFilePath;
@@ -167,9 +168,15 @@ namespace AddressOwnershipTool
 
                         decimal balance = stratisApiClient.GetAddressBalance(address);
 
-                        if (balance <= 0)
+                        if (balance == 0)
                         {
                             Console.WriteLine($"Address {address} has a zero balance, skipping it.");
+
+                            continue;
+                        }
+                        else if (balance < minumumBalanceToAcceptInSats)
+                        {
+                            Console.WriteLine($"Address {address} has a balance of {balance} sats which is below minimum of {minumumBalanceToAcceptInSats}, skipping it.");
 
                             continue;
                         }
