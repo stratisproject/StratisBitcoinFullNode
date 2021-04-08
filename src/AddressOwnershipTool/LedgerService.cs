@@ -129,7 +129,7 @@ namespace AddressOwnershipTool
             // 02 - INTEGER (R)
             // <LEN>
             // 02 - INTEGER (S)
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 2; i++)
             {
                 int recId = i;
 
