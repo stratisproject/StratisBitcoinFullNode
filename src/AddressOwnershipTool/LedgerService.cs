@@ -19,10 +19,13 @@ namespace AddressOwnershipTool
 
         private const int maximumInactiveAddresses = 20;
 
-        public LedgerService(bool testnet)
+        private bool verbose = false;
+
+        public LedgerService(bool testnet, bool verbose)
         {
             this.network = testnet ? new StratisTest() : new StratisMain();
             this.blockExplorerClient = new BlockExplorerClient();
+            this.verbose = verbose;
         }
 
         public async Task ExportAddressesAsync(int numberOfAddressesToScan, string destinationAddress, bool ignoreBalance, string keyPath = null)
@@ -126,9 +129,14 @@ namespace AddressOwnershipTool
             // 02 - INTEGER (R)
             // <LEN>
             // 02 - INTEGER (S)
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
                 int recId = i;
+
+                if (this.verbose)
+                {
+                    Console.WriteLine($@"Signature response from ledger: {BitConverter.ToString(resp)}");
+                }
 
                 if (resp[0] != (byte)(48 + recId))
                     continue; //throw new Exception("Unexpected signature encoding - outer type not SET");
