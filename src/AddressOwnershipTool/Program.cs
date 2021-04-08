@@ -15,12 +15,14 @@ namespace AddressOwnershipTool
             bool validate;
             bool distribute;
             bool testnet;
+            bool verbose;
             bool ledger;
             bool ignoreBalance;
             string destinationAddress = null;
 
             // Settings common between all modes
             testnet = args.Contains("-testnet");
+            verbose = args.Contains("-verbose");
             ledger = args.Contains("-ledger");
             ignoreBalance = args.Contains("-ignorebalance");
 
@@ -130,7 +132,7 @@ namespace AddressOwnershipTool
                     path = arg.Split('=')[1];
                 }
 
-                var ledgerService = new LedgerService(testnet);
+                var ledgerService = new LedgerService(testnet, verbose);
 
                 try
                 {
