@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private readonly IReceiptRepository receiptRepository;
         private readonly IWalletManager walletManager;
         private readonly ISmartContractTransactionService smartContractTransactionService;
+        private CoinType coinType;
 
         public SmartContractWalletController(
             IBroadcasterManager broadcasterManager,
@@ -54,6 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
             this.smartContractTransactionService = smartContractTransactionService;
+            this.coinType = (CoinType)network.Consensus.CoinType;
         }
 
         private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
@@ -139,6 +141,44 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             AddressBalance balance = this.walletManager.GetAddressBalance(address);
 
             return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
+        }
+
+        [Route("transaction-history")]
+        [HttpGet]
+        public IActionResult GetTransactionHistory([FromQuery] WalletHistoryRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var model = new WalletHistoryModel();
+                var query = new AccountBasedWalletHistoryQuery();
+                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, request.AccountName);
+
+                AccountHistory accountHistory = accountsHistory.First();
+
+                List<TransactionItemModel> results = query.GetHistory(accountHistory.History, request.Address, request.Skip, request.Take);
+
+                model.AccountsHistoryModel.Add(new AccountHistoryModel
+                {
+                    TransactionsHistory = results,
+                    Name = accountHistory.Account.Name,
+                    CoinType = this.coinType,
+                    HdPath = accountHistory.Account.HdPath
+                });
+                
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>

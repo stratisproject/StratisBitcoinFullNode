@@ -56,5 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// The balance of unconfirmed transactions.
         /// </summary>
         public Money AmountUnconfirmed { get; set; }
+
+        public IEnumerable<AddressModel> Addresses { get; set; }
     }
 }
