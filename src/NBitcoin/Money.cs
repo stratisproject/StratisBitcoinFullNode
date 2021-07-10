@@ -270,7 +270,7 @@ namespace NBitcoin
         // for decimal.TryParse. None of the NumberStyles' composed values is useful for bitcoin style
         private const NumberStyles BitcoinStyle =
                           NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite
-                        | NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
+                        | NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
 
 
         /// <summary>
@@ -322,7 +322,7 @@ namespace NBitcoin
             {
                 return this._Satoshis;
             }
-            // used as a central point where long.MinValue checking can be enforced 
+            // used as a central point where long.MinValue checking can be enforced
             private set
             {
                 CheckLongMinValue(value);
@@ -359,7 +359,7 @@ namespace NBitcoin
 
         public Money(ulong satoshis)
         {
-            // overflow check. 
+            // overflow check.
             // ulong.MaxValue is greater than long.MaxValue
             checked
             {
@@ -417,7 +417,7 @@ namespace NBitcoin
         public decimal ToUnit(MoneyUnit unit)
         {
             CheckMoneyUnit(unit, "unit");
-            // overflow safe because (long / int) always fit in decimal 
+            // overflow safe because (long / int) always fit in decimal
             // decimal operations are checked by default
             return (decimal)this.Satoshi / (int)unit;
         }

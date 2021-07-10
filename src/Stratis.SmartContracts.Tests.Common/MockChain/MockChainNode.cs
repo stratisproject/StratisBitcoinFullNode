@@ -197,7 +197,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Amount = amount.ToString(CultureInfo.InvariantCulture),
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
-                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
+                FeeAmount = new Money(feeAmount, MoneyUnit.BTC).ToString(),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 Parameters = parameters,
@@ -226,7 +226,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01,
+            decimal feeAmount = 0.01m,
             string sender = null)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -234,7 +234,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Amount = amount.ToString(CultureInfo.InvariantCulture),
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
-                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
+                FeeAmount = new Money(feeAmount, MoneyUnit.BTC).ToString(),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 Parameters = parameters,
@@ -272,7 +272,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M, 
+            decimal feeAmount = 0.01M,
             string sender = null,
             List<OutpointRequest> outpoints = null)
             {
@@ -281,7 +281,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 AccountName = this.AccountName,
                 Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
-                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
+                FeeAmount = new Money(feeAmount, MoneyUnit.BTC).ToString(),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 MethodName = methodName,
