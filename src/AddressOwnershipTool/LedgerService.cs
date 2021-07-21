@@ -162,12 +162,20 @@ namespace AddressOwnershipTool
 
                 int headerByte = recId + 27 + (pubKey.IsCompressed ? 4 : 0);
 
-                var sigData = new byte[65];  // 1 header + 32 bytes for R + 32 bytes for S
+                var sigData = new byte[1 + rLength + sLength];  // 1 header + 32 bytes for R + 32 bytes for S
 
                 sigData[0] = (byte)headerByte;
 
-                Array.Copy(rBytes, rLength == 33 ? 1 : 0, sigData, 1, 32);
-                Array.Copy(sBytes, sLength == 33 ? 1 : 0, sigData, 33, 32);
+                if (rLength == 31)
+                {
+                    Array.Copy(rBytes, 0, sigData, 1, 31);
+                    Array.Copy(sBytes, sLength == 33 ? 1 : 0, sigData, 32, 32);
+                }
+                else
+                {
+                    Array.Copy(rBytes, rLength == 33 ? 1 : 0, sigData, 1, 32);
+                    Array.Copy(sBytes, sLength == 33 ? 1 : 0, sigData, 33, 32);
+                }
 
                 var specialBytes = 0x18;
                 var prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
