@@ -196,7 +196,6 @@ namespace AddressOwnershipTool
                         break;
                     default:
                         throw new Exception("Unexpected sLength: " + sLength);
-                }
 
                 int specialBytes = 0x18;
                 byte[] prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
