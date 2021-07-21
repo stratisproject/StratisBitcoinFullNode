@@ -146,8 +146,7 @@ namespace AddressOwnershipTool
 
                 int rLength = resp[3];
 
-                var rBytes = new byte[32];
-                Array.Resize(ref rBytes, rLength); // can be 33
+                byte[] rBytes = new byte[rLength];
                 Array.Copy(resp, 4, rBytes, 0, rLength);
 
                 if (resp[4 + rLength] != 0x02)
@@ -155,32 +154,54 @@ namespace AddressOwnershipTool
 
                 int sLength = resp[5 + rLength];
 
-                var sBytes = new byte[32];
+                byte[] sBytes = new byte[sLength];
                 Array.Copy(resp, 6 + rLength, sBytes, 0, sLength);
 
                 // Now we have to work backwards to figure out the recId needed to recover the signature.
 
                 int headerByte = recId + 27 + (pubKey.IsCompressed ? 4 : 0);
 
-                var sigData = new byte[1 + rLength + sLength];  // 1 header + 32 bytes for R + 32 bytes for S
+                byte[] sigData = new byte[1 + 32 + 32];  // 1 header + 32 bytes for R + 32 bytes for S
 
                 sigData[0] = (byte)headerByte;
-
-                if (rLength == 31)
+                
+                switch (rLength)
                 {
-                    Array.Copy(rBytes, 0, sigData, 1, 31);
-                    Array.Copy(sBytes, sLength == 33 ? 1 : 0, sigData, 32, 32);
-                }
-                else
-                {
-                    Array.Copy(rBytes, rLength == 33 ? 1 : 0, sigData, 1, 32);
-                    Array.Copy(sBytes, sLength == 33 ? 1 : 0, sigData, 33, 32);
+                    case 31:
+                        // Add 1 to destination index as there will be a leading zero to make up the 32 bytes
+                        Array.Copy(rBytes, 0, sigData, 1 + 1, rLength);
+                        break;
+                    case 32:
+                        // The 'typical' case - no additional offsets
+                        Array.Copy(rBytes, 0, sigData, 1 + 0, rLength);
+                        break;
+                    case 33:
+                        // Use sourceIndex = 1 as we trim off the leading byte
+                        Array.Copy(rBytes, 1, sigData, 1 + 0, rLength - 1);
+                        break;
+                    default:
+                        throw new Exception("Unexpected rLength: " + rLength);
                 }
 
-                var specialBytes = 0x18;
-                var prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
-                var lengthBytes = BitConverter.GetBytes((char)address.Length).Take(1).ToArray();
-                var addressBytes = Encoding.UTF8.GetBytes(address);
+                switch (sLength)
+                {
+                    case 31:
+                        Array.Copy(sBytes, 0, sigData, 33 + 1, sLength);
+                        break;
+                    case 32:
+                        Array.Copy(sBytes, 0, sigData, 33 + 0, sLength);
+                        break;
+                    case 33:
+                        Array.Copy(sBytes, 1, sigData, 33 + 0, sLength - 1);
+                        break;
+                    default:
+                        throw new Exception("Unexpected sLength: " + sLength);
+                }
+
+                int specialBytes = 0x18;
+                byte[] prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
+                byte[] lengthBytes = BitConverter.GetBytes((char)address.Length).Take(1).ToArray();
+                byte[] addressBytes = Encoding.UTF8.GetBytes(address);
 
                 byte[] dataBytes = new byte[1 + prefixBytes.Length + lengthBytes.Length + addressBytes.Length];
                 dataBytes[0] = (byte)specialBytes;
@@ -189,8 +210,8 @@ namespace AddressOwnershipTool
                 Buffer.BlockCopy(addressBytes, 0, dataBytes, prefixBytes.Length + lengthBytes.Length + 1, addressBytes.Length);
 
                 uint256 messageHash = NBitcoin.Crypto.Hashes.Hash256(dataBytes);
-                var recovered = PubKey.RecoverCompact(messageHash, sigData);
-                var recoveredAddress = recovered.Hash.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+                PubKey recovered = PubKey.RecoverCompact(messageHash, sigData);
+                string recoveredAddress = recovered.Hash.ScriptPubKey.GetDestinationAddress(this.network).ToString();
                 bool foundMatch = recoveredAddress == address;
 
                 if (foundMatch)
