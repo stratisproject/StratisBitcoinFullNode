@@ -138,7 +138,7 @@ namespace AddressOwnershipTool
                     Console.WriteLine($@"Signature response from ledger: {BitConverter.ToString(resp)}");
                 }
 
-                if (resp[0] != (byte)(48 + recId))
+                if (resp[0] != (byte) (48 + recId))
                     continue; //throw new Exception("Unexpected signature encoding - outer type not SET");
 
                 if (resp[2] != 0x02)
@@ -161,10 +161,10 @@ namespace AddressOwnershipTool
 
                 int headerByte = recId + 27 + (pubKey.IsCompressed ? 4 : 0);
 
-                byte[] sigData = new byte[1 + 32 + 32];  // 1 header + 32 bytes for R + 32 bytes for S
+                byte[] sigData = new byte[1 + 32 + 32]; // 1 header + 32 bytes for R + 32 bytes for S
 
-                sigData[0] = (byte)headerByte;
-                
+                sigData[0] = (byte) headerByte;
+
                 switch (rLength)
                 {
                     case 31:
@@ -196,14 +196,15 @@ namespace AddressOwnershipTool
                         break;
                     default:
                         throw new Exception("Unexpected sLength: " + sLength);
+                }
 
                 int specialBytes = 0x18;
                 byte[] prefixBytes = Encoding.UTF8.GetBytes("Stratis Signed Message:\n");
-                byte[] lengthBytes = BitConverter.GetBytes((char)address.Length).Take(1).ToArray();
+                byte[] lengthBytes = BitConverter.GetBytes((char) address.Length).Take(1).ToArray();
                 byte[] addressBytes = Encoding.UTF8.GetBytes(address);
 
                 byte[] dataBytes = new byte[1 + prefixBytes.Length + lengthBytes.Length + addressBytes.Length];
-                dataBytes[0] = (byte)specialBytes;
+                dataBytes[0] = (byte) specialBytes;
                 Buffer.BlockCopy(prefixBytes, 0, dataBytes, 1, prefixBytes.Length);
                 Buffer.BlockCopy(lengthBytes, 0, dataBytes, prefixBytes.Length + 1, lengthBytes.Length);
                 Buffer.BlockCopy(addressBytes, 0, dataBytes, prefixBytes.Length + lengthBytes.Length + 1, addressBytes.Length);
