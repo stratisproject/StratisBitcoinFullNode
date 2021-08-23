@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts.Caching;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
@@ -233,6 +234,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             this.blockGasConsumed += result.GasConsumed;
 
+            string returnValue = SmartContractCoinViewRuleLogic.GetSerializedReturnValue(result.Return);
+
             // Store all fields. We will reuse these in CoinviewRule.
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
@@ -243,7 +246,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 result.To,
                 result.NewContractAddress,
                 !result.Revert,
-                result.Return?.ToString(),
+                returnValue,
                 result.ErrorMessage,
                 deserializedCallData.Value.GasPrice,
                 transactionContext.TxOutValue,
