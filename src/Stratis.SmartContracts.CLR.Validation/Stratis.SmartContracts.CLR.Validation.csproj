@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.10.1" />
-    <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.2.2-dev" />
     <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
     <PackageReference Include="Tracer.Fody" Version="3.1.0">
       <PrivateAssets>all</PrivateAssets>

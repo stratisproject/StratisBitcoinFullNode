@@ -191,4 +191,12 @@ namespace NBitcoin.Crypto
         }
 
     }
+
+    public static class ECKeyUtils
+    {
+        public static PubKey RecoverFromSignature(int recId, ECDSASignature sig, uint256 message, bool compressed)
+        {
+            return ECKey.RecoverFromSignature(recId, sig, message, compressed).GetPubKey(compressed);
+        }
+    }
 }

@@ -44,6 +44,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 null,
                 getBalance,
                 null,
+                null, 
                 null
             );
         }
@@ -88,7 +89,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             IInternalTransactionExecutor transactionExecutor,
             Func<ulong> getBalance,
             IInternalHashHelper hashHelper,
-            IContractLogger contractLogger)
+            IContractLogger contractLogger,
+            IEcRecoverProvider ecRecoverProvider)
         {
             this.Block = block;
             this.Message = message;
@@ -99,6 +101,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.GetBalance = getBalance;
             this.InternalHashHelper = hashHelper;
             this.ContractLogger = contractLogger;
+            this.EcRecoverProvider = ecRecoverProvider;
         }
 
         public IBlock Block { get; }
@@ -110,6 +113,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         public Func<ulong> GetBalance { get; }
         public IInternalHashHelper InternalHashHelper { get; }
         public IContractLogger ContractLogger { get; }
+        public IEcRecoverProvider EcRecoverProvider { get; }
     }
 
     public class TestBlock : IBlock

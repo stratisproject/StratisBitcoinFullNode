@@ -128,7 +128,8 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
-                () => 1000);
+                () => 1000,
+                Mock.Of<IEcRecoverProvider>());
 
             this.rewriter = new ObserverInstanceRewriter();
         }
