@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
     public interface ITxMempool
     {
         /// <summary>Gets the miner policy estimator.</summary>
-        BlockPolicyEstimator MinerPolicyEstimator { get; }
+        IBlockPolicyEstimator MinerPolicyEstimator { get; }
 
         /// <summary>Get the number of transactions in the memory pool.</summary>
         long Size { get; }
@@ -120,30 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// <param name="nBlocks">The confirmation target blocks.</param>
         /// <returns>The fee rate estimate.</returns>
         FeeRate EstimateFee(int nBlocks);
-
-        /// <summary>
-        /// Estimates the priority using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <returns>The estimated priority.</returns>
-        double EstimatePriority(int nBlocks);
-
-        /// <summary>
-        /// Estimates the smart fee using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <param name="answerFoundAtBlocks">The block where the fee was found.</param>
-        /// <returns>The fee rate estimate.</returns>
-        FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks);
-
-        /// <summary>
-        /// Estimates the smart priority using <see cref="MinerPolicyEstimator"/>.
-        /// </summary>
-        /// <param name="nBlocks">The confirmation target blocks.</param>
-        /// <param name="answerFoundAtBlocks">The block where the priority was found.</param>
-        /// <returns>The estimated priority.</returns>
-        double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks);
-
+        
         /// <summary>
         /// Whether the transaction hash exists in the memory pool.
         /// </summary>
@@ -195,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// Read fee estimates from a stream.
         /// </summary>
         /// <param name="stream">Stream to read from.</param>
-        void ReadFeeEstimates(BitcoinStream stream);
+        void ReadFeeEstimates();
 
         /// <summary>
         /// Called when a block is connected. Removes transactions from mempool and updates the miner fee estimator.
@@ -240,7 +217,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// <summary>
         /// Write fee estimates to a stream.
         /// </summary>
-        /// <param name="stream">Stream to write to.</param>
-        void WriteFeeEstimates(BitcoinStream stream);
+        void WriteFeeEstimates();
     }
 }

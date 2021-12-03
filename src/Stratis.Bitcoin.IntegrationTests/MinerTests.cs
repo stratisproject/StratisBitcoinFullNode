@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 this.DateTimeProvider = dateTimeProviderSet;
-                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
+                this.mempool = new TxMempool(dateTimeProvider, new BitcoinBlockPolicyEstimator(loggerFactory, nodeSettings), loggerFactory, nodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // We can't make transactions until we have inputs
