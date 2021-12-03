@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -6,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Stratis.Bitcoin.Builder.Feature;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -13,10 +16,10 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env, IFullNode fullNode)
+        public Startup(IHostingEnvironment env, IFullNode fullNode, ApiFeatureOptions apiFeatureOptions)
         {
             this.fullNode = fullNode;
-
+            this.apiFeatureOptions = apiFeatureOptions;
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -26,7 +29,8 @@ namespace Stratis.Bitcoin.Features.Api
             this.Configuration = builder.Build();
         }
 
-        private IFullNode fullNode;
+        private readonly IFullNode fullNode;
+        private readonly ApiFeatureOptions apiFeatureOptions;
 
         public IConfigurationRoot Configuration { get; }
 
@@ -55,6 +59,11 @@ namespace Stratis.Bitcoin.Features.Api
                     );
                 });
 
+            // filters api features based on options provided
+            IEnumerable<IFullNodeFeature> features = this.apiFeatureOptions.Includes.Any()
+                ? this.fullNode.Services.Features.Where(feature => this.apiFeatureOptions.Includes.Contains(feature.GetType()))
+                : this.fullNode.Services.Features.Where(feature => !this.apiFeatureOptions.Excludes.Contains(feature.GetType()));
+
             // Add framework services.
             services.AddMvc(options =>
                 {
@@ -69,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Api
                 })
                 // add serializers for NBitcoin objects
                 .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
-                .AddControllers(this.fullNode.Services.Features, services);
+                .AddControllers(features, services);
 
             // Enable API versioning.
             // Note much of this is borrowed from https://github.com/microsoft/aspnet-api-versioning/blob/master/samples/aspnetcore/SwaggerSample/Startup.cs
