@@ -631,7 +631,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 ChangeAddress = changeAddress,
                 Recipients = new List<RecipientModel>
                 {
-                    new RecipientModel { Amount = amount.ToString(), DestinationAddress = recipientAddress}
+                    new RecipientModel { Amount = (new Money(amount, MoneyUnit.BTC)).ToString(), DestinationAddress = recipientAddress}
                 }
             };
 
